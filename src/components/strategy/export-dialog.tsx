@@ -139,7 +139,7 @@ export function ExportDialog({
         .substring(0, 50);
 
       const extension = format === "pdf" ? "pdf" : "xlsx";
-      a.download = `ADVERTIS-${safeBrandName}-Strategie.${extension}`;
+      a.download = `ADVERTIS-${safeBrandName}-Stratégie.${extension}`;
       document.body.appendChild(a);
       a.click();
 

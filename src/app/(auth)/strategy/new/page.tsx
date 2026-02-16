@@ -165,11 +165,11 @@ function Step1BasicInfo({
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="strategyName">
-            Nom de la strategie <span className="text-destructive">*</span>
+            Nom de la stratégie <span className="text-destructive">*</span>
           </Label>
           <Input
             id="strategyName"
-            placeholder="Ex: Strategie de lancement Q1 2025"
+            placeholder="Ex: Stratégie de lancement Q1 2025"
             value={data.name}
             onChange={(e) => onChange({ ...data, name: e.target.value })}
           />
@@ -210,7 +210,7 @@ function Step1BasicInfo({
           <Label htmlFor="description">Description (optionnel)</Label>
           <Textarea
             id="description"
-            placeholder="Decrivez brievement le contexte et les objectifs de cette strategie..."
+            placeholder="Décrivez brièvement le contexte et les objectifs de cette stratégie..."
             value={data.description}
             onChange={(e) =>
               onChange({ ...data, description: e.target.value })
@@ -259,7 +259,7 @@ function Step2InputMethod({
           <span className="text-xs">
             Seuls les piliers A (Authenticite), D (Distinction), V (Valeur) et E
             (Engagement) necessitent des donnees. L&apos;audit (R+T) et les
-            rapports sont generes automatiquement par l&apos;IA.
+            rapports sont générés automatiquement par l&apos;IA.
           </span>
         </p>
       </div>
@@ -895,7 +895,7 @@ function Step4Summary({
         <CardContent className="p-4">
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">Strategie</p>
+              <p className="text-xs text-muted-foreground">Stratégie</p>
               <p className="font-medium">{basicInfo.name}</p>
             </div>
             <div>
@@ -962,7 +962,7 @@ function Step4Summary({
               <ol className="text-muted-foreground mt-2 list-inside list-decimal space-y-1 text-sm">
                 <li>
                   <strong>Audit (R+T)</strong> — L&apos;IA analyse vos donnees A-E
-                  et genere les SWOTs par variable + validation marche
+                  et génère les SWOTs par variable + validation marché
                 </li>
                 <li>
                   <strong>Rapports (6 documents)</strong> — Generation de
@@ -1004,7 +1004,7 @@ function Step4Summary({
           ) : (
             <>
               <Rocket className="mr-2 size-4" />
-              Creer la strategie & lancer l&apos;audit
+              Créer la stratégie & lancer l&apos;audit
             </>
           )}
         </Button>
@@ -1097,7 +1097,7 @@ export default function NewStrategyPage() {
           Nouvelle strategie
         </h1>
         <p className="text-muted-foreground">
-          Creez votre strategie de marque en 4 phases ADVERTIS : Fiche de Marque
+          Créez votre stratégie de marque en 4 phases ADVERTIS : Fiche de Marque
           → Audit → Rapports → Cockpit.
         </p>
       </div>

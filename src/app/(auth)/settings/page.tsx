@@ -245,7 +245,7 @@ function DangerZoneSection() {
           <CardTitle className="text-destructive">Zone de danger</CardTitle>
         </div>
         <CardDescription>
-          Actions irreversibles sur votre compte.
+          Actions irréversibles sur votre compte.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -294,7 +294,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-2xl">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Parametres</h2>
+        <h2 className="text-2xl font-bold tracking-tight">Paramètres</h2>
         <p className="text-muted-foreground">
           Gerez votre profil et les parametres de votre compte.
         </p>

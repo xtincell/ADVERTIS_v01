@@ -34,6 +34,7 @@ import {
 } from "~/lib/constants";
 import type { PillarType, Phase } from "~/lib/constants";
 import { PhaseBadge } from "~/components/strategy/phase-timeline";
+import { ExportDialog } from "~/components/strategy/export-dialog";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -78,19 +79,19 @@ function getStatusBadge(status: string) {
     case "generating":
       return (
         <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
-          En cours de generation
+          En cours de génération
         </Badge>
       );
     case "complete":
       return (
         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-          Terminee
+          Terminée
         </Badge>
       );
     case "archived":
       return (
         <Badge variant="outline" className="text-muted-foreground">
-          Archivee
+          Archivée
         </Badge>
       );
     default:
@@ -111,14 +112,14 @@ function getPillarStatusBadge(status: string) {
       return (
         <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs">
           <Loader2 className="mr-1 size-3 animate-spin" />
-          Generation...
+          Génération...
         </Badge>
       );
     case "complete":
       return (
         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
           <Check className="mr-1 size-3" />
-          Termine
+          Terminé
         </Badge>
       );
     case "error":
@@ -301,7 +302,7 @@ function PillarSection({
               ) : (
                 <div className="flex items-center justify-center py-8 text-muted-foreground">
                   <p className="text-sm">
-                    Aucun contenu genere pour ce pilier.
+                    Aucun contenu généré pour ce pilier.
                   </p>
                 </div>
               )}
@@ -322,12 +323,12 @@ function PillarSection({
                     size="sm"
                     onClick={() => {
                       toast.info(
-                        "La regeneration sera bientot disponible. Utilisez la page de generation pour regenerer un pilier.",
+                        "La régénération sera bientôt disponible. Utilisez la page de génération pour régénérer un pilier.",
                       );
                     }}
                   >
                     <RefreshCw className="mr-1.5 size-3.5" />
-                    Regenerer
+                    Régénérer
                   </Button>
                 )}
               </div>
@@ -418,7 +419,7 @@ export default function StrategyDetailPage(props: {
   // Mutations
   const duplicateMutation = api.strategy.duplicate.useMutation({
     onSuccess: (data) => {
-      toast.success("Strategie dupliquee avec succes.");
+      toast.success("Stratégie dupliquée avec succès.");
       router.push(`/strategy/${data.id}`);
     },
     onError: () => {
@@ -428,7 +429,7 @@ export default function StrategyDetailPage(props: {
 
   const archiveMutation = api.strategy.archive.useMutation({
     onSuccess: () => {
-      toast.success("Strategie archivee.");
+      toast.success("Stratégie archivée.");
       void refetch();
     },
     onError: () => {
@@ -438,17 +439,17 @@ export default function StrategyDetailPage(props: {
 
   const unarchiveMutation = api.strategy.unarchive.useMutation({
     onSuccess: () => {
-      toast.success("Strategie desarchivee.");
+      toast.success("Stratégie désarchivée.");
       void refetch();
     },
     onError: () => {
-      toast.error("Erreur lors du desarchivage.");
+      toast.error("Erreur lors du désarchivage.");
     },
   });
 
   const deleteMutation = api.strategy.delete.useMutation({
     onSuccess: () => {
-      toast.success("Strategie supprimee.");
+      toast.success("Stratégie supprimée.");
       router.push("/dashboard");
     },
     onError: () => {
@@ -525,7 +526,7 @@ export default function StrategyDetailPage(props: {
                   {strategy.coherenceScore}
                 </div>
               </TooltipTrigger>
-              <TooltipContent>Score de coherence global</TooltipContent>
+              <TooltipContent>Score de cohérence global</TooltipContent>
             </Tooltip>
           )}
         </div>
@@ -547,16 +548,20 @@ export default function StrategyDetailPage(props: {
           Dupliquer
         </Button>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() =>
-            toast.info("L'export sera disponible prochainement.")
-          }
+        <ExportDialog
+          strategyId={strategyId}
+          brandName={strategy.brandName}
+          pillars={strategy.pillars.map((p: { type: string; title: string; status: string }) => ({
+            type: p.type,
+            title: p.title,
+            status: p.status,
+          }))}
         >
-          <Download className="mr-1.5 size-3.5" />
-          Exporter
-        </Button>
+          <Button variant="outline" size="sm">
+            <Download className="mr-1.5 size-3.5" />
+            Exporter
+          </Button>
+        </ExportDialog>
 
         {isArchived ? (
           <Button
@@ -570,7 +575,7 @@ export default function StrategyDetailPage(props: {
             ) : (
               <ArchiveRestore className="mr-1.5 size-3.5" />
             )}
-            Desarchiver
+            Désarchiver
           </Button>
         ) : (
           <Button
@@ -598,11 +603,11 @@ export default function StrategyDetailPage(props: {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer cette strategie ?</AlertDialogTitle>
+              <AlertDialogTitle>Supprimer cette stratégie ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irreversible. La strategie &laquo;{" "}
+                Cette action est irréversible. La stratégie &laquo;{" "}
                 {strategy.name} &raquo; et tous ses piliers seront
-                definitivement supprimes.
+                définitivement supprimés.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

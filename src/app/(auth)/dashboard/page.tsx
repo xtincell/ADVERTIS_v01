@@ -54,13 +54,13 @@ function getStatusBadge(status: string) {
     case "complete":
       return (
         <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-          Terminee
+          Terminée
         </Badge>
       );
     case "archived":
       return (
         <Badge variant="outline" className="text-muted-foreground text-xs">
-          Archivee
+          Archivée
         </Badge>
       );
     default:
@@ -216,7 +216,7 @@ function StrategyCard({
                 <TooltipContent>
                   {pillar.type} - {config?.title ?? pillar.type}:{" "}
                   {pillar.status === "complete"
-                    ? "Termine"
+                    ? "Terminé"
                     : pillar.status === "generating"
                       ? "En cours"
                       : pillar.status === "error"
@@ -279,10 +279,10 @@ function EmptyState() {
           <FolderOpen className="size-8 text-muted-foreground" />
         </div>
         <CardTitle className="text-xl mt-2">
-          Aucune strategie pour le moment
+          Aucune stratégie pour le moment
         </CardTitle>
         <CardDescription className="max-w-md">
-          Commencez par creer votre premiere strategie de marque en 8 piliers
+          Commencez par créer votre première stratégie de marque en 8 piliers
           ADVERTIS pour structurer votre positionnement.
         </CardDescription>
       </CardHeader>
@@ -379,7 +379,7 @@ export default function DashboardPage() {
           isLoading={isLoading}
         />
         <MetricCard
-          title="Terminees"
+          title="Terminées"
           value={completedCount}
           icon={CheckCircle2}
           isLoading={isLoading}
@@ -405,10 +405,10 @@ export default function DashboardPage() {
               En cours ({inProgressCount})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              Terminees ({completedCount})
+              Terminées ({completedCount})
             </TabsTrigger>
             <TabsTrigger value="archived">
-              Archivees (
+              Archivées (
               {strategies?.filter((s) => s.status === "archived").length ?? 0})
             </TabsTrigger>
           </TabsList>
@@ -419,7 +419,7 @@ export default function DashboardPage() {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FolderOpen className="size-10 text-muted-foreground mb-3" />
                   <p className="text-muted-foreground text-sm">
-                    Aucune strategie dans cette categorie.
+                    Aucune stratégie dans cette catégorie.
                   </p>
                 </CardContent>
               </Card>

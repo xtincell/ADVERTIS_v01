@@ -16,9 +16,9 @@ import {
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Tableau de bord",
-  "/strategies": "Mes Strategies",
-  "/strategy/new": "Nouvelle Strategie",
-  "/settings": "Parametres",
+  "/strategies": "Mes Stratégies",
+  "/strategy/new": "Nouvelle Stratégie",
+  "/settings": "Paramètres",
 };
 
 function getPageTitle(pathname: string): string {
@@ -107,7 +107,7 @@ export default function Header({ title }: HeaderProps) {
             onClick={() => signOut({ callbackUrl: "/login" })}
           >
             <LogOut className="mr-2 size-4" />
-            Se deconnecter
+            Se déconnecter
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

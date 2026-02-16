@@ -36,17 +36,17 @@ const navItems: NavItem[] = [
     icon: LayoutDashboard,
   },
   {
-    label: "Mes Strategies",
+    label: "Mes Stratégies",
     href: "/strategies",
     icon: FolderOpen,
   },
   {
-    label: "Nouvelle Strategie",
+    label: "Nouvelle Stratégie",
     href: "/strategy/new",
     icon: Plus,
   },
   {
-    label: "Parametres",
+    label: "Paramètres",
     href: "/settings",
     icon: Settings,
   },
@@ -181,7 +181,7 @@ export default function Sidebar() {
               <ChevronLeft className="size-4" />
             )}
             <span className="sr-only">
-              {collapsed ? "Ouvrir la barre laterale" : "Reduire la barre laterale"}
+              {collapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
             </span>
           </Button>
         </div>

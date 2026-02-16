@@ -302,7 +302,7 @@ export default function PillarEditorPage(props: {
             : JSON.stringify(data.pillar.content, null, 2);
         setContent(newContent);
         setSaveStatus("saved");
-        toast.success("Pilier regenere avec succes.");
+        toast.success("Pilier régénéré avec succès.");
         void refetch();
       } else {
         toast.error(data.error ?? "Erreur lors de la regeneration.");
@@ -442,12 +442,12 @@ export default function PillarEditorPage(props: {
                 ) : (
                   <>
                     <RefreshCw className="mr-1.5 size-4" />
-                    Regenerer avec l&apos;IA
+                    Régénérer avec l&apos;IA
                   </>
                 )}
               </Button>
               <p className="text-xs text-muted-foreground mt-2">
-                Regenere le contenu de ce pilier a partir des donnees
+                Régénère le contenu de ce pilier à partir des données
                 d&apos;entretien. Le contenu actuel sera remplace.
               </p>
             </CardContent>

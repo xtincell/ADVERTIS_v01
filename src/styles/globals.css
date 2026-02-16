@@ -171,3 +171,116 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* ============================================
+   ADVERTIS Global Polish
+   ============================================ */
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Font loading optimization */
+@layer base {
+  body {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Focus ring styling for keyboard navigation */
+@layer base {
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide navigation and interactive elements when printing */
+  nav,
+  aside,
+  footer,
+  button:not([data-print]),
+  [role="navigation"],
+  .no-print {
+    display: none !important;
+  }
+
+  /* Ensure cards render well in print */
+  .card,
+  [class*="Card"] {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Page break management */
+  h1, h2, h3, h4 {
+    break-after: avoid;
+  }
+
+  /* Ensure links are visible in print */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: "";
+  }
+}
+
+/* Selection color */
+::selection {
+  background-color: oklch(0.55 0.15 30 / 20%);
+  color: oklch(0.20 0 0);
+}
+
+/* Scrollbar styling for WebKit browsers */
+@layer base {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.80 0 0);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.65 0 0);
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.35 0 0);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.45 0 0);
+  }
+}

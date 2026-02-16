@@ -39,6 +39,8 @@ import type {
   ManualDataCategory,
 } from "~/lib/types/market-study";
 
+import { toast } from "sonner";
+
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -203,6 +205,7 @@ export default function GeneratePage() {
                 : p,
             ),
           );
+          toast.success(`Pilier ${pillarType} généré avec succès.`);
           return true;
         } else {
           setPillars((prev) =>
@@ -247,7 +250,9 @@ export default function GeneratePage() {
           interviewData: editedData,
         });
         await refetchStrategy();
+        toast.success("Fiche validée avec succès !");
       } catch (error) {
+        toast.error("Erreur lors de la validation de la fiche.");
         console.error("[Fiche Review] Validation failed:", error);
       } finally {
         setIsValidatingFiche(false);
@@ -329,7 +334,9 @@ export default function GeneratePage() {
       });
       await response.json();
       await refetchMarketStudy();
+      toast.success("Collecte terminée !");
     } catch (error) {
+      toast.error("Erreur lors de la collecte des données marché.");
       console.error("[MarketStudy] Collection failed:", error);
     } finally {
       setIsCollecting(false);
@@ -343,22 +350,34 @@ export default function GeneratePage() {
       category: ManualDataCategory;
       sourceType: string;
     }) => {
-      await addManualDataMutation.mutateAsync({
-        strategyId,
-        ...data,
-      });
-      await refetchMarketStudy();
+      try {
+        await addManualDataMutation.mutateAsync({
+          strategyId,
+          ...data,
+        });
+        await refetchMarketStudy();
+        toast.success("Données ajoutées avec succès.");
+      } catch (error) {
+        toast.error("Erreur lors de l'ajout des données.");
+        console.error("[MarketStudy] Add manual data failed:", error);
+      }
     },
     [strategyId, addManualDataMutation, refetchMarketStudy],
   );
 
   const handleRemoveManualData = useCallback(
     async (entryId: string) => {
-      await removeManualDataMutation.mutateAsync({
-        strategyId,
-        entryId,
-      });
-      await refetchMarketStudy();
+      try {
+        await removeManualDataMutation.mutateAsync({
+          strategyId,
+          entryId,
+        });
+        await refetchMarketStudy();
+        toast.success("Entrée supprimée.");
+      } catch (error) {
+        toast.error("Erreur lors de la suppression.");
+        console.error("[MarketStudy] Remove manual data failed:", error);
+      }
     },
     [strategyId, removeManualDataMutation, refetchMarketStudy],
   );
@@ -376,6 +395,7 @@ export default function GeneratePage() {
         });
         await refetchMarketStudy();
       } catch (error) {
+        toast.error("Erreur lors de l'upload du fichier.");
         console.error("[MarketStudy] Upload failed:", error);
       }
     },
@@ -387,7 +407,9 @@ export default function GeneratePage() {
     try {
       await synthesizeMarketStudyMutation.mutateAsync({ strategyId });
       await refetchMarketStudy();
+      toast.success("Synthèse générée avec succès !");
     } catch (error) {
+      toast.error("Erreur lors de la synthèse.");
       console.error("[MarketStudy] Synthesis failed:", error);
     } finally {
       setIsSynthesizing(false);
@@ -398,7 +420,9 @@ export default function GeneratePage() {
     try {
       await skipMarketStudyMutation.mutateAsync({ strategyId });
       await refetchStrategy();
+      toast.success("Étude de marché passée.");
     } catch (error) {
+      toast.error("Erreur lors du passage de l'étude.");
       console.error("[MarketStudy] Skip failed:", error);
     }
   }, [strategyId, skipMarketStudyMutation, refetchStrategy]);
@@ -407,7 +431,9 @@ export default function GeneratePage() {
     try {
       await completeMarketStudyMutation.mutateAsync({ strategyId });
       await refetchStrategy();
+      toast.success("Étude de marché validée !");
     } catch (error) {
+      toast.error("Erreur lors de la validation.");
       console.error("[MarketStudy] Complete failed:", error);
     }
   }, [strategyId, completeMarketStudyMutation, refetchStrategy]);
@@ -423,7 +449,9 @@ export default function GeneratePage() {
           trackAuditData: JSON.parse(JSON.stringify(trackData)),
         });
         await refetchStrategy();
+        toast.success("Audit validé avec succès !");
       } catch (error) {
+        toast.error("Erreur lors de la validation de l'audit.");
         console.error("[Audit Review] Validation failed:", error);
       } finally {
         setIsValidatingAudit(false);
@@ -465,16 +493,18 @@ export default function GeneratePage() {
         };
 
         if (!data.success) {
+          toast.error(data.error ?? "Erreur lors de la génération du rapport.");
           console.error("[Reports] Generation failed:", data.error);
         }
       } catch (error) {
+        toast.error("Erreur réseau lors de la génération.");
         console.error("[Reports] Error:", error);
       }
 
       setIsGenerating(false);
       setCurrentAction(null);
       await refetchStrategy();
-      void refetchDocuments();
+      await refetchDocuments();
     },
     [strategyId, refetchStrategy, refetchDocuments],
   );

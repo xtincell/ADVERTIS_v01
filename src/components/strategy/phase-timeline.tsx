@@ -63,9 +63,11 @@ export function PhaseTimeline({
     <div
       className={cn(
         "flex gap-2",
-        orientation === "vertical" ? "flex-col" : "flex-row items-center",
+        orientation === "vertical" ? "flex-col" : "flex-row items-center overflow-x-auto pb-2",
         className,
       )}
+      role="list"
+      aria-label="Pipeline de génération — phases"
     >
       {displayPhases.map((phase, index) => {
         const config = PHASE_CONFIG[phase];
@@ -73,7 +75,7 @@ export function PhaseTimeline({
         const Icon = PHASE_ICONS[config.icon] ?? CheckCircle;
 
         return (
-          <div key={phase} className="flex items-center gap-2">
+          <div key={phase} className="flex shrink-0 items-center gap-2" role="listitem">
             {/* Phase item */}
             <div
               className={cn(

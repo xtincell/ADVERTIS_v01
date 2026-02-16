@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Share2,
   Copy,
@@ -10,6 +10,7 @@ import {
   Loader2,
   ExternalLink,
   Shield,
+  X,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -33,6 +34,21 @@ export function CockpitShareDialog({
 }: CockpitShareDialogProps) {
   const [password, setPassword] = useState("");
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  // Close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
+  // Focus trap — focus the dialog on mount
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
 
   const {
     data: shareStatus,
@@ -74,16 +90,22 @@ export function CockpitShareDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="w-full max-w-md">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Partager le Cockpit"
+    >
+      <Card ref={dialogRef} className="w-full max-w-md" tabIndex={-1}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Share2 className="h-5 w-5 text-terracotta" />
               <CardTitle>Partager le Cockpit</CardTitle>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              ✕
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
+              <X className="h-4 w-4" />
             </Button>
           </div>
           <CardDescription>

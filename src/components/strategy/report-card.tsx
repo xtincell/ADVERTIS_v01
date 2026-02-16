@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { REPORT_CONFIG } from "~/lib/constants";
@@ -93,7 +94,7 @@ export function ReportCard({
       </div>
 
       {/* Progress bar for generating */}
-      {status === "generating" && totalSections && (
+      {status === "generating" && totalSections && totalSections > 0 && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>
@@ -159,7 +160,7 @@ export function ReportCard({
             onClick={onGenerate}
             className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
           >
-            <Loader2 className="h-3.5 w-3.5" />
+            <Sparkles className="h-3.5 w-3.5" />
             Générer
           </button>
         </div>
