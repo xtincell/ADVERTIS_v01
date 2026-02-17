@@ -184,6 +184,65 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
     "year1Priorities": ["priorité1", "priorité2"],
     "year3Vision": "Vision à 3 ans"
   },
+  "campaigns": {
+    "annualCalendar": [
+      { "mois": "Janvier", "campagne": "Nom de la campagne", "objectif": "Objectif principal", "canaux": ["Instagram", "Email"], "budget": "500€", "kpiCible": "KPI mesurable" }
+    ],
+    "templates": [
+      { "nom": "Template Lancement", "type": "lancement", "description": "Description", "duree": "3 semaines", "canauxPrincipaux": ["Instagram", "TikTok"], "messagesCles": ["Message 1"] }
+    ],
+    "activationPlan": {
+      "phase1Teasing": "Stratégie de teasing pré-lancement",
+      "phase2Lancement": "Stratégie de lancement",
+      "phase3Amplification": "Stratégie d'amplification post-lancement",
+      "phase4Fidelisation": "Stratégie de fidélisation"
+    }
+  },
+  "budgetAllocation": {
+    "enveloppeGlobale": "Budget total annuel estimé",
+    "parPoste": [
+      { "poste": "Publicité digitale", "montant": "5000€", "pourcentage": 25, "justification": "Justification de l'allocation" }
+    ],
+    "parPhase": [
+      { "phase": "Phase de lancement (M1-M3)", "montant": "8000€", "focus": "Focus principal de la phase" }
+    ],
+    "roiProjections": {
+      "mois6": "ROI projeté à 6 mois",
+      "mois12": "ROI projeté à 12 mois",
+      "mois24": "ROI projeté à 24 mois",
+      "hypotheses": "Hypothèses sous-jacentes"
+    }
+  },
+  "teamStructure": {
+    "equipeActuelle": [
+      { "role": "Rôle", "profil": "Profil/compétences", "allocation": "Temps dédié" }
+    ],
+    "recrutements": [
+      { "role": "Rôle à recruter", "profil": "Profil recherché", "echeance": "Échéance", "priorite": 1 }
+    ],
+    "partenairesExternes": [
+      { "type": "Agence / Freelance", "mission": "Mission confiée", "budget": "Budget", "duree": "Durée de la mission" }
+    ]
+  },
+  "launchPlan": {
+    "phases": [
+      { "nom": "Phase 1 — Préparation", "debut": "M1", "fin": "M2", "objectifs": ["Objectif 1"], "livrables": ["Livrable 1"], "goNoGo": "Critère go/no-go" }
+    ],
+    "milestones": [
+      { "date": "M1 S2", "jalon": "Description du jalon", "responsable": "Responsable", "critereSucces": "Critère de succès" }
+    ]
+  },
+  "operationalPlaybook": {
+    "rythmeQuotidien": ["Action quotidienne 1"],
+    "rythmeHebdomadaire": ["Action hebdomadaire 1"],
+    "rythmeMensuel": ["Action mensuelle 1"],
+    "escalation": [
+      { "scenario": "Scénario de crise", "action": "Action à prendre", "responsable": "Responsable" }
+    ],
+    "outilsStack": [
+      { "outil": "Nom de l'outil", "usage": "Usage principal", "cout": "Coût mensuel" }
+    ]
+  },
   "coherenceScore": 75,
   "executiveSummary": "Résumé exécutif en 5-10 phrases..."
 }
@@ -194,11 +253,17 @@ RÈGLES CRITIQUES :
 - Remplis TOUS les champs avec des données spécifiques à la marque
 - Le coherenceScore doit refléter la cohérence globale de la stratégie (0-100)
 - L'executiveSummary doit faire 5-10 phrases de synthèse
-- Utilise les données validées de l'audit (pas tes propres analyses)`,
+- Utilise les données validées de l'audit (pas tes propres analyses)
+- Le calendrier de campagnes DOIT couvrir 12 mois (un par mois minimum)
+- Les templates de campagne doivent inclure 3-4 types différents
+- Le budget DOIT être ventilé par poste ET par phase
+- L'équipe DOIT inclure les recrutements nécessaires
+- Le plan de lancement DOIT avoir 3-5 phases avec des critères go/no-go
+- Le playbook opérationnel DOIT inclure les rythmes quotidien, hebdomadaire et mensuel`,
     prompt: `Génère les données d'implémentation structurées pour la marque "${brandName}" dans le secteur "${sector || "Non spécifié"}".
 
 Synthétise toutes les données fournies en un ImplementationData complet et actionable.`,
-    maxOutputTokens: 8000,
+    maxOutputTokens: 14000,
     temperature: 0.3,
   });
 
@@ -256,6 +321,11 @@ Synthétise toutes les données fournies en un ImplementationData complet et act
       year1Priorities: [],
       year3Vision: "",
     },
+    campaigns: parsed.campaigns ?? undefined,
+    budgetAllocation: parsed.budgetAllocation ?? undefined,
+    teamStructure: parsed.teamStructure ?? undefined,
+    launchPlan: parsed.launchPlan ?? undefined,
+    operationalPlaybook: parsed.operationalPlaybook ?? undefined,
     coherenceScore: parsed.coherenceScore ?? 50,
     executiveSummary: parsed.executiveSummary ?? "",
   };

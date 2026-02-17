@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   LayoutDashboard,
-  FolderOpen,
   Plus,
   Settings,
   ChevronLeft,
@@ -20,8 +19,13 @@ import {
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "~/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
 interface NavItem {
   label: string;
@@ -31,17 +35,12 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Tableau de bord",
     href: "/dashboard",
     icon: LayoutDashboard,
   },
   {
-    label: "Mes Stratégies",
-    href: "/strategies",
-    icon: FolderOpen,
-  },
-  {
-    label: "Nouvelle Stratégie",
+    label: "Nouvelle Fiche",
     href: "/strategy/new",
     icon: Plus,
   },
@@ -52,20 +51,27 @@ const navItems: NavItem[] = [
   },
 ];
 
+const SIDEBAR_COLLAPSED_KEY = "advertis-sidebar-collapsed";
+
 function NavLink({
   item,
   collapsed,
+  onClick,
 }: {
   item: NavItem;
   collapsed: boolean;
+  onClick?: () => void;
 }) {
   const pathname = usePathname();
+  // Active if exact match or if navigating within (e.g. /strategy/new)
   const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
   const Icon = item.icon;
 
-  return (
+  const linkElement = (
     <Link
       href={item.href}
+      onClick={onClick}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
         "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
@@ -79,9 +85,29 @@ function NavLink({
       {!collapsed && <span>{item.label}</span>}
     </Link>
   );
+
+  // Show tooltip when collapsed to indicate meaning of icon
+  if (collapsed) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{linkElement}</TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {item.label}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return linkElement;
 }
 
-function SidebarContent({ collapsed }: { collapsed: boolean }) {
+function SidebarContent({
+  collapsed,
+  onNavClick,
+}: {
+  collapsed: boolean;
+  onNavClick?: () => void;
+}) {
   return (
     <div className="flex h-full flex-col">
       {/* Logo / Title */}
@@ -98,10 +124,17 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map((item) => (
-          <NavLink key={item.href} item={item} collapsed={collapsed} />
-        ))}
+      <nav className="flex-1 space-y-1 px-3 py-4" aria-label="Navigation principale">
+        <TooltipProvider delayDuration={0}>
+          {navItems.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              collapsed={collapsed}
+              onClick={onNavClick}
+            />
+          ))}
+        </TooltipProvider>
       </nav>
 
       {/* Footer */}
@@ -119,6 +152,38 @@ function SidebarContent({ collapsed }: { collapsed: boolean }) {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Persist collapse state to localStorage
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
+      if (stored !== null) {
+        setCollapsed(stored === "true");
+      }
+    } catch {
+      // localStorage not available — ignore
+    }
+  }, []);
+
+  const handleToggleCollapse = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(next));
+      } catch {
+        // localStorage not available — ignore
+      }
+      return next;
+    });
+  }, []);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
 
   return (
     <>
@@ -128,6 +193,7 @@ export default function Sidebar() {
         size="icon"
         className="fixed left-4 top-4 z-50 lg:hidden"
         onClick={() => setMobileOpen(true)}
+        aria-label="Ouvrir le menu de navigation"
       >
         <Menu className="size-5" />
         <span className="sr-only">Ouvrir le menu</span>
@@ -148,13 +214,14 @@ export default function Sidebar() {
               variant="ghost"
               size="icon"
               className="text-sidebar-foreground hover:bg-sidebar-accent"
-              onClick={() => setMobileOpen(false)}
+              onClick={closeMobile}
+              aria-label="Fermer le menu de navigation"
             >
               <X className="size-5" />
               <span className="sr-only">Fermer le menu</span>
             </Button>
           </div>
-          <SidebarContent collapsed={false} />
+          <SidebarContent collapsed={false} onNavClick={closeMobile} />
         </SheetContent>
       </Sheet>
 
@@ -164,6 +231,7 @@ export default function Sidebar() {
           "hidden h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 lg:flex",
           collapsed ? "w-16" : "w-64",
         )}
+        aria-label="Barre latérale de navigation"
       >
         <SidebarContent collapsed={collapsed} />
 
@@ -173,16 +241,14 @@ export default function Sidebar() {
             variant="ghost"
             size="icon"
             className="w-full text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-            onClick={() => setCollapsed(!collapsed)}
+            onClick={handleToggleCollapse}
+            aria-label={collapsed ? "Déplier la barre latérale" : "Réduire la barre latérale"}
           >
             {collapsed ? (
               <ChevronRight className="size-4" />
             ) : (
               <ChevronLeft className="size-4" />
             )}
-            <span className="sr-only">
-              {collapsed ? "Ouvrir la barre latérale" : "Réduire la barre latérale"}
-            </span>
           </Button>
         </div>
       </aside>

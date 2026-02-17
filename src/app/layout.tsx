@@ -8,9 +8,9 @@ import { Toaster } from "~/components/ui/sonner";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "ADVERTIS - Stratégies de Marque Intelligentes",
+  title: "ADVERTIS - Fiches de Marque Intelligentes",
   description:
-    "Plateforme SaaS de création de stratégies de marque en 8 piliers, guidée par IA.",
+    "Plateforme SaaS de création de fiches de marque en 8 piliers, guidée par IA.",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 

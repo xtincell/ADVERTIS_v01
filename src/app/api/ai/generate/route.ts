@@ -1,16 +1,16 @@
 // ADVERTIS AI Generation API Route
 // POST /api/ai/generate
 // Phase-aware generation: dispatches to the correct service based on pillar type.
-//   - A, D, V, E → generatePillarContent (ai-generation.ts) — standard content
+//   - A, D, V, E → generatePillarContent (ai-generation.ts) — structured JSON data
 //   - R → generateRiskAudit (audit-generation.ts) — micro-SWOTs + global SWOT
 //   - T → generateTrackAudit (audit-generation.ts) — market validation + TAM/SAM/SOM
 //   - I → generateImplementationData (implementation-generation.ts) — structured cockpit data
-//   - S → reserved for future milestones (cockpit)
+//   - S → generateSyntheseContent (ai-generation.ts) — strategic synthesis
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
-import { generatePillarContent } from "~/server/services/ai-generation";
+import { generatePillarContent, generateSyntheseContent } from "~/server/services/ai-generation";
 import {
   generateRiskAudit,
   generateTrackAudit,
@@ -274,9 +274,31 @@ export async function POST(req: NextRequest) {
 
       generatedContent = JSON.parse(JSON.stringify(implResult));
       summary = `Score de cohérence : ${implResult.coherenceScore}/100. ${implResult.executiveSummary.substring(0, 200)}`;
+    } else if (pillarType === "S") {
+      // ── SYNTHÈSE STRATÉGIQUE (Pillar S) ──
+      // Requires ALL completed pillars for cross-referencing
+      const allCompletedPillars = strategy.pillars
+        .filter((p) => p.status === "complete" && p.type !== "S")
+        .map((p) => ({
+          type: p.type,
+          content:
+            typeof p.content === "string"
+              ? p.content
+              : JSON.stringify(p.content ?? ""),
+        }));
+
+      const syntheseResult = await generateSyntheseContent(
+        interviewData,
+        allCompletedPillars,
+        strategy.brandName,
+        strategy.sector ?? "",
+      );
+
+      generatedContent = JSON.parse(JSON.stringify(syntheseResult));
+      summary = `Score cohérence : ${syntheseResult.scoreCoherence}/100. ${syntheseResult.syntheseExecutive.substring(0, 200)}`;
     } else {
-      // ── STANDARD PILLAR (A, D, V, E, S) ──
-      const textContent = await generatePillarContent(
+      // ── STANDARD PILLAR (A, D, V, E) — structured JSON ──
+      const jsonContent = await generatePillarContent(
         pillarType,
         interviewData,
         previousPillars,
@@ -284,8 +306,24 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
       );
 
-      generatedContent = textContent;
-      summary = textContent.substring(0, 300);
+      generatedContent = JSON.parse(JSON.stringify(jsonContent));
+
+      // Extract a meaningful summary from the structured JSON
+      const obj = jsonContent as Record<string, unknown>;
+      if (pillarType === "A" && typeof obj.identite === "object" && obj.identite !== null) {
+        const identite = obj.identite as Record<string, string>;
+        summary = `Archétype : ${identite.archetype ?? "—"}. ${identite.noyauIdentitaire ?? ""}`;
+      } else if (pillarType === "D" && typeof obj.positionnement === "string") {
+        summary = obj.positionnement;
+      } else if (pillarType === "V" && typeof obj.unitEconomics === "object" && obj.unitEconomics !== null) {
+        const ue = obj.unitEconomics as Record<string, string>;
+        summary = `CAC: ${ue.cac ?? "—"}, LTV: ${ue.ltv ?? "—"}, Ratio: ${ue.ratio ?? "—"}`;
+      } else if (pillarType === "E" && typeof obj.aarrr === "object" && obj.aarrr !== null) {
+        const aarrr = obj.aarrr as Record<string, string>;
+        summary = `Acquisition: ${aarrr.acquisition?.substring(0, 100) ?? "—"}`;
+      } else {
+        summary = JSON.stringify(jsonContent).substring(0, 300);
+      }
     }
 
     // ---------------------------------------------------------------------------
@@ -326,6 +364,14 @@ export async function POST(req: NextRequest) {
       await db.strategy.update({
         where: { id: strategyId },
         data: { phase: "cockpit", status: "generating" },
+      });
+    }
+
+    // S complete → advance to complete
+    if (pillarType === "S") {
+      await db.strategy.update({
+        where: { id: strategyId },
+        data: { phase: "complete", status: "complete" },
       });
     }
 

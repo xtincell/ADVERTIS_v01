@@ -16,8 +16,7 @@ import {
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Tableau de bord",
-  "/strategies": "Mes Stratégies",
-  "/strategy/new": "Nouvelle Stratégie",
+  "/strategy/new": "Nouvelle Fiche de Marque",
   "/settings": "Paramètres",
 };
 
@@ -25,6 +24,17 @@ function getPageTitle(pathname: string): string {
   // Exact match first
   if (pageTitles[pathname]) {
     return pageTitles[pathname];
+  }
+
+  // Strategy sub-pages — provide meaningful titles
+  if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
+    return "Cockpit Stratégique";
+  }
+  if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
+    return "Génération";
+  }
+  if (pathname.match(/^\/strategy\/[^/]+$/)) {
+    return "Fiche de Marque";
   }
 
   // Check prefix matches for dynamic routes
@@ -71,7 +81,10 @@ export default function Header({ title }: HeaderProps) {
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <button
+            className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Menu utilisateur"
+          >
             <Avatar size="default">
               <AvatarImage
                 src={session?.user?.image ?? undefined}

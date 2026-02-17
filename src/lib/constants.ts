@@ -114,7 +114,7 @@ export const PHASE_CONFIG: Record<
 > = {
   fiche: {
     title: "Fiche de Marque",
-    description: "Collecte des données de marque (A-D-V-E)",
+    description: "Collecte des données de la fiche de marque (A-D-V-E)",
     pillars: ["A", "D", "V", "E"],
     order: 1,
     icon: "ClipboardList",
@@ -163,14 +163,14 @@ export const PHASE_CONFIG: Record<
   },
   cockpit: {
     title: "Cockpit",
-    description: "Interface stratégique interactive",
+    description: "Interface interactive de la fiche de marque",
     pillars: ["S"],
     order: 8,
     icon: "LayoutDashboard",
   },
   complete: {
     title: "Terminé",
-    description: "Stratégie complète",
+    description: "Fiche de marque complète",
     pillars: [],
     order: 9,
     icon: "CheckCircle",

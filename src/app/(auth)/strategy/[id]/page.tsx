@@ -419,7 +419,7 @@ export default function StrategyDetailPage(props: {
   // Mutations
   const duplicateMutation = api.strategy.duplicate.useMutation({
     onSuccess: (data) => {
-      toast.success("Stratégie dupliquée avec succès.");
+      toast.success("Fiche de marque dupliquée avec succès.");
       router.push(`/strategy/${data.id}`);
     },
     onError: () => {
@@ -429,7 +429,7 @@ export default function StrategyDetailPage(props: {
 
   const archiveMutation = api.strategy.archive.useMutation({
     onSuccess: () => {
-      toast.success("Stratégie archivée.");
+      toast.success("Fiche archivée.");
       void refetch();
     },
     onError: () => {
@@ -439,7 +439,7 @@ export default function StrategyDetailPage(props: {
 
   const unarchiveMutation = api.strategy.unarchive.useMutation({
     onSuccess: () => {
-      toast.success("Stratégie désarchivée.");
+      toast.success("Fiche désarchivée.");
       void refetch();
     },
     onError: () => {
@@ -449,7 +449,7 @@ export default function StrategyDetailPage(props: {
 
   const deleteMutation = api.strategy.delete.useMutation({
     onSuccess: () => {
-      toast.success("Stratégie supprimée.");
+      toast.success("Fiche supprimée.");
       router.push("/dashboard");
     },
     onError: () => {
@@ -603,9 +603,9 @@ export default function StrategyDetailPage(props: {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer cette stratégie ?</AlertDialogTitle>
+              <AlertDialogTitle>Supprimer cette fiche de marque ?</AlertDialogTitle>
               <AlertDialogDescription>
-                Cette action est irréversible. La stratégie &laquo;{" "}
+                Cette action est irréversible. La fiche &laquo;{" "}
                 {strategy.name} &raquo; et tous ses piliers seront
                 définitivement supprimés.
               </AlertDialogDescription>

@@ -7,6 +7,8 @@ import {
   Share2,
   Download,
   Loader2,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -25,15 +27,73 @@ export default function CockpitPage(props: {
   const strategyId = params.id;
   const [showShareDialog, setShowShareDialog] = useState(false);
 
-  const { data: strategy, isLoading } = api.cockpit.getData.useQuery(
+  const {
+    data: strategy,
+    isLoading,
+    isError,
+    refetch,
+  } = api.cockpit.getData.useQuery(
     { strategyId },
     { enabled: !!strategyId },
   );
 
-  if (isLoading || !strategy) {
+  // Loading state
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
         <Loader2 className="h-8 w-8 animate-spin text-terracotta" />
+        <p className="text-sm text-muted-foreground">
+          Chargement du cockpit stratégique…
+        </p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <AlertTriangle className="h-6 w-6 text-red-500" />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-red-700">
+            Impossible de charger le cockpit
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Vérifiez votre connexion ou réessayez.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => void refetch()}>
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
+  // No data (strategy not found or not at cockpit phase)
+  if (!strategy) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50">
+          <AlertTriangle className="h-6 w-6 text-amber-500" />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-foreground">
+            Cockpit non disponible
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Cette fiche n&apos;a pas encore atteint la phase cockpit,
+            ou elle n&apos;existe pas.
+          </p>
+        </div>
+        <Button variant="outline" asChild>
+          <Link href="/dashboard">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Retour au tableau de bord
+          </Link>
+        </Button>
       </div>
     );
   }
@@ -68,7 +128,7 @@ export default function CockpitPage(props: {
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link href={`/strategy/${strategyId}`}>
             <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à la stratégie
+            Retour à la fiche
           </Link>
         </Button>
 

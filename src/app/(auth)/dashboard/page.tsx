@@ -10,10 +10,11 @@ import {
   Clock,
   CheckCircle2,
   FolderOpen,
+  AlertTriangle,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
-import { PILLAR_CONFIG, SECTORS } from "~/lib/constants";
+import { PILLAR_CONFIG, PILLAR_TYPES, SECTORS } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
 
 import { Button } from "~/components/ui/button";
@@ -85,7 +86,21 @@ function getRelativeDate(date: Date | string): string {
   const diffWeeks = Math.floor(diffDays / 7);
   const diffMonths = Math.floor(diffDays / 30);
 
-  if (diffSeconds < 60) return "a l'instant";
+  if (diffMs < 0) {
+    // Future date
+    const absDiffSeconds = Math.abs(diffSeconds);
+    const absDiffMinutes = Math.floor(absDiffSeconds / 60);
+    const absDiffHours = Math.floor(absDiffMinutes / 60);
+    const absDiffDays = Math.floor(absDiffHours / 24);
+    if (absDiffSeconds < 60) return "dans un instant";
+    if (absDiffMinutes < 60)
+      return `dans ${absDiffMinutes} minute${absDiffMinutes > 1 ? "s" : ""}`;
+    if (absDiffHours < 24)
+      return `dans ${absDiffHours} heure${absDiffHours > 1 ? "s" : ""}`;
+    return `dans ${absDiffDays} jour${absDiffDays > 1 ? "s" : ""}`;
+  }
+
+  if (diffSeconds < 60) return "à l'instant";
   if (diffMinutes < 60)
     return `il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
   if (diffHours < 24)
@@ -154,8 +169,16 @@ function StrategyCard({
 
   return (
     <Card
-      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
+      role="button"
+      tabIndex={0}
+      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       onClick={() => router.push(`/strategy/${strategy.id}`)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(`/strategy/${strategy.id}`);
+        }
+      }}
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
@@ -175,7 +198,7 @@ function StrategyCard({
                     {strategy.coherenceScore}
                   </div>
                 </TooltipTrigger>
-                <TooltipContent>Score de coherence</TooltipContent>
+                <TooltipContent>Score de cohérence</TooltipContent>
               </Tooltip>
             )}
           </div>
@@ -227,7 +250,7 @@ function StrategyCard({
             );
           })}
           <span className="ml-2 text-xs text-muted-foreground">
-            {strategy._count.pillars}/8
+            {strategy._count.pillars}/{PILLAR_TYPES.length}
           </span>
         </div>
 
@@ -279,10 +302,10 @@ function EmptyState() {
           <FolderOpen className="size-8 text-muted-foreground" />
         </div>
         <CardTitle className="text-xl mt-2">
-          Aucune stratégie pour le moment
+          Aucune fiche de marque pour le moment
         </CardTitle>
         <CardDescription className="max-w-md">
-          Commencez par créer votre première stratégie de marque en 8 piliers
+          Commencez par créer votre première fiche de marque en 8 piliers
           ADVERTIS pour structurer votre positionnement.
         </CardDescription>
       </CardHeader>
@@ -290,7 +313,7 @@ function EmptyState() {
         <Button asChild>
           <Link href="/strategy/new">
             <Plus className="mr-2 size-4" />
-            Creer ma premiere strategie
+            Créer ma première fiche de marque
           </Link>
         </Button>
       </CardContent>
@@ -309,6 +332,7 @@ export default function DashboardPage() {
   const {
     data: strategies,
     isLoading,
+    isError,
   } = api.strategy.getAll.useQuery();
 
   // Computed metrics
@@ -352,14 +376,14 @@ export default function DashboardPage() {
           </h2>
           <p className="text-muted-foreground">
             Bienvenue
-            {session?.user?.name ? `, ${session.user.name}` : ""} ! Gerez
-            vos strategies de marque depuis cet espace.
+            {session?.user?.name ? `, ${session.user.name}` : ""} ! Gérez
+            vos fiches de marque depuis cet espace.
           </p>
         </div>
         <Button asChild>
           <Link href="/strategy/new">
             <Plus className="mr-2 size-4" />
-            Nouvelle strategie
+            Nouvelle fiche
           </Link>
         </Button>
       </div>
@@ -367,7 +391,7 @@ export default function DashboardPage() {
       {/* Metrics */}
       <div className="grid gap-4 sm:grid-cols-3">
         <MetricCard
-          title="Total strategies"
+          title="Total fiches"
           value={totalCount}
           icon={BarChart3}
           isLoading={isLoading}
@@ -387,7 +411,19 @@ export default function DashboardPage() {
       </div>
 
       {/* Strategy list */}
-      {isLoading ? (
+      {isError ? (
+        <Card className="border-destructive">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertTriangle className="size-10 text-destructive mb-3" />
+            <p className="text-destructive font-medium">
+              Impossible de charger vos fiches de marque.
+            </p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Veuillez réessayer ultérieurement.
+            </p>
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <StrategyCardSkeleton key={i} />
@@ -419,7 +455,7 @@ export default function DashboardPage() {
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <FolderOpen className="size-10 text-muted-foreground mb-3" />
                   <p className="text-muted-foreground text-sm">
-                    Aucune stratégie dans cette catégorie.
+                    Aucune fiche dans cette catégorie.
                   </p>
                 </CardContent>
               </Card>

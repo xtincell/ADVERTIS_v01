@@ -29,6 +29,7 @@ import {
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Textarea } from "~/components/ui/textarea";
+import { StructuredPillarEditor } from "~/components/pillar-editors";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -181,8 +182,10 @@ export default function PillarEditorPage(props: {
   const pillarType = params.type as PillarType;
   const config = PILLAR_CONFIG[pillarType];
 
-  // State
+  // State — supports both structured JSON objects and raw text (markdown)
   const [content, setContent] = useState("");
+  const [structuredContent, setStructuredContent] = useState<unknown>(null);
+  const [isStructured, setIsStructured] = useState(false);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
   const [isRegenerating, setIsRegenerating] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -212,12 +215,16 @@ export default function PillarEditorPage(props: {
   // Initialize content from pillar data
   useEffect(() => {
     if (pillar && !initializedRef.current) {
-      const formatted = pillar.content
-        ? typeof pillar.content === "string"
-          ? pillar.content
-          : JSON.stringify(pillar.content, null, 2)
-        : "";
-      setContent(formatted);
+      if (pillar.content && typeof pillar.content === "object") {
+        // Structured JSON content — use form editor
+        setStructuredContent(pillar.content);
+        setIsStructured(true);
+        setContent(JSON.stringify(pillar.content, null, 2));
+      } else {
+        // Raw text content (legacy markdown)
+        setContent(typeof pillar.content === "string" ? pillar.content : "");
+        setIsStructured(false);
+      }
       initializedRef.current = true;
     }
   }, [pillar]);
@@ -255,6 +262,31 @@ export default function PillarEditorPage(props: {
     [pillar, updatePillar],
   );
 
+  // Handle structured content change (from form editor)
+  const handleStructuredChange = useCallback(
+    (newData: unknown) => {
+      setStructuredContent(newData);
+      setContent(JSON.stringify(newData, null, 2));
+      setSaveStatus("unsaved");
+
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+
+      debounceRef.current = setTimeout(() => {
+        if (pillar) {
+          setSaveStatus("saving");
+          updatePillar.mutate({
+            id: pillar.id,
+            content: newData,
+            status: "complete",
+          });
+        }
+      }, 2000);
+    },
+    [pillar, updatePillar],
+  );
+
   // Manual save
   const handleManualSave = useCallback(() => {
     if (!pillar) return;
@@ -265,19 +297,27 @@ export default function PillarEditorPage(props: {
 
     setSaveStatus("saving");
 
-    let contentToSave: unknown;
-    try {
-      contentToSave = JSON.parse(content);
-    } catch {
-      contentToSave = content;
-    }
+    if (isStructured && structuredContent) {
+      updatePillar.mutate({
+        id: pillar.id,
+        content: structuredContent,
+        status: "complete",
+      });
+    } else {
+      let contentToSave: unknown;
+      try {
+        contentToSave = JSON.parse(content);
+      } catch {
+        contentToSave = content;
+      }
 
-    updatePillar.mutate({
-      id: pillar.id,
-      content: contentToSave,
-      status: "complete",
-    });
-  }, [pillar, content, updatePillar]);
+      updatePillar.mutate({
+        id: pillar.id,
+        content: contentToSave,
+        status: "complete",
+      });
+    }
+  }, [pillar, content, isStructured, structuredContent, updatePillar]);
 
   // Regenerate with AI
   const handleRegenerate = useCallback(async () => {
@@ -296,12 +336,17 @@ export default function PillarEditorPage(props: {
       };
 
       if (data.success && data.pillar) {
-        const newContent =
-          typeof data.pillar.content === "string"
-            ? data.pillar.content
-            : JSON.stringify(data.pillar.content, null, 2);
-        setContent(newContent);
+        if (data.pillar.content && typeof data.pillar.content === "object") {
+          setStructuredContent(data.pillar.content);
+          setIsStructured(true);
+          setContent(JSON.stringify(data.pillar.content, null, 2));
+        } else {
+          const newContent = typeof data.pillar.content === "string" ? data.pillar.content : "";
+          setContent(newContent);
+          setIsStructured(false);
+        }
         setSaveStatus("saved");
+        initializedRef.current = true;
         toast.success("Pilier régénéré avec succès.");
         void refetch();
       } else {
@@ -355,7 +400,7 @@ export default function PillarEditorPage(props: {
         <Button variant="ghost" size="sm" asChild className="-ml-2">
           <Link href={`/strategy/${strategyId}`}>
             <ArrowLeft className="mr-1.5 size-4" />
-            Retour a la strategie
+            Retour à la fiche
           </Link>
         </Button>
 
@@ -396,26 +441,62 @@ export default function PillarEditorPage(props: {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
         {/* Editor area */}
         <div className="space-y-3">
-          <Card>
-            <CardContent className="pt-6">
-              <Textarea
-                value={content}
-                onChange={(e) => handleContentChange(e.target.value)}
-                placeholder="Saisissez ou modifiez le contenu de ce pilier..."
-                className="min-h-[500px] resize-y font-mono text-sm leading-relaxed"
-              />
-            </CardContent>
-          </Card>
+          {isStructured && structuredContent ? (
+            <>
+              {/* Structured form editor */}
+              <Card>
+                <CardContent className="pt-6">
+                  <StructuredPillarEditor
+                    pillarType={pillarType}
+                    content={structuredContent}
+                    onChange={handleStructuredChange}
+                  />
+                  {/* Fallback to raw JSON if no dedicated editor */}
+                  {!["A", "D", "V", "E"].includes(pillarType) && (
+                    <Textarea
+                      value={content}
+                      onChange={(e) => handleContentChange(e.target.value)}
+                      placeholder="Éditez le JSON structuré..."
+                      className="mt-4 min-h-[300px] resize-y font-mono text-sm leading-relaxed"
+                    />
+                  )}
+                </CardContent>
+              </Card>
 
-          {/* Info note */}
-          <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
-            <Info className="size-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-blue-700 dark:text-blue-300">
-              Le contenu est automatiquement sauvegarde 2 secondes apres votre
-              derniere modification. Vous pouvez aussi sauvegarder manuellement
-              avec le bouton ci-dessus.
-            </p>
-          </div>
+              {/* Info note for structured mode */}
+              <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950">
+                <Info className="size-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-300">
+                  Les champs sont automatiquement sauvegardés 2 secondes après
+                  votre dernière modification. Chaque champ est une variable éditable.
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Raw textarea editor (legacy markdown) */}
+              <Card>
+                <CardContent className="pt-6">
+                  <Textarea
+                    value={content}
+                    onChange={(e) => handleContentChange(e.target.value)}
+                    placeholder="Saisissez ou modifiez le contenu de ce pilier..."
+                    className="min-h-[500px] resize-y font-mono text-sm leading-relaxed"
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Info note */}
+              <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950">
+                <Info className="size-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-700 dark:text-blue-300">
+                  Le contenu est automatiquement sauvegardé 2 secondes après votre
+                  dernière modification. Régénérez avec l&apos;IA pour obtenir un
+                  formulaire structuré avec des champs éditables.
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Right sidebar */}

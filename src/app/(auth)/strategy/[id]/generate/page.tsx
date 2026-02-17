@@ -109,6 +109,8 @@ export default function GeneratePage() {
   const {
     data: strategy,
     refetch: refetchStrategy,
+    isError: isStrategyError,
+    isLoading: isStrategyLoading,
   } = api.strategy.getById.useQuery(
     { id: strategyId },
     { enabled: !!strategyId, refetchInterval: isGenerating ? 3000 : false },
@@ -186,6 +188,10 @@ export default function GeneratePage() {
           body: JSON.stringify({ strategyId, pillarType }),
         });
 
+        if (!response.ok) {
+          throw new Error(`Erreur serveur (${response.status})`);
+        }
+
         const data = (await response.json()) as {
           success: boolean;
           pillar?: { type: string; status: string; content: unknown };
@@ -205,7 +211,8 @@ export default function GeneratePage() {
                 : p,
             ),
           );
-          toast.success(`Pilier ${pillarType} généré avec succès.`);
+          const pillarConfig = PILLAR_CONFIG[pillarType as PillarType];
+          toast.success(`Pilier ${pillarConfig?.title ?? pillarType} généré avec succès.`);
           return true;
         } else {
           setPillars((prev) =>
@@ -292,7 +299,9 @@ export default function GeneratePage() {
         targetPhase: "fiche-review",
       });
       await refetchStrategy();
+      toast.success("Fiche validée — Passez à l\u2019audit Risk.");
     } catch (error) {
+      toast.error("Erreur lors de l\u2019avancement de phase. Veuillez réessayer.");
       console.error("[Pipeline] Advance to fiche-review failed:", error);
     }
   }, [strategyId, advancePhaseMutation, refetchStrategy]);
@@ -332,7 +341,10 @@ export default function GeneratePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ strategyId }),
       });
-      await response.json();
+      const result = (await response.json()) as { success?: boolean; error?: string };
+      if (!response.ok || result.success === false) {
+        throw new Error(result.error ?? "Échec de la collecte");
+      }
       await refetchMarketStudy();
       toast.success("Collecte terminée !");
     } catch (error) {
@@ -389,13 +401,17 @@ export default function GeneratePage() {
       formData.append("file", file);
 
       try {
-        await fetch("/api/market-study/upload", {
+        const response = await fetch("/api/market-study/upload", {
           method: "POST",
           body: formData,
         });
+        if (!response.ok) {
+          throw new Error(`Upload failed: ${response.status}`);
+        }
         await refetchMarketStudy();
+        toast.success("Fichier importé avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l'upload du fichier.");
+        toast.error("Erreur lors de l\u2019import du fichier. Veuillez réessayer.");
         console.error("[MarketStudy] Upload failed:", error);
       }
     },
@@ -539,7 +555,7 @@ export default function GeneratePage() {
   const pillarT = pillars.find((p) => p.type === "T");
   const pillarI = pillars.find((p) => p.type === "I");
 
-  const ficheComplete = fichePillars.every((p) => p.status === "complete");
+  const ficheComplete = fichePillars.length > 0 && fichePillars.every((p) => p.status === "complete");
   const rComplete = pillarR?.status === "complete";
   const rInProgress = pillarR?.status === "generating";
   const tComplete = pillarT?.status === "complete";
@@ -572,10 +588,31 @@ export default function GeneratePage() {
   // Render
   // ---------------------------------------------------------------------------
 
-  if (!strategy) {
+  if (isStrategyError) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="size-8 animate-spin text-terracotta" />
+      <div className="flex flex-col items-center justify-center gap-4 py-20">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
+          <AlertTriangle className="h-6 w-6 text-red-500" />
+        </div>
+        <div className="text-center">
+          <p className="font-medium text-red-700">Impossible de charger la fiche de marque</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Vérifiez votre connexion ou réessayez.
+          </p>
+        </div>
+        <Button variant="outline" onClick={() => void refetchStrategy()}>
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
+  if (isStrategyLoading || !strategy) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-terracotta" />
+        <p className="text-sm text-muted-foreground">Chargement de la fiche de marque…</p>
       </div>
     );
   }
@@ -667,8 +704,13 @@ export default function GeneratePage() {
               onClick={handleAdvanceToFicheReview}
               size="sm"
               className="bg-terracotta hover:bg-terracotta/90"
+              disabled={advancePhaseMutation.isPending}
             >
-              <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
+              {advancePhaseMutation.isPending ? (
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ArrowRight className="mr-1.5 h-3.5 w-3.5" />
+              )}
               Valider la fiche
             </Button>
           </div>
@@ -1114,10 +1156,10 @@ export default function GeneratePage() {
                 ) : (
                   <Sparkles className="mr-2 h-3.5 w-3.5" />
                 )}
-                Tout générer (6 rapports)
+                Tout générer ({REPORT_TYPES.length} rapports)
               </Button>
               <p className="mt-1 text-xs text-muted-foreground">
-                ⏱ Durée estimée : 5-15 minutes (~48 appels IA)
+                ⏱ Durée estimée : 5-15 minutes
               </p>
             </div>
           </CardContent>
@@ -1130,7 +1172,7 @@ export default function GeneratePage() {
           variant="outline"
           onClick={() => router.push(`/strategy/${strategyId}`)}
         >
-          Retour à la stratégie
+          Retour à la fiche
         </Button>
 
         {currentPhase === "complete" && (
@@ -1277,6 +1319,7 @@ function PillarStatusCard({
               <button
                 onClick={onPreview}
                 className="ml-1 rounded p-1 hover:bg-green-100"
+                aria-label={`Aperçu du pilier ${pillar.type}`}
               >
                 <Eye className="h-3.5 w-3.5 text-green-600" />
               </button>
@@ -1293,6 +1336,7 @@ function PillarStatusCard({
               <button
                 onClick={onRetry}
                 className="ml-1 rounded p-1 hover:bg-red-100"
+                aria-label={`Réessayer le pilier ${pillar.type}`}
               >
                 <RotateCcw className="h-3.5 w-3.5 text-red-500" />
               </button>
@@ -1320,12 +1364,34 @@ function PreviewOverlay({
   content: string;
   onClose: () => void;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    dialogRef.current?.focus();
+    // Prevent body scroll while open
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <Card className="flex max-h-[80vh] w-full max-w-3xl flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <Card ref={dialogRef} className="flex max-h-[80vh] w-full max-w-3xl flex-col" tabIndex={-1}>
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
           <CardTitle className="text-lg">{title}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Fermer l'aperçu">
             <X className="h-4 w-4" />
           </Button>
         </CardHeader>

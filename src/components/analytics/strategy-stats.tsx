@@ -145,7 +145,7 @@ export function StrategyStats({ strategies }: StrategyStatsProps) {
         <CardContent>
           <p className="text-2xl font-bold">{stats.completionRate}%</p>
           <p className="text-muted-foreground text-xs">
-            {stats.completedStrategies} stratégie
+            {stats.completedStrategies} fiche
             {stats.completedStrategies !== 1 ? "s" : ""} terminée
             {stats.completedStrategies !== 1 ? "s" : ""}
           </p>
@@ -179,7 +179,7 @@ export function StrategyStats({ strategies }: StrategyStatsProps) {
         <CardContent>
           <p className="text-2xl font-bold">{stats.mostProductiveMonth}</p>
           <p className="text-muted-foreground text-xs">
-            en nombre de stratégies créées
+            en nombre de fiches créées
           </p>
         </CardContent>
       </Card>

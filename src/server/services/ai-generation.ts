@@ -1,6 +1,8 @@
 // ADVERTIS AI Generation Engine
 // Generates strategic content for each of the 8 ADVERTIS pillars sequentially,
 // using the Vercel AI SDK with Anthropic Claude.
+//
+// All pillars now generate structured JSON (not markdown).
 
 import { generateText } from "ai";
 
@@ -9,18 +11,19 @@ import type { PillarType } from "~/lib/constants";
 import { getInterviewSchema } from "~/lib/interview-schema";
 import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
 
+import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
+import type { DistinctionPillarData } from "~/lib/types/pillar-data";
+import type { ValeurPillarData } from "~/lib/types/pillar-data";
+import type { EngagementPillarData } from "~/lib/types/pillar-data";
+import type { SynthesePillarData } from "~/lib/types/pillar-data";
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
 /**
  * Generates the strategic content for one ADVERTIS pillar.
- *
- * @param pillarType  - The pillar letter (A, D, V, E, R, T, I, or S)
- * @param interviewData - All interview answers keyed by variable id (e.g. { A1: "...", D3: "..." })
- * @param previousPillars - Already generated pillars for cascade context
- * @param brandName - Name of the brand
- * @param sector - Industry sector label
+ * Returns structured JSON data (not markdown).
  */
 export async function generatePillarContent(
   pillarType: string,
@@ -28,7 +31,7 @@ export async function generatePillarContent(
   previousPillars: Array<{ type: string; content: string }>,
   brandName: string,
   sector: string,
-): Promise<string> {
+): Promise<unknown> {
   const systemPrompt = getSystemPrompt(pillarType);
   const userPrompt = buildUserPrompt(
     pillarType,
@@ -42,141 +45,314 @@ export async function generatePillarContent(
     model: anthropic(DEFAULT_MODEL),
     system: systemPrompt,
     prompt: userPrompt,
-    maxOutputTokens: 4000,
+    maxOutputTokens: 6000,
   });
 
-  return result.text;
+  // Parse JSON response and apply defaults
+  const parsed = parseJsonObject(result.text);
+
+  // Apply pillar-specific defaults
+  return applyDefaults(pillarType, parsed);
+}
+
+/**
+ * Generates the Pillar S (Synthèse) content.
+ * Requires all previous pillar data for cross-referencing.
+ */
+export async function generateSyntheseContent(
+  interviewData: Record<string, string>,
+  allPillars: Array<{ type: string; content: string }>,
+  brandName: string,
+  sector: string,
+): Promise<SynthesePillarData> {
+  const systemPrompt = getSystemPrompt("S");
+  const userPrompt = buildUserPrompt(
+    "S",
+    interviewData,
+    allPillars,
+    brandName,
+    sector,
+  );
+
+  const result = await generateText({
+    model: anthropic(DEFAULT_MODEL),
+    system: systemPrompt,
+    prompt: userPrompt,
+    maxOutputTokens: 8000,
+    temperature: 0.3,
+  });
+
+  const parsed = parseJsonObject(result.text) as Partial<SynthesePillarData>;
+
+  return {
+    syntheseExecutive: parsed.syntheseExecutive ?? "",
+    visionStrategique: parsed.visionStrategique ?? "",
+    coherencePiliers: Array.isArray(parsed.coherencePiliers) ? parsed.coherencePiliers : [],
+    facteursClesSucces: Array.isArray(parsed.facteursClesSucces) ? parsed.facteursClesSucces : [],
+    recommandationsPrioritaires: Array.isArray(parsed.recommandationsPrioritaires) ? parsed.recommandationsPrioritaires : [],
+    scoreCoherence: parsed.scoreCoherence ?? 50,
+  };
 }
 
 // ---------------------------------------------------------------------------
-// System prompts — one per pillar
+// System prompts — structured JSON output for each pillar
 // ---------------------------------------------------------------------------
 
+const JSON_RULES = `
+RÈGLES CRITIQUES :
+- Réponds UNIQUEMENT avec du JSON valide
+- Pas de commentaires, pas de markdown, pas de texte avant/après le JSON
+- Remplis TOUS les champs avec des données concrètes, spécifiques à la marque
+- Si une donnée n'est pas fournie, propose une recommandation réaliste basée sur le secteur
+- Utilise le français pour toutes les valeurs textuelles`;
+
 const SYSTEM_PROMPTS: Record<string, string> = {
-  A: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier A — Authenticite.
+  A: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu structuré du Pilier A — Authenticité.
 
-Ton role est de definir l'ADN profond de la marque : son identite, ses valeurs fondatrices, sa raison d'etre (Ikigai), son archetype, et l'histoire de la marque (Hero's Journey).
+Ton rôle est de définir l'ADN profond de la marque : son identité, ses valeurs fondatrices, sa raison d'être (Ikigai), son archétype, et l'histoire de la marque (Hero's Journey).
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Identite de Marque** — Archetype, citation fondatrice, noyau identitaire
-2. **Hero's Journey** — L'histoire de la marque en 5 actes
-3. **Ikigai** — Raison d'etre (Aimer, Competence, Besoin, Remuneration)
-4. **Valeurs** — 3-5 valeurs Schwartz hierarchisees avec justification
-5. **Hierarchie Communautaire** — 6 niveaux de fans
-6. **Timeline Narrative** — Chronologie en 4 actes
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "identite": {
+    "archetype": "L'archétype de marque dominant (ex: Le Magicien, Le Héros, L'Explorateur...)",
+    "citationFondatrice": "La citation ou le mantra fondateur de la marque",
+    "noyauIdentitaire": "Le noyau identitaire en 2-3 phrases — ce qui rend la marque unique"
+  },
+  "herosJourney": {
+    "acte1Origines": "Acte 1 — Les origines : contexte de naissance de la marque",
+    "acte2Appel": "Acte 2 — L'appel : le déclencheur, le problème identifié",
+    "acte3Epreuves": "Acte 3 — Les épreuves : obstacles surmontés",
+    "acte4Transformation": "Acte 4 — La transformation : le pivot ou l'innovation",
+    "acte5Revelation": "Acte 5 — La révélation : la vision et la promesse actuelle"
+  },
+  "ikigai": {
+    "aimer": "Ce que la marque aime / sa passion",
+    "competence": "Ce dans quoi la marque excelle",
+    "besoinMonde": "Ce dont le monde a besoin (le problème résolu)",
+    "remuneration": "Ce pour quoi les clients paient"
+  },
+  "valeurs": [
+    { "valeur": "Nom de la valeur", "rang": 1, "justification": "Pourquoi cette valeur est prioritaire" }
+  ],
+  "hierarchieCommunautaire": [
+    { "niveau": 1, "nom": "Nom du niveau", "description": "Description", "privileges": "Avantages spécifiques" }
+  ],
+  "timelineNarrative": {
+    "origines": "Les origines et la genèse",
+    "croissance": "La phase de croissance",
+    "pivot": "Le pivot stratégique",
+    "futur": "La vision future"
+  }
+}
 
-Sois precis, actionnable et ancre dans le secteur d'activite. Utilise un ton professionnel en francais. Si des donnees manquent, propose des recommandations basees sur le secteur et le positionnement de la marque.`,
+Génère 3-5 valeurs ordonnées et 4-6 niveaux de hiérarchie communautaire.
+${JSON_RULES}`,
 
-  D: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier D — Distinction.
+  D: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu structuré du Pilier D — Distinction.
 
-Ton role est de definir comment la marque se differencie : personas, positionnement, promesses, identite visuelle et vocale.
+Ton rôle est de définir comment la marque se différencie : personas, positionnement, promesses, identité visuelle et vocale.
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Personas** — Portraits detailles des clients cibles (demographie, psychographie, motivations, freins)
-2. **Paysage Concurrentiel** — Cartographie des concurrents et avantages competitifs
-3. **Promesses de Marque** — Promesse maitre + sous-promesses
-4. **Positionnement** — Statement unique (Pour [cible], [marque] est...)
-5. **Ton de Voix** — Personnalite vocale, ce qu'on dit / ne dit pas
-6. **Identite Visuelle** — Direction artistique, couleurs, mood
-7. **Assets Linguistiques** — Mantras, vocabulaire proprietaire
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "personas": [
+    {
+      "nom": "Nom du persona",
+      "demographie": "Âge, CSP, localisation",
+      "psychographie": "Valeurs, style de vie, centres d'intérêt",
+      "motivations": "Ce qui les pousse à acheter",
+      "freins": "Ce qui les retient",
+      "priorite": 1
+    }
+  ],
+  "paysageConcurrentiel": {
+    "concurrents": [
+      { "nom": "Nom", "forces": "Points forts", "faiblesses": "Points faibles", "partDeMarche": "Estimation" }
+    ],
+    "avantagesCompetitifs": ["Avantage 1", "Avantage 2"]
+  },
+  "promessesDeMarque": {
+    "promesseMaitre": "La promesse de marque principale",
+    "sousPromesses": ["Sous-promesse 1", "Sous-promesse 2"]
+  },
+  "positionnement": "Pour [cible], [marque] est [catégorie] qui [différence] parce que [preuve]",
+  "tonDeVoix": {
+    "personnalite": "Description de la personnalité vocale",
+    "onDit": ["Expression typique 1", "Expression typique 2"],
+    "onNeditPas": ["À éviter 1", "À éviter 2"]
+  },
+  "identiteVisuelle": {
+    "directionArtistique": "Description de la DA",
+    "paletteCouleurs": ["#HEX1 — Signification", "#HEX2 — Signification"],
+    "mood": "Ambiance générale et univers visuel"
+  },
+  "assetsLinguistiques": {
+    "mantras": ["Mantra 1", "Mantra 2"],
+    "vocabulaireProprietaire": ["Terme 1", "Terme 2"]
+  }
+}
 
-Appuie-toi sur les insights du Pilier A (Authenticite) pour garantir la coherence. Sois strategique et concret.`,
+Génère 2-4 personas, 3-5 concurrents, 3-5 avantages compétitifs.
+Appuie-toi sur les insights du Pilier A pour garantir la cohérence.
+${JSON_RULES}`,
 
-  V: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier V — Valeur.
+  V: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu structuré du Pilier V — Valeur.
 
-Ton role est de definir la proposition de valeur, l'architecture de l'offre, et les metriques economiques.
+Ton rôle est de définir la proposition de valeur, l'architecture de l'offre, et les métriques économiques.
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Product Ladder** — Architecture de l'offre en tiers (entree, coeur, premium)
-2. **Valeur pour la Marque** — Actifs tangibles et intangibles
-3. **Valeur pour le Client** — Gains fonctionnels, emotionnels, sociaux
-4. **Cout pour la Marque** — CAPEX, OPEX, couts caches
-5. **Cout pour le Client** — Frictions identifiees et solutions
-6. **Unit Economics** — CAC, LTV, marges, point mort, ratio LTV/CAC
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "productLadder": [
+    { "tier": "Nom du niveau", "prix": "Fourchette de prix", "description": "Description de l'offre", "cible": "Persona visé" }
+  ],
+  "valeurMarque": {
+    "tangible": ["Actif tangible 1", "Actif tangible 2"],
+    "intangible": ["Actif intangible 1", "Actif intangible 2"]
+  },
+  "valeurClient": {
+    "fonctionnels": ["Gain fonctionnel 1"],
+    "emotionnels": ["Gain émotionnel 1"],
+    "sociaux": ["Gain social 1"]
+  },
+  "coutMarque": {
+    "capex": "Investissements initiaux",
+    "opex": "Coûts opérationnels récurrents",
+    "coutsCaches": ["Coût caché 1"]
+  },
+  "coutClient": {
+    "frictions": [
+      { "friction": "Point de friction", "solution": "Solution proposée" }
+    ]
+  },
+  "unitEconomics": {
+    "cac": "Coût d'acquisition client estimé",
+    "ltv": "Valeur vie client estimée",
+    "ratio": "Ratio LTV/CAC",
+    "pointMort": "Estimation du point mort",
+    "marges": "Marges brutes estimées",
+    "notes": "Hypothèses et notes"
+  }
+}
 
-Relie la valeur au positionnement defini dans les piliers precedents. Propose des chiffres realistes pour le secteur si les donnees ne sont pas fournies.`,
+Génère 2-4 tiers, 2-3 frictions. Relie la valeur au positionnement des piliers précédents.
+${JSON_RULES}`,
 
-  E: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier E — Engagement.
+  E: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu structuré du Pilier E — Engagement.
 
-Ton role est de definir les mecanismes d'engagement : touchpoints, rituels, communaute, gamification et metriques AARRR.
+Ton rôle est de définir les mécanismes d'engagement : touchpoints, rituels, communauté, gamification et métriques AARRR.
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Touchpoints** — Points de contact physiques, digitaux, humains
-2. **Rituels** — Comportements Always-On et Cycliques
-3. **Principes Communautaires** — 5-10 principes + tabous
-4. **Gamification** — Systeme de progression 3-5 niveaux
-5. **AARRR Funnel** — Metriques pour Acquisition, Activation, Retention, Revenue, Referral
-6. **KPIs Dashboard** — 1-3 KPIs par variable ADVERTIS
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "touchpoints": [
+    { "canal": "Nom", "type": "physique", "role": "Rôle dans le parcours", "priorite": 1 }
+  ],
+  "rituels": [
+    { "nom": "Nom", "type": "always-on", "frequence": "Fréquence", "description": "Description" }
+  ],
+  "principesCommunautaires": {
+    "principes": ["Principe 1"],
+    "tabous": ["Tabou 1"]
+  },
+  "gamification": [
+    { "niveau": 1, "nom": "Nom du niveau", "condition": "Condition d'accès", "recompense": "Récompense" }
+  ],
+  "aarrr": {
+    "acquisition": "Stratégie d'acquisition",
+    "activation": "Premier aha moment",
+    "retention": "Boucles d'engagement",
+    "revenue": "Stratégie de monétisation",
+    "referral": "Stratégie virale"
+  },
+  "kpis": [
+    { "variable": "E1", "nom": "Nom du KPI", "cible": "Objectif chiffré", "frequence": "Mensuel" }
+  ]
+}
 
-Aligne les touchpoints sur les personas (D) et la proposition de valeur (V). Sois concret avec des actions implementables.`,
+Le champ "type" dans touchpoints est "physique", "digital" ou "humain".
+Le champ "type" dans rituels est "always-on" ou "cyclique".
+Génère 5-8 touchpoints, 3-5 rituels, 5-10 principes, 3-5 niveaux, 6-10 KPIs.
+${JSON_RULES}`,
 
-  R: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier R — Risk.
+  R: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu du Pilier R — Risk.
 
-Ton role est d'evaluer les risques strategiques en analysant les forces, faiblesses, opportunites et menaces identifiees dans les piliers A a E.
+NOTE : Ce prompt est un fallback. Le pilier R est normalement généré par audit-generation.ts.
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **SWOTs Individuels** — Analyse SWOT pour chaque variable cle des piliers A a E
-2. **SWOT Global** — Agregation et patterns transversaux
-3. **Score de Risque** — Score global 0-100 avec justification
-4. **Matrice Probabilite x Impact** — Classement des risques majeurs
-5. **Priorites de Mitigation** — Actions correctives classees par urgence et impact
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "microSwots": [],
+  "globalSwot": { "strengths": [], "weaknesses": [], "opportunities": [], "threats": [] },
+  "riskScore": 50,
+  "riskScoreJustification": "",
+  "probabilityImpactMatrix": [],
+  "mitigationPriorities": [],
+  "summary": ""
+}
+${JSON_RULES}`,
 
-Sois objectif et critique. Identifie les failles strategiques reelles. Propose des actions de mitigation concretes et priorisees.`,
+  T: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu du Pilier T — Track.
 
-  T: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier T — Track.
+NOTE : Ce prompt est un fallback. Le pilier T est normalement généré par audit-generation.ts.
 
-Ton role est de valider la strategie par confrontation aux donnees de marche et de definir la taille du marche adressable.
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "triangulation": { "internalData": "", "marketData": "", "customerData": "", "synthesis": "" },
+  "hypothesisValidation": [],
+  "marketReality": { "macroTrends": [], "weakSignals": [], "emergingPatterns": [] },
+  "tamSamSom": { "tam": { "value": "", "description": "" }, "sam": { "value": "", "description": "" }, "som": { "value": "", "description": "" }, "methodology": "" },
+  "competitiveBenchmark": [],
+  "brandMarketFitScore": 50,
+  "brandMarketFitJustification": "",
+  "strategicRecommendations": [],
+  "summary": ""
+}
+${JSON_RULES}`,
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Croisement 3 Sources** — Triangulation des donnees (internes, marche, clients)
-2. **Validation des Hypotheses** — Confrontation A-E aux donnees reelles (valide / invalide / a tester)
-3. **Rapport Realite Marche** — Tendances macro et signaux faibles
-4. **TAM/SAM/SOM** — Taille de marche avec estimations chiffrees
+  I: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
+Tu génères le contenu du Pilier I — Implémentation.
 
-Base tes analyses sur les donnees fournies et les tendances connues du secteur. Sois factuel et cite tes sources de raisonnement.`,
+NOTE : Ce prompt est un fallback. Le pilier I est normalement généré par implementation-generation.ts.
+${JSON_RULES}`,
 
-  I: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier I — Implementation.
+  S: `Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
+Tu génères le Pilier S — Synthèse Stratégique, la bible stratégique finale.
 
-Ton role est de transformer la strategie en plan d'action concret avec roadmap, budget, equipe et quick wins.
+Ce pilier compile les insights des 7 piliers précédents en une synthèse cohérente et actionable.
 
-Genere un document structure en markdown avec les sections suivantes :
-1. **Roadmap Strategique** — Jalons sur 12-36 mois
-2. **Phases de Lancement** — Quick Wins, Fondations, Deploiement
-3. **Quick Wins** — 3-5 actions realisables en < 2 semaines
-4. **Budget** — Enveloppe globale + allocation Phase 1
-5. **ROI et Payback** — Objectifs de retour sur investissement
-6. **Structure d'Equipe** — Roles, responsabilites, profils cles
-7. **Partenaires Externes** — Agences et freelancers necessaires
+FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
+{
+  "syntheseExecutive": "Résumé exécutif complet en 10-15 phrases.",
+  "visionStrategique": "Vision stratégique à 3-5 ans.",
+  "coherencePiliers": [
+    { "pilier": "A — Authenticité", "contribution": "Ce que ce pilier apporte", "articulation": "Comment il s'articule avec les autres" },
+    { "pilier": "D — Distinction", "contribution": "...", "articulation": "..." },
+    { "pilier": "V — Valeur", "contribution": "...", "articulation": "..." },
+    { "pilier": "E — Engagement", "contribution": "...", "articulation": "..." },
+    { "pilier": "R — Risk", "contribution": "...", "articulation": "..." },
+    { "pilier": "T — Track", "contribution": "...", "articulation": "..." },
+    { "pilier": "I — Implémentation", "contribution": "...", "articulation": "..." }
+  ],
+  "facteursClesSucces": ["Facteur 1", "Facteur 2", "Facteur 3", "Facteur 4", "Facteur 5"],
+  "recommandationsPrioritaires": [
+    { "action": "Action concrète", "priorite": 1, "impact": "Impact attendu", "delai": "Délai" }
+  ],
+  "scoreCoherence": 75
+}
 
-Sois extremement concret et actionnable. Chaque action doit avoir un responsable, un delai et un livrable mesurable.`,
-
-  S: `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS.
-Tu generes le contenu du Pilier S — Strategie.
-
-Ce pilier est la synthese finale de toute la strategie ADVERTIS. Il compile les insights des 7 piliers precedents en une bible strategique coherente.
-
-Genere un document structure en markdown avec les sections suivantes :
-1. **Synthese Executive** — Resume de la strategie en 1 page (contexte, positionnement, proposition de valeur, plan d'action)
-2. **Vision Strategique** — Direction a 3-5 ans
-3. **Coherence des Piliers** — Comment les 7 piliers s'articulent ensemble
-4. **Facteurs Cles de Succes** — 5-7 conditions necessaires
-5. **Recommandations Prioritaires** — Top 10 actions a mener
-6. **Score de Coherence** — Evaluation 0-100 de la coherence globale de la strategie
-
-Ce document doit etre la reference strategique definitive. Sois synthetique mais complet. Chaque recommandation doit etre ancree dans les analyses precedentes.`,
+Génère 5-7 facteurs clés de succès et 8-10 recommandations prioritaires ordonnées.
+Le scoreCoherence reflète la cohérence globale observée entre les piliers (0-100).
+${JSON_RULES}`,
 };
 
 function getSystemPrompt(pillarType: string): string {
   return (
     SYSTEM_PROMPTS[pillarType] ??
-    `Tu es un expert en strategie de marque utilisant la methodologie ADVERTIS. Genere le contenu strategique pour le pilier ${pillarType} en markdown structure.`
+    `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS. Génère le contenu stratégique structuré pour le pilier ${pillarType} en JSON.
+${JSON_RULES}`
   );
 }
 
@@ -198,14 +374,14 @@ function buildUserPrompt(
   // Header
   const lines: string[] = [
     `# Marque : ${brandName}`,
-    `# Secteur : ${sector || "Non specifie"}`,
+    `# Secteur : ${sector || "Non spécifié"}`,
     `# Pilier : ${pillarType} — ${pillarConfig?.title ?? pillarType}`,
     "",
   ];
 
   // Interview data for this pillar
   if (pillarSection && pillarSection.variables.length > 0) {
-    lines.push("## Donnees d'entretien pour ce pilier");
+    lines.push("## Données d'entretien pour ce pilier");
     lines.push("");
 
     for (const variable of pillarSection.variables) {
@@ -217,7 +393,7 @@ function buildUserPrompt(
         lines.push("");
       } else {
         lines.push(
-          `### ${variable.id} — ${variable.label} : *Non renseigne — genere une proposition basee sur le contexte.*`,
+          `### ${variable.id} — ${variable.label} : *Non renseigné — génère une proposition basée sur le contexte.*`,
         );
         lines.push("");
       }
@@ -226,7 +402,7 @@ function buildUserPrompt(
 
   // For Pillar S, also include interview data from ALL pillars
   if (pillarType === "S") {
-    lines.push("## Donnees d'entretien globales");
+    lines.push("## Données d'entretien globales");
     lines.push("");
     for (const section of schema) {
       for (const variable of section.variables) {
@@ -242,9 +418,9 @@ function buildUserPrompt(
 
   // Context from previously generated pillars
   if (previousPillars.length > 0) {
-    lines.push("## Contexte des piliers precedents");
+    lines.push("## Contexte des piliers précédents");
     lines.push(
-      "Utilise les insights suivants pour assurer la coherence avec les piliers deja generes :",
+      "Utilise les insights suivants pour assurer la cohérence avec les piliers déjà générés :",
     );
     lines.push("");
 
@@ -256,7 +432,7 @@ function buildUserPrompt(
       // Include a truncated version to stay within token limits
       const truncated =
         prev.content.length > 2000
-          ? prev.content.substring(0, 2000) + "\n\n[... contenu tronque ...]"
+          ? prev.content.substring(0, 2000) + "\n\n[... contenu tronqué ...]"
           : prev.content;
       lines.push(truncated);
       lines.push("");
@@ -265,11 +441,95 @@ function buildUserPrompt(
 
   lines.push("---");
   lines.push(
-    `Genere maintenant le contenu strategique complet pour le Pilier ${pillarType} — ${pillarConfig?.title ?? pillarType}.`,
+    `Génère maintenant le contenu stratégique structuré en JSON pour le Pilier ${pillarType} — ${pillarConfig?.title ?? pillarType}.`,
   );
   lines.push(
-    "Utilise le format markdown structure avec des titres, sous-titres, listes et tableaux le cas echeant.",
+    "Réponds UNIQUEMENT avec du JSON valide, sans aucun texte avant ou après.",
   );
 
   return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
+// JSON parsing + defaults
+// ---------------------------------------------------------------------------
+
+function parseJsonObject(responseText: string): Record<string, unknown> {
+  let jsonString = responseText.trim();
+
+  // Remove markdown code block if present
+  const jsonMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (jsonMatch?.[1]) {
+    jsonString = jsonMatch[1].trim();
+  }
+
+  try {
+    return JSON.parse(jsonString) as Record<string, unknown>;
+  } catch {
+    console.error(
+      "[AI Generation] Failed to parse JSON:",
+      responseText.substring(0, 200),
+    );
+    return {};
+  }
+}
+
+function applyDefaults(pillarType: string, parsed: Record<string, unknown>): unknown {
+  switch (pillarType) {
+    case "A":
+      return applyAuthenticiteDefaults(parsed as Partial<AuthenticitePillarData>);
+    case "D":
+      return applyDistinctionDefaults(parsed as Partial<DistinctionPillarData>);
+    case "V":
+      return applyValeurDefaults(parsed as Partial<ValeurPillarData>);
+    case "E":
+      return applyEngagementDefaults(parsed as Partial<EngagementPillarData>);
+    default:
+      return parsed;
+  }
+}
+
+function applyAuthenticiteDefaults(p: Partial<AuthenticitePillarData>): AuthenticitePillarData {
+  return {
+    identite: p.identite ?? { archetype: "", citationFondatrice: "", noyauIdentitaire: "" },
+    herosJourney: p.herosJourney ?? { acte1Origines: "", acte2Appel: "", acte3Epreuves: "", acte4Transformation: "", acte5Revelation: "" },
+    ikigai: p.ikigai ?? { aimer: "", competence: "", besoinMonde: "", remuneration: "" },
+    valeurs: Array.isArray(p.valeurs) ? p.valeurs : [],
+    hierarchieCommunautaire: Array.isArray(p.hierarchieCommunautaire) ? p.hierarchieCommunautaire : [],
+    timelineNarrative: p.timelineNarrative ?? { origines: "", croissance: "", pivot: "", futur: "" },
+  };
+}
+
+function applyDistinctionDefaults(p: Partial<DistinctionPillarData>): DistinctionPillarData {
+  return {
+    personas: Array.isArray(p.personas) ? p.personas : [],
+    paysageConcurrentiel: p.paysageConcurrentiel ?? { concurrents: [], avantagesCompetitifs: [] },
+    promessesDeMarque: p.promessesDeMarque ?? { promesseMaitre: "", sousPromesses: [] },
+    positionnement: p.positionnement ?? "",
+    tonDeVoix: p.tonDeVoix ?? { personnalite: "", onDit: [], onNeditPas: [] },
+    identiteVisuelle: p.identiteVisuelle ?? { directionArtistique: "", paletteCouleurs: [], mood: "" },
+    assetsLinguistiques: p.assetsLinguistiques ?? { mantras: [], vocabulaireProprietaire: [] },
+  };
+}
+
+function applyValeurDefaults(p: Partial<ValeurPillarData>): ValeurPillarData {
+  return {
+    productLadder: Array.isArray(p.productLadder) ? p.productLadder : [],
+    valeurMarque: p.valeurMarque ?? { tangible: [], intangible: [] },
+    valeurClient: p.valeurClient ?? { fonctionnels: [], emotionnels: [], sociaux: [] },
+    coutMarque: p.coutMarque ?? { capex: "", opex: "", coutsCaches: [] },
+    coutClient: p.coutClient ?? { frictions: [] },
+    unitEconomics: p.unitEconomics ?? { cac: "", ltv: "", ratio: "", pointMort: "", marges: "", notes: "" },
+  };
+}
+
+function applyEngagementDefaults(p: Partial<EngagementPillarData>): EngagementPillarData {
+  return {
+    touchpoints: Array.isArray(p.touchpoints) ? p.touchpoints : [],
+    rituels: Array.isArray(p.rituels) ? p.rituels : [],
+    principesCommunautaires: p.principesCommunautaires ?? { principes: [], tabous: [] },
+    gamification: Array.isArray(p.gamification) ? p.gamification : [],
+    aarrr: p.aarrr ?? { acquisition: "", activation: "", retention: "", revenue: "", referral: "" },
+    kpis: Array.isArray(p.kpis) ? p.kpis : [],
+  };
 }

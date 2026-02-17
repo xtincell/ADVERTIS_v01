@@ -20,6 +20,7 @@ import {
   Download,
 } from "lucide-react";
 
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { PILLAR_CONFIG, SECTORS } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
@@ -83,9 +84,9 @@ interface BasicInfo {
 
 const STEPS = [
   { number: 1 as const, label: "Informations de base" },
-  { number: 2 as const, label: "Methode de saisie" },
+  { number: 2 as const, label: "Méthode de saisie" },
   { number: 3 as const, label: "Fiche de Marque" },
-  { number: 4 as const, label: "Resume & Lancement" },
+  { number: 4 as const, label: "Résumé & Lancement" },
 ];
 
 function StepIndicator({ currentStep }: { currentStep: WizardStep }) {
@@ -158,18 +159,18 @@ function Step1BasicInfo({
       <CardHeader>
         <CardTitle className="text-xl">Informations de base</CardTitle>
         <CardDescription>
-          Commencez par definir les informations fondamentales de votre strategie
+          Commencez par définir les informations fondamentales de votre fiche
           de marque.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="strategyName">
-            Nom de la stratégie <span className="text-destructive">*</span>
+            Nom du projet / client <span className="text-destructive">*</span>
           </Label>
           <Input
             id="strategyName"
-            placeholder="Ex: Stratégie de lancement Q1 2025"
+            placeholder="Ex: Lancement Q1 2025"
             value={data.name}
             onChange={(e) => onChange({ ...data, name: e.target.value })}
           />
@@ -188,13 +189,13 @@ function Step1BasicInfo({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="sector">Secteur d&apos;activite</Label>
+          <Label htmlFor="sector">Secteur d&apos;activité</Label>
           <Select
             value={data.sector}
             onValueChange={(value) => onChange({ ...data, sector: value })}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selectionnez un secteur" />
+              <SelectValue placeholder="Sélectionnez un secteur" />
             </SelectTrigger>
             <SelectContent>
               {SECTORS.map((s) => (
@@ -210,7 +211,7 @@ function Step1BasicInfo({
           <Label htmlFor="description">Description (optionnel)</Label>
           <Textarea
             id="description"
-            placeholder="Décrivez brièvement le contexte et les objectifs de cette stratégie..."
+            placeholder="Décrivez brièvement le contexte et les objectifs de cette fiche de marque..."
             value={data.description}
             onChange={(e) =>
               onChange({ ...data, description: e.target.value })
@@ -252,13 +253,13 @@ function Step2InputMethod({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold">Methode de saisie</h2>
+        <h2 className="text-xl font-semibold">Méthode de saisie</h2>
         <p className="text-muted-foreground mt-1">
-          Comment souhaitez-vous renseigner les donnees de votre marque ?
+          Comment souhaitez-vous renseigner les données de votre marque ?
           <br />
           <span className="text-xs">
-            Seuls les piliers A (Authenticite), D (Distinction), V (Valeur) et E
-            (Engagement) necessitent des donnees. L&apos;audit (R+T) et les
+            Seuls les piliers A (Authenticité), D (Distinction), V (Valeur) et E
+            (Engagement) nécessitent des données. L&apos;audit (R+T) et les
             rapports sont générés automatiquement par l&apos;IA.
           </span>
         </p>
@@ -290,8 +291,8 @@ function Step2InputMethod({
           <CardContent>
             <p className="text-muted-foreground text-sm">
               Remplissez les variables de la Fiche de Marque pilier par pilier
-              (A, D, V, E) via un formulaire guide. Ideal pour une saisie
-              structuree.
+              (A, D, V, E) via un formulaire guidé. Idéal pour une saisie
+              structurée.
             </p>
           </CardContent>
         </Card>
@@ -313,14 +314,14 @@ function Step2InputMethod({
               <div>
                 <CardTitle className="text-lg">Texte libre</CardTitle>
                 <Badge variant="secondary" className="mt-1">
-                  Ecriture libre + IA
+                  Écriture libre + IA
                 </Badge>
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground text-sm">
-              Decrivez votre marque librement dans un bloc de texte. L&apos;IA
+              Décrivez votre marque librement dans un bloc de texte. L&apos;IA
               analysera votre description et mappera automatiquement les 25
               variables A-D-V-E.
             </p>
@@ -363,7 +364,7 @@ function Step2InputMethod({
       {method === "form" && (
         <div className="space-y-3">
           <p className="text-sm font-medium text-center">
-            Niveau de detail du formulaire :
+            Niveau de détail du formulaire :
           </p>
           <div className="grid gap-3 md:grid-cols-2">
             <Card
@@ -418,7 +419,7 @@ function Step2InputMethod({
               className="text-primary hover:underline font-medium"
               onClick={(e) => e.stopPropagation()}
             >
-              Telecharger le template Excel ADVERTIS
+              Télécharger le template Excel ADVERTIS
             </a>
           </p>
         </div>
@@ -427,7 +428,7 @@ function Step2InputMethod({
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onBack}>
           <ChevronLeft className="mr-2 size-4" />
-          Precedent
+          Précédent
         </Button>
         <Button onClick={onNext}>
           Continuer
@@ -496,7 +497,7 @@ function Step3FicheDeMarque({
           <div className="text-center">
             <h2 className="text-xl font-semibold">Texte libre</h2>
             <p className="text-muted-foreground mt-1">
-              Decrivez votre marque librement. L&apos;IA analysera votre texte
+              Décrivez votre marque librement. L&apos;IA analysera votre texte
               et mappera les variables automatiquement.
             </p>
           </div>
@@ -511,7 +512,7 @@ function Step3FicheDeMarque({
           <div className="flex justify-start pt-2">
             <Button variant="outline" onClick={onBack}>
               <ChevronLeft className="mr-2 size-4" />
-              Precedent
+              Précédent
             </Button>
           </div>
         </div>
@@ -541,7 +542,7 @@ function Step3FicheDeMarque({
         <div className="flex justify-start pt-2">
           <Button variant="outline" onClick={onBack}>
             <ChevronLeft className="mr-2 size-4" />
-            Precedent
+            Précédent
           </Button>
         </div>
       </div>
@@ -554,10 +555,10 @@ function Step3FicheDeMarque({
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="text-center">
           <h2 className="text-xl font-semibold">
-            Verification du mapping
+            Vérification du mapping
           </h2>
           <p className="text-muted-foreground mt-1">
-            Verifiez et ajustez les variables mappees par l&apos;IA avant de
+            Vérifiez et ajustez les variables mappées par l&apos;IA avant de
             continuer.
           </p>
         </div>
@@ -641,10 +642,10 @@ function Step3FicheDeMarque({
               <Check className="text-primary mt-0.5 size-5 shrink-0" />
               <div>
                 <p className="font-medium">
-                  Mapping IA confirme &mdash; Verifiez et completez vos donnees
+                  Mapping IA confirmé &mdash; Vérifiez et complétez vos données
                 </p>
                 <p className="text-muted-foreground mt-1 text-sm">
-                  Les champs pre-remplis par l&apos;IA sont indiques en{" "}
+                  Les champs pré-remplis par l&apos;IA sont indiqués en{" "}
                   <span className="inline-flex items-center gap-1 rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-400">
                     bleu
                   </span>
@@ -652,7 +653,7 @@ function Step3FicheDeMarque({
                   <span className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950 dark:text-amber-400">
                     jaune
                   </span>
-                  {" "}sont a completer.
+                  {" "}sont à compléter.
                 </p>
               </div>
             </div>
@@ -822,7 +823,7 @@ function Step3FicheDeMarque({
       <div className="flex justify-between">
         <Button variant="outline" onClick={goToPrevPillar}>
           <ChevronLeft className="mr-2 size-4" />
-          {activePillarIdx === 0 ? "Precedent" : `Pilier ${sections[activePillarIdx - 1]?.pillarType}`}
+          {activePillarIdx === 0 ? "Précédent" : `Pilier ${sections[activePillarIdx - 1]?.pillarType}`}
         </Button>
         <Button onClick={goToNextPillar}>
           {activePillarIdx < sections.length - 1 ? (
@@ -884,9 +885,9 @@ function Step4Summary({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold">Resume de la Fiche de Marque</h2>
+        <h2 className="text-xl font-semibold">Résumé de la Fiche de Marque</h2>
         <p className="text-muted-foreground mt-1">
-          Verifiez les donnees collectees avant de lancer l&apos;audit automatique.
+          Vérifiez les données collectées avant de lancer l&apos;audit automatique.
         </p>
       </div>
 
@@ -895,7 +896,7 @@ function Step4Summary({
         <CardContent className="p-4">
           <div className="grid gap-3 md:grid-cols-3">
             <div>
-              <p className="text-xs text-muted-foreground">Stratégie</p>
+              <p className="text-xs text-muted-foreground">Projet</p>
               <p className="font-medium">{basicInfo.name}</p>
             </div>
             <div>
@@ -903,7 +904,7 @@ function Step4Summary({
               <p className="font-medium">{basicInfo.brandName}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Methode</p>
+              <p className="text-xs text-muted-foreground">Méthode</p>
               <p className="font-medium">
                 {inputMethod === "form"
                   ? "Saisie manuelle"
@@ -958,19 +959,19 @@ function Step4Summary({
           <div className="flex items-start gap-3">
             <Rocket className="text-primary mt-0.5 size-5 shrink-0" />
             <div>
-              <p className="font-medium">Prochaines etapes automatiques</p>
+              <p className="font-medium">Prochaines étapes automatiques</p>
               <ol className="text-muted-foreground mt-2 list-inside list-decimal space-y-1 text-sm">
                 <li>
-                  <strong>Audit (R+T)</strong> — L&apos;IA analyse vos donnees A-E
+                  <strong>Audit (R+T)</strong> — L&apos;IA analyse vos données A-E
                   et génère les SWOTs par variable + validation marché
                 </li>
                 <li>
-                  <strong>Rapports (6 documents)</strong> — Generation de
-                  300-600 pages de livrables strategiques
+                  <strong>Rapports (6 documents)</strong> — Génération de
+                  300-600 pages de livrables stratégiques
                 </li>
                 <li>
                   <strong>Cockpit</strong> — Interface interactive de
-                  presentation pour votre client
+                  présentation pour votre client
                 </li>
               </ol>
             </div>
@@ -993,18 +994,18 @@ function Step4Summary({
       <div className="flex justify-between pt-2">
         <Button variant="outline" onClick={onBack} disabled={isLoading}>
           <ChevronLeft className="mr-2 size-4" />
-          Precedent
+          Précédent
         </Button>
         <Button onClick={onSubmit} disabled={isLoading} size="lg">
           {isLoading ? (
             <>
               <Loader2 className="mr-2 size-4 animate-spin" />
-              Creation en cours...
+              Création en cours...
             </>
           ) : (
             <>
               <Rocket className="mr-2 size-4" />
-              Créer la stratégie & lancer l&apos;audit
+              Créer la fiche & lancer l&apos;audit
             </>
           )}
         </Button>
@@ -1079,6 +1080,7 @@ export default function NewStrategyPage() {
       router.push(`/strategy/${strategy.id}`);
     } catch (error) {
       console.error("Failed to create strategy:", error);
+      toast.error("Erreur lors de la création de la fiche de marque. Veuillez réessayer.");
     }
   }, [
     basicInfo,
@@ -1094,10 +1096,10 @@ export default function NewStrategyPage() {
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">
-          Nouvelle strategie
+          Créez votre fiche de marque
         </h1>
         <p className="text-muted-foreground">
-          Créez votre stratégie de marque en 4 phases ADVERTIS : Fiche de Marque
+          Créez votre fiche de marque en 4 phases ADVERTIS : Fiche de Marque
           → Audit → Rapports → Cockpit.
         </p>
       </div>

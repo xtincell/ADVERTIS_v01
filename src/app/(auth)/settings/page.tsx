@@ -25,17 +25,6 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Separator } from "~/components/ui/separator";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "~/components/ui/alert-dialog";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -62,11 +51,11 @@ function ProfileSection() {
 
   const updateProfile = api.auth.updateProfile.useMutation({
     onSuccess: () => {
-      toast.success("Profil mis a jour avec succes.");
+      toast.success("Profil mis à jour avec succès.");
       setIsDirty(false);
     },
     onError: () => {
-      toast.error("Erreur lors de la mise a jour du profil.");
+      toast.error("Erreur lors de la mise à jour du profil.");
     },
   });
 
@@ -109,7 +98,7 @@ function ProfileSection() {
           <CardTitle>Profil</CardTitle>
         </div>
         <CardDescription>
-          Gerez vos informations personnelles.
+          Gérez vos informations personnelles.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -200,7 +189,7 @@ function AccountSection() {
           <Label className="text-muted-foreground text-xs uppercase tracking-wider">
             Adresse email
           </Label>
-          <p className="text-sm font-medium">{profile?.email ?? "---"}</p>
+          <p className="text-sm font-medium">{profile?.email ?? "Non renseigné"}</p>
         </div>
 
         <Separator />
@@ -221,7 +210,7 @@ function AccountSection() {
 
         <div className="space-y-1">
           <Label className="text-muted-foreground text-xs uppercase tracking-wider">
-            Role
+            Rôle
           </Label>
           <p className="text-sm font-medium capitalize">
             {profile?.role ?? "utilisateur"}
@@ -249,37 +238,9 @@ function DangerZoneSection() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="destructive" size="sm">
-              Supprimer mon compte
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer votre compte ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                La suppression de compte n&apos;est pas encore disponible en
-                libre-service. Veuillez contacter le support a{" "}
-                <span className="font-medium">support@advertis.app</span> pour
-                effectuer cette demande.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Fermer</AlertDialogCancel>
-              <AlertDialogAction
-                variant="default"
-                onClick={() => {
-                  toast.info(
-                    "Veuillez contacter le support pour supprimer votre compte.",
-                  );
-                }}
-              >
-                Compris
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <Button variant="destructive" size="sm" disabled title="Bientôt disponible">
+          Supprimer mon compte (Bientôt disponible)
+        </Button>
       </CardContent>
     </Card>
   );
@@ -296,7 +257,7 @@ export default function SettingsPage() {
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Paramètres</h2>
         <p className="text-muted-foreground">
-          Gerez votre profil et les parametres de votre compte.
+          Gérez votre profil et les paramètres de votre compte.
         </p>
       </div>
 
