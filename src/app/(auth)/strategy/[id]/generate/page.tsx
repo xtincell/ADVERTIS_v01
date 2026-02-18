@@ -17,13 +17,16 @@ import {
   Database,
   Shield,
   BarChart3,
+  Presentation,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
 import {
   PILLAR_CONFIG,
+  PHASE_CONFIG,
   FICHE_PILLARS,
   REPORT_TYPES,
+  TEMPLATE_TYPES,
   PHASES,
   LEGACY_PHASE_MAP,
 } from "~/lib/constants";
@@ -53,7 +56,9 @@ import { Badge } from "~/components/ui/badge";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { PhaseTimeline } from "~/components/strategy/phase-timeline";
 import { ReportCard } from "~/components/strategy/report-card";
+import { TemplateCard } from "~/components/strategy/template-card";
 import { AuditReviewForm } from "~/components/strategy/audit-review/audit-review-form";
+import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
 import { FicheReviewForm } from "~/components/strategy/fiche-review/fiche-review-form";
 import { MarketStudyDashboard } from "~/components/strategy/market-study/market-study-dashboard";
 
@@ -141,6 +146,7 @@ export default function GeneratePage() {
   const validateAuditMutation = api.strategy.validateAuditReview.useMutation();
   const validateFicheMutation = api.strategy.validateFicheReview.useMutation();
   const advancePhaseMutation = api.strategy.advancePhase.useMutation();
+  const revertPhaseMutation = api.strategy.revertPhase.useMutation();
   const addManualDataMutation = api.marketStudy.addManualData.useMutation();
   const removeManualDataMutation = api.marketStudy.removeManualData.useMutation();
   const skipMarketStudyMutation = api.marketStudy.skip.useMutation();
@@ -247,7 +253,7 @@ export default function GeneratePage() {
     [strategyId],
   );
 
-  // --- Validate Fiche Review → advance to audit-r ---
+  // --- Validate Fiche Review → advance to audit-r → auto-launch audit ---
   const handleValidateFiche = useCallback(
     async (editedData: Record<string, string>) => {
       setIsValidatingFiche(true);
@@ -257,15 +263,26 @@ export default function GeneratePage() {
           interviewData: editedData,
         });
         await refetchStrategy();
-        toast.success("Fiche validée avec succès !");
+        toast.success("Fiche validée — Lancement de l'audit Risk…");
+
+        // Auto-chain: launch audit R immediately after fiche validation
+        setIsGenerating(true);
+        setCurrentAction("audit-r");
+        cancelledRef.current = false;
+        await generateSinglePillar("R");
+        setIsGenerating(false);
+        setCurrentAction(null);
+        await refetchStrategy();
       } catch (error) {
         toast.error("Erreur lors de la validation de la fiche.");
         console.error("[Fiche Review] Validation failed:", error);
+        setIsGenerating(false);
+        setCurrentAction(null);
       } finally {
         setIsValidatingFiche(false);
       }
     },
-    [strategyId, validateFicheMutation, refetchStrategy],
+    [strategyId, validateFicheMutation, refetchStrategy, generateSinglePillar],
   );
 
   // --- Launch Fiche generation (A-D-V-E sequentially) ---
@@ -525,6 +542,44 @@ export default function GeneratePage() {
     [strategyId, refetchStrategy, refetchDocuments],
   );
 
+  // --- Launch a single template (on demand) ---
+  const handleLaunchSingleTemplate = useCallback(
+    async (templateType?: string) => {
+      setIsGenerating(true);
+      setCurrentAction("templates");
+      cancelledRef.current = false;
+
+      try {
+        const response = await fetch("/api/ai/templates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ strategyId, templateType }),
+        });
+
+        const data = (await response.json()) as {
+          success: boolean;
+          error?: string;
+        };
+
+        if (!data.success) {
+          toast.error(data.error ?? "Erreur lors de la génération du template.");
+          console.error("[Templates] Generation failed:", data.error);
+        } else {
+          toast.success("Template généré avec succès !");
+        }
+      } catch (error) {
+        toast.error("Erreur réseau lors de la génération.");
+        console.error("[Templates] Error:", error);
+      }
+
+      setIsGenerating(false);
+      setCurrentAction(null);
+      await refetchStrategy();
+      await refetchDocuments();
+    },
+    [strategyId, refetchStrategy, refetchDocuments],
+  );
+
   // --- Retry a single pillar ---
   const handleRetry = useCallback(
     async (pillarType: string) => {
@@ -543,6 +598,25 @@ export default function GeneratePage() {
   const handleCancel = () => {
     cancelledRef.current = true;
   };
+
+  // --- Revert to a previous phase ---
+  type RevertablePhase = Exclude<Phase, "complete">;
+  const handleRevertPhase = useCallback(
+    async (targetPhase: RevertablePhase) => {
+      try {
+        await revertPhaseMutation.mutateAsync({
+          id: strategyId,
+          targetPhase,
+        });
+        await refetchStrategy();
+        toast.success(`Retour à la phase "${PHASE_CONFIG[targetPhase].title}"`);
+      } catch (error) {
+        toast.error("Erreur lors du retour en arrière.");
+        console.error("[Pipeline] Revert phase failed:", error);
+      }
+    },
+    [strategyId, revertPhaseMutation, refetchStrategy],
+  );
 
   // ---------------------------------------------------------------------------
   // Phase helpers
@@ -583,6 +657,18 @@ export default function GeneratePage() {
       currentPhase === "implementation" ||
       currentPhase === "cockpit" ||
       currentPhase === "complete");
+
+  // Templates require Pillar I complete
+  const templatesAvailable =
+    implComplete &&
+    (currentPhase === "cockpit" || currentPhase === "complete");
+
+  const templateDocs = (documents ?? []).filter((d) =>
+    (TEMPLATE_TYPES as readonly string[]).includes(d.type),
+  ) as DocumentStatus[];
+  const templatesInProgress = templateDocs.some(
+    (d) => d.status === "generating",
+  );
 
   // ---------------------------------------------------------------------------
   // Render
@@ -638,6 +724,8 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 1 : Fiche de Marque"
         description="Données collectées via le formulaire ou l'import de fichier"
+        onRevert={() => handleRevertPhase("fiche")}
+        isReverting={revertPhaseMutation.isPending}
       >
         <div className="grid gap-3 sm:grid-cols-2">
           {fichePillars.map((pillar) => {
@@ -747,9 +835,12 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 2 : Validation de la Fiche"
         description="Vérifiez et corrigez les données A-D-V-E avant l'audit"
+        onRevert={() => handleRevertPhase("fiche-review")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {currentPhase === "fiche-review" ? (
           <FicheReviewForm
+            strategyId={strategyId}
             interviewData={interviewData}
             onValidate={handleValidateFiche}
             isValidating={isValidatingFiche}
@@ -769,6 +860,8 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 3 : Audit Risk (R)"
         description="Analyse SWOT automatique par variable A-D-V-E"
+        onRevert={() => handleRevertPhase("audit-r")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {pillarR && (
           <PillarStatusCard
@@ -838,6 +931,8 @@ export default function GeneratePage() {
         title="Phase 4 : Étude de Marché"
         description="Collecte de données marché réelles pour enrichir l'audit Track"
         optional
+        onRevert={() => handleRevertPhase("market-study")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {currentPhase === "market-study" ? (
           <MarketStudyDashboard
@@ -887,6 +982,8 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 5 : Audit Track (T)"
         description="Validation marché, TAM/SAM/SOM, benchmarking concurrentiel"
+        onRevert={() => handleRevertPhase("audit-t")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {pillarT && (
           <PillarStatusCard
@@ -969,14 +1066,29 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 6 : Validation de l'audit"
         description="Revue et correction manuelle des résultats R+T"
+        onRevert={() => handleRevertPhase("audit-review")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {currentPhase === "audit-review" && riskData && trackData ? (
-          <AuditReviewForm
-            initialRiskData={riskData}
-            initialTrackData={trackData}
-            onValidate={handleValidateAudit}
-            isValidating={isValidatingAudit}
-          />
+          <div className="space-y-6">
+            <AuditReviewForm
+              initialRiskData={riskData}
+              initialTrackData={trackData}
+              onValidate={handleValidateAudit}
+              isValidating={isValidatingAudit}
+            />
+
+            {/* Suggestions panel — analyze audit to suggest A-D-V-E updates */}
+            <AuditSuggestionsPanel
+              strategyId={strategyId}
+              pillars={pillars.map((p) => ({
+                id: p.id,
+                type: p.type,
+                content: p.content,
+              }))}
+              onSuggestionsApplied={() => void refetchStrategy()}
+            />
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("audit-review")
@@ -992,6 +1104,8 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 7 : Données stratégiques"
         description="Génération des données structurées pour le cockpit (Pilier I)"
+        onRevert={() => handleRevertPhase("implementation")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {pillarI && (
           <PillarStatusCard
@@ -1056,6 +1170,8 @@ export default function GeneratePage() {
         currentPhase={currentPhase}
         title="Phase 8 : Cockpit stratégique"
         description="Interface interactive + lien de partage public"
+        onRevert={() => handleRevertPhase("cockpit")}
+        isReverting={revertPhaseMutation.isPending}
       >
         {currentPhase === "cockpit" || currentPhase === "complete" ? (
           <div className="space-y-4">
@@ -1166,6 +1282,96 @@ export default function GeneratePage() {
         </Card>
       )}
 
+      {/* ─── Templates UPGRADERS (floating section, hors pipeline) ─── */}
+      {templatesAvailable && (
+        <Card className="border-dashed">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Presentation className="h-5 w-5 text-muted-foreground" />
+                  Templates UPGRADERS
+                  <Badge variant="secondary" className="text-xs">
+                    Livrables
+                  </Badge>
+                </CardTitle>
+                <CardDescription>
+                  3 livrables vendables — Protocole Stratégique, Reco Campagne,
+                  Mandat 360
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {TEMPLATE_TYPES.map((tt) => {
+                const doc = templateDocs.find((d) => d.type === tt);
+                return (
+                  <TemplateCard
+                    key={tt}
+                    templateType={tt}
+                    status={
+                      (doc?.status as
+                        | "pending"
+                        | "generating"
+                        | "complete"
+                        | "error") ?? "pending"
+                    }
+                    slideCount={doc?.pageCount}
+                    errorMessage={doc?.errorMessage}
+                    generatedAt={doc?.generatedAt}
+                    onGenerate={
+                      !isGenerating && doc?.status !== "complete"
+                        ? () => handleLaunchSingleTemplate(tt)
+                        : undefined
+                    }
+                    onView={
+                      doc?.status === "complete"
+                        ? () =>
+                            router.push(
+                              `/strategy/${strategyId}/report/${doc.id}`,
+                            )
+                        : undefined
+                    }
+                    onRegenerate={
+                      doc?.status === "complete" || doc?.status === "error"
+                        ? () => handleLaunchSingleTemplate(tt)
+                        : undefined
+                    }
+                  />
+                );
+              })}
+            </div>
+
+            {templatesInProgress && (
+              <div className="mt-4 flex items-center gap-2 text-sm text-terracotta">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Génération de template en cours...
+              </div>
+            )}
+
+            <div className="mt-4 border-t pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleLaunchSingleTemplate()}
+                disabled={isGenerating}
+              >
+                {isGenerating && currentAction === "templates" ? (
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-3.5 w-3.5" />
+                )}
+                Tout générer ({TEMPLATE_TYPES.length} templates)
+              </Button>
+              <p className="mt-1 text-xs text-muted-foreground">
+                ⏱ Durée estimée : 10-20 minutes
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ─── Actions footer ─── */}
       <div className="flex items-center justify-between border-t pt-6">
         <Button
@@ -1210,6 +1416,8 @@ function PhaseSection({
   title,
   description,
   optional,
+  onRevert,
+  isReverting,
   children,
 }: {
   phase: Phase;
@@ -1217,6 +1425,8 @@ function PhaseSection({
   title: string;
   description: string;
   optional?: boolean;
+  onRevert?: () => void;
+  isReverting?: boolean;
   children: React.ReactNode;
 }) {
   const currentIndex = PHASES.indexOf(currentPhase);
@@ -1243,20 +1453,38 @@ function PhaseSection({
             </CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          {isComplete && (
-            <Badge
-              variant="outline"
-              className="border-green-200 bg-green-50 text-green-700"
-            >
-              <Check className="mr-1 h-3 w-3" />
-              Terminé
-            </Badge>
-          )}
-          {isLocked && (
-            <Badge variant="outline" className="text-muted-foreground">
-              Verrouillé
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {isComplete && onRevert && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onRevert}
+                disabled={isReverting}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                {isReverting ? (
+                  <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-1 h-3 w-3" />
+                )}
+                Revenir ici
+              </Button>
+            )}
+            {isComplete && (
+              <Badge
+                variant="outline"
+                className="border-green-200 bg-green-50 text-green-700"
+              >
+                <Check className="mr-1 h-3 w-3" />
+                Terminé
+              </Badge>
+            )}
+            {isLocked && (
+              <Badge variant="outline" className="text-muted-foreground">
+                Verrouillé
+              </Badge>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>{isLocked ? null : children}</CardContent>

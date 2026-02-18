@@ -11,11 +11,8 @@ import type { PillarType } from "~/lib/constants";
 import { getInterviewSchema } from "~/lib/interview-schema";
 import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
 
-import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
-import type { DistinctionPillarData } from "~/lib/types/pillar-data";
-import type { ValeurPillarData } from "~/lib/types/pillar-data";
-import type { EngagementPillarData } from "~/lib/types/pillar-data";
 import type { SynthesePillarData } from "~/lib/types/pillar-data";
+import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -48,11 +45,12 @@ export async function generatePillarContent(
     maxOutputTokens: 6000,
   });
 
-  // Parse JSON response and apply defaults
-  const parsed = parseJsonObject(result.text);
-
-  // Apply pillar-specific defaults
-  return applyDefaults(pillarType, parsed);
+  // Parse + validate with Zod schema (applies defaults for missing fields)
+  const { data, errors } = parseAiGeneratedContent(pillarType, result.text);
+  if (errors?.length) {
+    console.warn(`[AI Generation] Pillar ${pillarType} validation issues:`, errors);
+  }
+  return data;
 }
 
 /**
@@ -82,16 +80,11 @@ export async function generateSyntheseContent(
     temperature: 0.3,
   });
 
-  const parsed = parseJsonObject(result.text) as Partial<SynthesePillarData>;
-
-  return {
-    syntheseExecutive: parsed.syntheseExecutive ?? "",
-    visionStrategique: parsed.visionStrategique ?? "",
-    coherencePiliers: Array.isArray(parsed.coherencePiliers) ? parsed.coherencePiliers : [],
-    facteursClesSucces: Array.isArray(parsed.facteursClesSucces) ? parsed.facteursClesSucces : [],
-    recommandationsPrioritaires: Array.isArray(parsed.recommandationsPrioritaires) ? parsed.recommandationsPrioritaires : [],
-    scoreCoherence: parsed.scoreCoherence ?? 50,
-  };
+  const { data, errors } = parseAiGeneratedContent<SynthesePillarData>("S", result.text);
+  if (errors?.length) {
+    console.warn("[AI Generation] Pillar S validation issues:", errors);
+  }
+  return data;
 }
 
 // ---------------------------------------------------------------------------
@@ -451,85 +444,5 @@ function buildUserPrompt(
 }
 
 // ---------------------------------------------------------------------------
-// JSON parsing + defaults
+// JSON parsing + defaults: handled by Zod schemas in pillar-parsers.ts
 // ---------------------------------------------------------------------------
-
-function parseJsonObject(responseText: string): Record<string, unknown> {
-  let jsonString = responseText.trim();
-
-  // Remove markdown code block if present
-  const jsonMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch?.[1]) {
-    jsonString = jsonMatch[1].trim();
-  }
-
-  try {
-    return JSON.parse(jsonString) as Record<string, unknown>;
-  } catch {
-    console.error(
-      "[AI Generation] Failed to parse JSON:",
-      responseText.substring(0, 200),
-    );
-    return {};
-  }
-}
-
-function applyDefaults(pillarType: string, parsed: Record<string, unknown>): unknown {
-  switch (pillarType) {
-    case "A":
-      return applyAuthenticiteDefaults(parsed as Partial<AuthenticitePillarData>);
-    case "D":
-      return applyDistinctionDefaults(parsed as Partial<DistinctionPillarData>);
-    case "V":
-      return applyValeurDefaults(parsed as Partial<ValeurPillarData>);
-    case "E":
-      return applyEngagementDefaults(parsed as Partial<EngagementPillarData>);
-    default:
-      return parsed;
-  }
-}
-
-function applyAuthenticiteDefaults(p: Partial<AuthenticitePillarData>): AuthenticitePillarData {
-  return {
-    identite: p.identite ?? { archetype: "", citationFondatrice: "", noyauIdentitaire: "" },
-    herosJourney: p.herosJourney ?? { acte1Origines: "", acte2Appel: "", acte3Epreuves: "", acte4Transformation: "", acte5Revelation: "" },
-    ikigai: p.ikigai ?? { aimer: "", competence: "", besoinMonde: "", remuneration: "" },
-    valeurs: Array.isArray(p.valeurs) ? p.valeurs : [],
-    hierarchieCommunautaire: Array.isArray(p.hierarchieCommunautaire) ? p.hierarchieCommunautaire : [],
-    timelineNarrative: p.timelineNarrative ?? { origines: "", croissance: "", pivot: "", futur: "" },
-  };
-}
-
-function applyDistinctionDefaults(p: Partial<DistinctionPillarData>): DistinctionPillarData {
-  return {
-    personas: Array.isArray(p.personas) ? p.personas : [],
-    paysageConcurrentiel: p.paysageConcurrentiel ?? { concurrents: [], avantagesCompetitifs: [] },
-    promessesDeMarque: p.promessesDeMarque ?? { promesseMaitre: "", sousPromesses: [] },
-    positionnement: p.positionnement ?? "",
-    tonDeVoix: p.tonDeVoix ?? { personnalite: "", onDit: [], onNeditPas: [] },
-    identiteVisuelle: p.identiteVisuelle ?? { directionArtistique: "", paletteCouleurs: [], mood: "" },
-    assetsLinguistiques: p.assetsLinguistiques ?? { mantras: [], vocabulaireProprietaire: [] },
-  };
-}
-
-function applyValeurDefaults(p: Partial<ValeurPillarData>): ValeurPillarData {
-  return {
-    productLadder: Array.isArray(p.productLadder) ? p.productLadder : [],
-    valeurMarque: p.valeurMarque ?? { tangible: [], intangible: [] },
-    valeurClient: p.valeurClient ?? { fonctionnels: [], emotionnels: [], sociaux: [] },
-    coutMarque: p.coutMarque ?? { capex: "", opex: "", coutsCaches: [] },
-    coutClient: p.coutClient ?? { frictions: [] },
-    unitEconomics: p.unitEconomics ?? { cac: "", ltv: "", ratio: "", pointMort: "", marges: "", notes: "" },
-  };
-}
-
-function applyEngagementDefaults(p: Partial<EngagementPillarData>): EngagementPillarData {
-  return {
-    touchpoints: Array.isArray(p.touchpoints) ? p.touchpoints : [],
-    rituels: Array.isArray(p.rituels) ? p.rituels : [],
-    principesCommunautaires: p.principesCommunautaires ?? { principes: [], tabous: [] },
-    gamification: Array.isArray(p.gamification) ? p.gamification : [],
-    aarrr: p.aarrr ?? { acquisition: "", activation: "", retention: "", revenue: "", referral: "" },
-    kpis: Array.isArray(p.kpis) ? p.kpis : [],
-  };
-}

@@ -12,80 +12,16 @@ import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
 
 // ---------------------------------------------------------------------------
-// Types
+// Types — re-exported from Zod schemas (source of truth)
 // ---------------------------------------------------------------------------
 
-export interface MicroSwot {
-  variableId: string;
-  variableLabel: string;
-  strengths: string[];
-  weaknesses: string[];
-  opportunities: string[];
-  threats: string[];
-  riskLevel: "low" | "medium" | "high";
-  commentary: string;
-}
+import type {
+  MicroSwot,
+  RiskAuditResult,
+  TrackAuditResult,
+} from "~/lib/types/pillar-schemas";
 
-export interface RiskAuditResult {
-  microSwots: MicroSwot[];
-  globalSwot: {
-    strengths: string[];
-    weaknesses: string[];
-    opportunities: string[];
-    threats: string[];
-  };
-  riskScore: number; // 0-100
-  riskScoreJustification: string;
-  probabilityImpactMatrix: Array<{
-    risk: string;
-    probability: "low" | "medium" | "high";
-    impact: "low" | "medium" | "high";
-    priority: number; // 1-5
-  }>;
-  mitigationPriorities: Array<{
-    risk: string;
-    action: string;
-    urgency: "immediate" | "short_term" | "medium_term";
-    effort: "low" | "medium" | "high";
-  }>;
-  summary: string;
-}
-
-export interface TrackAuditResult {
-  triangulation: {
-    internalData: string;
-    marketData: string;
-    customerData: string;
-    synthesis: string;
-  };
-  hypothesisValidation: Array<{
-    variableId: string;
-    hypothesis: string;
-    status: "validated" | "invalidated" | "to_test";
-    evidence: string;
-  }>;
-  marketReality: {
-    macroTrends: string[];
-    weakSignals: string[];
-    emergingPatterns: string[];
-  };
-  tamSamSom: {
-    tam: { value: string; description: string };
-    sam: { value: string; description: string };
-    som: { value: string; description: string };
-    methodology: string;
-  };
-  competitiveBenchmark: Array<{
-    competitor: string;
-    strengths: string[];
-    weaknesses: string[];
-    marketShare: string;
-  }>;
-  brandMarketFitScore: number; // 0-100
-  brandMarketFitJustification: string;
-  strategicRecommendations: string[];
-  summary: string;
-}
+export type { MicroSwot, RiskAuditResult, TrackAuditResult };
 
 // ---------------------------------------------------------------------------
 // Public API — Risk Audit (Pillar R)

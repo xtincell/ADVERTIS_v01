@@ -272,6 +272,44 @@ export const marketStudyRouter = createTRPCRouter({
     }),
 
   /**
+   * Complete the market study standalone (does NOT advance the pipeline phase).
+   * Used from the dedicated /strategy/[id]/market-study page.
+   */
+  completeStandalone: protectedProcedure
+    .input(z.object({ strategyId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.strategyId },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      // Mark study as complete but don't change pipeline phase
+      const marketStudy = await ctx.db.marketStudy.findUnique({
+        where: { strategyId: input.strategyId },
+      });
+
+      if (!marketStudy) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Étude de marché non trouvée",
+        });
+      }
+
+      const updated = await ctx.db.marketStudy.update({
+        where: { strategyId: input.strategyId },
+        data: { status: "complete" },
+      });
+
+      return updated;
+    }),
+
+  /**
    * Complete the market study and advance to audit-t.
    */
   complete: protectedProcedure

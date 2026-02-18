@@ -284,3 +284,60 @@ html {
     background: oklch(0.45 0 0);
   }
 }
+
+/* ============================================
+   Page Transition Animation
+   ============================================ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-page-enter {
+  animation: fadeInUp 0.3s ease-out;
+}
+
+/* ============================================
+   Card Hover Polish
+   ============================================ */
+
+[data-slot="card"] {
+  transition: box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+[data-slot="card"]:hover {
+  box-shadow: 0 4px 16px oklch(0 0 0 / 6%);
+}
+
+.dark [data-slot="card"]:hover {
+  box-shadow: 0 4px 16px oklch(0 0 0 / 20%);
+}
+
+/* ============================================
+   Subtle Background Texture (main content)
+   ============================================ */
+
+.bg-dotgrid {
+  background-image: radial-gradient(circle, oklch(0.88 0 0) 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+}
+
+.dark .bg-dotgrid {
+  background-image: radial-gradient(circle, oklch(0.20 0 0) 0.5px, transparent 0.5px);
+  background-size: 20px 20px;
+}
+
+/* ============================================
+   Sidebar Transition Refinement
+   ============================================ */
+
+.sidebar-transition {
+  transition: width 300ms ease-in-out;
+}

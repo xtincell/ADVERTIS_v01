@@ -5,6 +5,9 @@ import { analyticsRouter } from "~/server/api/routers/analytics";
 import { documentRouter } from "~/server/api/routers/document";
 import { cockpitRouter } from "~/server/api/routers/cockpit";
 import { marketStudyRouter } from "~/server/api/routers/market-study";
+import { moduleRouter } from "~/server/api/routers/module";
+import { widgetRouter } from "~/server/api/routers/widget";
+import { integrationRouter } from "~/server/api/routers/integration";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -20,6 +23,9 @@ export const appRouter = createTRPCRouter({
   document: documentRouter,
   cockpit: cockpitRouter,
   marketStudy: marketStudyRouter,
+  module: moduleRouter,
+  widget: widgetRouter,
+  integration: integrationRouter,
 });
 
 // export type definition of API

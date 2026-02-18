@@ -1,0 +1,21 @@
+{
+  "name": "ADVERTIS",
+  "short_name": "ADVERTIS",
+  "description": "Plateforme SaaS de fiches de marque intelligentes en 8 piliers",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#1a2e1f",
+  "theme_color": "#c45a3c",
+  "icons": [
+    {
+      "src": "/icon",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-icon",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

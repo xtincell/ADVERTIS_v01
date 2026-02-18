@@ -19,6 +19,7 @@ import { generateImplementationData } from "~/server/services/implementation-gen
 import { PILLAR_TYPES } from "~/lib/constants";
 import type { RiskAuditResult, TrackAuditResult } from "~/server/services/audit-generation";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
+import { parsePillarContent } from "~/lib/types/pillar-parsers";
 
 // Allow up to 2 minutes for AI generation (Vercel serverless timeout)
 export const maxDuration = 120;
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
       );
 
-      generatedContent = JSON.parse(JSON.stringify(riskResult));
+      generatedContent = riskResult;
       summary = `Score de risque : ${riskResult.riskScore}/100 — ${riskResult.microSwots.length} micro-SWOTs analysés. ${riskResult.summary}`;
     } else if (pillarType === "T") {
       // ── TRACK AUDIT ──
@@ -170,22 +171,7 @@ export async function POST(req: NextRequest) {
       const riskPillar = strategy.pillars.find(
         (p) => p.type === "R" && p.status === "complete",
       );
-      const riskResults: RiskAuditResult = riskPillar?.content
-        ? (riskPillar.content as unknown as RiskAuditResult)
-        : {
-            microSwots: [],
-            globalSwot: {
-              strengths: [],
-              weaknesses: [],
-              opportunities: [],
-              threats: [],
-            },
-            riskScore: 50,
-            riskScoreJustification: "Audit R non disponible",
-            probabilityImpactMatrix: [],
-            mitigationPriorities: [],
-            summary: "",
-          };
+      const { data: riskResults } = parsePillarContent<RiskAuditResult>("R", riskPillar?.content);
 
       // Load market study synthesis if available (enriches Track with real data)
       const marketStudy = await db.marketStudy.findUnique({
@@ -206,7 +192,7 @@ export async function POST(req: NextRequest) {
         marketStudyData,
       );
 
-      generatedContent = JSON.parse(JSON.stringify(trackResult));
+      generatedContent = trackResult;
       summary = `Brand-Market Fit : ${trackResult.brandMarketFitScore}/100 — TAM: ${trackResult.tamSamSom.tam.value}. ${trackResult.summary}`;
     } else if (pillarType === "I") {
       // ── IMPLEMENTATION DATA ──
@@ -232,36 +218,8 @@ export async function POST(req: NextRequest) {
         (p) => p.type === "T" && p.status === "complete",
       );
 
-      const riskResults: RiskAuditResult = riskPillar?.content
-        ? (riskPillar.content as unknown as RiskAuditResult)
-        : {
-            microSwots: [],
-            globalSwot: { strengths: [], weaknesses: [], opportunities: [], threats: [] },
-            riskScore: 50,
-            riskScoreJustification: "Audit R non disponible",
-            probabilityImpactMatrix: [],
-            mitigationPriorities: [],
-            summary: "",
-          };
-
-      const trackResults: TrackAuditResult = trackPillar?.content
-        ? (trackPillar.content as unknown as TrackAuditResult)
-        : {
-            triangulation: { internalData: "", marketData: "", customerData: "", synthesis: "" },
-            hypothesisValidation: [],
-            marketReality: { macroTrends: [], weakSignals: [], emergingPatterns: [] },
-            tamSamSom: {
-              tam: { value: "", description: "" },
-              sam: { value: "", description: "" },
-              som: { value: "", description: "" },
-              methodology: "",
-            },
-            competitiveBenchmark: [],
-            brandMarketFitScore: 50,
-            brandMarketFitJustification: "Audit T non disponible",
-            strategicRecommendations: [],
-            summary: "",
-          };
+      const { data: riskResults } = parsePillarContent<RiskAuditResult>("R", riskPillar?.content);
+      const { data: trackResults } = parsePillarContent<TrackAuditResult>("T", trackPillar?.content);
 
       const implResult = await generateImplementationData(
         interviewData,
@@ -272,7 +230,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
       );
 
-      generatedContent = JSON.parse(JSON.stringify(implResult));
+      generatedContent = implResult;
       summary = `Score de cohérence : ${implResult.coherenceScore}/100. ${implResult.executiveSummary.substring(0, 200)}`;
     } else if (pillarType === "S") {
       // ── SYNTHÈSE STRATÉGIQUE (Pillar S) ──
@@ -294,7 +252,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
       );
 
-      generatedContent = JSON.parse(JSON.stringify(syntheseResult));
+      generatedContent = syntheseResult;
       summary = `Score cohérence : ${syntheseResult.scoreCoherence}/100. ${syntheseResult.syntheseExecutive.substring(0, 200)}`;
     } else {
       // ── STANDARD PILLAR (A, D, V, E) — structured JSON ──
@@ -306,7 +264,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
       );
 
-      generatedContent = JSON.parse(JSON.stringify(jsonContent));
+      generatedContent = jsonContent;
 
       // Extract a meaningful summary from the structured JSON
       const obj = jsonContent as Record<string, unknown>;
@@ -327,7 +285,24 @@ export async function POST(req: NextRequest) {
     }
 
     // ---------------------------------------------------------------------------
-    // 8. Save generated content and mark as complete
+    // 8. Snapshot current content before overwriting (version history)
+    // ---------------------------------------------------------------------------
+    if (targetPillar.content != null) {
+      const source = targetPillar.generatedAt ? "regeneration" : "generation";
+      await db.pillarVersion.create({
+        data: {
+          pillarId: targetPillar.id,
+          version: targetPillar.version,
+          content: targetPillar.content,
+          summary: targetPillar.summary,
+          source,
+          createdBy: session.user.id,
+        },
+      });
+    }
+
+    // ---------------------------------------------------------------------------
+    // 9. Save generated content and mark as complete
     // ---------------------------------------------------------------------------
     const updatedPillar = await db.pillar.update({
       where: { id: targetPillar.id },
@@ -337,11 +312,12 @@ export async function POST(req: NextRequest) {
         generatedAt: new Date(),
         errorMessage: null,
         summary: summary.substring(0, 500),
+        version: { increment: 1 },
       },
     });
 
     // ---------------------------------------------------------------------------
-    // 9. Phase advancement logic (new 9-phase pipeline)
+    // 10. Phase advancement logic (new 9-phase pipeline)
     // ---------------------------------------------------------------------------
     // R complete → advance to market-study
     if (pillarType === "R") {
@@ -405,7 +381,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     // ---------------------------------------------------------------------------
-    // 10. Handle errors
+    // 11. Handle errors
     // ---------------------------------------------------------------------------
     console.error(
       `[AI Generation] Error generating pillar ${pillarType}:`,

@@ -21,6 +21,9 @@ import {
   X,
   AlertCircle,
   Sparkles,
+  Globe,
+  Info,
+  History,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -35,6 +38,7 @@ import {
 import type { PillarType, Phase } from "~/lib/constants";
 import { PhaseBadge } from "~/components/strategy/phase-timeline";
 import { ExportDialog } from "~/components/strategy/export-dialog";
+import { VersionHistoryPanel } from "~/components/strategy/version-history-panel";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -222,6 +226,9 @@ function PillarSection({
   pillar,
   strategyId,
   defaultOpen,
+  onRegenerate,
+  isRegenerating,
+  onShowHistory,
 }: {
   pillar: {
     id: string;
@@ -231,9 +238,13 @@ function PillarSection({
     summary: string | null;
     content: unknown;
     errorMessage: string | null;
+    version: number;
   };
   strategyId: string;
   defaultOpen: boolean;
+  onRegenerate?: (pillarType: string) => void;
+  isRegenerating?: boolean;
+  onShowHistory?: (pillarId: string, pillarType: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const config = PILLAR_CONFIG[pillar.type as PillarType];
@@ -317,18 +328,29 @@ function PillarSection({
                     Modifier
                   </Link>
                 </Button>
-                {pillar.content != null && (
+                {pillar.content != null && onRegenerate && (
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => {
-                      toast.info(
-                        "La régénération sera bientôt disponible. Utilisez la page de génération pour régénérer un pilier.",
-                      );
-                    }}
+                    onClick={() => onRegenerate(pillar.type)}
+                    disabled={isRegenerating}
                   >
-                    <RefreshCw className="mr-1.5 size-3.5" />
-                    Régénérer
+                    {isRegenerating ? (
+                      <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1.5 size-3.5" />
+                    )}
+                    {isRegenerating ? "Régénération..." : "Régénérer"}
+                  </Button>
+                )}
+                {pillar.version > 1 && onShowHistory && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onShowHistory(pillar.id, pillar.type)}
+                  >
+                    <History className="mr-1.5 size-3.5" />
+                    v{pillar.version}
                   </Button>
                 )}
               </div>
@@ -473,6 +495,49 @@ export default function StrategyDetailPage(props: {
     deleteMutation.mutate({ id: strategyId });
   }, [deleteMutation, strategyId]);
 
+  // Regeneration state
+  const [regeneratingPillar, setRegeneratingPillar] = useState<string | null>(null);
+  // Version history state
+  const [historyPillar, setHistoryPillar] = useState<{
+    id: string;
+    type: string;
+  } | null>(null);
+
+  const handleRegenerate = useCallback(
+    async (pillarType: string) => {
+      if (regeneratingPillar) return;
+      setRegeneratingPillar(pillarType);
+      try {
+        const res = await fetch("/api/ai/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ strategyId, pillarType }),
+        });
+        const data = await res.json() as { success: boolean; error?: string };
+        if (data.success) {
+          toast.success(
+            `Pilier ${pillarType} régénéré avec succès. L'ancienne version a été sauvegardée dans l'historique.`,
+          );
+          void refetch();
+        } else {
+          toast.error(data.error ?? "Erreur lors de la régénération.");
+        }
+      } catch {
+        toast.error("Erreur réseau lors de la régénération.");
+      } finally {
+        setRegeneratingPillar(null);
+      }
+    },
+    [regeneratingPillar, strategyId, refetch],
+  );
+
+  const handleShowHistory = useCallback(
+    (pillarId: string, pillarType: string) => {
+      setHistoryPillar({ id: pillarId, type: pillarType });
+    },
+    [],
+  );
+
   // Loading
   if (isLoading || !strategy) {
     return <StrategyDetailSkeleton />;
@@ -482,6 +547,11 @@ export default function StrategyDetailPage(props: {
   const isArchived = strategy.status === "archived";
   const sortedPillars = [...strategy.pillars].sort(
     (a, b) => a.order - b.order,
+  );
+
+  // Find pillars marked as stale
+  const stalePillars = strategy.pillars.filter(
+    (p: { staleReason?: string | null }) => p.staleReason,
   );
 
   return (
@@ -627,6 +697,16 @@ export default function StrategyDetailPage(props: {
           </AlertDialogContent>
         </AlertDialog>
 
+        {/* Market Study button */}
+        {!isArchived && (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/strategy/${strategyId}/market-study`}>
+              <Globe className="mr-1.5 size-3.5" />
+              Étude de Marché
+            </Link>
+          </Button>
+        )}
+
         {/* Generate / Pipeline button */}
         {!isArchived && (
           <Button size="sm" asChild>
@@ -648,6 +728,50 @@ export default function StrategyDetailPage(props: {
         )}
       </div>
 
+      {/* Post-completion banner */}
+      {isComplete && (
+        <div className="flex items-center gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-800 dark:bg-blue-950/30">
+          <Info className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            Fiche terminée — Vous pouvez modifier n&apos;importe quel pilier à
+            tout moment en cliquant sur &laquo;&nbsp;Modifier&nbsp;&raquo;.
+          </p>
+        </div>
+      )}
+
+      {/* Stale pillar notifications */}
+      {stalePillars.length > 0 && (
+        <div className="space-y-2">
+          {stalePillars.map((pillar) => (
+            <div
+              key={pillar.id}
+              className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950/30"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
+                  Pilier {pillar.type} ({PILLAR_CONFIG[pillar.type as PillarType]?.title}) — Mise à jour recommandée
+                </p>
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  {pillar.staleReason}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="shrink-0 text-amber-700 border-amber-300"
+              >
+                <Link href={`/strategy/${strategyId}/pillar/${pillar.type}/edit`}>
+                  <Edit3 className="mr-1 h-3 w-3" />
+                  Mettre à jour
+                </Link>
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Main content: Pillars + Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-6">
         {/* Pillar sections */}
@@ -658,6 +782,9 @@ export default function StrategyDetailPage(props: {
               pillar={pillar}
               strategyId={strategyId}
               defaultOpen={isComplete}
+              onRegenerate={(pt) => void handleRegenerate(pt)}
+              isRegenerating={regeneratingPillar === pillar.type}
+              onShowHistory={handleShowHistory}
             />
           ))}
         </div>
@@ -667,6 +794,22 @@ export default function StrategyDetailPage(props: {
           <PillarNavSidebar pillars={sortedPillars} />
         </div>
       </div>
+
+      {/* Version history panel */}
+      {historyPillar && (
+        <VersionHistoryPanel
+          pillarId={historyPillar.id}
+          pillarType={historyPillar.type}
+          open={!!historyPillar}
+          onOpenChange={(open) => {
+            if (!open) setHistoryPillar(null);
+          }}
+          onRestored={() => {
+            setHistoryPillar(null);
+            void refetch();
+          }}
+        />
+      )}
     </div>
   );
 }

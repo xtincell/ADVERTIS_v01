@@ -15,6 +15,7 @@ import {
 import { PILLAR_CONFIG, type PillarType } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import type { RiskAuditResult, TrackAuditResult } from "./audit-generation";
+import { parsePillarContent } from "~/lib/types/pillar-parsers";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -670,7 +671,7 @@ function renderRiskContent(content: unknown): React.ReactElement[] {
   const out: React.ReactElement[] = [];
   if (!content || typeof content !== "object") return renderTextContent(content);
 
-  const d = content as Partial<RiskAuditResult>;
+  const { data: d } = parsePillarContent<RiskAuditResult>("R", content);
 
   // Risk Score
   if (d.riskScore != null) {
@@ -759,7 +760,7 @@ function renderTrackContent(content: unknown): React.ReactElement[] {
   const out: React.ReactElement[] = [];
   if (!content || typeof content !== "object") return renderTextContent(content);
 
-  const d = content as Partial<TrackAuditResult>;
+  const { data: d } = parsePillarContent<TrackAuditResult>("T", content);
 
   // Brand-Market Fit Score
   if (d.brandMarketFitScore != null) {
@@ -895,7 +896,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
   const out: React.ReactElement[] = [];
   if (!content || typeof content !== "object") return renderTextContent(content);
 
-  const d = content as Partial<ImplementationData>;
+  const { data: d } = parsePillarContent<ImplementationData>("I", content);
 
   // Executive Summary
   if (d.executiveSummary) {

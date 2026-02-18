@@ -26,6 +26,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
+import {
+  AdvertisMonogram,
+  AdvertisWordmark,
+} from "~/components/brand/advertis-logo";
 
 interface NavItem {
   label: string;
@@ -73,15 +77,15 @@ function NavLink({
       onClick={onClick}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
         "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
         isActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : "text-sidebar-foreground/70",
+          ? "bg-sidebar-accent font-semibold text-sidebar-accent-foreground"
+          : "font-medium text-sidebar-foreground/70",
         collapsed && "justify-center px-2",
       )}
     >
-      <Icon className="size-5 shrink-0" />
+      <Icon className="size-[18px] shrink-0" />
       {!collapsed && <span>{item.label}</span>}
     </Link>
   );
@@ -110,16 +114,17 @@ function SidebarContent({
 }) {
   return (
     <div className="flex h-full flex-col">
-      {/* Logo / Title */}
+      {/* Logo / Brand Mark */}
       <div className="flex h-16 items-center border-b border-sidebar-border px-4">
         {collapsed ? (
-          <span className="mx-auto text-lg font-bold text-sidebar-primary">
-            A
-          </span>
+          <div className="mx-auto">
+            <AdvertisMonogram size={28} variant="color" />
+          </div>
         ) : (
-          <span className="text-xl font-bold tracking-tight text-sidebar-primary">
-            ADVERTIS
-          </span>
+          <div className="flex items-center gap-2.5">
+            <AdvertisMonogram size={24} variant="color" />
+            <AdvertisWordmark className="text-lg text-sidebar-primary" />
+          </div>
         )}
       </div>
 
@@ -140,9 +145,9 @@ function SidebarContent({
       {/* Footer */}
       <div className="border-t border-sidebar-border px-3 py-3">
         {!collapsed && (
-          <p className="text-xs text-sidebar-foreground/50">
-            ADVERTIS v1.0
-          </p>
+          <span className="inline-flex items-center rounded-full bg-sidebar-accent/50 px-2.5 py-0.5 text-[10px] font-medium text-sidebar-foreground/50">
+            v1.0
+          </span>
         )}
       </div>
     </div>
@@ -228,7 +233,7 @@ export default function Sidebar() {
       {/* Desktop sidebar */}
       <aside
         className={cn(
-          "hidden h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 lg:flex",
+          "hidden h-screen flex-col bg-sidebar text-sidebar-foreground sidebar-transition lg:flex",
           collapsed ? "w-16" : "w-64",
         )}
         aria-label="Barre latérale de navigation"

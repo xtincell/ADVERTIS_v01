@@ -7,6 +7,7 @@ import { generateText } from "ai";
 import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
 import type { RiskAuditResult, TrackAuditResult } from "./audit-generation";
 import type { ImplementationData } from "~/lib/types/implementation-data";
+import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
 import { PILLAR_CONFIG } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
 
@@ -243,6 +244,80 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
       { "outil": "Nom de l'outil", "usage": "Usage principal", "cout": "Coût mensuel" }
     ]
   },
+  "brandPlatform": {
+    "purpose": "La raison d'être profonde de la marque (le WHY de Simon Sinek)",
+    "vision": "Ce que la marque veut accomplir dans le monde à 10 ans",
+    "mission": "Comment la marque concrétise sa vision au quotidien",
+    "values": ["valeur1 — explication", "valeur2 — explication", "valeur3 — explication"],
+    "personality": "Description de la personnalité de marque (3-5 traits + tonalité)",
+    "territory": "Le territoire d'expression exclusif de la marque (univers sémantique, visuel, émotionnel)",
+    "tagline": "La signature de marque (baseline) — concise, mémorable, différenciante"
+  },
+  "copyStrategy": {
+    "promise": "La promesse centrale faite au consommateur",
+    "rtb": ["Reason to believe 1 — preuve tangible", "Reason to believe 2"],
+    "consumerBenefit": "Le bénéfice consommateur principal (fonctionnel + émotionnel)",
+    "tone": "Le ton de communication (registre, niveau de langue, attitude)",
+    "constraint": "Les contraintes légales, réglementaires ou brand guidelines à respecter"
+  },
+  "bigIdea": {
+    "concept": "Le concept créatif central — l'idée maîtresse de la campagne",
+    "mechanism": "Le mécanisme créatif de déploiement (comment l'idée prend vie)",
+    "insightLink": "Le lien avec l'insight consommateur qui fonde cette idée",
+    "declinaisons": [
+      { "support": "Spot TV/Vidéo", "description": "Déclinaison du concept sur ce support" },
+      { "support": "Social Media", "description": "Déclinaison du concept sur ce support" },
+      { "support": "Affichage/Print", "description": "Déclinaison du concept sur ce support" },
+      { "support": "Digital/Web", "description": "Déclinaison du concept sur ce support" },
+      { "support": "Activation terrain", "description": "Déclinaison du concept sur ce support" }
+    ]
+  },
+  "activationDispositif": {
+    "owned": [
+      { "canal": "Canal owned", "role": "Rôle dans le dispositif", "budget": "Budget alloué" }
+    ],
+    "earned": [
+      { "canal": "Canal earned", "role": "Rôle dans le dispositif", "budget": "Budget alloué" }
+    ],
+    "paid": [
+      { "canal": "Canal paid", "role": "Rôle dans le dispositif", "budget": "Budget alloué" }
+    ],
+    "shared": [
+      { "canal": "Canal shared", "role": "Rôle dans le dispositif", "budget": "Budget alloué" }
+    ],
+    "parcoursConso": "Description du parcours consommateur cross-canal (awareness → consideration → purchase → loyalty)"
+  },
+  "governance": {
+    "comiteStrategique": { "frequence": "Trimestriel", "participants": "Direction + Agence", "objectif": "Validation des orientations stratégiques" },
+    "comitePilotage": { "frequence": "Mensuel", "participants": "Équipe projet + Agence", "objectif": "Suivi des KPIs et ajustements tactiques" },
+    "pointsOperationnels": { "frequence": "Hebdomadaire", "participants": "Équipe opérationnelle", "objectif": "Coordination des actions en cours" },
+    "processValidation": "Description du circuit de validation (brief → concept → exé → BAT → diffusion)",
+    "delaisStandards": [
+      { "livrable": "Type de livrable", "delai": "Délai standard" }
+    ]
+  },
+  "workstreams": [
+    {
+      "name": "Nom du stream de travail",
+      "objectif": "Objectif principal du stream",
+      "livrables": ["Livrable 1", "Livrable 2"],
+      "frequence": "Fréquence de livraison",
+      "kpis": ["KPI de suivi 1"]
+    }
+  ],
+  "brandArchitecture": {
+    "model": "Modèle d'architecture (Branded House / House of Brands / Endorsed / Hybrid)",
+    "hierarchy": [
+      { "brand": "Nom de la marque/sous-marque", "level": "corporate / master / sub / product", "role": "Rôle dans le portefeuille" }
+    ],
+    "coexistenceRules": "Règles de coexistence entre marques (lockup, hiérarchie visuelle, contextes d'utilisation)"
+  },
+  "guidingPrinciples": {
+    "dos": ["Ce que la marque DOIT faire — principe directeur 1", "Principe directeur 2"],
+    "donts": ["Ce que la marque ne doit JAMAIS faire — interdit 1", "Interdit 2"],
+    "communicationPrinciples": ["Principe de communication 1", "Principe 2"],
+    "coherenceCriteria": ["Critère de cohérence à vérifier 1", "Critère 2"]
+  },
   "coherenceScore": 75,
   "executiveSummary": "Résumé exécutif en 5-10 phrases..."
 }
@@ -259,98 +334,26 @@ RÈGLES CRITIQUES :
 - Le budget DOIT être ventilé par poste ET par phase
 - L'équipe DOIT inclure les recrutements nécessaires
 - Le plan de lancement DOIT avoir 3-5 phases avec des critères go/no-go
-- Le playbook opérationnel DOIT inclure les rythmes quotidien, hebdomadaire et mensuel`,
+- Le playbook opérationnel DOIT inclure les rythmes quotidien, hebdomadaire et mensuel
+- brandPlatform DOIT inclure purpose, vision, mission, values (3-5), personality, territory ET tagline — chaque champ doit être spécifique à la marque
+- copyStrategy suit le format standard agence : promesse + RTB (2-3 preuves) + bénéfice + ton + contrainte
+- bigIdea DOIT être déclinable sur 5+ supports minimum (TV, social, print, digital, terrain)
+- activationDispositif DOIT couvrir les 4 catégories POEM (owned, earned, paid, shared) + parcours conso
+- governance DOIT inclure 3 niveaux de comités (stratégique, pilotage, opérationnel) + process de validation
+- workstreams : minimum 3 streams avec livrables concrets, fréquences et KPIs
+- brandArchitecture : identifier le modèle approprié et la hiérarchie des marques
+- guidingPrinciples : minimum 3 do's et 3 don'ts + principes de communication`,
     prompt: `Génère les données d'implémentation structurées pour la marque "${brandName}" dans le secteur "${sector || "Non spécifié"}".
 
 Synthétise toutes les données fournies en un ImplementationData complet et actionable.`,
-    maxOutputTokens: 14000,
+    maxOutputTokens: 18000,
     temperature: 0.3,
   });
 
-  // Parse the response
-  const parsed = parseJsonObject<ImplementationData>(text);
-
-  // Apply defaults for any missing fields
-  return {
-    brandIdentity: parsed.brandIdentity ?? {
-      archetype: "",
-      purpose: "",
-      vision: "",
-      values: [],
-      narrative: "",
-    },
-    positioning: parsed.positioning ?? {
-      statement: "",
-      differentiators: [],
-      toneOfVoice: "",
-      personas: [],
-      competitors: [],
-    },
-    valueArchitecture: parsed.valueArchitecture ?? {
-      productLadder: [],
-      valueProposition: "",
-      unitEconomics: { cac: "", ltv: "", ratio: "", notes: "" },
-    },
-    engagementStrategy: parsed.engagementStrategy ?? {
-      touchpoints: [],
-      rituals: [],
-      aarrr: {
-        acquisition: "",
-        activation: "",
-        retention: "",
-        revenue: "",
-        referral: "",
-      },
-      kpis: [],
-    },
-    riskSynthesis: parsed.riskSynthesis ?? {
-      riskScore: riskAudit.riskScore,
-      globalSwot: riskAudit.globalSwot,
-      topRisks: [],
-    },
-    marketValidation: parsed.marketValidation ?? {
-      brandMarketFitScore: trackAudit.brandMarketFitScore,
-      tam: trackAudit.tamSamSom.tam.value,
-      sam: trackAudit.tamSamSom.sam.value,
-      som: trackAudit.tamSamSom.som.value,
-      trends: [],
-      recommendations: [],
-    },
-    strategicRoadmap: parsed.strategicRoadmap ?? {
-      sprint90Days: [],
-      year1Priorities: [],
-      year3Vision: "",
-    },
-    campaigns: parsed.campaigns ?? undefined,
-    budgetAllocation: parsed.budgetAllocation ?? undefined,
-    teamStructure: parsed.teamStructure ?? undefined,
-    launchPlan: parsed.launchPlan ?? undefined,
-    operationalPlaybook: parsed.operationalPlaybook ?? undefined,
-    coherenceScore: parsed.coherenceScore ?? 50,
-    executiveSummary: parsed.executiveSummary ?? "",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function parseJsonObject<T>(responseText: string): Partial<T> {
-  let jsonString = responseText.trim();
-
-  // Remove markdown code block if present
-  const jsonMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch?.[1]) {
-    jsonString = jsonMatch[1].trim();
+  // Parse + validate with Zod schema (applies defaults for missing fields)
+  const { data, errors } = parseAiGeneratedContent<ImplementationData>("I", text);
+  if (errors?.length) {
+    console.warn("[Implementation] Pillar I validation issues:", errors);
   }
-
-  try {
-    return JSON.parse(jsonString) as Partial<T>;
-  } catch {
-    console.error(
-      "[Implementation] Failed to parse JSON:",
-      responseText.substring(0, 200),
-    );
-    return {} as Partial<T>;
-  }
+  return data;
 }

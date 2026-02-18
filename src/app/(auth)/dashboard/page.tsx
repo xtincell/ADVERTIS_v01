@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { motion } from "framer-motion";
 import {
   Plus,
-  BarChart3,
-  Clock,
-  CheckCircle2,
-  FolderOpen,
   AlertTriangle,
+  Activity,
+  PieChart,
+  GitBranch,
+  Heart,
+  ArrowRight,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
-import { PILLAR_CONFIG, PILLAR_TYPES, SECTORS } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -25,268 +24,88 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
-import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
+import { AdvertisMonogram } from "~/components/brand/advertis-logo";
+
+// Dashboard components
+import { AgencyKpiBar } from "~/components/dashboard/agency-kpi-bar";
+import { BrandTable } from "~/components/dashboard/brand-table";
+import { AlertPanel } from "~/components/dashboard/alert-panel";
+import { BrandDetailPanel } from "~/components/dashboard/brand-detail-panel";
+
+// Visualisations
+import { SectorDonut } from "~/components/analytics/sector-donut";
+import { PhasePipeline } from "~/components/analytics/phase-pipeline";
+import { HealthHeatmap } from "~/components/analytics/health-heatmap";
+import { ActivityTimeline } from "~/components/analytics/activity-timeline";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function getStatusBadge(status: string) {
-  switch (status) {
-    case "draft":
-      return (
-        <Badge variant="secondary" className="text-xs">
-          Brouillon
-        </Badge>
-      );
-    case "generating":
-      return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 text-xs">
-          En cours
-        </Badge>
-      );
-    case "complete":
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-          Terminée
-        </Badge>
-      );
-    case "archived":
-      return (
-        <Badge variant="outline" className="text-muted-foreground text-xs">
-          Archivée
-        </Badge>
-      );
-    default:
-      return <Badge variant="secondary">{status}</Badge>;
-  }
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Bonjour";
+  if (hour < 18) return "Bon après-midi";
+  return "Bonsoir";
 }
 
-function getSectorLabel(sectorValue: string | null | undefined): string {
-  if (!sectorValue) return "";
-  const found = SECTORS.find((s) => s.value === sectorValue);
-  return found ? found.label : sectorValue;
-}
+// Stagger animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 },
+  },
+};
 
-function getRelativeDate(date: Date | string): string {
-  const now = new Date();
-  const d = new Date(date);
-  const diffMs = now.getTime() - d.getTime();
-  const diffSeconds = Math.floor(diffMs / 1000);
-  const diffMinutes = Math.floor(diffSeconds / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
-
-  if (diffMs < 0) {
-    // Future date
-    const absDiffSeconds = Math.abs(diffSeconds);
-    const absDiffMinutes = Math.floor(absDiffSeconds / 60);
-    const absDiffHours = Math.floor(absDiffMinutes / 60);
-    const absDiffDays = Math.floor(absDiffHours / 24);
-    if (absDiffSeconds < 60) return "dans un instant";
-    if (absDiffMinutes < 60)
-      return `dans ${absDiffMinutes} minute${absDiffMinutes > 1 ? "s" : ""}`;
-    if (absDiffHours < 24)
-      return `dans ${absDiffHours} heure${absDiffHours > 1 ? "s" : ""}`;
-    return `dans ${absDiffDays} jour${absDiffDays > 1 ? "s" : ""}`;
-  }
-
-  if (diffSeconds < 60) return "à l'instant";
-  if (diffMinutes < 60)
-    return `il y a ${diffMinutes} minute${diffMinutes > 1 ? "s" : ""}`;
-  if (diffHours < 24)
-    return `il y a ${diffHours} heure${diffHours > 1 ? "s" : ""}`;
-  if (diffDays < 7)
-    return `il y a ${diffDays} jour${diffDays > 1 ? "s" : ""}`;
-  if (diffWeeks < 5)
-    return `il y a ${diffWeeks} semaine${diffWeeks > 1 ? "s" : ""}`;
-  return `il y a ${diffMonths} mois`;
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: "easeOut" as const },
+  },
+};
 
 // ---------------------------------------------------------------------------
-// Metric Card
+// Loading skeleton
 // ---------------------------------------------------------------------------
 
-function MetricCard({
-  title,
-  value,
-  icon: Icon,
-  isLoading,
-}: {
-  title: string;
-  value: number;
-  icon: React.ComponentType<{ className?: string }>;
-  isLoading: boolean;
-}) {
+function DashboardSkeleton() {
   return (
-    <Card>
-      <CardContent className="flex items-center gap-4 pt-6">
-        <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <Icon className="size-6 text-primary" />
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
         <div>
-          {isLoading ? (
-            <Skeleton className="h-8 w-12 mb-1" />
-          ) : (
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
-          )}
-          <p className="text-sm text-muted-foreground">{title}</p>
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="mt-1.5 h-7 w-56" />
+          <Skeleton className="mt-2 h-4 w-72" />
         </div>
-      </CardContent>
-    </Card>
-  );
-}
+        <Skeleton className="h-9 w-36" />
+      </div>
 
-// ---------------------------------------------------------------------------
-// Strategy Card
-// ---------------------------------------------------------------------------
+      {/* KPI bar */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className="flex flex-col items-center gap-3 pt-5 pb-4">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-14 w-14 rounded-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-function StrategyCard({
-  strategy,
-}: {
-  strategy: {
-    id: string;
-    name: string;
-    brandName: string;
-    sector: string | null;
-    status: string;
-    coherenceScore: number | null;
-    updatedAt: Date;
-    pillars: { id: string; type: string; status: string }[];
-    _count: { pillars: number };
-  };
-}) {
-  const router = useRouter();
+      {/* Charts row */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Skeleton className="h-64 rounded-lg" />
+        <Skeleton className="h-64 rounded-lg" />
+      </div>
 
-  return (
-    <Card
-      role="button"
-      tabIndex={0}
-      className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-      onClick={() => router.push(`/strategy/${strategy.id}`)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          router.push(`/strategy/${strategy.id}`);
-        }
-      }}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0 flex-1">
-            <CardTitle className="text-lg truncate">
-              {strategy.brandName}
-            </CardTitle>
-            <CardDescription className="truncate">
-              {strategy.name}
-            </CardDescription>
-          </div>
-          <div className="flex items-center gap-2 shrink-0 ml-2">
-            {strategy.coherenceScore !== null && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex size-10 items-center justify-center rounded-full border-2 border-primary/30 text-sm font-bold text-primary">
-                    {strategy.coherenceScore}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>Score de cohérence</TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Sector + Status */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {getStatusBadge(strategy.status)}
-          {strategy.sector && (
-            <Badge variant="outline" className="text-xs">
-              {getSectorLabel(strategy.sector)}
-            </Badge>
-          )}
-        </div>
-
-        {/* Pillar dots */}
-        <div className="flex items-center gap-1.5">
-          {strategy.pillars.map((pillar) => {
-            const config = PILLAR_CONFIG[pillar.type as PillarType];
-            return (
-              <Tooltip key={pillar.id}>
-                <TooltipTrigger asChild>
-                  <div
-                    className="size-3 rounded-full transition-colors"
-                    style={{
-                      backgroundColor:
-                        pillar.status === "complete"
-                          ? config?.color ?? "#22c55e"
-                          : pillar.status === "error"
-                            ? "#ef4444"
-                            : pillar.status === "generating"
-                              ? "#eab308"
-                              : "#d1d5db",
-                    }}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  {pillar.type} - {config?.title ?? pillar.type}:{" "}
-                  {pillar.status === "complete"
-                    ? "Terminé"
-                    : pillar.status === "generating"
-                      ? "En cours"
-                      : pillar.status === "error"
-                        ? "Erreur"
-                        : "En attente"}
-                </TooltipContent>
-              </Tooltip>
-            );
-          })}
-          <span className="ml-2 text-xs text-muted-foreground">
-            {strategy._count.pillars}/{PILLAR_TYPES.length}
-          </span>
-        </div>
-
-        {/* Date */}
-        <p className="text-xs text-muted-foreground">
-          {getRelativeDate(strategy.updatedAt)}
-        </p>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Skeleton Card
-// ---------------------------------------------------------------------------
-
-function StrategyCardSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="pb-3">
-        <Skeleton className="h-5 w-36" />
-        <Skeleton className="h-4 w-48 mt-1" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex gap-2">
-          <Skeleton className="h-5 w-20" />
-          <Skeleton className="h-5 w-24" />
-        </div>
-        <div className="flex gap-1.5">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <Skeleton key={i} className="size-3 rounded-full" />
-          ))}
-        </div>
-        <Skeleton className="h-3 w-24" />
-      </CardContent>
-    </Card>
+      {/* Table */}
+      <Skeleton className="h-48 rounded-lg" />
+    </div>
   );
 }
 
@@ -296,12 +115,12 @@ function StrategyCardSkeleton() {
 
 function EmptyState() {
   return (
-    <Card className="border-dashed">
+    <Card className="border-dashed bg-gradient-to-br from-muted/50 to-transparent">
       <CardHeader className="items-center text-center">
-        <div className="flex size-16 items-center justify-center rounded-full bg-muted">
-          <FolderOpen className="size-8 text-muted-foreground" />
+        <div className="flex size-20 items-center justify-center rounded-full bg-muted/80">
+          <AdvertisMonogram size={48} variant="color" />
         </div>
-        <CardTitle className="text-xl mt-2">
+        <CardTitle className="mt-4 text-xl">
           Aucune fiche de marque pour le moment
         </CardTitle>
         <CardDescription className="max-w-md">
@@ -309,7 +128,7 @@ function EmptyState() {
           ADVERTIS pour structurer votre positionnement.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center">
+      <CardContent className="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <Button asChild>
           <Link href="/strategy/new">
             <Plus className="mr-2 size-4" />
@@ -327,148 +146,248 @@ function EmptyState() {
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const [activeTab, setActiveTab] = useState("all");
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
 
   const {
-    data: strategies,
+    data: overview,
     isLoading,
     isError,
-  } = api.strategy.getAll.useQuery();
+  } = api.analytics.getAgencyOverview.useQuery();
 
-  // Computed metrics
-  const totalCount = strategies?.length ?? 0;
-  const inProgressCount = useMemo(
-    () =>
-      strategies?.filter(
-        (s) => s.status === "draft" || s.status === "generating",
-      ).length ?? 0,
-    [strategies],
-  );
-  const completedCount = useMemo(
-    () => strategies?.filter((s) => s.status === "complete").length ?? 0,
-    [strategies],
-  );
-
-  // Filtered strategies by tab
-  const filteredStrategies = useMemo(() => {
-    if (!strategies) return [];
-    switch (activeTab) {
-      case "in_progress":
-        return strategies.filter(
-          (s) => s.status === "draft" || s.status === "generating",
-        );
-      case "completed":
-        return strategies.filter((s) => s.status === "complete");
-      case "archived":
-        return strategies.filter((s) => s.status === "archived");
-      default:
-        return strategies;
-    }
-  }, [strategies, activeTab]);
-
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Tableau de bord
-          </h2>
-          <p className="text-muted-foreground">
-            Bienvenue
-            {session?.user?.name ? `, ${session.user.name}` : ""} ! Gérez
-            vos fiches de marque depuis cet espace.
-          </p>
-        </div>
-        <Button asChild>
-          <Link href="/strategy/new">
-            <Plus className="mr-2 size-4" />
-            Nouvelle fiche
-          </Link>
-        </Button>
-      </div>
-
-      {/* Metrics */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <MetricCard
-          title="Total fiches"
-          value={totalCount}
-          icon={BarChart3}
-          isLoading={isLoading}
-        />
-        <MetricCard
-          title="En cours"
-          value={inProgressCount}
-          icon={Clock}
-          isLoading={isLoading}
-        />
-        <MetricCard
-          title="Terminées"
-          value={completedCount}
-          icon={CheckCircle2}
-          isLoading={isLoading}
-        />
-      </div>
-
-      {/* Strategy list */}
-      {isError ? (
+  // ---------------------------------------------------------------------------
+  // Error state
+  // ---------------------------------------------------------------------------
+  if (isError) {
+    return (
+      <div className="space-y-6">
         <Card className="border-destructive">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertTriangle className="size-10 text-destructive mb-3" />
             <p className="text-destructive font-medium">
-              Impossible de charger vos fiches de marque.
+              Impossible de charger le tableau de bord.
             </p>
             <p className="text-muted-foreground text-sm mt-1">
               Veuillez réessayer ultérieurement.
             </p>
           </CardContent>
         </Card>
-      ) : isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <StrategyCardSkeleton key={i} />
-          ))}
-        </div>
-      ) : totalCount === 0 ? (
-        <EmptyState />
-      ) : (
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="all">
-              Toutes ({totalCount})
-            </TabsTrigger>
-            <TabsTrigger value="in_progress">
-              En cours ({inProgressCount})
-            </TabsTrigger>
-            <TabsTrigger value="completed">
-              Terminées ({completedCount})
-            </TabsTrigger>
-            <TabsTrigger value="archived">
-              Archivées (
-              {strategies?.filter((s) => s.status === "archived").length ?? 0})
-            </TabsTrigger>
-          </TabsList>
+      </div>
+    );
+  }
 
-          <TabsContent value={activeTab} className="mt-4">
-            {filteredStrategies.length === 0 ? (
-              <Card className="border-dashed">
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <FolderOpen className="size-10 text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground text-sm">
-                    Aucune fiche dans cette catégorie.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {filteredStrategies.map((strategy) => (
-                  <StrategyCard key={strategy.id} strategy={strategy} />
-                ))}
-              </div>
+  // ---------------------------------------------------------------------------
+  // Loading state
+  // ---------------------------------------------------------------------------
+  if (isLoading || !overview) {
+    return <DashboardSkeleton />;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Empty state
+  // ---------------------------------------------------------------------------
+  if (overview.totalBrands === 0) {
+    return (
+      <motion.div
+        className="space-y-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col gap-1"
+        >
+          <p className="text-sm font-medium text-muted-foreground">
+            {getGreeting()}
+            {session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+          </p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Tableau de bord
+          </h2>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <EmptyState />
+        </motion.div>
+      </motion.div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Brand detail view
+  // ---------------------------------------------------------------------------
+  const selectedBrand = selectedBrandId
+    ? overview.brands.find((b) => b.id === selectedBrandId)
+    : null;
+
+  if (selectedBrand) {
+    return (
+      <BrandDetailPanel
+        brand={selectedBrand}
+        onBack={() => setSelectedBrandId(null)}
+      />
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Agency overview (main view)
+  // ---------------------------------------------------------------------------
+  return (
+    <motion.div
+      className="space-y-6"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
+      {/* Header / Greeting */}
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div>
+          <p className="text-sm font-medium text-muted-foreground">
+            {getGreeting()}
+            {session?.user?.name ? `, ${session.user.name.split(" ")[0]}` : ""}
+          </p>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Tableau de bord
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {overview.totalBrands} marque
+            {overview.totalBrands > 1 ? "s" : ""} active
+            {overview.totalBrands > 1 ? "s" : ""}
+            {overview.avgCoherence > 0 && (
+              <>
+                {" "}&middot; Score moyen&nbsp;: {overview.avgCoherence}/100
+              </>
             )}
-          </TabsContent>
-        </Tabs>
+          </p>
+        </div>
+        <Button asChild size="sm">
+          <Link href="/strategy/new">
+            <Plus className="mr-1.5 size-4" />
+            Nouvelle fiche
+          </Link>
+        </Button>
+      </motion.div>
+
+      {/* KPI Bar */}
+      <motion.div variants={itemVariants}>
+        <AgencyKpiBar
+          totalBrands={overview.totalBrands}
+          avgCoherence={overview.avgCoherence}
+          avgRisk={overview.avgRisk}
+          avgBrandMarketFit={overview.avgBrandMarketFit}
+          completionRate={overview.completionRate}
+        />
+      </motion.div>
+
+      {/* Charts row: distributions + health/alerts */}
+      <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
+        {/* Left column: Sector donut + Phase pipeline */}
+        <div className="space-y-6">
+          <Card className="transition-shadow hover:shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <PieChart className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-sm font-semibold">Répartition par secteur</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <SectorDonut data={overview.bySector} size={200} />
+            </CardContent>
+          </Card>
+
+          <Card className="transition-shadow hover:shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <GitBranch className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-sm font-semibold">Pipeline par phase</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <PhasePipeline
+                data={overview.byPhase}
+                totalBrands={overview.totalBrands}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right column: Health heatmap + Alerts */}
+        <div className="space-y-6">
+          <Card className="transition-shadow hover:shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Heart className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-sm font-semibold">Santé des marques</CardTitle>
+              </div>
+              <CardDescription>
+                Cliquez sur une marque pour voir le détail
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <HealthHeatmap
+                brands={overview.brands}
+                onBrandClick={setSelectedBrandId}
+                selectedBrandId={selectedBrandId ?? undefined}
+              />
+            </CardContent>
+          </Card>
+
+          <AlertPanel
+            alerts={overview.alerts}
+            onBrandClick={setSelectedBrandId}
+          />
+        </div>
+      </motion.div>
+
+      {/* Activity timeline */}
+      {overview.recentActivity.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card className="transition-shadow hover:shadow-md">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-terracotta" />
+                <CardTitle className="text-sm font-semibold">Activité récente</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ActivityTimeline
+                events={overview.recentActivity}
+                onBrandClick={setSelectedBrandId}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
-    </div>
+
+      {/* Brand table */}
+      <motion.div variants={itemVariants}>
+        <Card className="transition-shadow hover:shadow-md">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-sm font-semibold">Toutes les marques</CardTitle>
+                <CardDescription>
+                  Cliquez sur une ligne pour voir le détail complet
+                </CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/strategy/new" className="text-xs text-muted-foreground">
+                  Ajouter
+                  <ArrowRight className="ml-1 size-3" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <BrandTable
+              brands={overview.brands}
+              onBrandClick={setSelectedBrandId}
+            />
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

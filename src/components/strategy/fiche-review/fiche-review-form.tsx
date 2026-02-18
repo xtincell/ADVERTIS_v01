@@ -3,12 +3,12 @@
 import { useState, useCallback } from "react";
 import {
   ClipboardEdit,
-  Save,
   CheckCircle,
   ChevronDown,
   ChevronUp,
   Star,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { PILLAR_CONFIG, FICHE_PILLARS } from "~/lib/constants";
@@ -16,10 +16,11 @@ import type { PillarType } from "~/lib/constants";
 import {
   getFicheDeMarqueSchema,
   type InterviewVariable,
-  type PillarInterviewSection,
 } from "~/lib/interview-schema";
+import { toast } from "sonner";
 
 interface FicheReviewFormProps {
+  strategyId: string;
   interviewData: Record<string, string>;
   onValidate: (editedData: Record<string, string>) => Promise<void>;
   isValidating?: boolean;
@@ -29,8 +30,10 @@ interface FicheReviewFormProps {
 /**
  * FicheReviewForm displays all 25 A-D-V-E variables grouped by pillar tabs.
  * The user can review and edit each value, then validate to advance to audit-r.
+ * Includes AI auto-fill for empty variables.
  */
 export function FicheReviewForm({
+  strategyId,
   interviewData,
   onValidate,
   isValidating = false,
@@ -51,6 +54,12 @@ export function FicheReviewForm({
 
   // Track collapsed sections
   const [collapsedVars, setCollapsedVars] = useState<Set<string>>(new Set());
+
+  // Track AI auto-filled variables
+  const [autoFilledIds, setAutoFilledIds] = useState<Set<string>>(new Set());
+
+  // AI fill loading state
+  const [isAiFilling, setIsAiFilling] = useState(false);
 
   const handleFieldChange = useCallback(
     (variableId: string, value: string) => {
@@ -84,6 +93,68 @@ export function FicheReviewForm({
     await onValidate(editedData);
   };
 
+  // --- AI Fill handler ---
+  const handleAiFill = useCallback(async () => {
+    setIsAiFilling(true);
+    try {
+      const response = await fetch("/api/ai/fill-interview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyId }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as { error?: string };
+        throw new Error(errorData.error ?? "Erreur serveur");
+      }
+
+      const result = (await response.json()) as {
+        filledData: Record<string, string>;
+        autoFilledIds: string[];
+        totalFilled: number;
+      };
+
+      // Merge: keep user edits, only fill variables that are still empty in editedData
+      setEditedData((prev) => {
+        const merged = { ...prev };
+        for (const id of result.autoFilledIds) {
+          // Only fill if the current field is empty (respect user edits)
+          if (!merged[id]?.trim() && result.filledData[id]?.trim()) {
+            merged[id] = result.filledData[id]!;
+          }
+        }
+        return merged;
+      });
+
+      // Track which were auto-filled
+      setAutoFilledIds((prev) => {
+        const next = new Set(prev);
+        for (const id of result.autoFilledIds) {
+          next.add(id);
+        }
+        return next;
+      });
+
+      // Expand auto-filled fields so user can see them
+      setCollapsedVars((prev) => {
+        const next = new Set(prev);
+        for (const id of result.autoFilledIds) {
+          next.delete(id); // uncollapse
+        }
+        return next;
+      });
+
+      toast.success(
+        `${result.autoFilledIds.length} variable${result.autoFilledIds.length > 1 ? "s" : ""} complétée${result.autoFilledIds.length > 1 ? "s" : ""} par l'IA`,
+      );
+    } catch (error) {
+      console.error("[FicheReview] AI fill failed:", error);
+      toast.error("Erreur lors de la complétion IA. Réessayez.");
+    } finally {
+      setIsAiFilling(false);
+    }
+  }, [strategyId]);
+
   const activeSection = schema.find((s) => s.pillarType === activeTab);
   const totalModified = modifiedFields.size;
 
@@ -99,6 +170,10 @@ export function FicheReviewForm({
     };
   });
 
+  const totalFilled = pillarStats.reduce((sum, s) => sum + s.filled, 0);
+  const totalVars = pillarStats.reduce((sum, s) => sum + s.total, 0);
+  const hasEmptyVars = totalFilled < totalVars;
+
   return (
     <div className={cn("space-y-4", className)}>
       {/* Header */}
@@ -107,17 +182,53 @@ export function FicheReviewForm({
           <ClipboardEdit className="h-5 w-5 text-terracotta" />
           <h3 className="text-lg font-semibold">Validation de la Fiche de Marque</h3>
         </div>
-        {totalModified > 0 && (
-          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
-            {totalModified} modification{totalModified > 1 ? "s" : ""}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {totalModified > 0 && (
+            <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
+              {totalModified} modification{totalModified > 1 ? "s" : ""}
+            </span>
+          )}
+          {autoFilledIds.size > 0 && (
+            <span className="text-xs text-violet-600 bg-violet-50 px-2 py-1 rounded-full">
+              {autoFilledIds.size} par IA
+            </span>
+          )}
+        </div>
       </div>
 
       <p className="text-sm text-muted-foreground">
         Vérifiez et corrigez les données collectées avant de lancer l&apos;audit.
         Les champs marqués d&apos;une étoile (★) sont prioritaires.
       </p>
+
+      {/* AI Fill Button — only when there are empty vars */}
+      {hasEmptyVars && (
+        <button
+          onClick={handleAiFill}
+          disabled={isAiFilling || isValidating}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-3 text-sm font-medium transition-all",
+            isAiFilling
+              ? "border-violet-300 bg-violet-50 text-violet-500 cursor-wait"
+              : "border-violet-300 bg-violet-50/50 text-violet-700 hover:bg-violet-100 hover:border-violet-400",
+          )}
+        >
+          {isAiFilling ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Complétion IA en cours… ({totalVars - totalFilled} variable
+              {totalVars - totalFilled > 1 ? "s" : ""})
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Compléter les {totalVars - totalFilled} champ
+              {totalVars - totalFilled > 1 ? "s" : ""} vide
+              {totalVars - totalFilled > 1 ? "s" : ""} avec l&apos;IA
+            </>
+          )}
+        </button>
+      )}
 
       {/* Pillar Tabs */}
       <div className="flex gap-1 rounded-lg border bg-muted/30 p-1">
@@ -174,6 +285,7 @@ export function FicheReviewForm({
               variable={variable}
               value={editedData[variable.id] ?? ""}
               isModified={modifiedFields.has(variable.id)}
+              isAutoFilled={autoFilledIds.has(variable.id)}
               isCollapsed={collapsedVars.has(variable.id)}
               onChange={(v) => handleFieldChange(variable.id, v)}
               onToggleCollapse={() => toggleCollapse(variable.id)}
@@ -185,16 +297,15 @@ export function FicheReviewForm({
       {/* Validate button */}
       <div className="flex items-center justify-between pt-4 border-t">
         <p className="text-xs text-muted-foreground">
-          {pillarStats.reduce((sum, s) => sum + s.filled, 0)} /{" "}
-          {pillarStats.reduce((sum, s) => sum + s.total, 0)} variables renseignées
+          {totalFilled} / {totalVars} variables renseignées
         </p>
 
         <button
           onClick={handleValidate}
-          disabled={isValidating}
+          disabled={isValidating || isAiFilling}
           className={cn(
             "inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-all",
-            isValidating
+            isValidating || isAiFilling
               ? "bg-terracotta/50 cursor-not-allowed"
               : "bg-terracotta hover:bg-terracotta/90 shadow-sm",
           )}
@@ -224,6 +335,7 @@ interface VariableFieldProps {
   variable: InterviewVariable;
   value: string;
   isModified: boolean;
+  isAutoFilled: boolean;
   isCollapsed: boolean;
   onChange: (value: string) => void;
   onToggleCollapse: () => void;
@@ -233,6 +345,7 @@ function VariableField({
   variable,
   value,
   isModified,
+  isAutoFilled,
   isCollapsed,
   onChange,
   onToggleCollapse,
@@ -243,8 +356,9 @@ function VariableField({
     <div
       className={cn(
         "rounded-lg border p-3 transition-all",
+        isAutoFilled && !isModified && "border-violet-300 bg-violet-50/30",
         isModified && "border-amber-300 bg-amber-50/30",
-        isEmpty && !isModified && "border-dashed border-muted opacity-70",
+        isEmpty && !isModified && !isAutoFilled && "border-dashed border-muted opacity-70",
       )}
     >
       {/* Header row */}
@@ -252,13 +366,19 @@ function VariableField({
         onClick={onToggleCollapse}
         className="flex w-full items-center justify-between text-left"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-mono font-bold text-muted-foreground">
             {variable.id}
           </span>
           <span className="text-sm font-medium">{variable.label}</span>
           {variable.priority && (
             <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+          )}
+          {isAutoFilled && !isModified && (
+            <span className="inline-flex items-center gap-1 text-xs text-violet-600 bg-violet-100 px-1.5 py-0.5 rounded">
+              <Sparkles className="h-2.5 w-2.5" />
+              IA
+            </span>
           )}
           {isModified && (
             <span className="text-xs text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">
@@ -292,6 +412,9 @@ function VariableField({
               "placeholder:text-muted-foreground/50",
               "focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta",
               "resize-y min-h-[72px]",
+              isAutoFilled &&
+                !isModified &&
+                "border-violet-200 focus:ring-violet-300 focus:border-violet-400",
             )}
           />
         </div>

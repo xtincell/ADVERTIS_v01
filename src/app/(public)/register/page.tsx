@@ -61,7 +61,7 @@ export default function RegisterPage() {
     }
 
     if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caracteres.");
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
       return;
     }
 
@@ -78,9 +78,9 @@ export default function RegisterPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Creer un compte ADVERTIS</CardTitle>
+        <CardTitle className="text-xl">Créer un compte</CardTitle>
         <CardDescription>
-          Remplissez le formulaire pour commencer a creer vos strategies de
+          Remplissez le formulaire pour commencer à créer vos stratégies de
           marque.
         </CardDescription>
       </CardHeader>
@@ -103,6 +103,7 @@ export default function RegisterPage() {
               required
               disabled={isLoading}
               autoComplete="name"
+              autoFocus
             />
           </div>
 
@@ -143,7 +144,7 @@ export default function RegisterPage() {
             <Input
               id="password"
               type="password"
-              placeholder="Minimum 8 caracteres"
+              placeholder="Minimum 8 caractères"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -172,17 +173,17 @@ export default function RegisterPage() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Creation du compte...
+                Création du compte...
               </>
             ) : (
-              "Creer mon compte"
+              "Créer mon compte"
             )}
           </Button>
         </form>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Deja un compte ?{" "}
+          Déjà un compte ?{" "}
           <Link
             href="/login"
             className="font-medium text-primary underline-offset-4 hover:underline"

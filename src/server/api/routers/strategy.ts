@@ -438,6 +438,69 @@ export const strategyRouter = createTRPCRouter({
     }),
 
   /**
+   * Revert the strategy to a previous phase.
+   * Data from later phases is PRESERVED (not deleted).
+   */
+  revertPhase: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        targetPhase: z.enum([
+          "fiche",
+          "fiche-review",
+          "audit-r",
+          "market-study",
+          "audit-t",
+          "audit-review",
+          "implementation",
+          "cockpit",
+        ]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      // Resolve legacy phase names
+      const resolvedPhase = LEGACY_PHASE_MAP[strategy.phase] ?? strategy.phase;
+      const currentPhaseIndex = PHASES.indexOf(resolvedPhase as Phase);
+      const targetPhaseIndex = PHASES.indexOf(input.targetPhase);
+
+      if (currentPhaseIndex === -1) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Phase actuelle inconnue : "${strategy.phase}"`,
+        });
+      }
+
+      if (targetPhaseIndex >= currentPhaseIndex) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Impossible de revenir à la phase "${input.targetPhase}" — la stratégie est déjà en phase "${strategy.phase}" ou antérieure.`,
+        });
+      }
+
+      const updatedStrategy = await ctx.db.strategy.update({
+        where: { id: input.id },
+        data: {
+          phase: input.targetPhase,
+          status: "generating",
+        },
+        include: { pillars: { orderBy: { order: "asc" } } },
+      });
+
+      return updatedStrategy;
+    }),
+
+  /**
    * Validate the fiche review: save edited A-D-V-E interview data and advance to audit-r.
    */
   validateFicheReview: protectedProcedure

@@ -99,6 +99,8 @@ model Strategy {
     cockpitShare  CockpitShare?
     importedFiles ImportedFile[]
     marketStudy   MarketStudy?
+    moduleRuns    ModuleRun[]
+    cockpitWidgets CockpitWidget[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -115,9 +117,14 @@ model Pillar {
     order   Int // 1-8 for sequential generation
     status  String @default("pending") // pending, generating, complete, error
     summary String? @db.Text // Short summary for dashboard card
+    version Int     @default(1) // Current version number (incremented on each content change)
 
     // Structured content (variables + AI-generated outputs)
     content Json?
+
+    // Staleness tracking (informational, not blocking)
+    staleReason String?   // null = fresh, otherwise reason for staleness
+    staleSince  DateTime? // When the pillar became stale
 
     // Generation metadata
     generatedAt  DateTime?
@@ -126,12 +133,38 @@ model Pillar {
     // Relations
     strategyId String
     strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    versions   PillarVersion[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     @@unique([strategyId, type])
     @@index([strategyId])
+}
+
+// ============================================
+// PILLAR VERSIONING (Historique de mises à jour)
+// ============================================
+
+model PillarVersion {
+    id         String @id @default(cuid())
+    version    Int // Version number at snapshot time (1, 2, 3...)
+    content    Json // Frozen pillar content at this version
+    summary    String? @db.Text // Summary at this version
+    source     String // generation, manual_edit, regeneration, ai_update, import, restore
+    changeNote String? // Optional description of what changed
+
+    // Who created this version
+    createdBy String // userId
+
+    // Relations
+    pillarId String
+    pillar   Pillar @relation(fields: [pillarId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@unique([pillarId, version])
+    @@index([pillarId])
 }
 
 // ============================================
@@ -232,4 +265,102 @@ model MarketStudy {
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// MODULE SYSTEM (Extensibility — Axis 1)
+// Super-modules that collect/deduce/refine individual variables
+// ============================================
+
+model ModuleRun {
+    id            String   @id @default(cuid())
+    moduleId      String // Registered module identifier (e.g., "da-corpus-refiner", "codb-calculator")
+    status        String   @default("pending") // pending, running, complete, error
+    inputSnapshot Json? // Frozen inputs at execution time
+    outputData    Json? // Module output data
+    triggeredBy   String   @default("manual") // manual, auto, webhook
+    errorMessage  String?
+    durationMs    Int?
+
+    strategyId String
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    userId     String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([moduleId])
+    @@index([status])
+}
+
+// ============================================
+// EXTERNAL INTEGRATIONS (Axis 2 — Zoho, HubSpot, etc.)
+// Per-user connections to external business tools
+// ============================================
+
+model Integration {
+    id             String   @id @default(cuid())
+    providerId     String // "zoho_crm", "hubspot", "monday"
+    name           String // Human-readable display name
+    status         String   @default("inactive") // inactive, active, error
+    credentials    Json? // Encrypted credentials blob
+    config         Json? // { syncDirection, mappings, ... }
+    lastSyncAt     DateTime?
+    lastSyncStatus String? // success, error, partial
+    lastSyncError  String?
+    webhookSecret  String? // HMAC secret for verifying incoming webhooks
+
+    userId   String
+    syncLogs SyncLog[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([userId, providerId])
+    @@index([userId])
+    @@index([providerId])
+}
+
+model SyncLog {
+    id               String @id @default(cuid())
+    direction        String // push, pull
+    status           String // success, error, partial
+    entityType       String // "strategy", "pillar", "contact"
+    entityId         String?
+    recordsProcessed Int    @default(0)
+    recordsFailed    Int    @default(0)
+    errorMessage     String?
+
+    integrationId String
+    integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+    strategyId    String?
+
+    createdAt DateTime @default(now())
+
+    @@index([integrationId])
+    @@index([strategyId])
+}
+
+// ============================================
+// COCKPIT WIDGETS (Axis 3 — Derived Insights)
+// Dashboard modules that only exist because cockpit data exists
+// ============================================
+
+model CockpitWidget {
+    id           String    @id @default(cuid())
+    widgetType   String // "superfan_tracker", "brand_health", "engagement_score"
+    data         Json? // Computed widget output
+    computedAt   DateTime?
+    status       String    @default("pending") // pending, computing, ready, error
+    errorMessage String?
+
+    strategyId String
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, widgetType])
+    @@index([strategyId])
 }

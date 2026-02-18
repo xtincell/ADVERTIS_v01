@@ -51,9 +51,9 @@ export default function LoginPage() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">Connexion a ADVERTIS</CardTitle>
+        <CardTitle className="text-xl">Connexion</CardTitle>
         <CardDescription>
-          Entrez vos identifiants pour acceder a votre espace.
+          Entrez vos identifiants pour accéder à votre espace.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -75,6 +75,7 @@ export default function LoginPage() {
               required
               disabled={isLoading}
               autoComplete="email"
+              autoFocus
             />
           </div>
 
@@ -111,7 +112,7 @@ export default function LoginPage() {
             href="/register"
             className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            Creer un compte
+            Créer un compte
           </Link>
         </p>
       </CardFooter>

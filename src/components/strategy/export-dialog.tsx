@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Download, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
+import { Download, Eye, FileSpreadsheet, FileText, Globe, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { PILLAR_CONFIG, type PillarType } from "~/lib/constants";
@@ -35,7 +35,7 @@ interface ExportDialogProps {
   children: React.ReactNode;
 }
 
-type ExportFormat = "pdf" | "excel";
+type ExportFormat = "pdf" | "excel" | "html";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -51,6 +51,7 @@ export function ExportDialog({
   const [format, setFormat] = React.useState<ExportFormat>("pdf");
   const [includeCover, setIncludeCover] = React.useState(true);
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isPreviewing, setIsPreviewing] = React.useState(false);
 
   // Initialize selected pillars with all completed pillars checked
   const [selectedPillars, setSelectedPillars] = React.useState<Set<string>>(
@@ -95,6 +96,50 @@ export function ExportDialog({
     }
   }
 
+  async function handlePreview() {
+    if (!hasSelection || format !== "html") return;
+
+    setIsPreviewing(true);
+
+    try {
+      const requestBody: Record<string, unknown> = {
+        strategyId,
+        selectedPillars: Array.from(selectedPillars),
+      };
+
+      const response = await fetch("/api/export/html/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          errorData?.error ?? `Erreur lors de la prévisualisation (${response.status})`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+
+      // Cleanup after a delay
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      console.error("[Preview] Error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue lors de la prévisualisation"
+      );
+    } finally {
+      setIsPreviewing(false);
+    }
+  }
+
   async function handleExport() {
     if (!hasSelection) return;
 
@@ -102,7 +147,11 @@ export function ExportDialog({
 
     try {
       const endpoint =
-        format === "pdf" ? "/api/export/pdf" : "/api/export/excel";
+        format === "pdf"
+          ? "/api/export/pdf"
+          : format === "html"
+            ? "/api/export/html"
+            : "/api/export/excel";
 
       const requestBody: Record<string, unknown> = {
         strategyId,
@@ -138,7 +187,7 @@ export function ExportDialog({
         .replace(/\s+/g, "-")
         .substring(0, 50);
 
-      const extension = format === "pdf" ? "pdf" : "xlsx";
+      const extension = format === "pdf" ? "pdf" : format === "html" ? "html" : "xlsx";
       a.download = `ADVERTIS-${safeBrandName}-Fiche-de-Marque.${extension}`;
       document.body.appendChild(a);
       a.click();
@@ -151,8 +200,10 @@ export function ExportDialog({
 
       toast.success(
         format === "pdf"
-          ? "PDF t\u00e9l\u00e9charg\u00e9 avec succ\u00e8s"
-          : "Excel t\u00e9l\u00e9charg\u00e9 avec succ\u00e8s"
+          ? "PDF téléchargé avec succès"
+          : format === "html"
+            ? "Présentation HTML téléchargée avec succès"
+            : "Excel téléchargé avec succès"
       );
       setOpen(false);
     } catch (error) {
@@ -182,7 +233,7 @@ export function ExportDialog({
           {/* Format selection */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">Format</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setFormat("pdf")}
@@ -233,7 +284,35 @@ export function ExportDialog({
                   Excel
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Tableur structur\u00e9
+                  Tableur structuré
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormat("html")}
+                className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors ${
+                  format === "html"
+                    ? "border-[#8b5cf6] bg-[#8b5cf6]/5"
+                    : "border-border hover:border-[#8b5cf6]/40"
+                }`}
+              >
+                <Globe
+                  className={`size-8 ${
+                    format === "html"
+                      ? "text-[#8b5cf6]"
+                      : "text-muted-foreground"
+                  }`}
+                />
+                <span
+                  className={`text-sm font-medium ${
+                    format === "html" ? "text-[#8b5cf6]" : "text-foreground"
+                  }`}
+                >
+                  HTML
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  Présentation interactive
                 </span>
               </button>
             </div>
@@ -341,23 +420,42 @@ export function ExportDialog({
           <Button
             variant="outline"
             onClick={() => setOpen(false)}
-            disabled={isExporting}
+            disabled={isExporting || isPreviewing}
           >
             Annuler
           </Button>
+          {format === "html" && (
+            <Button
+              variant="outline"
+              onClick={handlePreview}
+              disabled={isPreviewing || isExporting || !hasSelection}
+            >
+              {isPreviewing ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Aperçu...
+                </>
+              ) : (
+                <>
+                  <Eye className="size-4" />
+                  Aperçu
+                </>
+              )}
+            </Button>
+          )}
           <Button
             onClick={handleExport}
-            disabled={isExporting || !hasSelection}
+            disabled={isExporting || isPreviewing || !hasSelection}
           >
             {isExporting ? (
               <>
                 <Loader2 className="size-4 animate-spin" />
-                G\u00e9n\u00e9ration...
+                Génération...
               </>
             ) : (
               <>
                 <Download className="size-4" />
-                T\u00e9l\u00e9charger
+                Télécharger
               </>
             )}
           </Button>

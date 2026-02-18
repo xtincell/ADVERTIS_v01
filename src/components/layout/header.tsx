@@ -1,9 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
@@ -13,6 +14,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
+
+// ---------------------------------------------------------------------------
+// Page titles
+// ---------------------------------------------------------------------------
 
 const pageTitles: Record<string, string> = {
   "/dashboard": "Tableau de bord",
@@ -47,6 +52,69 @@ function getPageTitle(pathname: string): string {
   return "ADVERTIS";
 }
 
+// ---------------------------------------------------------------------------
+// Breadcrumbs
+// ---------------------------------------------------------------------------
+
+interface Breadcrumb {
+  label: string;
+  href: string;
+}
+
+function getBreadcrumbs(pathname: string): Breadcrumb[] {
+  const crumbs: Breadcrumb[] = [{ label: "Accueil", href: "/dashboard" }];
+
+  // Strategy sub-pages
+  if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
+    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/cockpit$/, "") });
+    crumbs.push({ label: "Cockpit", href: pathname });
+  } else if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
+    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/generate$/, "") });
+    crumbs.push({ label: "Génération", href: pathname });
+  } else if (pathname.match(/^\/strategy\/[^/]+$/) && pathname !== "/strategy/new") {
+    crumbs.push({ label: "Fiche de Marque", href: pathname });
+  } else if (pathname === "/strategy/new") {
+    crumbs.push({ label: "Nouvelle Fiche", href: pathname });
+  } else if (pathname === "/settings") {
+    crumbs.push({ label: "Paramètres", href: pathname });
+  }
+
+  return crumbs;
+}
+
+function Breadcrumbs({ pathname }: { pathname: string }) {
+  const segments = getBreadcrumbs(pathname);
+  // Don't show breadcrumbs for dashboard (home) or single-level pages
+  if (segments.length <= 1) return null;
+
+  return (
+    <nav
+      aria-label="Fil d'Ariane"
+      className="flex items-center gap-1 text-xs text-muted-foreground"
+    >
+      {segments.map((seg, i) => (
+        <Fragment key={seg.href}>
+          {i > 0 && <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />}
+          {i === segments.length - 1 ? (
+            <span className="font-medium text-foreground/80">{seg.label}</span>
+          ) : (
+            <Link
+              href={seg.href}
+              className="transition-colors hover:text-foreground"
+            >
+              {seg.label}
+            </Link>
+          )}
+        </Fragment>
+      ))}
+    </nav>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function getUserInitials(name?: string | null): string {
   if (!name) return "U";
   return name
@@ -56,6 +124,10 @@ function getUserInitials(name?: string | null): string {
     .toUpperCase()
     .slice(0, 2);
 }
+
+// ---------------------------------------------------------------------------
+// Header Component
+// ---------------------------------------------------------------------------
 
 interface HeaderProps {
   title?: string;
@@ -69,22 +141,30 @@ export default function Header({ title }: HeaderProps) {
 
   return (
     <header className="flex h-16 items-center justify-between border-b bg-background px-6">
-      {/* Page title */}
-      <div className="flex items-center gap-4">
-        {/* Spacer for mobile menu button */}
-        <div className="w-8 lg:hidden" />
-        <h1 className="text-lg font-semibold text-foreground">
-          {displayTitle}
-        </h1>
+      {/* Page title + breadcrumbs */}
+      <div className="flex flex-col justify-center gap-0.5">
+        <div className="flex items-center gap-4">
+          {/* Spacer for mobile menu button */}
+          <div className="w-8 lg:hidden" />
+          <h1 className="text-lg font-semibold text-foreground/90">
+            {displayTitle}
+          </h1>
+        </div>
+        <div className="hidden lg:block">
+          <Breadcrumbs pathname={pathname} />
+        </div>
       </div>
 
       {/* User menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className="flex items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="flex items-center gap-2.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring"
             aria-label="Menu utilisateur"
           >
+            <span className="hidden text-sm font-medium text-foreground/80 md:block">
+              {session?.user?.name ?? "Utilisateur"}
+            </span>
             <Avatar size="default">
               <AvatarImage
                 src={session?.user?.image ?? undefined}

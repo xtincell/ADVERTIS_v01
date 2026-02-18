@@ -32,7 +32,7 @@ export const PILLAR_CONFIG: Record<
   R: {
     title: "Risk",
     order: 5,
-    color: "#c43c3c",
+    color: "#c43c6e",
     description: "SWOT, Score de risque, Mitigation",
   },
   T: {
@@ -190,6 +190,85 @@ export const REPORT_TYPES = [
   "rapport_t",
 ] as const;
 export type ReportType = (typeof REPORT_TYPES)[number];
+
+// ============================================
+// TEMPLATE CONFIGURATION (Livrables UPGRADERS)
+// ============================================
+
+export const TEMPLATE_TYPES = [
+  "protocole_strategique",
+  "reco_campagne",
+  "mandat_360",
+] as const;
+export type TemplateType = (typeof TEMPLATE_TYPES)[number];
+
+export const TEMPLATE_CONFIG: Record<
+  TemplateType,
+  {
+    title: string;
+    subtitle: string;
+    estimatedSlides: [number, number]; // [min, max]
+    unit: "slides" | "pages";
+    sections: string[];
+  }
+> = {
+  protocole_strategique: {
+    title: "Protocole Stratégique",
+    subtitle: "Conseil de marque & positionnement",
+    estimatedSlides: [60, 120],
+    unit: "slides",
+    sections: [
+      "Couverture & Sommaire",
+      "Contexte de Mission",
+      "Méthodologie ADVE",
+      "Audit de Marque (Synthèse A-D-V-E)",
+      "Analyse Marché & Consommateur",
+      "Synthèse Diagnostique",
+      "Vision Stratégique",
+      "Plateforme de Marque",
+      "Architecture de Marque",
+      "Stratégie d'Engagement",
+      "Principes Directeurs",
+      "Recommandations d'Activation",
+      "Investissement & Gouvernance",
+    ],
+  },
+  reco_campagne: {
+    title: "Recommandation de Campagne",
+    subtitle: "Création & activation",
+    estimatedSlides: [30, 60],
+    unit: "slides",
+    sections: [
+      "Brief Recap",
+      "Diagnostic Marché",
+      "Insight Consommateur",
+      "Copy Strategy",
+      "Territoire Stratégique",
+      "Big Idea",
+      "Déclinaisons Créatives",
+      "Stratégie Média & Touchpoints",
+      "Plan de Production",
+      "Chronologie & Budget",
+    ],
+  },
+  mandat_360: {
+    title: "Mandat 360 / Retainer",
+    subtitle: "Scope of work annuel",
+    estimatedSlides: [20, 40],
+    unit: "pages",
+    sections: [
+      "Contexte & Vision",
+      "Streams de Travail",
+      "Matrice des Livrables",
+      "Gouvernance",
+      "Dispositif d'Intervention",
+      "Roadmap Annuelle",
+      "Calendrier T1",
+      "Rémunération & Budget",
+      "Performance & KPIs",
+    ],
+  },
+};
 
 export const REPORT_CONFIG: Record<
   ReportType,

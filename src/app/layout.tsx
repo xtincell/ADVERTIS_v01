@@ -8,10 +8,27 @@ import { Toaster } from "~/components/ui/sonner";
 import { TooltipProvider } from "~/components/ui/tooltip";
 
 export const metadata: Metadata = {
-  title: "ADVERTIS - Fiches de Marque Intelligentes",
+  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
+  title: {
+    default: "ADVERTIS - Fiches de Marque Intelligentes",
+    template: "%s | ADVERTIS",
+  },
   description:
     "Plateforme SaaS de création de fiches de marque en 8 piliers, guidée par IA.",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  manifest: "/site.webmanifest",
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: "ADVERTIS",
+    title: "ADVERTIS - Fiches de Marque Intelligentes",
+    description:
+      "Créez des stratégies de marque structurées en 8 piliers avec l'IA.",
+  },
+  twitter: {
+    card: "summary",
+    title: "ADVERTIS",
+    description: "Plateforme SaaS de fiches de marque intelligentes.",
+  },
 };
 
 const inter = Inter({
