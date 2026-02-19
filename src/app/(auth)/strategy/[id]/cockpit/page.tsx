@@ -37,6 +37,12 @@ export default function CockpitPage(props: {
     { enabled: !!strategyId },
   );
 
+  // Fetch last 2 score snapshots for evolution delta
+  const { data: scoreHistory } = api.analytics.getScoreHistory.useQuery(
+    { strategyId, limit: 2 },
+    { enabled: !!strategyId },
+  );
+
   // Loading state
   if (isLoading) {
     return (
@@ -98,7 +104,11 @@ export default function CockpitPage(props: {
     );
   }
 
+  // The 2nd snapshot (index 1) is the "previous" state for computing deltas
+  const previousSnapshot = scoreHistory && scoreHistory.length >= 2 ? scoreHistory[1] : null;
+
   const cockpitData: CockpitData = {
+    strategyId,
     brandName: strategy.brandName,
     name: strategy.name,
     sector: strategy.sector,
@@ -119,6 +129,13 @@ export default function CockpitPage(props: {
       status: d.status,
       pageCount: d.pageCount,
     })),
+    previousScores: previousSnapshot
+      ? {
+          coherenceScore: previousSnapshot.coherenceScore,
+          riskScore: previousSnapshot.riskScore,
+          bmfScore: previousSnapshot.bmfScore,
+        }
+      : null,
   };
 
   return (

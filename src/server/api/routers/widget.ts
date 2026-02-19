@@ -6,6 +6,9 @@ import { computeWidget, computeAllWidgets } from "~/server/services/widgets/comp
 
 // Auto-register widget implementations
 import "~/server/services/widgets/implementations/superfan-tracker";
+import "~/server/services/widgets/implementations/campaign-tracker";
+import "~/server/services/widgets/implementations/da-visual-identity";
+import "~/server/services/widgets/implementations/codb-calculator";
 
 export const widgetRouter = createTRPCRouter({
   /**

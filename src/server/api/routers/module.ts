@@ -103,6 +103,40 @@ export const moduleRouter = createTRPCRouter({
     }),
 
   /**
+   * Get the latest run for a specific module + strategy combination.
+   */
+  getLatestRun: protectedProcedure
+    .input(
+      z.object({
+        moduleId: z.string(),
+        strategyId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.strategyId },
+        select: { userId: true },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      const run = await ctx.db.moduleRun.findFirst({
+        where: {
+          moduleId: input.moduleId,
+          strategyId: input.strategyId,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return run;
+    }),
+
+  /**
    * Get a single module run by ID.
    */
   getRunById: protectedProcedure

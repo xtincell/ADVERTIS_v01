@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  ChevronsUpDown,
   Star,
   List,
   Zap,
@@ -22,7 +23,7 @@ import {
 
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
-import { PILLAR_CONFIG, SECTORS } from "~/lib/constants";
+import { PILLAR_CONFIG, SECTORS, SECTOR_GROUPS } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
 import {
   getInterviewSchema,
@@ -41,6 +42,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "~/components/ui/command";
 import {
   Card,
   CardContent,
@@ -153,6 +167,8 @@ function Step1BasicInfo({
   onNext: () => void;
 }) {
   const isValid = data.name.trim().length > 0 && data.brandName.trim().length > 0;
+  const [sectorOpen, setSectorOpen] = useState(false);
+  const selectedSectorLabel = SECTORS.find((s) => s.value === data.sector)?.label;
 
   return (
     <Card className="mx-auto max-w-2xl">
@@ -190,21 +206,46 @@ function Step1BasicInfo({
 
         <div className="space-y-2">
           <Label htmlFor="sector">Secteur d&apos;activité</Label>
-          <Select
-            value={data.sector}
-            onValueChange={(value) => onChange({ ...data, sector: value })}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Sélectionnez un secteur" />
-            </SelectTrigger>
-            <SelectContent>
-              {SECTORS.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  {s.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Popover open={sectorOpen} onOpenChange={setSectorOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={sectorOpen}
+                className="w-full justify-between font-normal"
+              >
+                {selectedSectorLabel ?? "Sélectionnez un secteur..."}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+              <Command>
+                <CommandInput placeholder="Rechercher un secteur..." />
+                <CommandList>
+                  <CommandEmpty>Aucun secteur trouvé.</CommandEmpty>
+                  {SECTOR_GROUPS.map((group) => (
+                    <CommandGroup key={group.group} heading={group.group}>
+                      {group.sectors.map((sector) => (
+                        <CommandItem
+                          key={sector.value}
+                          value={`${sector.label} ${sector.value}`}
+                          onSelect={() => {
+                            onChange({ ...data, sector: sector.value });
+                            setSectorOpen(false);
+                          }}
+                        >
+                          {sector.label}
+                          {data.sector === sector.value && (
+                            <Check className="ml-auto h-4 w-4 text-primary" />
+                          )}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  ))}
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-2">

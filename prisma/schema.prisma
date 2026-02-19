@@ -99,8 +99,9 @@ model Strategy {
     cockpitShare  CockpitShare?
     importedFiles ImportedFile[]
     marketStudy   MarketStudy?
-    moduleRuns    ModuleRun[]
+    moduleRuns     ModuleRun[]
     cockpitWidgets CockpitWidget[]
+    scoreSnapshots ScoreSnapshot[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -363,4 +364,23 @@ model CockpitWidget {
 
     @@unique([strategyId, widgetType])
     @@index([strategyId])
+}
+
+// ============================================
+// SCORE SNAPSHOTS (Evolution tracking)
+// Created each time scores are recalculated
+// ============================================
+
+model ScoreSnapshot {
+    id             String   @id @default(cuid())
+    strategyId     String
+    strategy       Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    coherenceScore Int
+    riskScore      Int?
+    bmfScore       Int?
+    trigger        String // pillar_update, audit_review, fiche_review, manual, generation
+    createdAt      DateTime @default(now())
+
+    @@index([strategyId])
+    @@index([createdAt])
 }

@@ -35,6 +35,9 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
     return "Cockpit Stratégique";
   }
+  if (pathname.match(/^\/strategy\/[^/]+\/presentation$/)) {
+    return "Fiche S";
+  }
   if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
     return "Génération";
   }
@@ -68,6 +71,9 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
   if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
     crumbs.push({ label: "Stratégie", href: pathname.replace(/\/cockpit$/, "") });
     crumbs.push({ label: "Cockpit", href: pathname });
+  } else if (pathname.match(/^\/strategy\/[^/]+\/presentation$/)) {
+    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/presentation$/, "") });
+    crumbs.push({ label: "Fiche S", href: pathname });
   } else if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
     crumbs.push({ label: "Stratégie", href: pathname.replace(/\/generate$/, "") });
     crumbs.push({ label: "Génération", href: pathname });

@@ -3,9 +3,10 @@
 import {
   Crown,
   FileText,
+  Presentation,
 } from "lucide-react";
 
-import { PILLAR_CONFIG } from "~/lib/constants";
+import { PILLAR_CONFIG, REPORT_TYPES, TEMPLATE_TYPES } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import type {
   AuthenticitePillarData,
@@ -24,9 +25,13 @@ import {
 import {
   CockpitSection,
   ScoreCircle,
+  ScoreCircleWithEvolution,
   getScoreColor,
   getScoreLabel,
   getRiskLevel,
+  type CoherenceBreakdownData,
+  type RiskBreakdownData,
+  type BmfBreakdownData,
 } from "./cockpit-shared";
 
 // Section components
@@ -38,6 +43,7 @@ import { SectionRisk } from "./sections/section-risk";
 import { SectionTrack } from "./sections/section-track";
 import { SectionImplementation } from "./sections/section-implementation";
 import { SectionSynthese } from "./sections/section-synthese";
+import { SectionWidgets } from "./sections/section-widgets";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,7 +66,14 @@ interface DocumentData {
   sections?: unknown;
 }
 
+export interface ScoreSnapshot {
+  coherenceScore: number;
+  riskScore: number | null;
+  bmfScore: number | null;
+}
+
 export interface CockpitData {
+  strategyId?: string;
   brandName: string;
   name: string;
   sector: string | null;
@@ -69,6 +82,10 @@ export interface CockpitData {
   coherenceScore: number | null;
   pillars: PillarData[];
   documents: DocumentData[];
+  previousScores?: ScoreSnapshot | null;
+  coherenceBreakdown?: CoherenceBreakdownData | null;
+  riskBreakdown?: RiskBreakdownData | null;
+  bmfBreakdown?: BmfBreakdownData | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,33 +150,42 @@ export function CockpitContent({
           )}
         </div>
 
-        {/* ── 3 Key Scores ── */}
+        {/* ── 3 Key Scores with Evolution ── */}
         {(coherenceScore != null || riskScore > 0 || bmfScore > 0) && (
           <div className="mx-auto max-w-3xl">
             <div className="flex flex-wrap items-start justify-center gap-8">
               {coherenceScore != null && coherenceScore > 0 && (
-                <ScoreCircle
+                <ScoreCircleWithEvolution
                   score={coherenceScore}
+                  previousScore={data.previousScores?.coherenceScore}
                   label="Cohérence"
                   sublabel={getScoreLabel(coherenceScore)}
                   size="lg"
+                  breakdownType="coherence"
+                  breakdown={data.coherenceBreakdown}
                 />
               )}
               {riskScore > 0 && (
-                <ScoreCircle
+                <ScoreCircleWithEvolution
                   score={riskScore}
+                  previousScore={data.previousScores?.riskScore}
                   label="Risque"
                   sublabel={getRiskLevel(riskScore).label}
                   size="lg"
                   invertForRisk
+                  breakdownType="risk"
+                  breakdown={data.riskBreakdown}
                 />
               )}
               {bmfScore > 0 && (
-                <ScoreCircle
+                <ScoreCircleWithEvolution
                   score={bmfScore}
+                  previousScore={data.previousScores?.bmfScore}
                   label="Brand-Market Fit"
                   sublabel={getScoreLabel(bmfScore)}
                   size="lg"
+                  breakdownType="bmf"
+                  breakdown={data.bmfBreakdown}
                 />
               )}
             </div>
@@ -229,6 +255,11 @@ export function CockpitContent({
       {/* ── Pillar I — Implementation (Roadmap, Campaigns, Budget, Team, Launch, Playbook) ── */}
       <SectionImplementation implContent={implContent} />
 
+      {/* ── Widgets Analytiques ── */}
+      {data.strategyId && !isPublic && (
+        <SectionWidgets strategyId={data.strategyId} />
+      )}
+
       {/* ── Pillar S — Synthèse Stratégique ── */}
       <SectionSynthese
         sContent={sContent}
@@ -236,33 +267,77 @@ export function CockpitContent({
       />
 
       {/* ── Reports Access ── */}
-      {data.documents.length > 0 && (
-        <CockpitSection
-          icon={<FileText className="h-5 w-5" />}
-          pillarLetter="S"
-          title="Rapports Stratégiques"
-          subtitle={`${data.documents.length} rapport${data.documents.length > 1 ? "s" : ""} généré${data.documents.length > 1 ? "s" : ""}`}
-          color={PILLAR_CONFIG.S.color}
-        >
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {data.documents.map((doc) => (
-              <Card key={doc.id} className="transition-shadow hover:shadow-sm">
-                <CardContent className="pt-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">{doc.title}</p>
-                  </div>
-                  {doc.pageCount && (
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {doc.pageCount} pages
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CockpitSection>
-      )}
+      {(() => {
+        const reportDocs = data.documents.filter((d) =>
+          (REPORT_TYPES as readonly string[]).includes(d.type),
+        );
+        const templateDocs = data.documents.filter((d) =>
+          (TEMPLATE_TYPES as readonly string[]).includes(d.type),
+        );
+
+        return (
+          <>
+            {reportDocs.length > 0 && (
+              <CockpitSection
+                icon={<FileText className="h-5 w-5" />}
+                pillarLetter="S"
+                title="Rapports Stratégiques"
+                subtitle={`${reportDocs.length} rapport${reportDocs.length > 1 ? "s" : ""} généré${reportDocs.length > 1 ? "s" : ""}`}
+                color={PILLAR_CONFIG.S.color}
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {reportDocs.map((doc) => (
+                    <Card key={doc.id} className="transition-shadow hover:shadow-sm">
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <p className="text-sm font-medium">{doc.title}</p>
+                        </div>
+                        {doc.pageCount && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {doc.pageCount} pages
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CockpitSection>
+            )}
+
+            {templateDocs.length > 0 && (
+              <CockpitSection
+                icon={<Presentation className="h-5 w-5" />}
+                pillarLetter="S"
+                title="Livrables UPGRADERS"
+                subtitle={`${templateDocs.length} template${templateDocs.length > 1 ? "s" : ""} vendable${templateDocs.length > 1 ? "s" : ""}`}
+                color="#c45a3c"
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {templateDocs.map((doc) => (
+                    <Card
+                      key={doc.id}
+                      className="border-terracotta/20 transition-shadow hover:shadow-sm"
+                    >
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-2">
+                          <Presentation className="h-4 w-4 text-terracotta" />
+                          <p className="text-sm font-medium">{doc.title}</p>
+                        </div>
+                        {doc.pageCount && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {doc.pageCount} slides
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CockpitSection>
+            )}
+          </>
+        );
+      })()}
 
       {/* ── Footer ── */}
       <footer className="border-t pt-6 text-center">

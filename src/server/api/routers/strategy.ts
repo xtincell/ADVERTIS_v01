@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { PILLAR_TYPES, PILLAR_CONFIG, PHASES, SKIPPABLE_PHASES, LEGACY_PHASE_MAP } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
+import { recalculateAllScores } from "~/server/services/score-engine";
 
 export const strategyRouter = createTRPCRouter({
   /**
@@ -539,6 +540,9 @@ export const strategyRouter = createTRPCRouter({
         include: { pillars: { orderBy: { order: "asc" } } },
       });
 
+      // Recalculate scores after fiche review validation
+      void recalculateAllScores(input.id, "fiche_review");
+
       return updatedStrategy;
     }),
 
@@ -613,6 +617,9 @@ export const strategyRouter = createTRPCRouter({
           },
         }),
       ]);
+
+      // Recalculate scores after audit review validation
+      void recalculateAllScores(input.id, "audit_review");
 
       return updatedStrategy;
     }),

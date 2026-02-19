@@ -14,6 +14,4 @@ export { applyModuleOutputs } from "./output-applier";
 // Auto-register module implementations
 // ---------------------------------------------------------------------------
 // Import new modules here to register them at startup.
-// Example:
-// import "./implementations/da-corpus-refiner";
-// import "./implementations/codb-calculator";
+import "./implementations/data-quality-scorer";

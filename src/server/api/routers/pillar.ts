@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { validatePillarContent } from "~/lib/types/pillar-parsers";
 import { invalidateWidgetsForPillar } from "~/server/services/widgets/compute-engine";
+import { recalculateAllScores } from "~/server/services/score-engine";
 
 export const pillarRouter = createTRPCRouter({
   /**
@@ -130,6 +131,8 @@ export const pillarRouter = createTRPCRouter({
       // Invalidate cockpit widgets that depend on this pillar type
       if (input.content !== undefined) {
         void invalidateWidgetsForPillar(existing.strategyId, existing.type);
+        // Recalculate all scores reactively on every content change
+        void recalculateAllScores(existing.strategyId, "pillar_update");
       }
 
       return pillar;
@@ -317,8 +320,9 @@ export const pillarRouter = createTRPCRouter({
         },
       });
 
-      // Invalidate widgets
+      // Invalidate widgets + recalculate scores
       void invalidateWidgetsForPillar(pillar.strategyId, pillar.type);
+      void recalculateAllScores(pillar.strategyId, "pillar_update");
 
       return updated;
     }),

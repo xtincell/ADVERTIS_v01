@@ -55,16 +55,92 @@ export const PILLAR_CONFIG: Record<
   },
 };
 
-export const SECTORS = [
-  { value: "fashion", label: "Mode & Luxe" },
-  { value: "fintech", label: "Fintech & Finance" },
-  { value: "fmcg", label: "FMCG & Grande Consommation" },
-  { value: "b2b-saas", label: "B2B SaaS & Tech" },
-  { value: "hospitality", label: "Hôtellerie & Tourisme" },
-  { value: "health", label: "Santé & Bien-être" },
-  { value: "education", label: "Éducation" },
-  { value: "other", label: "Autre" },
-] as const;
+// ---------------------------------------------------------------------------
+// Sector groups (searchable combobox in strategy creation)
+// ---------------------------------------------------------------------------
+
+export interface SectorGroup {
+  group: string;
+  sectors: { value: string; label: string }[];
+}
+
+export const SECTOR_GROUPS: SectorGroup[] = [
+  {
+    group: "Finance & Tech",
+    sectors: [
+      { value: "fintech", label: "Fintech & Finance" },
+      { value: "banking", label: "Banque & Assurance" },
+      { value: "mobile-money", label: "Mobile Money & Paiements" },
+      { value: "b2b-saas", label: "B2B SaaS & Tech" },
+      { value: "e-commerce", label: "E-commerce & Marketplace" },
+    ],
+  },
+  {
+    group: "Consommation & Retail",
+    sectors: [
+      { value: "fmcg", label: "FMCG & Grande Consommation" },
+      { value: "food-bev", label: "Agroalimentaire & Boissons" },
+      { value: "fashion", label: "Mode & Luxe" },
+      { value: "beauty", label: "Beauté & Cosmétiques" },
+      { value: "retail", label: "Retail & Distribution" },
+    ],
+  },
+  {
+    group: "Industrie & Ressources",
+    sectors: [
+      { value: "mining", label: "Mines & Ressources naturelles" },
+      { value: "energy", label: "Énergie & Utilities" },
+      { value: "agriculture", label: "Agriculture & Agribusiness" },
+      { value: "manufacturing", label: "Industrie & Manufacturing" },
+      { value: "construction", label: "BTP & Construction" },
+    ],
+  },
+  {
+    group: "Services & Infrastructure",
+    sectors: [
+      { value: "telecom", label: "Télécommunications" },
+      { value: "logistics", label: "Transport & Logistique" },
+      { value: "maritime", label: "Maritime & Portuaire" },
+      { value: "real-estate", label: "Immobilier" },
+      { value: "hospitality", label: "Hôtellerie & Tourisme" },
+      { value: "consulting", label: "Conseil & Services professionnels" },
+    ],
+  },
+  {
+    group: "Santé & Éducation",
+    sectors: [
+      { value: "health", label: "Santé & Pharma" },
+      { value: "wellness", label: "Bien-être & Fitness" },
+      { value: "education", label: "Éducation & EdTech" },
+    ],
+  },
+  {
+    group: "Médias & Culture",
+    sectors: [
+      { value: "media", label: "Médias & Entertainment" },
+      { value: "creative", label: "Industries Créatives & Design" },
+      { value: "sports", label: "Sport & Sponsoring" },
+    ],
+  },
+  {
+    group: "Secteur Public & ONG",
+    sectors: [
+      { value: "public", label: "Secteur public & Gouvernance" },
+      { value: "ngo", label: "ONG & Développement" },
+    ],
+  },
+  {
+    group: "Autre",
+    sectors: [
+      { value: "other", label: "Autre" },
+    ],
+  },
+];
+
+// Flat list — backward compatible with all existing code that uses SECTORS
+export const SECTORS = SECTOR_GROUPS.flatMap((g) =>
+  g.sectors.map((s) => ({ ...s, group: g.group })),
+);
 
 // ============================================
 // PHASE PIPELINE CONFIGURATION

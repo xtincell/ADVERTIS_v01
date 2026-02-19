@@ -12,6 +12,8 @@ import {
   GitBranch,
   Heart,
   ArrowRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -30,6 +32,7 @@ import { AdvertisMonogram } from "~/components/brand/advertis-logo";
 // Dashboard components
 import { AgencyKpiBar } from "~/components/dashboard/agency-kpi-bar";
 import { BrandTable } from "~/components/dashboard/brand-table";
+import { BrandCardGrid } from "~/components/dashboard/brand-card-grid";
 import { AlertPanel } from "~/components/dashboard/alert-panel";
 import { BrandDetailPanel } from "~/components/dashboard/brand-detail-panel";
 
@@ -147,6 +150,7 @@ function EmptyState() {
 export default function DashboardPage() {
   const { data: session } = useSession();
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
 
   const {
     data: overview,
@@ -361,7 +365,7 @@ export default function DashboardPage() {
         </motion.div>
       )}
 
-      {/* Brand table */}
+      {/* Brand list (cards / table toggle) */}
       <motion.div variants={itemVariants}>
         <Card className="transition-shadow hover:shadow-md">
           <CardHeader className="pb-3">
@@ -369,22 +373,49 @@ export default function DashboardPage() {
               <div>
                 <CardTitle className="text-sm font-semibold">Toutes les marques</CardTitle>
                 <CardDescription>
-                  Cliquez sur une ligne pour voir le détail complet
+                  Cliquez sur {viewMode === "cards" ? "une carte" : "une ligne"} pour voir le détail complet
                 </CardDescription>
               </div>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/strategy/new" className="text-xs text-muted-foreground">
-                  Ajouter
-                  <ArrowRight className="ml-1 size-3" />
-                </Link>
-              </Button>
+              <div className="flex items-center gap-2">
+                <div className="flex rounded-md border">
+                  <Button
+                    variant={viewMode === "cards" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setViewMode("cards")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant={viewMode === "table" ? "default" : "ghost"}
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() => setViewMode("table")}
+                  >
+                    <List className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/strategy/new" className="text-xs text-muted-foreground">
+                    Ajouter
+                    <ArrowRight className="ml-1 size-3" />
+                  </Link>
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <BrandTable
-              brands={overview.brands}
-              onBrandClick={setSelectedBrandId}
-            />
+            {viewMode === "cards" ? (
+              <BrandCardGrid
+                brands={overview.brands}
+                onBrandClick={setSelectedBrandId}
+              />
+            ) : (
+              <BrandTable
+                brands={overview.brands}
+                onBrandClick={setSelectedBrandId}
+              />
+            )}
           </CardContent>
         </Card>
       </motion.div>

@@ -2,6 +2,9 @@
 
 import {
   Layers,
+  TrendingUp,
+  TrendingDown,
+  Minus,
   type LucideIcon,
 } from "lucide-react";
 
@@ -12,6 +15,12 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "~/components/ui/tooltip";
 
 // ---------------------------------------------------------------------------
 // Score Helpers
@@ -106,6 +115,181 @@ export function ScoreCircle({
       )}
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Score Breakdown Tooltip — shows decomposition of each score type
+// ---------------------------------------------------------------------------
+
+export interface CoherenceBreakdownData {
+  pillarCompletion: number;
+  variableCoverage: number;
+  contentQuality: number;
+  crossPillarAlignment: number;
+  auditIntegration: number;
+  total: number;
+}
+
+export interface RiskBreakdownData {
+  microSwotRisk: number;
+  probabilityImpactRisk: number;
+  globalSwotBalance: number;
+  mitigationCoverage: number;
+  total: number;
+}
+
+export interface BmfBreakdownData {
+  triangulationQuality: number;
+  hypothesisValidation: number;
+  marketSizing: number;
+  competitiveDifferentiation: number;
+  total: number;
+}
+
+function BreakdownRow({ label, value, max }: { label: string; value: number; max: number }) {
+  const pct = max > 0 ? Math.round((value / max) * 100) : 0;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-[120px] text-[10px] text-background/70 truncate">{label}</span>
+      <div className="flex-1 h-1.5 rounded-full bg-background/20">
+        <div
+          className="h-full rounded-full bg-background/60"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-mono text-background/80 w-[40px] text-right">
+        {value}/{max}
+      </span>
+    </div>
+  );
+}
+
+export function ScoreBreakdownTooltip({
+  type,
+  breakdown,
+  children,
+}: {
+  type: "coherence" | "risk" | "bmf";
+  breakdown: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | null;
+  children: React.ReactNode;
+}) {
+  if (!breakdown) return <>{children}</>;
+
+  const rows: { label: string; value: number; max: number }[] = [];
+
+  if (type === "coherence") {
+    const b = breakdown as CoherenceBreakdownData;
+    rows.push(
+      { label: "Complétion piliers", value: b.pillarCompletion, max: 25 },
+      { label: "Couverture variables", value: b.variableCoverage, max: 20 },
+      { label: "Qualité contenu", value: b.contentQuality, max: 15 },
+      { label: "Alignement inter-piliers", value: b.crossPillarAlignment, max: 25 },
+      { label: "Intégration audits", value: b.auditIntegration, max: 15 },
+    );
+  } else if (type === "risk") {
+    const b = breakdown as RiskBreakdownData;
+    rows.push(
+      { label: "Micro-SWOT Risk", value: b.microSwotRisk, max: 40 },
+      { label: "Probabilité × Impact", value: b.probabilityImpactRisk, max: 30 },
+      { label: "Balance SWOT", value: b.globalSwotBalance, max: 20 },
+      { label: "Couverture mitigations", value: b.mitigationCoverage, max: 10 },
+    );
+  } else {
+    const b = breakdown as BmfBreakdownData;
+    rows.push(
+      { label: "Triangulation", value: b.triangulationQuality, max: 25 },
+      { label: "Validation hypothèses", value: b.hypothesisValidation, max: 30 },
+      { label: "Market Sizing", value: b.marketSizing, max: 20 },
+      { label: "Différenciation", value: b.competitiveDifferentiation, max: 25 },
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipContent side="bottom" className="w-[260px] p-3 space-y-1.5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-background/60 mb-2">
+            {type === "coherence"
+              ? "Décomposition Cohérence"
+              : type === "risk"
+                ? "Décomposition Risque"
+                : "Décomposition BMF"}
+          </p>
+          {rows.map((r) => (
+            <BreakdownRow key={r.label} {...r} />
+          ))}
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// ScoreCircleWithEvolution — wraps ScoreCircle + delta indicator
+// ---------------------------------------------------------------------------
+
+export function ScoreCircleWithEvolution({
+  score,
+  previousScore,
+  label,
+  sublabel,
+  size = "lg",
+  invertForRisk = false,
+  breakdownType,
+  breakdown,
+}: {
+  score: number;
+  previousScore?: number | null;
+  label: string;
+  sublabel?: string;
+  size?: "sm" | "md" | "lg";
+  invertForRisk?: boolean;
+  breakdownType?: "coherence" | "risk" | "bmf";
+  breakdown?: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | null;
+}) {
+  const delta = previousScore != null ? score - previousScore : null;
+
+  const circle = (
+    <div className="flex flex-col items-center">
+      <ScoreCircle
+        score={score}
+        label={label}
+        sublabel={sublabel}
+        size={size}
+        invertForRisk={invertForRisk}
+      />
+      {delta != null && delta !== 0 && (
+        <div className="mt-1 flex items-center gap-0.5">
+          {(() => {
+            // For risk: going UP is bad (red), going DOWN is good (green)
+            const isPositive = invertForRisk ? delta < 0 : delta > 0;
+            const color = isPositive ? "text-emerald-600" : "text-red-600";
+            const Icon = delta > 0 ? TrendingUp : delta < 0 ? TrendingDown : Minus;
+            return (
+              <>
+                <Icon className={`h-3 w-3 ${color}`} />
+                <span className={`text-[11px] font-semibold ${color}`}>
+                  {delta > 0 ? "+" : ""}
+                  {delta}
+                </span>
+              </>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+
+  if (breakdownType && breakdown) {
+    return (
+      <ScoreBreakdownTooltip type={breakdownType} breakdown={breakdown}>
+        {circle}
+      </ScoreBreakdownTooltip>
+    );
+  }
+
+  return circle;
 }
 
 // ---------------------------------------------------------------------------

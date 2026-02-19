@@ -6,6 +6,7 @@ import {
   calculateCoherenceScore,
   getCoherenceBreakdown,
 } from "~/server/services/coherence-calculator";
+import { recalculateAllScores } from "~/server/services/score-engine";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type {
   RiskAuditResult,
@@ -94,22 +95,15 @@ export const analyticsRouter = createTRPCRouter({
   }),
 
   /**
-   * Recalculate the coherence score for a single strategy and persist it.
+   * Recalculate ALL scores for a strategy (coherence, risk, BMF) and persist them.
+   * Returns full breakdowns for all 3 scores.
    */
-  recalculateCoherence: protectedProcedure
+  recalculateScores: protectedProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const strategy = await ctx.db.strategy.findUnique({
         where: { id: input.strategyId },
-        include: {
-          pillars: {
-            select: {
-              type: true,
-              status: true,
-              content: true,
-            },
-          },
-        },
+        select: { userId: true },
       });
 
       if (!strategy || strategy.userId !== ctx.session.user.id) {
@@ -119,20 +113,65 @@ export const analyticsRouter = createTRPCRouter({
         });
       }
 
-      const breakdown = getCoherenceBreakdown(
-        strategy.pillars,
-        strategy.interviewData as Record<string, unknown> | undefined,
-      );
+      const scores = await recalculateAllScores(input.strategyId, "manual");
+      return scores;
+    }),
 
-      await ctx.db.strategy.update({
+  /**
+   * Backward-compatible alias for recalculateScores (returns only coherence).
+   */
+  recalculateCoherence: protectedProcedure
+    .input(z.object({ strategyId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
         where: { id: input.strategyId },
-        data: { coherenceScore: breakdown.total },
+        select: { userId: true },
       });
 
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      const scores = await recalculateAllScores(input.strategyId, "manual");
       return {
-        score: breakdown.total,
-        breakdown,
+        score: scores.coherenceScore,
+        breakdown: scores.coherenceBreakdown,
       };
+    }),
+
+  /**
+   * Get score evolution history for a strategy.
+   */
+  getScoreHistory: protectedProcedure
+    .input(
+      z.object({
+        strategyId: z.string(),
+        limit: z.number().int().min(1).max(100).default(10),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.strategyId },
+        select: { userId: true },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      const snapshots = await ctx.db.scoreSnapshot.findMany({
+        where: { strategyId: input.strategyId },
+        orderBy: { createdAt: "desc" },
+        take: input.limit,
+      });
+
+      return snapshots;
     }),
 
   /**

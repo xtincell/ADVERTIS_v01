@@ -24,6 +24,7 @@ import {
   Globe,
   Info,
   History,
+  Presentation,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -696,6 +697,16 @@ export default function StrategyDetailPage(props: {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Fiche S — Presentation button */}
+        {strategy.pillars.some((p) => p.status === "complete") && (
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/strategy/${strategyId}/presentation`}>
+              <Presentation className="mr-1.5 size-3.5" />
+              Fiche S
+            </Link>
+          </Button>
+        )}
 
         {/* Market Study button */}
         {!isArchived && (

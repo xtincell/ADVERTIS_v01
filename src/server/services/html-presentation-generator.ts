@@ -40,6 +40,42 @@ export interface HTMLPresentationOptions {
   brandAccent2?: string;
   currency?: string;
   locale?: string;
+  /** Custom image overrides per section (section id → URL) */
+  sectionImages?: Partial<Record<string, string>>;
+}
+
+// ---------------------------------------------------------------------------
+// Default section hero images — diverse, non-Caucasian, African business
+// ---------------------------------------------------------------------------
+
+const DEFAULT_SECTION_IMAGES: Record<string, string> = {
+  dashboard:
+    "https://images.unsplash.com/photo-1573164713714-d95e436ab8d6?w=1200&h=400&fit=crop&crop=center",
+  strategie:
+    "https://images.unsplash.com/photo-1552664730-d307ca884978?w=1200&h=400&fit=crop&crop=center",
+  authenticite:
+    "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=1200&h=400&fit=crop&crop=center",
+  distinction:
+    "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=1200&h=400&fit=crop&crop=center",
+  valeur:
+    "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=1200&h=400&fit=crop&crop=center",
+  engagement:
+    "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=1200&h=400&fit=crop&crop=center",
+  risk:
+    "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=1200&h=400&fit=crop&crop=center",
+  track:
+    "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=400&fit=crop&crop=center",
+  implementation:
+    "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=400&fit=crop&crop=center",
+};
+
+function getSectionImage(sectionId: string, options: HTMLPresentationOptions): string {
+  return options.sectionImages?.[sectionId] ?? DEFAULT_SECTION_IMAGES[sectionId] ?? "";
+}
+
+function heroImgTag(imageUrl: string | undefined): string {
+  if (!imageUrl) return "";
+  return `<img class="section-hero-img" src="${esc(imageUrl)}" alt="" loading="lazy" />`;
 }
 
 // ---------------------------------------------------------------------------
@@ -166,15 +202,15 @@ ${buildSidebar(meta, sections, riskScore, bmfScore, coherence, accent1, accent2,
 ${buildMobileNav(sections)}
 <main class="main">
 <div class="main-inner">
-${buildDashboard(meta, a, d, v, e, r, t, impl, s, coherence, riskScore, bmfScore, currency)}
-${selected.has("S") || impl.campaigns ? buildSectionS(impl, currency) : ""}
-${selected.has("A") ? buildSectionA(a) : ""}
-${selected.has("D") ? buildSectionD(d) : ""}
-${selected.has("V") ? buildSectionV(v, currency) : ""}
-${selected.has("E") ? buildSectionE(e) : ""}
-${selected.has("R") ? buildSectionR(r) : ""}
-${selected.has("T") ? buildSectionT(t) : ""}
-${selected.has("I") ? buildSectionI(impl, currency) : ""}
+${buildDashboard(meta, a, d, v, e, r, t, impl, s, coherence, riskScore, bmfScore, currency, getSectionImage("dashboard", options))}
+${selected.has("S") || impl.campaigns ? buildSectionS(impl, currency, getSectionImage("strategie", options)) : ""}
+${selected.has("A") ? buildSectionA(a, getSectionImage("authenticite", options)) : ""}
+${selected.has("D") ? buildSectionD(d, getSectionImage("distinction", options)) : ""}
+${selected.has("V") ? buildSectionV(v, currency, getSectionImage("valeur", options)) : ""}
+${selected.has("E") ? buildSectionE(e, getSectionImage("engagement", options)) : ""}
+${selected.has("R") ? buildSectionR(r, getSectionImage("risk", options)) : ""}
+${selected.has("T") ? buildSectionT(t, getSectionImage("track", options)) : ""}
+${selected.has("I") ? buildSectionI(impl, currency, getSectionImage("implementation", options)) : ""}
 ${buildFooter(meta, locale)}
 </div>
 </main>
@@ -286,7 +322,8 @@ section:first-child { padding-top: 50px; }
 
 /* Section Hero */
 .section-hero { position: relative; border-radius: var(--card-radius); overflow: hidden; margin-bottom: 48px; min-height: 220px; display: flex; align-items: flex-end; padding: 36px; }
-.section-hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(6,6,11,0.95) 0%, rgba(6,6,11,0.4) 100%); }
+.section-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.18; z-index: 0; pointer-events: none; }
+.section-hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(6,6,11,0.95) 0%, rgba(6,6,11,0.4) 100%); z-index: 1; }
 .section-hero-content { position: relative; z-index: 2; width: 100%; }
 .section-hero .section-tag { display: inline-flex; align-items: center; gap: 8px; background: var(--accent-1-dim); color: var(--accent-1); padding: 5px 14px; border-radius: 100px; font-size: var(--fs-micro); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 14px; }
 .section-hero h1 { font-size: var(--fs-hero); font-weight: 900; margin-bottom: 10px; color: var(--text-primary); }
@@ -608,6 +645,7 @@ function buildDashboard(
   riskScore: number,
   bmfScore: number,
   currency: string,
+  imageUrl?: string,
 ): string {
   const ue = impl.valueArchitecture?.unitEconomics;
   const ltvCac = ue?.ratio || "—";
@@ -635,6 +673,7 @@ function buildDashboard(
 
   return `<section id="dashboard">
   <div class="section-hero" style="min-height:280px;background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.7), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">⚡ Fiche de Marque ADVERTIS</div>
@@ -698,7 +737,7 @@ function buildDashboard(
 // S — Stratégie
 // ---------------------------------------------------------------------------
 
-function buildSectionS(impl: ImplementationData, currency: string): string {
+function buildSectionS(impl: ImplementationData, currency: string, imageUrl?: string): string {
   const campaigns = impl.campaigns;
   if (!campaigns) return "";
 
@@ -800,6 +839,7 @@ function buildSectionS(impl: ImplementationData, currency: string): string {
 
   return `<section id="strategie">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.8), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">S — Stratégie d'attaque</div>
@@ -818,7 +858,7 @@ function buildSectionS(impl: ImplementationData, currency: string): string {
 // A — Authenticité
 // ---------------------------------------------------------------------------
 
-function buildSectionA(a: AuthenticitePillarData): string {
+function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
   const identityHtml = `<div class="sub-section">
     <h3 class="sub-title">Identité de marque</h3>
     <div class="grid-3">
@@ -896,6 +936,7 @@ function buildSectionA(a: AuthenticitePillarData): string {
 
   return `<section id="authenticite">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.A.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">A — Authenticité</div>
@@ -914,7 +955,7 @@ function buildSectionA(a: AuthenticitePillarData): string {
 // D — Distinction
 // ---------------------------------------------------------------------------
 
-function buildSectionD(d: DistinctionPillarData): string {
+function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
   // Personas
   const personasHtml =
     d.personas.length > 0
@@ -979,6 +1020,7 @@ function buildSectionD(d: DistinctionPillarData): string {
 
   return `<section id="distinction">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.D.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">D — Distinction</div>
@@ -997,7 +1039,7 @@ function buildSectionD(d: DistinctionPillarData): string {
 // V — Valeur
 // ---------------------------------------------------------------------------
 
-function buildSectionV(v: ValeurPillarData, currency: string): string {
+function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string): string {
   // Product Ladder
   const ladderHtml =
     v.productLadder.length > 0
@@ -1062,6 +1104,7 @@ function buildSectionV(v: ValeurPillarData, currency: string): string {
 
   return `<section id="valeur">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.V.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">V — Valeur</div>
@@ -1080,7 +1123,7 @@ function buildSectionV(v: ValeurPillarData, currency: string): string {
 // E — Engagement
 // ---------------------------------------------------------------------------
 
-function buildSectionE(e: EngagementPillarData): string {
+function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
   // KPIs
   const kpisHtml =
     e.kpis.length > 0
@@ -1153,6 +1196,7 @@ function buildSectionE(e: EngagementPillarData): string {
 
   return `<section id="engagement">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.E.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">E — Engagement</div>
@@ -1171,7 +1215,7 @@ function buildSectionE(e: EngagementPillarData): string {
 // R — Risk
 // ---------------------------------------------------------------------------
 
-function buildSectionR(r: RiskAuditResult): string {
+function buildSectionR(r: RiskAuditResult, imageUrl?: string): string {
   // Global SWOT
   const gs = r.globalSwot;
   const swotHtml = `<div class="sub-section">
@@ -1221,6 +1265,7 @@ function buildSectionR(r: RiskAuditResult): string {
 
   return `<section id="risk">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.R.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">R — Risk</div>
@@ -1238,7 +1283,7 @@ function buildSectionR(r: RiskAuditResult): string {
 // T — Track
 // ---------------------------------------------------------------------------
 
-function buildSectionT(t: TrackAuditResult): string {
+function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
   // TAM/SAM/SOM
   const tss = t.tamSamSom;
   const tamHtml =
@@ -1296,6 +1341,7 @@ function buildSectionT(t: TrackAuditResult): string {
 
   return `<section id="track">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.T.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">T — Track</div>
@@ -1314,7 +1360,7 @@ function buildSectionT(t: TrackAuditResult): string {
 // I — Implémentation
 // ---------------------------------------------------------------------------
 
-function buildSectionI(impl: ImplementationData, currency: string): string {
+function buildSectionI(impl: ImplementationData, currency: string, imageUrl?: string): string {
   // Sprint 90 days
   const sprintHtml =
     impl.strategicRoadmap.sprint90Days.length > 0
@@ -1366,6 +1412,7 @@ function buildSectionI(impl: ImplementationData, currency: string): string {
 
   return `<section id="implementation">
   <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.I.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
       <div class="section-tag">I — Implémentation</div>

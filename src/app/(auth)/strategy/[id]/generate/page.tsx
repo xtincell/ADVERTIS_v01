@@ -506,6 +506,31 @@ export default function GeneratePage() {
     await refetchStrategy();
   }, [generateSinglePillar, refetchStrategy]);
 
+  // --- Launch Synthèse Stratégique (Pillar S) ---
+  const handleLaunchSynthese = useCallback(async () => {
+    setIsGenerating(true);
+    setCurrentAction("synthese");
+    cancelledRef.current = false;
+
+    const success = await generateSinglePillar("S");
+
+    if (success) {
+      // Auto-advance to "complete" phase after S generation
+      try {
+        await advancePhaseMutation.mutateAsync({
+          id: strategyId,
+          targetPhase: "complete",
+        });
+      } catch (error) {
+        console.error("[Pipeline] Advance to complete failed:", error);
+      }
+    }
+
+    setIsGenerating(false);
+    setCurrentAction(null);
+    await refetchStrategy();
+  }, [generateSinglePillar, strategyId, advancePhaseMutation, refetchStrategy]);
+
   // --- Launch a single report (on demand) ---
   const handleLaunchSingleReport = useCallback(
     async (reportType?: string) => {
@@ -628,6 +653,7 @@ export default function GeneratePage() {
   const pillarR = pillars.find((p) => p.type === "R");
   const pillarT = pillars.find((p) => p.type === "T");
   const pillarI = pillars.find((p) => p.type === "I");
+  const pillarS = pillars.find((p) => p.type === "S");
 
   const ficheComplete = fichePillars.length > 0 && fichePillars.every((p) => p.status === "complete");
   const rComplete = pillarR?.status === "complete";
@@ -636,6 +662,8 @@ export default function GeneratePage() {
   const tInProgress = pillarT?.status === "generating";
   const implComplete = pillarI?.status === "complete";
   const implInProgress = pillarI?.status === "generating";
+  const sComplete = pillarS?.status === "complete";
+  const sInProgress = pillarS?.status === "generating";
 
   const reportDocs = (documents ?? []) as DocumentStatus[];
   const reportsInProgress = reportDocs.some(
@@ -658,9 +686,9 @@ export default function GeneratePage() {
       currentPhase === "cockpit" ||
       currentPhase === "complete");
 
-  // Templates require Pillar I complete
+  // Templates require Pillar S (Synthèse) complete
   const templatesAvailable =
-    implComplete &&
+    sComplete &&
     (currentPhase === "cockpit" || currentPhase === "complete");
 
   const templateDocs = (documents ?? []).filter((d) =>
@@ -1164,35 +1192,76 @@ export default function GeneratePage() {
         )}
       </PhaseSection>
 
-      {/* ─── Phase 8: Cockpit ─── */}
+      {/* ─── Phase 8: Synthèse stratégique & Cockpit ─── */}
       <PhaseSection
         phase="cockpit"
         currentPhase={currentPhase}
-        title="Phase 8 : Cockpit stratégique"
-        description="Interface interactive + lien de partage public"
+        title="Phase 8 : Synthèse stratégique & Cockpit"
+        description="Pilier S — Bible stratégique, puis cockpit interactif"
         onRevert={() => handleRevertPhase("cockpit")}
         isReverting={revertPhaseMutation.isPending}
       >
         {currentPhase === "cockpit" || currentPhase === "complete" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Le cockpit compile toutes les données en une interface interactive
-              premium, prête à être partagée avec le client.
-            </p>
-            <Button
-              onClick={() =>
-                router.push(`/strategy/${strategyId}/cockpit`)
-              }
-              className="bg-terracotta hover:bg-terracotta/90"
-            >
-              <Eye className="mr-2 h-4 w-4" />
-              Ouvrir le Cockpit
-            </Button>
+            {/* Pillar S generation */}
+            {!sComplete && !sInProgress && currentPhase === "cockpit" && (
+              <div>
+                <p className="mb-3 text-sm text-muted-foreground">
+                  La synthèse stratégique compile les 7 piliers (A-D-V-E-R-T-I)
+                  en une bible de marque avec score de cohérence global.
+                </p>
+                <Button
+                  onClick={() => void handleLaunchSynthese()}
+                  disabled={isGenerating}
+                  className="bg-terracotta hover:bg-terracotta/90"
+                >
+                  {isGenerating && currentAction === "synthese" ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Générer la synthèse stratégique (Pilier S)
+                </Button>
+              </div>
+            )}
+
+            {sInProgress && (
+              <div className="flex items-center gap-2 text-sm text-terracotta">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Génération de la synthèse en cours...
+              </div>
+            )}
+
+            {sComplete && (
+              <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3">
+                <Check className="h-4 w-4 text-green-600" />
+                <span className="text-sm text-green-700">
+                  Synthèse stratégique générée — Fiche de marque complète
+                </span>
+              </div>
+            )}
+
+            {/* Cockpit navigation — always available in cockpit/complete phase */}
+            <div className="border-t pt-4">
+              <p className="mb-3 text-sm text-muted-foreground">
+                Le cockpit compile toutes les données en une interface interactive
+                premium, prête à être partagée avec le client.
+              </p>
+              <Button
+                onClick={() =>
+                  router.push(`/strategy/${strategyId}/cockpit`)
+                }
+                className="bg-terracotta hover:bg-terracotta/90"
+              >
+                <Eye className="mr-2 h-4 w-4" />
+                Ouvrir le Cockpit
+              </Button>
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Le cockpit sera disponible après la génération des données
-            stratégiques.
+            La synthèse et le cockpit seront disponibles après la génération des
+            données stratégiques (Pilier I).
           </p>
         )}
       </PhaseSection>
