@@ -14,6 +14,7 @@ import {
 
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { StrategySubNav } from "~/components/strategy/strategy-sub-nav";
 
 // ---------------------------------------------------------------------------
 // Presentation Page — Inline viewer for the HTML "Fiche S"
@@ -200,21 +201,15 @@ export default function PresentationPage(props: {
   // ---------------------------------------------------------------------------
   return (
     <div className="-m-6 flex h-[calc(100vh-4rem)] flex-col">
+      {/* Sub-navigation */}
+      <StrategySubNav strategyId={strategyId} className="px-3" />
+
       {/* Header bar */}
       <div className="flex items-center justify-between border-b bg-background px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
-            <Link href={`/strategy/${strategyId}`}>
-              <ArrowLeft className="mr-1.5 size-3.5" />
-              Retour
-            </Link>
-          </Button>
-          <div className="hidden h-5 w-px bg-border sm:block" />
-          <div className="hidden sm:block">
-            <h2 className="text-sm font-semibold text-foreground/90">
-              Fiche S — {brandName}
-            </h2>
-          </div>
+          <h2 className="text-sm font-semibold text-foreground/90">
+            Fiche S — {brandName}
+          </h2>
         </div>
 
         <div className="flex items-center gap-1.5">

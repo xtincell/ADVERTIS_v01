@@ -30,6 +30,7 @@ import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Textarea } from "~/components/ui/textarea";
 import { StructuredPillarEditor } from "~/components/pillar-editors";
+import { PillarSubNav } from "~/components/strategy/pillar-sub-nav";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -393,16 +394,22 @@ export default function PillarEditorPage(props: {
     unknown
   > | null;
 
+  // Compute pillar list for sub-nav
+  const availablePillars = (strategy.pillars ?? []).map((p: { type: string }) => ({
+    type: p.type,
+    title: PILLAR_CONFIG[p.type as PillarType]?.title ?? p.type,
+    color: PILLAR_CONFIG[p.type as PillarType]?.color ?? "#888",
+  }));
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Pillar navigation */}
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href={`/strategy/${strategyId}`}>
-            <ArrowLeft className="mr-1.5 size-4" />
-            Retour à la fiche
-          </Link>
-        </Button>
+        <PillarSubNav
+          strategyId={strategyId}
+          currentPillarType={pillarType}
+          availablePillars={availablePillars}
+        />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">

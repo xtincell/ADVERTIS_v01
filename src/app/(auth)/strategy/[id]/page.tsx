@@ -40,6 +40,8 @@ import type { PillarType, Phase } from "~/lib/constants";
 import { PhaseBadge } from "~/components/strategy/phase-timeline";
 import { ExportDialog } from "~/components/strategy/export-dialog";
 import { VersionHistoryPanel } from "~/components/strategy/version-history-panel";
+import { StrategySubNav } from "~/components/strategy/strategy-sub-nav";
+import { PillarContentPreview } from "~/components/strategy/pillar-content-preview";
 
 import { Button } from "~/components/ui/button";
 import {
@@ -160,12 +162,6 @@ function getSectorLabel(sectorValue: string | null | undefined): string {
   return found ? found.label : sectorValue;
 }
 
-function formatContent(content: unknown): string {
-  if (typeof content === "string") return content;
-  if (content === null || content === undefined) return "";
-  return JSON.stringify(content, null, 2);
-}
-
 // ---------------------------------------------------------------------------
 // Pillar Nav Sidebar
 // ---------------------------------------------------------------------------
@@ -249,7 +245,7 @@ function PillarSection({
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const config = PILLAR_CONFIG[pillar.type as PillarType];
-  const contentText = formatContent(pillar.content);
+  const hasStructuredContent = pillar.content != null && typeof pillar.content === "object";
 
   return (
     <div id={`pillar-${pillar.type}`} className="scroll-mt-6">
@@ -307,9 +303,16 @@ function PillarSection({
               )}
 
               {/* Content */}
-              {contentText ? (
+              {hasStructuredContent ? (
+                <div className="rounded-lg bg-muted/30 p-4 space-y-4">
+                  <PillarContentPreview
+                    pillarType={pillar.type}
+                    content={pillar.content}
+                  />
+                </div>
+              ) : pillar.content != null ? (
                 <div className="prose dark:prose-invert prose-sm max-w-none whitespace-pre-wrap rounded-lg bg-muted/30 p-4">
-                  {contentText}
+                  {String(pillar.content)}
                 </div>
               ) : (
                 <div className="flex items-center justify-center py-8 text-muted-foreground">
@@ -480,6 +483,27 @@ export default function StrategyDetailPage(props: {
     },
   });
 
+  // Refresh / Actualize mutations
+  const recalcScoresMutation = api.analytics.recalculateScores.useMutation();
+  const computeAllWidgetsMutation = api.widget.computeAll.useMutation();
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefreshFiche = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await recalcScoresMutation.mutateAsync({ strategyId });
+      await computeAllWidgetsMutation.mutateAsync({ strategyId });
+      toast.success("Scores recalculés et widgets actualisés.");
+      void refetch();
+    } catch {
+      toast.error("Erreur lors de l'actualisation.");
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [isRefreshing, recalcScoresMutation, computeAllWidgetsMutation, strategyId, refetch]);
+
   const handleDuplicate = useCallback(() => {
     duplicateMutation.mutate({ id: strategyId });
   }, [duplicateMutation, strategyId]);
@@ -557,15 +581,11 @@ export default function StrategyDetailPage(props: {
 
   return (
     <div className="space-y-6">
-      {/* Back button + Header */}
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href="/dashboard">
-            <ArrowLeft className="mr-1.5 size-4" />
-            Retour au tableau de bord
-          </Link>
-        </Button>
+      {/* Sub-navigation */}
+      <StrategySubNav strategyId={strategyId} className="-mx-6 -mt-6 px-3 mb-2" />
 
+      {/* Header */}
+      <div className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3 flex-wrap">
@@ -697,6 +717,56 @@ export default function StrategyDetailPage(props: {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Refresh / Actualize button */}
+        {strategy.pillars.some((p) => p.status === "complete") && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void handleRefreshFiche()}
+                disabled={isRefreshing}
+              >
+                {isRefreshing ? (
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-1.5 size-3.5" />
+                )}
+                {isRefreshing ? "Actualisation..." : "Actualiser"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Recalculer les scores et actualiser les widgets
+            </TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Regenerer la synthese (pilier S) */}
+        {strategy.pillars.some(
+          (p: { type: string; status: string }) => p.type === "S" && p.status === "complete",
+        ) && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => void handleRegenerate("S")}
+                disabled={regeneratingPillar === "S"}
+              >
+                {regeneratingPillar === "S" ? (
+                  <Loader2 className="mr-1.5 size-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 size-3.5" />
+                )}
+                {regeneratingPillar === "S" ? "Regeneration..." : "Regenerer la synthese"}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Regenerer le pilier S a partir des donnees actuelles A-I
+            </TooltipContent>
+          </Tooltip>
+        )}
 
         {/* Fiche S — Presentation button */}
         {strategy.pillars.some((p) => p.status === "complete") && (

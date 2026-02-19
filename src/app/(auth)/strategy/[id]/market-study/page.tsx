@@ -22,6 +22,7 @@ import type {
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { MarketStudyDashboard } from "~/components/strategy/market-study/market-study-dashboard";
+import { StrategySubNav } from "~/components/strategy/strategy-sub-nav";
 
 // ---------------------------------------------------------------------------
 // Standalone Market Study Page
@@ -211,19 +212,11 @@ export default function MarketStudyPage() {
   const studyStatus = marketStudy?.status ?? "pending";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push(`/strategy/${strategyId}`)}
-        >
-          <ArrowLeft className="mr-1 h-4 w-4" />
-          Retour
-        </Button>
-      </div>
+    <div>
+      {/* Sub-navigation */}
+      <StrategySubNav strategyId={strategyId} className="-mx-6 -mt-6 px-3 mb-6" />
 
+    <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight">
@@ -309,6 +302,7 @@ export default function MarketStudyPage() {
           </Button>
         )}
       </div>
+    </div>
     </div>
   );
 }

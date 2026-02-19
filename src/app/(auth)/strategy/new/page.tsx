@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   Check,
   ChevronLeft,
@@ -19,6 +20,7 @@ import {
   AlertCircle,
   MessageSquareText,
   Download,
+  X,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -1135,14 +1137,22 @@ export default function NewStrategyPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">
-          Créez votre fiche de marque
-        </h1>
-        <p className="text-muted-foreground">
-          Créez votre fiche de marque en 4 phases ADVERTIS : Fiche de Marque
-          → Audit → Rapports → Cockpit.
-        </p>
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Créez votre fiche de marque
+          </h1>
+          <p className="text-muted-foreground">
+            Créez votre fiche de marque en 4 phases ADVERTIS : Fiche de Marque
+            → Audit → Rapports → Cockpit.
+          </p>
+        </div>
+        <Button variant="ghost" size="sm" asChild className="shrink-0">
+          <Link href="/dashboard">
+            <X className="mr-1.5 size-4" />
+            Annuler
+          </Link>
+        </Button>
       </div>
 
       <StepIndicator currentStep={currentStep} />

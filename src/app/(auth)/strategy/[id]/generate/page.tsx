@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { StrategySubNav } from "~/components/strategy/strategy-sub-nav";
 import {
   PILLAR_CONFIG,
   PHASE_CONFIG,
@@ -732,6 +733,10 @@ export default function GeneratePage() {
   }
 
   return (
+    <div>
+      {/* Sub-navigation */}
+      <StrategySubNav strategyId={strategyId} className="-mx-6 -mt-6 px-3 mb-6" />
+
     <div className="mx-auto max-w-4xl space-y-8">
       {/* Header */}
       <div>
@@ -1471,6 +1476,7 @@ export default function GeneratePage() {
           onClose={() => setPreviewContent(null)}
         />
       )}
+    </div>
     </div>
   );
 }

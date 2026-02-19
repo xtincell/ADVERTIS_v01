@@ -141,9 +141,9 @@ export function generateStrategyHTML(
   const currency = options.currency ?? "FCFA";
   const locale = options.locale ?? "fr-FR";
 
-  // Filter pillars
+  // Filter pillars — include any pillar that has content (not just status=complete)
   const selected = new Set(
-    options.selectedPillars ?? pillars.filter((p) => p.status === "complete").map((p) => p.type),
+    options.selectedPillars ?? pillars.filter((p) => p.content != null).map((p) => p.type),
   );
   const getPillar = (type: string) => pillars.find((p) => p.type === type && selected.has(type));
 
@@ -203,7 +203,7 @@ ${buildMobileNav(sections)}
 <main class="main">
 <div class="main-inner">
 ${buildDashboard(meta, a, d, v, e, r, t, impl, s, coherence, riskScore, bmfScore, currency, getSectionImage("dashboard", options))}
-${selected.has("S") || impl.campaigns ? buildSectionS(impl, currency, getSectionImage("strategie", options)) : ""}
+${selected.has("S") || impl.campaigns ? buildSectionS(impl, s, currency, getSectionImage("strategie", options)) : ""}
 ${selected.has("A") ? buildSectionA(a, getSectionImage("authenticite", options)) : ""}
 ${selected.has("D") ? buildSectionD(d, getSectionImage("distinction", options)) : ""}
 ${selected.has("V") ? buildSectionV(v, currency, getSectionImage("valeur", options)) : ""}
@@ -737,13 +737,94 @@ function buildDashboard(
 // S — Stratégie
 // ---------------------------------------------------------------------------
 
-function buildSectionS(impl: ImplementationData, currency: string, imageUrl?: string): string {
+function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, currency: string, imageUrl?: string): string {
+  // If neither pillar S data nor campaigns, nothing to render
   const campaigns = impl.campaigns;
-  if (!campaigns) return "";
+  const hasSData = sData.syntheseExecutive || sData.visionStrategique || sData.coherencePiliers.length > 0 || sData.facteursClesSucces.length > 0 || sData.recommandationsPrioritaires.length > 0;
+  if (!campaigns && !hasSData) return "";
+
+  // ── Synthèse Executive ──
+  const syntheseHtml = sData.syntheseExecutive
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Synthèse exécutive</h3>
+    <div class="card" style="border-left:4px solid var(--accent-1);padding:1.5rem;">
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(sData.syntheseExecutive)}</p>
+    </div>
+  </div>`
+    : "";
+
+  // ── Vision Stratégique ──
+  const visionHtml = sData.visionStrategique
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Vision stratégique</h3>
+    <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(sData.visionStrategique)}</p>
+    </div>
+  </div>`
+    : "";
+
+  // ── Cohérence inter-piliers ──
+  const coherenceHtml = sData.coherencePiliers.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Cohérence inter-piliers</h3>
+    <div class="grid-3">
+      ${sData.coherencePiliers
+        .map(
+          (cp) => `<div class="card" style="border-top:3px solid var(--accent-1);">
+        <div class="micro-text mb-2">${esc(cp.pilier)}</div>
+        <div style="font-weight:600;font-size:var(--fs-small);margin-bottom:0.5rem;">${esc(cp.contribution)}</div>
+        <div style="color:var(--text-secondary);font-size:0.8rem;line-height:1.6;">${esc(cp.articulation)}</div>
+      </div>`,
+        )
+        .join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // ── Facteurs clés de succès ──
+  const fcIcons = ["🎯", "⚡", "🛡️", "🚀", "💎", "🔑", "✨", "🏆"];
+  const facteursHtml = sData.facteursClesSucces.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Facteurs clés de succès</h3>
+    <div class="grid-2">
+      ${sData.facteursClesSucces
+        .map(
+          (fc, i) => `<div class="card" style="display:flex;align-items:flex-start;gap:0.75rem;">
+        <span style="font-size:1.3rem;">${fcIcons[i % fcIcons.length]}</span>
+        <p style="font-size:var(--fs-small);line-height:1.7;color:var(--text-secondary);">${esc(fc)}</p>
+      </div>`,
+        )
+        .join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // ── Recommandations prioritaires ──
+  const recoHtml = sData.recommandationsPrioritaires.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Recommandations prioritaires</h3>
+    <table class="budget-table">
+      <thead><tr><th>Action</th><th>Priorité</th><th>Impact</th><th>Délai</th></tr></thead>
+      <tbody>
+        ${sData.recommandationsPrioritaires
+          .sort((a, b) => a.priorite - b.priorite)
+          .map(
+            (r) => `<tr class="budget-row">
+          <td style="font-weight:600;">${esc(r.action)}</td>
+          <td class="mono" style="text-align:center;">P${r.priorite}</td>
+          <td style="color:var(--text-secondary);">${esc(r.impact)}</td>
+          <td style="color:var(--text-secondary);">${esc(r.delai)}</td>
+        </tr>`,
+          )
+          .join("\n")}
+      </tbody>
+    </table>
+  </div>`
+    : "";
 
   // Campaign templates as pillars
   const templatesHtml =
-    campaigns.templates.length > 0
+    campaigns && campaigns.templates.length > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Architecture de campagne</h3>
     <div class="grid-4">
@@ -764,7 +845,7 @@ function buildSectionS(impl: ImplementationData, currency: string, imageUrl?: st
 
   // Calendar
   const calendarHtml =
-    campaigns.annualCalendar.length > 0
+    campaigns && campaigns.annualCalendar.length > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Calendrier 12 mois</h3>
     <div class="calendar-grid">
@@ -842,11 +923,16 @@ function buildSectionS(impl: ImplementationData, currency: string, imageUrl?: st
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.8), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">S — Stratégie d'attaque</div>
-      <h1>Plan d'attaque</h1>
-      <p class="section-summary">Architecture de campagne, calendrier annuel, budget opérationnel, funnel mapping.</p>
+      <div class="section-tag">S — Synthèse Stratégique</div>
+      <h1>Synthèse &amp; Plan d'attaque</h1>
+      <p class="section-summary">Vision stratégique, cohérence inter-piliers, recommandations prioritaires, campagnes et budget.</p>
     </div>
   </div>
+  ${syntheseHtml}
+  ${visionHtml}
+  ${coherenceHtml}
+  ${facteursHtml}
+  ${recoHtml}
   ${templatesHtml}
   ${calendarHtml}
   ${budgetHtml}

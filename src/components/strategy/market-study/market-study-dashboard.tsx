@@ -11,6 +11,10 @@ import {
   Database,
   FileSearch,
   AlertTriangle,
+  TrendingUp,
+  BarChart3,
+  Users,
+  Search,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
 import type {
@@ -76,7 +80,7 @@ export function MarketStudyDashboard({
   isSynthesizing = false,
   className,
 }: MarketStudyDashboardProps) {
-  const [activeTab, setActiveTab] = useState<Tab>("sources");
+  const [activeTab, setActiveTab] = useState<Tab>(synthesis ? "synthesis" : "sources");
 
   const configuredCount = availableSources.filter((s) => s.configured).length;
   const completedSources = Object.values(sourceStatuses).filter(
@@ -107,6 +111,85 @@ export function MarketStudyDashboard({
         Les données automatiques et manuelles seront synthétisées par IA.
         Vous pouvez aussi sauter cette étape.
       </p>
+
+      {/* Summary banner — visible when synthesis exists */}
+      {synthesis && (
+        <div className="rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-50/80 to-emerald-50/30 p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Confidence score */}
+            {synthesis.overallConfidence != null && (
+              <div className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white",
+                    synthesis.overallConfidence >= 70
+                      ? "bg-emerald-500"
+                      : synthesis.overallConfidence >= 40
+                        ? "bg-amber-500"
+                        : "bg-red-500",
+                  )}
+                >
+                  {synthesis.overallConfidence}
+                </div>
+                <div className="text-xs">
+                  <p className="font-semibold text-foreground">Score de confiance</p>
+                  <p className="text-muted-foreground">
+                    {synthesis.overallConfidence >= 70
+                      ? "Élevé"
+                      : synthesis.overallConfidence >= 40
+                        ? "Moyen"
+                        : "Faible"}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Quick stats */}
+            <div className="flex flex-wrap items-center gap-3 text-xs">
+              {completedSources > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 font-medium">
+                  <BarChart3 className="h-3 w-3 text-emerald-600" />
+                  {completedSources} source{completedSources > 1 ? "s" : ""}
+                </span>
+              )}
+              {manualEntries.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 font-medium">
+                  <Database className="h-3 w-3 text-emerald-600" />
+                  {manualEntries.length} donnée{manualEntries.length > 1 ? "s" : ""} manuelle{manualEntries.length > 1 ? "s" : ""}
+                </span>
+              )}
+              {synthesis.macroTrends?.trends?.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 font-medium">
+                  <TrendingUp className="h-3 w-3 text-emerald-600" />
+                  {synthesis.macroTrends.trends.length} tendance{synthesis.macroTrends.trends.length > 1 ? "s" : ""}
+                </span>
+              )}
+              {synthesis.competitiveLandscape?.competitors?.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 font-medium">
+                  <Users className="h-3 w-3 text-emerald-600" />
+                  {synthesis.competitiveLandscape.competitors.length} concurrent{synthesis.competitiveLandscape.competitors.length > 1 ? "s" : ""}
+                </span>
+              )}
+              {synthesis.weakSignals?.signals?.length > 0 && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-white px-2.5 py-1 font-medium">
+                  <Search className="h-3 w-3 text-emerald-600" />
+                  {synthesis.weakSignals.signals.length} signal{synthesis.weakSignals.signals.length > 1 ? "ux" : ""} faible{synthesis.weakSignals.signals.length > 1 ? "s" : ""}
+                </span>
+              )}
+            </div>
+
+            {/* Link to synthesis tab */}
+            {activeTab !== "synthesis" && (
+              <button
+                onClick={() => setActiveTab("synthesis")}
+                className="ml-auto text-xs font-semibold text-emerald-700 hover:text-emerald-900 underline underline-offset-2 transition-colors"
+              >
+                Voir la synthèse complète →
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tab navigation */}
       <div className="flex gap-1 rounded-lg border bg-muted/30 p-1">

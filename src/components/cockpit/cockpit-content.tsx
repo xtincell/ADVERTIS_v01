@@ -43,6 +43,7 @@ import { SectionRisk } from "./sections/section-risk";
 import { SectionTrack } from "./sections/section-track";
 import { SectionImplementation } from "./sections/section-implementation";
 import { SectionSynthese } from "./sections/section-synthese";
+import { SectionVeille } from "./sections/section-veille";
 import { SectionWidgets } from "./sections/section-widgets";
 
 // ---------------------------------------------------------------------------
@@ -244,6 +245,9 @@ export function CockpitContent({
         implContent={implContent}
         pillar={getPillar("R")}
       />
+
+      {/* ── Veille & Opportunites (surfaces T insights prominently) ── */}
+      <SectionVeille tContent={tContent} implContent={implContent} />
 
       {/* ── Pillar T — Track / Market Validation ── */}
       <SectionTrack

@@ -18,6 +18,7 @@ import {
   type CockpitData,
 } from "~/components/cockpit/cockpit-content";
 import { CockpitShareDialog } from "~/components/cockpit/cockpit-share-dialog";
+import { StrategySubNav } from "~/components/strategy/strategy-sub-nav";
 import { ExportDialog } from "~/components/strategy/export-dialog";
 
 export default function CockpitPage(props: {
@@ -139,16 +140,13 @@ export default function CockpitPage(props: {
   };
 
   return (
-    <div className="mx-auto max-w-5xl">
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-        <Button variant="ghost" size="sm" asChild className="-ml-2">
-          <Link href={`/strategy/${strategyId}`}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            Retour à la fiche
-          </Link>
-        </Button>
+    <div>
+      {/* Sub-navigation */}
+      <StrategySubNav strategyId={strategyId} className="-mx-6 -mt-6 px-3 mb-6" />
 
+      <div className="mx-auto max-w-5xl">
+      {/* Header */}
+      <div className="mb-8 flex items-center justify-end">
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -185,6 +183,7 @@ export default function CockpitPage(props: {
           onClose={() => setShowShareDialog(false)}
         />
       )}
+    </div>
     </div>
   );
 }

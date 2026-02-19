@@ -114,7 +114,7 @@ function HealthIndicator({ label, ok }: { label: string; ok: boolean }) {
 function CampaignWidgetCard({ data }: { data: Record<string, unknown> }) {
   const d = data as {
     bigIdea: { concept: string; mechanism: string; declinaisonCount: number } | null;
-    annualCalendarCount: number;
+    annualCalendar: Array<{ mois: string; campagne: string; objectif: string; canaux: string[]; budget: string; kpiCible: string }>;
     campaignTemplateCount: number;
     activationPhases: { teasing: boolean; lancement: boolean; amplification: boolean; fidelisation: boolean };
     totalBudgetAllocated: string;
@@ -122,6 +122,7 @@ function CampaignWidgetCard({ data }: { data: Record<string, unknown> }) {
     insights: string[];
   };
 
+  const calendarCount = Array.isArray(d.annualCalendar) ? d.annualCalendar.length : 0;
   const activeFilled = [d.activationPhases?.teasing, d.activationPhases?.lancement, d.activationPhases?.amplification, d.activationPhases?.fidelisation].filter(Boolean).length;
 
   return (
@@ -138,9 +139,28 @@ function CampaignWidgetCard({ data }: { data: Record<string, unknown> }) {
         </div>
       )}
 
+      {/* Calendar preview — top 4 campaigns */}
+      {calendarCount > 0 && (
+        <div className="space-y-1">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Calendrier</p>
+          {d.annualCalendar.slice(0, 4).map((entry, i) => (
+            <div key={i} className="flex items-center gap-2 rounded-md border px-2 py-1">
+              <span className="text-[10px] font-semibold text-terracotta w-[28px]">{entry.mois?.substring(0, 3)}</span>
+              <span className="text-[11px] truncate flex-1">{entry.campagne}</span>
+              <span className="text-[10px] text-muted-foreground">{entry.budget}</span>
+            </div>
+          ))}
+          {calendarCount > 4 && (
+            <p className="text-[10px] text-muted-foreground text-center">
+              +{calendarCount - 4} autres campagnes
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-2 text-center">
         <div className="rounded-md border p-1.5">
-          <p className="text-lg font-bold">{d.annualCalendarCount}</p>
+          <p className="text-lg font-bold">{calendarCount}</p>
           <p className="text-[10px] text-muted-foreground">Campagnes</p>
         </div>
         <div className="rounded-md border p-1.5">

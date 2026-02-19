@@ -41,6 +41,12 @@ function getPageTitle(pathname: string): string {
   if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
     return "Génération";
   }
+  if (pathname.match(/^\/strategy\/[^/]+\/market-study$/)) {
+    return "Étude de Marché";
+  }
+  if (pathname.match(/^\/strategy\/[^/]+\/pillar\/[^/]+\/edit$/)) {
+    return "Éditeur de pilier";
+  }
   if (pathname.match(/^\/strategy\/[^/]+$/)) {
     return "Fiche de Marque";
   }
@@ -77,6 +83,13 @@ function getBreadcrumbs(pathname: string): Breadcrumb[] {
   } else if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
     crumbs.push({ label: "Stratégie", href: pathname.replace(/\/generate$/, "") });
     crumbs.push({ label: "Génération", href: pathname });
+  } else if (pathname.match(/^\/strategy\/[^/]+\/market-study$/)) {
+    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/market-study$/, "") });
+    crumbs.push({ label: "Étude de Marché", href: pathname });
+  } else if (pathname.match(/^\/strategy\/[^/]+\/pillar\/[^/]+\/edit$/)) {
+    const strategyPath = pathname.replace(/\/pillar\/.*$/, "");
+    crumbs.push({ label: "Stratégie", href: strategyPath });
+    crumbs.push({ label: "Éditeur de pilier", href: pathname });
   } else if (pathname.match(/^\/strategy\/[^/]+$/) && pathname !== "/strategy/new") {
     crumbs.push({ label: "Fiche de Marque", href: pathname });
   } else if (pathname === "/strategy/new") {
@@ -156,7 +169,7 @@ export default function Header({ title }: HeaderProps) {
             {displayTitle}
           </h1>
         </div>
-        <div className="hidden lg:block">
+        <div>
           <Breadcrumbs pathname={pathname} />
         </div>
       </div>
