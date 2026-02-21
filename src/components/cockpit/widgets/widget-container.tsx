@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K19 — Widget Container
+// =============================================================================
+// Individual widget display wrapper for cockpit-derived widgets.
+// Props: title, description, icon, status (pending/computing/ready/error),
+// errorMessage, children.
+// Key features: generic card wrapper with terracotta accent border, 4 display
+// states (pending placeholder, computing spinner, error with message, ready
+// with children content), loading indicator in header during compute.
+// =============================================================================
+
 // Widget Container — Generic wrapper for cockpit-derived widgets.
 // Handles loading, error, empty, and ready states.
 

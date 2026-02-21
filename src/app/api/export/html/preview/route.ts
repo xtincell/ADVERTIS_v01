@@ -1,6 +1,15 @@
-// ADVERTIS HTML Preview API Route
-// POST /api/export/html/preview
-// Same as /api/export/html but with Content-Disposition: inline (opens in browser).
+// =============================================================================
+// ROUTE R.10B — Export HTML Preview
+// =============================================================================
+// POST  /api/export/html/preview
+// Preview endpoint for HTML presentation. Same generation logic as R.10
+// (/api/export/html) but returns Content-Disposition: inline so the browser
+// renders it directly instead of downloading.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: html-presentation-generator service, Prisma (Strategy +
+//               Pillars + Decisions + CompetitorSnapshots + Opportunities +
+//               BudgetTiers + TranslationDocuments + Signals + parent/children)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
@@ -25,6 +34,7 @@ export async function POST(req: NextRequest) {
     brandAccent?: string;
     brandAccent2?: string;
     currency?: string;
+    userRole?: string;
   };
   try {
     body = (await req.json()) as typeof body;
@@ -35,7 +45,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { strategyId, selectedPillars, brandAccent, brandAccent2, currency } = body;
+  const { strategyId, selectedPillars, brandAccent, brandAccent2, currency, userRole } = body;
 
   if (!strategyId) {
     return NextResponse.json(
@@ -52,6 +62,29 @@ export async function POST(req: NextRequest) {
     include: {
       pillars: {
         orderBy: { order: "asc" },
+      },
+      decisions: {
+        orderBy: { priority: "asc" },
+      },
+      competitorSnapshots: true,
+      opportunities: {
+        orderBy: { startDate: "asc" },
+      },
+      budgetTiers: {
+        orderBy: { minBudget: "asc" },
+      },
+      translationDocuments: {
+        where: { status: { not: "ARCHIVED" } },
+      },
+      parent: {
+        select: { id: true, brandName: true },
+      },
+      children: {
+        select: { id: true, brandName: true },
+      },
+      signals: {
+        orderBy: { detectedAt: "desc" },
+        take: 50,
       },
     },
   });
@@ -71,6 +104,7 @@ export async function POST(req: NextRequest) {
       {
         name: strategy.name,
         brandName: strategy.brandName,
+        tagline: strategy.tagline ?? undefined,
         sector: strategy.sector ?? undefined,
         coherenceScore: strategy.coherenceScore ?? undefined,
         createdAt: strategy.createdAt,
@@ -87,6 +121,16 @@ export async function POST(req: NextRequest) {
         brandAccent,
         brandAccent2,
         currency,
+        decisions: strategy.decisions,
+        competitors: strategy.competitorSnapshots,
+        opportunities: strategy.opportunities,
+        budgetTiers: strategy.budgetTiers,
+        briefs: strategy.translationDocuments,
+        parentBrand: strategy.parent,
+        childBrands: strategy.children,
+        userRole: userRole ?? session.user.role ?? undefined,
+        vertical: strategy.vertical ?? undefined,
+        signals: strategy.signals,
       },
     );
 

@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E2 — Distinction Editor
+// Pillar D content editor.
+// ==========================================================================
+
 "use client";
 
 import type { DistinctionPillarData } from "~/lib/types/pillar-data";

@@ -1,5 +1,21 @@
-// ADVERTIS Excel Generator Service
-// Server-side Excel generation using ExcelJS
+// =============================================================================
+// MODULE 15B — Excel Generator
+// =============================================================================
+// Server-side Excel generation using ExcelJS. Produces a multi-sheet workbook
+// with a Synthese (overview) sheet, one sheet per pillar with flattened
+// key-value content, and a consolidated Variables sheet. Styled with ADVERTIS
+// terracotta design tokens and alternating row colors.
+//
+// Public API:
+//   1. generateStrategyExcel() — Generate a full strategy Excel workbook
+//
+// Dependencies:
+//   - exceljs (ExcelJS)
+//   - ~/lib/constants (PILLAR_CONFIG, PILLAR_TYPES)
+//
+// Called by:
+//   - tRPC export router (export.excel)
+// =============================================================================
 
 import ExcelJS from "exceljs";
 import { PILLAR_CONFIG, PILLAR_TYPES, type PillarType } from "~/lib/constants";
@@ -11,6 +27,7 @@ import { PILLAR_CONFIG, PILLAR_TYPES, type PillarType } from "~/lib/constants";
 interface StrategyData {
   name: string;
   brandName: string;
+  tagline?: string;
   sector?: string;
   coherenceScore?: number;
 }
@@ -242,6 +259,9 @@ export async function generateStrategyExcel(
     ["Strat\u00e9gie", strategy.name],
     ["Marque", strategy.brandName],
   ];
+  if (strategy.tagline) {
+    metaData.push(["Accroche", strategy.tagline]);
+  }
   if (strategy.sector) {
     metaData.push(["Secteur", strategy.sector]);
   }

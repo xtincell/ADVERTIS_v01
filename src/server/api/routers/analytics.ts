@@ -1,3 +1,27 @@
+// =============================================================================
+// ROUTER T.15 — Analytics Router
+// =============================================================================
+// Dashboard analytics and stats. Coherence, risk, BMF scores, agency overview.
+//
+// Procedures:
+//   getDashboardStats      — Aggregate dashboard statistics for current user
+//   recalculateScores      — Recalculate ALL scores (coherence, risk, BMF) and persist
+//   recalculateCoherence   — Backward-compatible alias (returns only coherence)
+//   getScoreHistory        — Get score evolution history (ScoreSnapshot records)
+//   getAgencyOverview      — Agency-level KPIs, distributions, alerts, per-brand data
+//   getBreakdowns          — Read-only score breakdowns for cockpit tooltips
+//
+// Dependencies:
+//   ~/server/api/trpc                      — createTRPCRouter, protectedProcedure
+//   ~/server/services/coherence-calculator — calculateCoherenceScore, getCoherenceBreakdown
+//   ~/server/services/score-engine         — recalculateAllScores
+//   ~/server/services/risk-calculator      — calculateRiskScore
+//   ~/server/services/bmf-calculator       — calculateBrandMarketFit
+//   ~/lib/types/pillar-parsers             — parsePillarContent
+//   ~/lib/types/pillar-schemas             — RiskAuditResult, TrackAuditResult, etc.
+//   ~/lib/constants                        — SECTORS, PHASE_CONFIG
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -7,6 +31,8 @@ import {
   getCoherenceBreakdown,
 } from "~/server/services/coherence-calculator";
 import { recalculateAllScores } from "~/server/services/score-engine";
+import { calculateRiskScore } from "~/server/services/risk-calculator";
+import { calculateBrandMarketFit } from "~/server/services/bmf-calculator";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type {
   RiskAuditResult,
@@ -235,7 +261,7 @@ export const analyticsRouter = createTRPCRouter({
         pointMort: string;
         marges: string;
       } | null;
-      pillars: Array<{ type: string; status: string; content: unknown }>;
+      pillars: Array<{ type: string; status: string; content: unknown; updatedAt: Date }>;
       pillarCompletionCount: number;
       createdAt: Date;
       updatedAt: Date;
@@ -265,127 +291,134 @@ export const analyticsRouter = createTRPCRouter({
     const STALE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
     for (const s of strategies) {
-      // --- Score extraction per pillar ---
-      let riskScore: number | null = null;
-      let bmfScore: number | null = null;
-      let synthCoherence: number | null = null;
-      let unitEcon: BrandData["unitEconomics"] = null;
+      try {
+        // --- Score extraction per pillar ---
+        let riskScore: number | null = null;
+        let bmfScore: number | null = null;
+        let synthCoherence: number | null = null;
+        let unitEcon: BrandData["unitEconomics"] = null;
 
-      const pillarR = s.pillars.find((p) => p.type === "R");
-      if (pillarR?.status === "complete" && pillarR.content) {
-        const parsed = parsePillarContent<RiskAuditResult>("R", pillarR.content);
-        if (parsed.success) riskScore = parsed.data.riskScore;
-      }
+        const pillarR = s.pillars.find((p) => p.type === "R");
+        if (pillarR?.status === "complete" && pillarR.content) {
+          const parsed = parsePillarContent<RiskAuditResult>("R", pillarR.content);
+          if (parsed.success) riskScore = parsed.data.riskScore;
+        }
 
-      const pillarT = s.pillars.find((p) => p.type === "T");
-      if (pillarT?.status === "complete" && pillarT.content) {
-        const parsed = parsePillarContent<TrackAuditResult>("T", pillarT.content);
-        if (parsed.success) bmfScore = parsed.data.brandMarketFitScore;
-      }
+        const pillarT = s.pillars.find((p) => p.type === "T");
+        if (pillarT?.status === "complete" && pillarT.content) {
+          const parsed = parsePillarContent<TrackAuditResult>("T", pillarT.content);
+          if (parsed.success) bmfScore = parsed.data.brandMarketFitScore;
+        }
 
-      const pillarS = s.pillars.find((p) => p.type === "S");
-      if (pillarS?.status === "complete" && pillarS.content) {
-        const parsed = parsePillarContent<SynthesePillarData>("S", pillarS.content);
-        if (parsed.success) synthCoherence = parsed.data.scoreCoherence;
-      }
+        const pillarS = s.pillars.find((p) => p.type === "S");
+        if (pillarS?.status === "complete" && pillarS.content) {
+          const parsed = parsePillarContent<SynthesePillarData>("S", pillarS.content);
+          if (parsed.success) synthCoherence = parsed.data.scoreCoherence;
+        }
 
-      const pillarV = s.pillars.find((p) => p.type === "V");
-      if (pillarV?.status === "complete" && pillarV.content) {
-        const parsed = parsePillarContent<ValeurPillarData>("V", pillarV.content);
-        if (parsed.success) {
-          const ue = parsed.data.unitEconomics;
-          if (ue && (ue.cac || ue.ltv || ue.ratio)) {
-            unitEcon = {
-              cac: ue.cac,
-              ltv: ue.ltv,
-              ratio: ue.ratio,
-              pointMort: ue.pointMort,
-              marges: ue.marges,
-            };
+        const pillarV = s.pillars.find((p) => p.type === "V");
+        if (pillarV?.status === "complete" && pillarV.content) {
+          const parsed = parsePillarContent<ValeurPillarData>("V", pillarV.content);
+          if (parsed.success) {
+            const ue = parsed.data.unitEconomics;
+            if (ue && (ue.cac || ue.ltv || ue.ratio)) {
+              unitEcon = {
+                cac: ue.cac,
+                ltv: ue.ltv,
+                ratio: ue.ratio,
+                pointMort: ue.pointMort,
+                marges: ue.marges,
+              };
+            }
           }
         }
-      }
 
-      // Best coherence: use stored (Strategy.coherenceScore) or synthèse-derived
-      const coherence = s.coherenceScore ?? synthCoherence;
+        // Best coherence: use stored (Strategy.coherenceScore) or synthèse-derived
+        const coherence = s.coherenceScore ?? synthCoherence;
 
-      const completedPillars = s.pillars.filter(
-        (p) => p.status === "complete",
-      ).length;
-      totalPillarsGenerated += completedPillars;
+        const completedPillars = s.pillars.filter(
+          (p) => p.status === "complete",
+        ).length;
+        totalPillarsGenerated += completedPillars;
 
-      // Accumulate averages
-      if (coherence != null) coherenceScores.push(coherence);
-      if (riskScore != null) riskScores.push(riskScore);
-      if (bmfScore != null) bmfScores.push(bmfScore);
+        // Accumulate averages
+        if (coherence != null) coherenceScores.push(coherence);
+        if (riskScore != null) riskScores.push(riskScore);
+        if (bmfScore != null) bmfScores.push(bmfScore);
 
-      // Distributions
-      const sectorKey = s.sector ?? "other";
-      sectorCounts.set(sectorKey, (sectorCounts.get(sectorKey) ?? 0) + 1);
-      phaseCounts.set(s.phase, (phaseCounts.get(s.phase) ?? 0) + 1);
-      statusCounts.set(s.status, (statusCounts.get(s.status) ?? 0) + 1);
+        // Distributions
+        const sectorKey = s.sector ?? "other";
+        sectorCounts.set(sectorKey, (sectorCounts.get(sectorKey) ?? 0) + 1);
+        phaseCounts.set(s.phase, (phaseCounts.get(s.phase) ?? 0) + 1);
+        statusCounts.set(s.status, (statusCounts.get(s.status) ?? 0) + 1);
 
-      // Alerts
-      if (coherence != null && coherence < 40) {
-        alerts.push({
-          strategyId: s.id,
+        // Alerts
+        if (coherence != null && coherence < 40) {
+          alerts.push({
+            strategyId: s.id,
+            brandName: s.brandName,
+            reason: "low_coherence",
+            detail: `Score de cohérence faible : ${coherence}/100`,
+          });
+        }
+        if (riskScore != null && riskScore > 70) {
+          alerts.push({
+            strategyId: s.id,
+            brandName: s.brandName,
+            reason: "high_risk",
+            detail: `Score de risque élevé : ${riskScore}/100`,
+          });
+        }
+        if (
+          s.status !== "complete" &&
+          s.status !== "archived" &&
+          now - s.updatedAt.getTime() > STALE_MS
+        ) {
+          alerts.push({
+            strategyId: s.id,
+            brandName: s.brandName,
+            reason: "stalled",
+            detail: `Aucune mise à jour depuis plus de 14 jours`,
+          });
+        }
+        if (s.pillars.some((p) => p.status === "error")) {
+          alerts.push({
+            strategyId: s.id,
+            brandName: s.brandName,
+            reason: "error_pillars",
+            detail: `${s.pillars.filter((p) => p.status === "error").length} pilier(s) en erreur`,
+          });
+        }
+
+        brands.push({
+          id: s.id,
+          name: s.name,
           brandName: s.brandName,
-          reason: "low_coherence",
-          detail: `Score de cohérence faible : ${coherence}/100`,
+          sector: s.sector,
+          sectorLabel: sectorLabelMap.get(s.sector ?? "other") ?? "Autre",
+          phase: s.phase,
+          phaseLabel: phaseLabelMap.get(s.phase as Phase) ?? s.phase,
+          phaseOrder: phaseOrderMap.get(s.phase as Phase) ?? 99,
+          status: s.status,
+          coherenceScore: coherence,
+          riskScore,
+          brandMarketFitScore: bmfScore,
+          unitEconomics: unitEcon,
+          pillars: s.pillars.map((p) => ({
+            type: p.type,
+            status: p.status,
+            content: p.content,
+            updatedAt: p.updatedAt,
+          })),
+          pillarCompletionCount: completedPillars,
+          createdAt: s.createdAt,
+          updatedAt: s.updatedAt,
         });
+      } catch (err) {
+        console.error(`[getAgencyOverview] Error processing strategy ${s.id}:`, err);
+        // Skip this strategy but continue with others
+        continue;
       }
-      if (riskScore != null && riskScore > 70) {
-        alerts.push({
-          strategyId: s.id,
-          brandName: s.brandName,
-          reason: "high_risk",
-          detail: `Score de risque élevé : ${riskScore}/100`,
-        });
-      }
-      if (
-        s.status !== "complete" &&
-        s.status !== "archived" &&
-        now - s.updatedAt.getTime() > STALE_MS
-      ) {
-        alerts.push({
-          strategyId: s.id,
-          brandName: s.brandName,
-          reason: "stalled",
-          detail: `Aucune mise à jour depuis plus de 14 jours`,
-        });
-      }
-      if (s.pillars.some((p) => p.status === "error")) {
-        alerts.push({
-          strategyId: s.id,
-          brandName: s.brandName,
-          reason: "error_pillars",
-          detail: `${s.pillars.filter((p) => p.status === "error").length} pilier(s) en erreur`,
-        });
-      }
-
-      brands.push({
-        id: s.id,
-        name: s.name,
-        brandName: s.brandName,
-        sector: s.sector,
-        sectorLabel: sectorLabelMap.get(s.sector ?? "other") ?? "Autre",
-        phase: s.phase,
-        phaseLabel: phaseLabelMap.get(s.phase as Phase) ?? s.phase,
-        phaseOrder: phaseOrderMap.get(s.phase as Phase) ?? 99,
-        status: s.status,
-        coherenceScore: coherence,
-        riskScore,
-        brandMarketFitScore: bmfScore,
-        unitEconomics: unitEcon,
-        pillars: s.pillars.map((p) => ({
-          type: p.type,
-          status: p.status,
-          content: p.content,
-        })),
-        pillarCompletionCount: completedPillars,
-        createdAt: s.createdAt,
-        updatedAt: s.updatedAt,
-      });
     }
 
     // ---------------------------------------------------------------
@@ -448,7 +481,7 @@ export const analyticsRouter = createTRPCRouter({
       const latestPillar = s.pillars
         .filter((p) => p.updatedAt)
         .sort(
-          (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+          (a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0),
         )[0];
 
       let action = "Mise à jour";
@@ -489,4 +522,85 @@ export const analyticsRouter = createTRPCRouter({
       recentActivity,
     };
   }),
+
+  /**
+   * Get score breakdowns for a strategy (read-only, no persistence).
+   * Computes coherence, risk, and BMF breakdowns on-the-fly for display in cockpit tooltips.
+   */
+  getBreakdowns: protectedProcedure
+    .input(z.object({ strategyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.strategyId },
+        include: { pillars: true },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      // Parse pillar data
+      const pillarMap: Record<string, unknown> = {};
+      for (const p of strategy.pillars) {
+        const { data } = parsePillarContent(p.type, p.content);
+        pillarMap[p.type] = data;
+      }
+
+      // Load parent pillars for parent-child coherence (if child strategy)
+      let parentPillarMap: Record<string, unknown> | undefined;
+      if (strategy.parentId) {
+        try {
+          const parent = await ctx.db.strategy.findUnique({
+            where: { id: strategy.parentId },
+            include: { pillars: true },
+          });
+          if (parent) {
+            parentPillarMap = {};
+            for (const p of parent.pillars) {
+              const { data } = parsePillarContent(p.type, p.content);
+              parentPillarMap[p.type] = data;
+            }
+          }
+        } catch {
+          // Parent not found — continue without parent context
+        }
+      }
+
+      // 1. Coherence breakdown
+      const coherenceBreakdown = getCoherenceBreakdown(
+        strategy.pillars,
+        strategy.interviewData as Record<string, unknown> | undefined,
+        pillarMap,
+        parentPillarMap,
+      );
+
+      // 2. Risk breakdown (only if R pillar is complete)
+      let riskBreakdown = null;
+      const rPillar = strategy.pillars.find((p) => p.type === "R");
+      if (rPillar?.status === "complete" && rPillar.content) {
+        const { data: rData } = parsePillarContent<RiskAuditResult>("R", rPillar.content);
+        if (rData) {
+          riskBreakdown = calculateRiskScore(rData);
+        }
+      }
+
+      // 3. BMF breakdown (only if T pillar is complete)
+      let bmfBreakdown = null;
+      const tPillar = strategy.pillars.find((p) => p.type === "T");
+      if (tPillar?.status === "complete" && tPillar.content) {
+        const { data: tData } = parsePillarContent<TrackAuditResult>("T", tPillar.content);
+        if (tData) {
+          bmfBreakdown = calculateBrandMarketFit(tData);
+        }
+      }
+
+      return {
+        coherenceBreakdown,
+        riskBreakdown,
+        bmfBreakdown,
+      };
+    }),
 });

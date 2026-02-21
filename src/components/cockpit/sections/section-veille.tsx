@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K15 — Section Veille
+// =============================================================================
+// Strategic monitoring dashboard surfacing market opportunities prominently.
+// Props: tContent (TrackAuditResult), implContent (ImplementationData).
+// Key features: prominent weak signals as "opportunites de prise de parole"
+// (amber highlight), macro trends pills, emerging pattern pills, competitive
+// weaknesses extracted as positioning opportunities, numbered strategic
+// recommendations. Sources data from Track Audit (T) pillar.
+// =============================================================================
+
 // Section Veille & Opportunites — Surfaces market opportunities prominently
 // instead of burying them in the Track Audit section.
 // Sources: Track Audit (T) — weak signals, macro trends, emerging patterns,

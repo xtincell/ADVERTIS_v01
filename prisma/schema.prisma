@@ -23,7 +23,8 @@ model User {
     image         String?
     password      String?   // bcrypt hashed — for Credentials provider
     company       String?
-    role          String    @default("user") // user, admin
+    role          String    @default("OPERATOR") // USER_ROLES: ADMIN, OPERATOR, FREELANCE, CLIENT_RETAINER, CLIENT_STATIC
+    viewMode      String    @default("MARKETING") // EXECUTIVE, MARKETING, FOUNDER, MINIMAL
 
     accounts   Account[]
     sessions   Session[]
@@ -78,6 +79,7 @@ model Strategy {
     id             String  @id @default(cuid())
     name           String // Nom du projet stratégique
     brandName      String // Nom de la marque client
+    tagline        String? // Signature / accroche de marque (A0)
     sector         String? // fashion, fintech, fmcg, b2b-saas, other
     description    String? @db.Text
     status         String  @default("draft") // draft, generating, complete, archived
@@ -91,6 +93,16 @@ model Strategy {
     generationMode String? // wizard, copilot
     generatedAt    DateTime?
 
+    // === Phase 1: Brand Tree ===
+    parentId        String?
+    parent          Strategy?  @relation("StrategyTree", fields: [parentId], references: [id], onDelete: SetNull)
+    children        Strategy[] @relation("StrategyTree")
+    depth           Int        @default(0) // 0 = root brand
+    nodeType        String     @default("BRAND") // NODE_TYPES constant
+    deliveryMode    String? // DELIVERY_MODES: ONE_SHOT, PLACEMENT, RETAINER
+    vertical        String? // VERTICALS: FMCG, TECH, HEALTH_PUBLIC, etc.
+    maturityProfile String? // MATURITY_PROFILES: MATURE, GROWTH, STARTUP, LAUNCH
+
     // Relations
     userId        String
     user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -103,12 +115,28 @@ model Strategy {
     cockpitWidgets CockpitWidget[]
     scoreSnapshots ScoreSnapshot[]
 
+    // === Phase 1: SIS + Market Context Relations ===
+    signals              Signal[]
+    metricThresholds     MetricThreshold[]
+    decisions            Decision[]
+    competitorSnapshots  CompetitorSnapshot[]
+    opportunities        OpportunityCalendar[]
+    budgetTiers          BudgetTier[]
+
+    // === Phase 2: Translation Layer Relations ===
+    translationDocuments TranslationDocument[]
+
+    // === Phase 3: Upgraders Ops Relations ===
+    missions             Mission[]
+    interventionRequests InterventionRequest[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
     @@index([userId])
     @@index([status])
     @@index([phase])
+    @@index([parentId])
 }
 
 model Pillar {
@@ -203,6 +231,7 @@ model CockpitShare {
     password  String // bcrypt hashed password for access control
     isActive  Boolean @default(true)
     viewCount Int     @default(0)
+    mode      String  @default("STATIC") // STATIC, LIVE
 
     strategyId String   @unique
     strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
@@ -383,4 +412,372 @@ model ScoreSnapshot {
 
     @@index([strategyId])
     @@index([createdAt])
+}
+
+// ============================================
+// SIGNAL INTELLIGENCE SYSTEM (Phase 1 — SIS)
+// 3-layer intelligence: METRIC, STRONG, WEAK
+// ============================================
+
+model Signal {
+    id             String    @id @default(cuid())
+    strategyId     String
+    strategy       Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    pillar         String // A, D, V, E, R, T, I, S
+    layer          String // METRIC, STRONG, WEAK
+    title          String
+    description    String?   @db.Text
+    status         String // Layer-dependent: METRIC→HEALTHY/WARNING/CRITICAL, STRONG→ACTIVE/DECLINING/EMERGING, WEAK→WATCH/PROBE/BET
+    source         String? // Origin: audit, manual, metric-monitor, social_listening, etc.
+    evidence       Json? // Supporting data / proof
+    confidence     String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+    reputationFlag Boolean   @default(false) // Flagged for reputation impact
+    detectedAt     DateTime  @default(now())
+    lastCheckedAt  DateTime  @default(now())
+
+    mutations SignalMutation[]
+    decision  Decision?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([strategyId, pillar])
+    @@index([layer])
+    @@index([status])
+}
+
+model SignalMutation {
+    id         String   @id @default(cuid())
+    signalId   String
+    signal     Signal   @relation(fields: [signalId], references: [id], onDelete: Cascade)
+    fromStatus String
+    toStatus   String
+    reason     String?  @db.Text
+    mutatedBy  String // userId or "system"
+
+    createdAt DateTime @default(now())
+
+    @@index([signalId])
+}
+
+model MetricThreshold {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    pillar       String
+    metricKey    String
+    metricLabel  String
+    currentValue Float    @default(0)
+    targetValue  Float    @default(0)
+    alertMin     Float?
+    alertMax     Float?
+    unit         String   @default("%")
+    cadence      String   @default("MONTHLY") // DAILY, WEEKLY, MONTHLY, QUARTERLY
+
+    lastUpdated DateTime @default(now())
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@unique([strategyId, metricKey])
+    @@index([strategyId])
+}
+
+// ============================================
+// DECISION QUEUE (Phase 1)
+// Priority-based decisions linked to signals
+// ============================================
+
+model Decision {
+    id           String    @id @default(cuid())
+    strategyId   String
+    strategy     Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    title        String
+    description  String?   @db.Text
+    priority     String    @default("P1") // P0 (urgent), P1 (scheduled), P2 (backlog)
+    status       String    @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED, DEFERRED
+    deadline     DateTime?
+    deadlineType String? // MARKETING (weeks), INSTITUTIONAL (months), STARTUP (days)
+    resolution   String?   @db.Text
+    resolvedBy   String? // userId
+    resolvedAt   DateTime?
+
+    signalId String? @unique
+    signal   Signal? @relation(fields: [signalId], references: [id], onDelete: SetNull)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([strategyId, priority])
+    @@index([status])
+}
+
+// ============================================
+// MARKET CONTEXT (Phase 1)
+// Competitors, Opportunities, Budget Tiers
+// ============================================
+
+model CompetitorSnapshot {
+    id          String   @id @default(cuid())
+    strategyId  String
+    strategy    Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    name        String
+    sov         Float? // Share of Voice %
+    positioning String?  @db.Text
+    strengths   Json? // string[]
+    weaknesses  Json? // string[]
+    recentMoves Json? // string[]
+    lastUpdated DateTime @default(now())
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, name])
+    @@index([strategyId])
+}
+
+model OpportunityCalendar {
+    id         String    @id @default(cuid())
+    strategyId String
+    strategy   Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    title      String
+    startDate  DateTime
+    endDate    DateTime?
+    type       String // SEASONAL, CULTURAL, COMPETITIVE, INTERNAL
+    impact     String    @default("MEDIUM") // LOW, MEDIUM, HIGH
+    channels   Json? // string[]
+    linkedAxes Json? // PillarType[] — axes stratégiques liés
+    notes      String?   @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([strategyId, startDate])
+}
+
+model BudgetTier {
+    id          String  @id @default(cuid())
+    strategyId  String
+    strategy    Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    tier        String // MICRO, STARTER, IMPACT, CAMPAIGN, DOMINATION
+    minBudget   Int // in local currency (e.g., FCFA)
+    maxBudget   Int
+    channels    Json // { channel: string, allocation: number }[]
+    kpis        Json // { kpi: string, target: string }[]
+    description String?  @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, tier])
+    @@index([strategyId])
+}
+
+// ============================================
+// TRANSLATION LAYER (Phase 2 — Couche 2)
+// Brief generation with traceability & freshness
+// ============================================
+
+model TranslationDocument {
+    id            String    @id @default(cuid())
+    strategyId    String
+    strategy      Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    type          String // CREATIVE_PLAYBOOK, PRODUCTION_KIT, PACKAGING_BRIEF, CHARACTER_DESIGN, etc.
+    version       Int       @default(1)
+    content       Json // Structured content with sourceRef per assertion
+    status        String    @default("DRAFT") // DRAFT, VALIDATED, STALE, ARCHIVED
+    staleReason   String?
+    staleSince    DateTime?
+    sourcePillars Json // ["A", "D"] — source pillars used for generation
+    generatedAt   DateTime  @default(now())
+    validUntil    DateTime?
+    generatedBy   String // userId who triggered generation
+    approvedBy    String?
+    approvedAt    DateTime?
+    metadata      Json? // Type-specific data (media mix period, production scope, etc.)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([type])
+    @@index([status])
+}
+
+model BriefPreset {
+    id          String  @id @default(cuid())
+    name        String
+    description String?
+    briefTypes  Json // ["CREATIVE_PLAYBOOK", "PRODUCTION_KIT_SPOT", "MEDIA_MIX"]
+    vertical    String? // null = universal preset
+    isSystem    Boolean @default(false)
+    createdBy   String // userId
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// UPGRADERS OPS (Phase 3 — Couche 3)
+// Mission workflow, roles, cost tracking, marketplace
+// ============================================
+
+model Mission {
+    id              String    @id @default(cuid())
+    strategyId      String
+    strategy        Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    title           String
+    description     String?   @db.Text
+    status          String    @default("INTAKE") // MISSION_STATUSES: INTAKE, INTELLIGENCE, STAFFING, IN_PROGRESS, REVIEW, CLOSED, MAINTENANCE
+    priority        String    @default("P1") // P0, P1, P2
+    estimatedCharge Float? // calculated: days × rate from MarketPricing
+    actualCharge    Float?
+    currency        String    @default("XAF")
+    startDate       DateTime?
+    endDate         DateTime?
+    briefTypes      Json? // string[] of BriefType linked to this mission
+    createdBy       String // userId who created the mission
+
+    assignments     MissionAssignment[]
+    deliverables    MissionDeliverable[]
+    debrief         MissionDebrief?
+    aiUsageLogs     AIUsageLog[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([status])
+    @@index([createdBy])
+}
+
+model MissionAssignment {
+    id            String    @id @default(cuid())
+    missionId     String
+    mission       Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+    userId        String // freelance userId
+    role          String // ASSIGNMENT_ROLES: DA, CR, STRAT, PROD, DEV, MEDIA, SOCIAL, RP, EVENT
+    briefType     String? // which brief type this assignment covers
+    status        String    @default("ASSIGNED") // ASSIGNED, ACCEPTED, IN_PROGRESS, DELIVERED, REVIEWED
+    dayRate       Float? // daily rate in currency
+    estimatedDays Float?
+    actualDays    Float?
+    notes         String?   @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([missionId])
+    @@index([userId])
+}
+
+model MissionDeliverable {
+    id            String    @id @default(cuid())
+    missionId     String
+    mission       Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+    assignmentId  String? // optional link to MissionAssignment
+    title         String
+    fileUrl       String? // uploaded file path or URL
+    fileType      String? // pdf, psd, ai, mp4, etc.
+    fileSize      Int? // bytes
+    status        String    @default("PENDING") // DELIVERABLE_STATUSES: PENDING, UPLOADED, UNDER_REVIEW, APPROVED, REJECTED
+    reviewNotes   String?   @db.Text
+    reviewedBy    String? // userId who reviewed
+    reviewedAt    DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([missionId])
+}
+
+model MissionDebrief {
+    id              String  @id @default(cuid())
+    missionId       String  @unique
+    mission         Mission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+    summary         String  @db.Text
+    lessonsLearned  Json? // string[]
+    clientFeedback  String? @db.Text
+    qualityScore    Int? // 0-100 internal quality score
+    onTime          Boolean?
+    onBudget        Boolean?
+    signalsSuggested Json? // Signal data to feed back into SIS
+    pricingInsights Json? // pricing data to feed into MarketPricing
+    completedBy     String // userId who completed the debrief
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+model InterventionRequest {
+    id          String    @id @default(cuid())
+    missionId   String? // optional link to mission
+    strategyId  String? // optional link to strategy
+    strategy    Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+    requestedBy String // userId (typically CLIENT_RETAINER)
+    type        String // INTERVENTION_TYPES: URGENT_CHANGE, SCOPE_EXTENSION, BUG_FIX, CONTENT_UPDATE
+    title       String
+    description String?   @db.Text
+    priority    String    @default("P1") // P0, P1, P2
+    status      String    @default("OPEN") // OPEN, TRIAGED, IN_PROGRESS, RESOLVED, REJECTED
+    resolvedBy  String?
+    resolvedAt  DateTime?
+    resolution  String?   @db.Text
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([missionId])
+    @@index([strategyId])
+    @@index([requestedBy])
+    @@index([status])
+}
+
+model AIUsageLog {
+    id             String   @id @default(cuid())
+    missionId      String?
+    mission        Mission? @relation(fields: [missionId], references: [id], onDelete: SetNull)
+    strategyId     String?
+    userId         String
+    generationType String // brief_generation, report_generation, audit_generation, translation, freetext, intel_report
+    model          String // claude-sonnet-4-..., etc.
+    tokensIn       Int
+    tokensOut      Int
+    costUsd        Float // calculated cost in USD
+    costXaf        Float // calculated cost in XAF (USD × exchange rate)
+    durationMs     Int?
+    metadata       Json? // additional context
+
+    createdAt DateTime @default(now())
+
+    @@index([missionId])
+    @@index([strategyId])
+    @@index([userId])
+    @@index([createdAt])
+}
+
+model MarketPricing {
+    id          String   @id @default(cuid())
+    market      String // CM, CI, SN, GH, NG
+    category    String // PRODUCTION, MEDIA, EVENT, TALENT, DIGITAL
+    subcategory String // e.g., "spot_tv_30s", "billboard_4x3", "MC_day_rate"
+    label       String // human-readable label
+    minPrice    Float
+    maxPrice    Float
+    avgPrice    Float?
+    currency    String   @default("XAF")
+    unit        String // "per_day", "per_unit", "per_month", "per_campaign"
+    source      String? // "agency_data", "mission_debrief", "market_research"
+    confidence  String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+    lastUpdated DateTime @default(now())
+    updatedBy   String? // userId
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([market, category, subcategory])
+    @@index([market])
+    @@index([category])
 }

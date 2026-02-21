@@ -1,3 +1,19 @@
+// =============================================================================
+// COMPONENT C.S4 — Pillar Content Preview
+// =============================================================================
+// Read-only structured display of pillar content, dispatching by type.
+// Props: pillarType (A/D/V/E/R/T/I/S), content (unknown).
+// Key features: Zod schema parsing per pillar type, 8 specialized preview
+// renderers (PreviewA through PreviewS), shared helper components
+// (ReadOnlyField, ReadOnlySection, TagList, ScoreBadge), graceful JSON
+// fallback on parse failure, covers all pillar data structures including
+// identite/ikigai/valeurs/herosJourney (A), personas/promesses/concurrence/
+// tonDeVoix/identiteVisuelle (D), productLadder/unitEconomics (V),
+// AARRR/touchpoints/rituels/gamification/KPIs (E), riskScore/SWOT/P*I
+// matrix (R), BMF/TAM-SAM-SOM/hypothesisValidation (T), brandPlatform/
+// copyStrategy/bigIdea/roadmap (I), coherencePiliers/recommandations (S).
+// =============================================================================
+
 "use client";
 
 // Pillar Content Preview — Read-only structured display of pillar content

@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.AR2 — Risk Audit Editor
+// Pillar R review/edit.
+// ==========================================================================
+
 "use client";
 
 import { ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";

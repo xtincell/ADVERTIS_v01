@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E3 — Valeur Editor
+// Pillar V content editor.
+// ==========================================================================
+
 "use client";
 
 import type { ValeurPillarData } from "~/lib/types/pillar-data";

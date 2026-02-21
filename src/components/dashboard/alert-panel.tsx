@@ -1,4 +1,7 @@
-// Alert Panel — Health alerts for the agency dashboard.
+// ==========================================================================
+// C.D4 — Alert Panel
+// Dashboard alerts and notifications.
+// ==========================================================================
 
 "use client";
 

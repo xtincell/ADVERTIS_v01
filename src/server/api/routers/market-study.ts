@@ -1,3 +1,26 @@
+// =============================================================================
+// ROUTER T.16 — Market Study Router
+// =============================================================================
+// Market study lifecycle management. Create, collect data, synthesize, complete/skip.
+//
+// Procedures:
+//   getByStrategy      — Get the market study for a strategy (or null)
+//   create             — Create a market study record (if not exists)
+//   getDataSources     — Get available data sources and configuration status
+//   addManualData      — Add a manual data entry (internal/external/interview)
+//   removeManualData   — Remove a manual data entry by ID
+//   synthesize         — Run AI synthesis on all collected data
+//   skip               — Skip market study phase and advance to audit-t
+//   completeStandalone — Complete market study without advancing pipeline phase
+//   complete           — Complete market study and advance to audit-t
+//
+// Dependencies:
+//   ~/server/api/trpc                                     — createTRPCRouter, protectedProcedure
+//   ~/server/services/market-study/collection-orchestrator — getAvailableDataSources
+//   ~/server/services/market-study/synthesis               — synthesizeMarketStudy
+//   ~/lib/types/market-study                              — ManualDataStore, ManualDataEntry
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -195,6 +218,8 @@ export const marketStudyRouter = createTRPCRouter({
 
   /**
    * Run AI synthesis on all collected data.
+   * Auto-creates MarketStudy record if it doesn't exist yet,
+   * enabling synthesis even without prior data collection (pure AI estimation).
    */
   synthesize: protectedProcedure
     .input(z.object({ strategyId: z.string() }))
@@ -211,8 +236,30 @@ export const marketStudyRouter = createTRPCRouter({
         });
       }
 
-      const synthesis = await synthesizeMarketStudy(input.strategyId);
-      return synthesis;
+      // Auto-create MarketStudy if it doesn't exist (enables synthesis without prior collection)
+      const existing = await ctx.db.marketStudy.findUnique({
+        where: { strategyId: input.strategyId },
+      });
+      if (!existing) {
+        await ctx.db.marketStudy.create({
+          data: { strategyId: input.strategyId, status: "pending" },
+        });
+      }
+
+      try {
+        const synthesis = await synthesizeMarketStudy(input.strategyId);
+        return synthesis;
+      } catch (err) {
+        console.error("[TRPC marketStudy.synthesize] Error:", err);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            err instanceof Error
+              ? err.message
+              : "Erreur inconnue lors de la synthèse",
+          cause: err,
+        });
+      }
     }),
 
   /**

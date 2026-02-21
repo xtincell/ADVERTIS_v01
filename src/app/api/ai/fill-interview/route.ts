@@ -1,7 +1,14 @@
-// ADVERTIS AI Fill Interview Route
-// POST /api/ai/fill-interview
-// Uses already-generated pillar content (A-D-V-E) + existing interview data
-// to infer and fill empty interview variables via Claude.
+// =============================================================================
+// ROUTE R.2 — AI Fill Interview
+// =============================================================================
+// POST  /api/ai/fill-interview
+// Auto-fills empty interview variables via AI. Uses already-generated pillar
+// content (A-D-V-E) + existing interview data to infer and complete missing
+// variables through Claude.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: anthropic-client (Claude), interview-schema, constants
+// maxDuration:  90s (Vercel serverless)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { generateText } from "ai";

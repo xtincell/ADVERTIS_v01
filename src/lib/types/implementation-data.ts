@@ -1,4 +1,10 @@
-// ImplementationData — Structured output from Pillar I generation.
-// Re-exported from Zod schemas (pillar-schemas.ts) which are the source of truth.
+// =============================================================================
+// LIB L.6 — Implementation Data
+// =============================================================================
+// Re-exports ImplementationData type from pillar-schemas.ts (source of truth).
+// Structured output for Pillar I (roadmap, budget, team) generation.
+// Exports: ImplementationData.
+// Used by: implementation generator, roadmap components, PDF export.
+// =============================================================================
 
 export type { ImplementationData } from "./pillar-schemas";

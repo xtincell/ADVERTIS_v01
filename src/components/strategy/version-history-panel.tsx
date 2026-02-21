@@ -1,3 +1,16 @@
+// =============================================================================
+// COMPONENT C.S8 — Version History Panel
+// =============================================================================
+// Slide-out sheet displaying pillar content version history with restore.
+// Props: pillarId, pillarType, open, onOpenChange, onRestored.
+// Key features: Sheet (side panel) listing archived versions with version
+// number badges, source labels (generation/regeneration/manual_edit/ai_update/
+// restore/import) with color-coded badges and icons, summary/changeNote
+// preview, formatted fr-FR timestamps, restore action with AlertDialog
+// confirmation, tRPC getVersions query and restoreVersion mutation, toast
+// notifications on success/error, empty state display.
+// =============================================================================
+
 "use client";
 
 import { useState } from "react";

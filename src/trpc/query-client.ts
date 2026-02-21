@@ -1,3 +1,12 @@
+// =============================================================================
+// LIB L.T1 — tRPC Query Client
+// =============================================================================
+// React Query client configuration with SuperJSON serialization for SSR.
+// Sets default staleTime, dehydration and hydration with SuperJSON.
+// Exports: createQueryClient().
+// Used by: tRPC provider (client-side), server.ts (server-side RSC).
+// =============================================================================
+
 import {
   defaultShouldDehydrateQuery,
   QueryClient,

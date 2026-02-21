@@ -1,5 +1,25 @@
-// Crunchbase adapter — fetches competitor company data (funding, size, description).
-// Uses the Crunchbase Basic API (requires CRUNCHBASE_API_KEY).
+// =============================================================================
+// MODULE 25F — Crunchbase Adapter
+// =============================================================================
+// Fetches competitor company data (description, founding date, employee count,
+// total funding, last funding round, HQ location, categories) from the
+// Crunchbase Basic API v4. Searches by competitor name via autocomplete,
+// then fetches detailed organization fields.
+// Requires env CRUNCHBASE_API_KEY.
+//
+// Implements: DataSourceAdapter { isConfigured(), collect(params) }
+// sourceId: "crunchbase"
+//
+// Public API (exported):
+//   CrunchbaseAdapter class
+//
+// Dependencies:
+//   ~/lib/types/market-study         — CollectionParams, CollectionResult, Crunchbase* types
+//   ./base-adapter                   — getEnvVar
+//
+// Called by:
+//   market-study/collection-orchestrator.ts (instantiated + collect())
+// =============================================================================
 
 import type {
   CollectionParams,

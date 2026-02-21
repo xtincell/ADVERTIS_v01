@@ -1,6 +1,17 @@
+// =============================================================================
+// COMPONENT C.S3 — Pillar Sub Nav
+// =============================================================================
+// Horizontal navigation for switching between pillar editors (A-D-V-E-R-T-I-S).
+// Props: strategyId, currentPillarType, availablePillars, className.
+// Key features: prev/next pillar buttons with ChevronLeft/ChevronRight, center
+// dot navigation sorted by canonical ADVERTIS order, back button to strategy
+// detail page, color-coded pillar dots from PILLAR_CONFIG, active pillar ring
+// highlight, responsive (dots hidden on small screens).
+// =============================================================================
+
 "use client";
 
-// Pillar Sub-Navigation — Allows navigating between pillar editors (A↔D↔V↔E↔R↔T↔I↔S)
+// Pillar Sub-Navigation — Allows navigating between pillar editors (A-D-V-E-R-T-I-S)
 // without going back to the strategy detail page.
 
 import Link from "next/link";

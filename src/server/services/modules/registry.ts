@@ -1,5 +1,24 @@
-// Module Registry — Map-based registry for pluggable modules.
-// Follows the same pattern as PILLAR_SCHEMAS in pillar-schemas.ts.
+// =============================================================================
+// MODULE 23 — Module Registry
+// =============================================================================
+// Central Map-based registry for pluggable strategy modules.
+// Follows the same singleton-Map pattern as PILLAR_SCHEMAS and Widget Registry.
+//
+// Public API:
+//   registerModule(handler)          — Register (or overwrite) a ModuleHandler
+//   getModule(moduleId)              — Retrieve a single handler by ID
+//   getAllModules()                   — List every registered handler
+//   getModulesForPillar(pillarType)  — Filter modules that output to a pillar
+//   getModulesByCategory(category)   — Filter modules by category
+//
+// Dependencies:
+//   ~/lib/types/module-system        — ModuleHandler type
+//
+// Called by:
+//   modules/index.ts (re-exports)  ·  modules/executor.ts (getModule)
+//   module implementations (registerModule at import-time)
+//   tRPC module router (getAllModules, getModulesForPillar)
+// =============================================================================
 
 import type { ModuleHandler } from "~/lib/types/module-system";
 

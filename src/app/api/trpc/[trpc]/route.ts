@@ -1,3 +1,15 @@
+// =============================================================================
+// ROUTE R.T — tRPC Handler
+// =============================================================================
+// GET, POST  /api/trpc/[trpc]
+// Next.js tRPC route handler. Wraps the tRPC fetch adapter to serve all
+// tRPC procedures (queries, mutations, subscriptions) via the appRouter.
+// Provides request context (headers) to each procedure via createTRPCContext.
+// Auth:         Per-procedure (handled by tRPC middleware in each router)
+// Dependencies: @trpc/server (fetchRequestHandler), appRouter, createTRPCContext,
+//               env (NODE_ENV for dev error logging)
+// =============================================================================
+
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
 

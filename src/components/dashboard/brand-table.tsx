@@ -1,4 +1,7 @@
-// Brand Table — Sortable table of all brands for the agency dashboard.
+// ==========================================================================
+// C.D1 — Brand Table
+// Strategy list table view.
+// ==========================================================================
 
 "use client";
 

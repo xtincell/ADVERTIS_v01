@@ -1,3 +1,26 @@
+// =============================================================================
+// ROUTER T.14 — Integration Router
+// =============================================================================
+// Third-party integration management. Connect, disconnect, sync, and monitor
+// external service integrations with encrypted credential storage.
+//
+// Procedures:
+//   listProviders  — List all available integration providers (registered adapters)
+//   listConnected  — List user's configured integrations
+//   connect        — Connect a new integration (save credentials + test connection)
+//   disconnect     — Disconnect (remove) an integration
+//   testConnection — Test an existing integration's connection
+//   sync           — Trigger a manual sync (push or pull)
+//   getSyncLogs    — Get sync history for an integration
+//
+// Dependencies:
+//   ~/server/api/trpc                           — createTRPCRouter, protectedProcedure
+//   ~/server/services/integrations/registry     — getAllIntegrations, getIntegration
+//   ~/server/services/integrations/crypto       — encryptCredentials
+//   ~/server/services/integrations/sync-orchestrator — pushToIntegration, pullFromIntegration
+//   crypto                                      — randomBytes for webhook secret
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";

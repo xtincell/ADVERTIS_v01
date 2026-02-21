@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K4 — Section Valeur
+// =============================================================================
+// Pillar V cockpit display: Value Architecture.
+// Props: vContent (ValeurPillarData), implContent, pillar, vertical.
+// Key features: product ladder (tiers with pricing), brand value (tangible /
+// intangible), client value (functional / emotional / social), client frictions,
+// cost structure (CAPEX, OPEX, hidden costs), unit economics (CAC, LTV, ratio,
+// break-even, margins). Falls back to implContent.valueArchitecture.
+// =============================================================================
+
 // Section Valeur (Pillar V) — Product Ladder, Brand & Client Value, Costs, Unit Economics
 
 import {
@@ -23,16 +34,19 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 export function SectionValeur({
   vContent,
   implContent,
   pillar,
+  vertical,
 }: {
   vContent: ValeurPillarData;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   const color = PILLAR_CONFIG.V.color;
 
@@ -43,6 +57,8 @@ export function SectionValeur({
       title="Architecture de Valeur"
       subtitle="Valeur — Proposition de valeur, Pricing, Unit Economics"
       color={color}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {vContent?.productLadder?.length ||
       vContent?.valeurMarque?.tangible?.length ||

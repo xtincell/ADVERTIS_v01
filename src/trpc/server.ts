@@ -1,3 +1,12 @@
+// =============================================================================
+// LIB L.T2 — tRPC Server Client
+// =============================================================================
+// Server-side tRPC caller for React Server Components (RSC).
+// Creates a cached tRPC context with RSC headers, wires up hydration helpers.
+// Exports: api (server-side tRPC caller), HydrateClient.
+// Used by: all RSC pages that call tRPC procedures server-side.
+// =============================================================================
+
 import "server-only";
 
 import { createHydrationHelpers } from "@trpc/react-query/rsc";

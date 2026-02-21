@@ -1,3 +1,17 @@
+// =============================================================================
+// COMPONENT C.S11 — Fiche Review Form
+// =============================================================================
+// Interview data review/edit form for validating the Fiche de Marque.
+// Props: strategyId, interviewData, onValidate, isValidating, className.
+// Key features: displays all 25 A-D-V-E interview variables grouped by pillar
+// tabs with filled/total counters, collapsible VariableField sub-components
+// with textarea editing, priority star indicators, modification tracking with
+// amber highlights, AI auto-fill via POST /api/ai/fill-interview for empty
+// variables with violet highlight, merge logic respecting user edits,
+// validate button to advance to audit-r phase, schema-driven from
+// getFicheDeMarqueSchema().
+// =============================================================================
+
 "use client";
 
 import { useState, useCallback } from "react";

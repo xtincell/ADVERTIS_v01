@@ -1,6 +1,14 @@
-// POST /api/freetext
-// Takes raw free-form text describing a brand and maps it to ADVERTIS A-E variables via AI.
-// Reuses the same variable-mapper service as file import.
+// =============================================================================
+// ROUTE R.12 — Freetext
+// =============================================================================
+// POST  /api/freetext
+// AI-powered free-text input processing. Takes raw free-form text describing
+// a brand and maps it to ADVERTIS A-E variables via AI. Reuses the same
+// variable-mapper service as file import (R.14).
+// Auth:         Session required
+// Dependencies: variable-mapper service (mapTextToVariables)
+// maxDuration:  120s (2 minutes — AI mapping)
+// =============================================================================
 
 import { NextResponse } from "next/server";
 
@@ -69,14 +77,15 @@ export async function POST(request: Request) {
       );
     } catch (error) {
       console.error("Free text mapping error:", error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Erreur lors du mapping IA des variables";
+      const isTransient =
+        message.includes("surchargée") || message.includes("réessayer");
       return NextResponse.json(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Erreur lors du mapping IA des variables",
-        },
-        { status: 500 },
+        { error: message, retryable: isTransient },
+        { status: isTransient ? 503 : 500 },
       );
     }
 

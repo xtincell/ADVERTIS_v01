@@ -1,3 +1,17 @@
+// =============================================================================
+// COMPONENT C.S7 — Template Card
+// =============================================================================
+// Status card for generated template documents (slides or pages).
+// Props: templateType, status (pending/generating/complete/error), slideCount,
+// sectionCount, totalSections, errorMessage, generatedAt, onGenerate, onView,
+// onRegenerate, className.
+// Key features: 4 status states with color-coded borders and icons, progress
+// bar during generation (section X/Y), estimated slide/page range from
+// TEMPLATE_CONFIG, dynamic icon (Presentation for slides, BookOpen for pages),
+// section checklist on completion, TemplateStatusBadge sub-component,
+// generate/view/regenerate action buttons.
+// =============================================================================
+
 "use client";
 
 import {
@@ -121,7 +135,7 @@ export function TemplateCard({
       {/* Stats for completed */}
       {status === "complete" && (
         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-          {slideCount && (
+          {slideCount != null && slideCount > 0 && (
             <span className="flex items-center gap-1">
               <FileText className="h-3 w-3" />
               ~{slideCount} {unitLabel}

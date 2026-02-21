@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.IM2 — Variable Mapping Preview
+// Imported data → variable mapping UI.
+// ==========================================================================
+
 "use client";
 
 import { useState } from "react";

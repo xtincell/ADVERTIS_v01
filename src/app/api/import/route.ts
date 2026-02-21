@@ -1,5 +1,16 @@
-// POST /api/import
-// Handles file upload (Excel/Word/PDF), parses text, and maps to ADVERTIS A-E variables via AI.
+// =============================================================================
+// ROUTE R.14 — Import
+// =============================================================================
+// POST  /api/import
+// File import and variable mapping. Handles multipart file upload
+// (Excel/Word/PDF), parses text via file-parser, and maps extracted content
+// to ADVERTIS A-E variables via AI. Supports temp strategyId for pre-creation
+// imports. Creates ImportedFile records for tracking.
+// Auth:         Session required (ownership verified when strategyId != "temp")
+// Dependencies: file-parser, variable-mapper (mapTextToVariables),
+//               Prisma (ImportedFile model)
+// maxDuration:  120s (2 minutes — file parsing + AI mapping)
+// =============================================================================
 
 import { NextResponse } from "next/server";
 
@@ -150,7 +161,7 @@ export async function POST(request: Request) {
         sector ?? "",
       );
       console.log(
-        `[import] AI mapping complete: ${Object.values(mappingResult.mappedVariables).filter((v) => v.trim()).length}/25 variables mapped, confidence=${mappingResult.confidence}%`,
+        `[import] AI mapping complete: ${Object.values(mappingResult.mappedVariables).filter((v) => v.trim()).length}/26 variables mapped, confidence=${mappingResult.confidence}%`,
       );
     } catch (error) {
       console.error("[import] AI mapping failed:", error);

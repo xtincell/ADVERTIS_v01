@@ -1,6 +1,27 @@
-// Mathematical Risk Score Calculator
-// Replaces AI-generated riskScore with deterministic formula.
-// Consumes structured data already present in RiskAuditResult.
+// =============================================================================
+// MODULE 6B — Risk Score Calculator
+// =============================================================================
+//
+// Deterministic mathematical formula replacing AI-generated riskScore.
+// Consumes structured data from RiskAuditResult (Pillar R).
+//
+// FORMULA (4 components, max 100) :
+//   6B.1  microSwotRisk         (40) — Weighted avg of micro-SWOT risk levels
+//   6B.2  probabilityImpactRisk (30) — P×I matrix aggregate (1-9 per item)
+//   6B.3  globalSwotBalance     (20) — Negatives vs total SWOT items
+//   6B.4  mitigationCoverage    (10) — Penalty for uncovered high risks
+//
+// PUBLIC API :
+//   6B.0  RiskBreakdown          — Interface with component breakdown
+//   6B.5  calculateRiskScore()   — Pure function → RiskBreakdown
+//
+// DEPENDENCIES :
+//   - lib/types/pillar-schemas → RiskAuditResult
+//
+// CALLED BY :
+//   - Module 6 (score-engine.ts)
+//
+// =============================================================================
 
 import type { RiskAuditResult } from "~/lib/types/pillar-schemas";
 

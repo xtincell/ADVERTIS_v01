@@ -1,3 +1,17 @@
+// =============================================================================
+// COMPONENT C.K8 — Section Implementation
+// =============================================================================
+// Pillar I cockpit display: Implementation Plan.
+// Props: implContent (ImplementationData).
+// Key features: 14 sub-sections — strategic roadmap (sprint 90j, year 1, year 3
+// vision), campaign plan (annual calendar, templates, activation phases), budget
+// allocation (enveloppe, par poste/phase, ROI projections), team structure
+// (current, recruitment, external partners), launch plan (phases, milestones,
+// go/no-go), operational playbook (rhythms, escalation, tool stack), brand
+// platform, copy strategy, big idea, activation dispositif (POEM), governance,
+// workstreams, brand architecture, guiding principles.
+// =============================================================================
+
 // Section Implementation (Pillar I) — Strategic Roadmap, Campaigns, Budget,
 // Team Structure, Launch Plan, Operational Playbook.
 

@@ -22,7 +22,12 @@ import {
 const pageTitles: Record<string, string> = {
   "/dashboard": "Tableau de bord",
   "/strategy/new": "Nouvelle Fiche de Marque",
+  "/market-intelligence": "Intelligence Marché",
   "/settings": "Paramètres",
+  "/missions": "Missions",
+  "/pricing": "Référentiel Pricing",
+  "/presets": "Presets de Briefs",
+  "/costs": "Coûts IA",
 };
 
 function getPageTitle(pathname: string): string {

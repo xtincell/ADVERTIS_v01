@@ -1,3 +1,24 @@
+// =============================================================================
+// ROUTER T.5 — Widget Router
+// =============================================================================
+// Widget computation + listing for cockpit dashboard widgets.
+// Auto-registers widget implementations on import.
+//
+// Procedures:
+//   listAvailable — List all registered widgets with availability status
+//   compute       — Compute (or recompute) a single widget for a strategy
+//   getData       — Get cached widget data
+//   computeAll    — Compute all available widgets for a strategy
+//
+// Auto-registered implementations:
+//   superfan-tracker, campaign-tracker, da-visual-identity, codb-calculator
+//
+// Dependencies:
+//   ~/server/api/trpc                        — createTRPCRouter, protectedProcedure
+//   ~/server/services/widgets/registry       — getAllWidgets, getWidget
+//   ~/server/services/widgets/compute-engine — computeWidget, computeAllWidgets
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";

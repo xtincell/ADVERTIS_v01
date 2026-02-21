@@ -1,10 +1,28 @@
-// Variable Mapper Service
-// Uses AI to map extracted text from imported files to ADVERTIS A-E variables.
-// Takes raw text and returns a Record<variableId, extractedValue>.
+// =============================================================================
+// MODULE 16B — Variable Mapper
+// =============================================================================
+// Maps parsed file content to interview schema variables using AI. Takes raw
+// text extracted by the File Parser (Module 16) and returns a mapping of
+// ADVERTIS A-E variable IDs to their extracted values. Includes confidence
+// scoring and unmapped variable tracking.
+//
+// Public API:
+//   1. mapTextToVariables() — Map extracted text to ADVERTIS A-E variables
+//
+// Dependencies:
+//   - anthropic-client (anthropic, DEFAULT_MODEL, resilientGenerateText)
+//   - ~/lib/interview-schema (getFicheDeMarqueSchema, getAllFicheVariableIds)
+//
+// Called by:
+//   - tRPC import router (import.mapVariables)
+//   - File Parser pipeline (post-parsing step)
+// =============================================================================
 
-import { generateText } from "ai";
-
-import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
+import {
+  anthropic,
+  DEFAULT_MODEL,
+  resilientGenerateText,
+} from "./anthropic-client";
 import {
   getFicheDeMarqueSchema,
   getAllFicheVariableIds,
@@ -69,7 +87,7 @@ FORMAT DE RÉPONSE :
 Réponds UNIQUEMENT avec un objet JSON valide mappant les IDs de variables à leurs valeurs extraites.
 Exemple : { "A1": "Description de l'identité...", "D1": "Persona principal...", "V3": "" }
 
-Important : inclus TOUTES les variables (A1 à E6), même celles sans valeur (valeur = "").`;
+Important : inclus TOUTES les variables (A0 à E6), même celles sans valeur (valeur = "").`;
 
   const userPrompt = `Document importé pour la marque "${brandName}" (secteur : ${sector}) :
 
@@ -79,7 +97,8 @@ ${extractedText}
 
 Extrais les informations pertinentes et mappe-les aux variables ADVERTIS A-E.`;
 
-  const { text } = await generateText({
+  const { text } = await resilientGenerateText({
+    label: "variable-mapper",
     model: anthropic(DEFAULT_MODEL),
     system: systemPrompt,
     prompt: userPrompt,

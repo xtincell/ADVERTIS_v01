@@ -1,4 +1,7 @@
-// Agency KPI Bar — 5 top-level KPI cards for the agency dashboard.
+// ==========================================================================
+// C.D5 — Agency KPI Bar
+// Agency-wide KPI summary.
+// ==========================================================================
 
 "use client";
 

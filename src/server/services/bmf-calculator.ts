@@ -1,6 +1,27 @@
-// Mathematical Brand-Market Fit Score Calculator
-// Replaces AI-generated brandMarketFitScore with deterministic formula.
-// Consumes structured data already present in TrackAuditResult.
+// =============================================================================
+// MODULE 6C — Brand-Market Fit (BMF) Score Calculator
+// =============================================================================
+//
+// Deterministic formula replacing AI-generated brandMarketFitScore.
+// Consumes structured data from TrackAuditResult (Pillar T).
+//
+// FORMULA (4 components, max 100) :
+//   6C.1  triangulationQuality       (25) — Data source coverage
+//   6C.2  hypothesisValidation       (30) — Validated vs total hypotheses
+//   6C.3  marketSizing               (20) — TAM/SAM/SOM completeness
+//   6C.4  competitiveDifferentiation (25) — Benchmarks + recs + market trends
+//
+// PUBLIC API :
+//   6C.0  BmfBreakdown                — Interface with component breakdown
+//   6C.5  calculateBrandMarketFit()   — Pure function → BmfBreakdown
+//
+// DEPENDENCIES :
+//   - lib/types/pillar-schemas → TrackAuditResult
+//
+// CALLED BY :
+//   - Module 6 (score-engine.ts)
+//
+// =============================================================================
 
 import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
 

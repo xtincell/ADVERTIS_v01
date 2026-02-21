@@ -1,5 +1,28 @@
-// Input Resolver — Fetches and extracts data from the database
-// based on a module's declared ModuleInputSource[].
+// =============================================================================
+// MODULE 23B — Module Input Resolver
+// =============================================================================
+// Resolves a module's declared input sources from the database into a flat
+// Record<string, unknown> that the module handler can consume.
+// Supports five source types: pillar, interview, strategy, marketStudy,
+// and moduleOutput (output of a previously-run module).
+//
+// Public API:
+//   resolveModuleInputs(descriptor, strategyId)
+//     -> Record<string, unknown>
+//
+// Internal helpers:
+//   deepGet(obj, dotPath)            — Dot-notation property accessor
+//   resolveSource(source, strategyId) — Resolve one ModuleInputSource
+//
+// Dependencies:
+//   ~/server/db                      — Prisma client (pillar, strategy, marketStudy, moduleRun)
+//   ~/lib/types/pillar-parsers       — parsePillarContent
+//   ~/lib/types/module-system        — ModuleDescriptor, ModuleInputSource
+//
+// Called by:
+//   modules/executor.ts (step 1 of run lifecycle)
+//   modules/index.ts (re-exports)
+// =============================================================================
 
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";

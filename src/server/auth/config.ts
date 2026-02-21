@@ -1,3 +1,31 @@
+// =============================================================================
+// INFRA I.6 — Auth Config
+// =============================================================================
+// NextAuth.js providers + callbacks. Credentials provider (email/password) for
+// MVP with JWT session strategy (required for Credentials provider).
+//
+// Exports:
+//   authConfig — NextAuthConfig object (providers, adapter, session, callbacks, pages)
+//
+// Module augmentation:
+//   next-auth Session — Adds id, company, role to session.user
+//   next-auth User    — Adds company, role to User type
+//
+// Configuration:
+//   Provider     — CredentialsProvider (email/password, bcrypt verification)
+//   Adapter      — PrismaAdapter (database-backed sessions/accounts)
+//   Session      — JWT strategy
+//   Callbacks    — jwt (attach id, company, role), session (expose to client)
+//   Pages        — signIn -> /login
+//
+// Dependencies:
+//   @auth/prisma-adapter             — PrismaAdapter
+//   next-auth                        — NextAuthConfig, DefaultSession
+//   next-auth/providers/credentials  — CredentialsProvider
+//   bcryptjs                         — Password comparison
+//   ~/server/db                      — Prisma client
+// =============================================================================
+
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type DefaultSession, type NextAuthConfig } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";

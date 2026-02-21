@@ -1,5 +1,24 @@
-// Integration Registry — Map-based registry for external tool adapters.
-// Same pattern as module registry and widget registry.
+// =============================================================================
+// MODULE 24 — Integration Registry
+// =============================================================================
+// Central Map-based registry for third-party integration adapters (Notion,
+// Google Sheets, Airtable, etc.). Same singleton-Map pattern as Module
+// Registry (23) and Widget Registry (14R).
+//
+// Public API:
+//   registerIntegration(adapter)             — Register an IntegrationAdapter
+//   getIntegration(providerId)               — Retrieve by provider ID
+//   getAllIntegrations()                      — List all registered adapters
+//   getIntegrationsByCategory(category)      — Filter by category
+//
+// Dependencies:
+//   ~/lib/types/integration          — IntegrationAdapter type
+//
+// Called by:
+//   integration implementations (registerIntegration at import-time)
+//   integrations/sync-orchestrator.ts (getIntegration)
+//   tRPC integration router (getAllIntegrations, getIntegration)
+// =============================================================================
 
 import type { IntegrationAdapter } from "~/lib/types/integration";
 

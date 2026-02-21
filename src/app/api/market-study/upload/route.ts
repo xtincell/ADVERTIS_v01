@@ -1,7 +1,14 @@
-// Market Study File Upload API Route
-// POST /api/market-study/upload
-// Accepts file uploads, extracts text, and stores in MarketStudy.uploadedFiles.
-// Reuses the existing file-parser service.
+// =============================================================================
+// ROUTE R.8 — Market Study Upload
+// =============================================================================
+// POST  /api/market-study/upload
+// Handles file uploads for market study. Accepts multipart file uploads,
+// extracts text via file-parser, and stores entries in MarketStudy.uploadedFiles.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: file-parser service, Prisma (MarketStudy model),
+//               types/market-study (UploadedFileEntry)
+// maxDuration:  60s
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";

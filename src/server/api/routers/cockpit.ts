@@ -1,3 +1,25 @@
+// =============================================================================
+// ROUTER T.4 — Cockpit Router
+// =============================================================================
+// Cockpit data aggregation + password-protected sharing for strategy cockpits.
+//
+// Procedures:
+//   getData          — Get cockpit data for a strategy (authenticated owner)
+//   createShare      — Create a shareable cockpit link with password protection
+//   disableShare     — Disable cockpit sharing
+//   enableShare      — Re-enable cockpit sharing
+//   getShareStatus   — Get share status for a strategy
+//   getPublicCockpit — Public endpoint: verify password and get cockpit data
+//
+// Helpers:
+//   hashPassword     — SHA-256 password hashing
+//   verifyPassword   — Password verification against stored hash
+//
+// Dependencies:
+//   ~/server/api/trpc — createTRPCRouter, protectedProcedure, publicProcedure
+//   crypto            — randomBytes for slug generation
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { randomBytes } from "crypto";

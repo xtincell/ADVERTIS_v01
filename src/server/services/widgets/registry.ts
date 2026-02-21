@@ -1,5 +1,27 @@
-// Widget Registry — Map-based registry for cockpit-derived widgets.
-// Same pattern as module registry and PILLAR_SCHEMAS.
+// =============================================================================
+// MODULE 14R — Widget Registry
+// =============================================================================
+// Central Map-based registry for cockpit dashboard widgets.
+// Same singleton-Map pattern as Module Registry (23) and Integration Registry (24).
+// Widgets self-register at import time; the registry then exposes query
+// helpers for phase-gating and category filtering.
+//
+// Public API:
+//   registerWidget(handler)                    — Register a WidgetHandler
+//   getWidget(widgetId)                        — Retrieve by ID
+//   getAllWidgets()                             — List all registered widgets
+//   getWidgetsByCategory(category)             — Filter by category
+//   getAvailableWidgets(phase, completedPillars)
+//     — Phase-gated + pillar-gated widget list for the cockpit UI
+//
+// Dependencies:
+//   ~/lib/types/cockpit-widgets      — WidgetHandler type
+//
+// Called by:
+//   widget implementations (registerWidget at import-time)
+//   tRPC cockpit/widget router (getAvailableWidgets, getWidget)
+//   widgets/implementations/* (registerWidget)
+// =============================================================================
 
 import type { WidgetHandler } from "~/lib/types/cockpit-widgets";
 

@@ -1,8 +1,13 @@
-// ============================================
-// EXTERNAL INTEGRATIONS — Type Definitions
-// ============================================
-// Standardized interface for connecting ADVERTIS
-// to business tools (Zoho, HubSpot, Monday, etc.)
+// =============================================================================
+// LIB L.10 — Integration Types
+// =============================================================================
+// Standardized interface for connecting ADVERTIS to external business tools
+// (Zoho CRM, HubSpot, Monday.com, etc.).
+// Exports: IntegrationProviderDescriptor, IntegrationCredentialField,
+//   IntegrationCapability, IntegrationSyncPayload, IntegrationSyncResult,
+//   IntegrationWebhookResult, IntegrationWebhookAction, IntegrationAdapter.
+// Used by: integration registry, sync pipeline, settings UI.
+// =============================================================================
 
 // ---------------------------------------------------------------------------
 // Integration Provider Descriptor — what an integration IS

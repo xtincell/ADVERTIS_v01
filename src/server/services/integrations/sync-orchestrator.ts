@@ -1,5 +1,27 @@
-// Sync Orchestrator — Handles push/pull operations with external tools.
-// Creates SyncLog records, manages credentials decryption, and delegates to adapters.
+// =============================================================================
+// MODULE 24B — Sync Orchestrator
+// =============================================================================
+// Orchestrates bidirectional data sync between ADVERTIS and external tools.
+// For each operation: fetches integration record, decrypts credentials,
+// builds payload (push) or delegates fetch (pull), logs the sync in SyncLog,
+// and updates the integration's lastSync* fields.
+//
+// Public API:
+//   pushToIntegration(integrationId, strategyId)
+//     -> { success, error? }
+//   pullFromIntegration(integrationId, entityType, strategyId?)
+//     -> { success, data?, error? }
+//
+// Dependencies:
+//   ~/server/db                      — Prisma client (integration, syncLog, strategy, pillar)
+//   ./registry                       — getIntegration (adapter lookup)
+//   ./crypto                         — decryptCredentials
+//   ~/lib/types/integration          — IntegrationSyncPayload
+//   ~/lib/types/pillar-parsers       — parsePillarContent
+//
+// Called by:
+//   tRPC integration router (sync.push / sync.pull mutations)
+// =============================================================================
 
 import { db } from "~/server/db";
 import { getIntegration } from "./registry";

@@ -1,6 +1,26 @@
-// Superfan Tracker Widget
-// Consumes pillar A (community hierarchy) + E (gamification, touchpoints, KPIs)
-// to produce a fan scoring model and engagement matrix.
+// =============================================================================
+// MODULE 14W1 — Superfan Tracker Widget
+// =============================================================================
+// Consumes pillar A (hierarchieCommunautaire) and pillar E (gamification,
+// touchpoints, KPIs) to produce a fan scoring model, engagement matrix,
+// per-level KPI recommendations, and a readiness score.
+// Pure compute -- no AI calls.
+//
+// Category: community  |  minimumPhase: implementation  |  size: large
+// Required pillars: A, E
+//
+// Public API (exported):
+//   default handler  — registered with registerWidget() at import time
+//
+// Dependencies:
+//   zod                              — SuperfanOutputSchema
+//   ../registry                      — registerWidget
+//   ~/lib/types/cockpit-widgets      — WidgetHandler, WidgetInput, WidgetResult
+//
+// Called by:
+//   widgets/index.ts or auto-registration import
+//   tRPC cockpit router (widget compute)
+// =============================================================================
 
 import { z } from "zod";
 import { registerWidget } from "../registry";

@@ -1,6 +1,13 @@
-// GET /api/template
-// Generates and serves an ADVERTIS Fiche de Marque Excel template (.xlsx)
-// with all 25 A-D-V-E variables pre-structured for easy data entry.
+// =============================================================================
+// ROUTE R.13 — Template
+// =============================================================================
+// GET  /api/template
+// Template CRUD operations. Generates and serves an ADVERTIS Fiche de Marque
+// Excel template (.xlsx) with all 25 A-D-V-E variables pre-structured for
+// easy data entry. Includes instructions sheet + per-pillar worksheets.
+// Auth:         None (public template download)
+// Dependencies: exceljs, interview-schema (getFicheDeMarqueSchema)
+// =============================================================================
 
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
@@ -50,7 +57,7 @@ export async function GET() {
     instructionsSheet.addRow([""]);
 
     const instructions = [
-      "Ce fichier Excel est un template pour renseigner les 25 variables de la Fiche de Marque ADVERTIS.",
+      "Ce fichier Excel est un template pour renseigner les 26 variables de la Fiche de Marque ADVERTIS.",
       "",
       "COMMENT UTILISER CE TEMPLATE :",
       "1. Chaque onglet correspond a un pilier (A, D, V, E).",
@@ -65,7 +72,7 @@ export async function GET() {
       "- Utilisez les exemples dans la colonne 'Exemple' comme guide.",
       "",
       "PILIERS :",
-      "A — Authenticite : ADN de marque, Purpose, Vision, Valeurs (6 variables)",
+      "A — Authenticite : ADN de marque, Purpose, Vision, Valeurs (7 variables)",
       "D — Distinction : Positionnement, Personas, Identite visuelle (7 variables)",
       "V — Valeur : Proposition de valeur, Pricing, Unit Economics (6 variables)",
       "E — Engagement : Touchpoints, Rituels, AARRR, Communaute (6 variables)",

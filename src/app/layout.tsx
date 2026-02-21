@@ -2,6 +2,7 @@ import "~/styles/globals.css";
 
 import { type Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { Toaster } from "~/components/ui/sonner";
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
   },
   description:
     "Plateforme SaaS de création de fiches de marque en 8 piliers, guidée par IA.",
-  manifest: "/site.webmanifest",
+  manifest: "/manifest.json",
   openGraph: {
     type: "website",
     locale: "fr_FR",
@@ -41,6 +42,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr" className={`${inter.variable}`}>
+      <head>
+        <meta name="theme-color" content="#c45a3c" />
+      </head>
       <body className="font-sans antialiased">
         <TRPCReactProvider>
           <TooltipProvider>
@@ -48,6 +52,7 @@ export default function RootLayout({
             <Toaster richColors position="bottom-right" />
           </TooltipProvider>
         </TRPCReactProvider>
+        <Script src="/register-sw.js" strategy="lazyOnload" />
       </body>
     </html>
   );

@@ -1,5 +1,13 @@
-// Pillar Parsers — Runtime validation utilities for all 8 ADVERTIS pillar types.
-// Replaces unsafe `as T` type assertions and `parseJsonObject()` + `applyDefaults()`.
+// =============================================================================
+// LIB L.4 — Pillar Parsers
+// =============================================================================
+// Runtime validation utilities for all 8 ADVERTIS pillar types.
+// 3-tier fallback: strict parse -> partial coerce -> full defaults.
+// Replaces unsafe `as T` type assertions and legacy parseJsonObject().
+// Exports: ParseResult<T>, parsePillarContent<T>(),
+//   validatePillarContent(), parseAiGeneratedContent<T>().
+// Used by: cockpit, PDF export, editors, tRPC save handlers, AI pipeline.
+// =============================================================================
 
 import { PILLAR_SCHEMAS } from "./pillar-schemas";
 

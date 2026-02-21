@@ -1,8 +1,15 @@
-// ============================================
-// MARKET STUDY MODULE — Type Definitions
-// ============================================
-// Types for the market study module that collects real market data
+// =============================================================================
+// LIB L.7 — Market Study Types
+// =============================================================================
+// Type definitions for the market study module that collects real market data
 // to enrich Pillar T (Track) generation.
+// Exports: MarketStudySynthesis, ConfidenceAnnotated<T>, DataPoint,
+//   DataSourceName, SourceStatusMap, ManualDataEntry, BraveSearchData,
+//   GoogleTrendsData, CrunchbaseData, SimilarWebData, AIWebSearchData,
+//   CompetitorProfile, TrendItem, WeakSignal, CollectionParams,
+//   DataSourceAdapter, CONFIDENCE_LABELS, SOURCE_DISPLAY.
+// Used by: market-study router, data-source adapters, Track generator UI.
+// =============================================================================
 
 // ---------------------------------------------------------------------------
 // Confidence & Data Points

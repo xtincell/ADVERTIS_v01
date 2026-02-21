@@ -1,4 +1,7 @@
-// Dashboard Shared Utilities — Helpers reused across dashboard components.
+// ==========================================================================
+// C.D0 — Dashboard Shared
+// Shared dashboard utilities/types.
+// ==========================================================================
 
 import { Badge } from "~/components/ui/badge";
 import { SECTORS } from "~/lib/constants";

@@ -1,3 +1,33 @@
+// =============================================================================
+// MODULE 6A — Coherence Score Calculator
+// =============================================================================
+//
+// Deterministic formula for measuring strategic coherence (0-100).
+// Uses 5 components that check pillar completion, variable coverage,
+// content quality, cross-pillar alignment, and audit integration.
+// Supports parent-child alignment for brand tree architectures.
+//
+// FORMULA (5+1 components, max 100) :
+//   6A.1  pillarCompletion       (25) — % of 8 pillars with status "complete"
+//   6A.2  variableCoverage       (20) — % of interview variables non-empty
+//   6A.3  contentQuality         (15) — % of completed pillars with real content
+//   6A.4  crossPillarAlignment   (25) — 7 inter-pillar coherence checks (A↔D↔V↔E)
+//   6A.5  auditIntegration       (15) — R/T audit findings quality
+//   6A.6  parentChildAlignment   (15) — Optional: child vs parent brand coherence
+//
+// PUBLIC API :
+//   6A.7  calculateCoherenceScore()  — Returns total score (0-100)
+//   6A.8  getCoherenceBreakdown()    — Returns full breakdown per component
+//
+// DEPENDENCIES :
+//   - lib/constants → PILLAR_TYPES
+//   - lib/types/pillar-schemas → typed pillar data interfaces
+//
+// CALLED BY :
+//   - Module 6 (score-engine.ts)
+//
+// =============================================================================
+
 import { PILLAR_TYPES } from "~/lib/constants";
 import type {
   AuthenticitePillarData,
@@ -27,10 +57,12 @@ export interface CoherenceBreakdown {
   variableCoverage: number;
   /** 0-15 — content quality (non-trivial content per completed pillar) */
   contentQuality: number;
-  /** 0-25 — cross-pillar alignment checks (NEW) */
+  /** 0-25 — cross-pillar alignment checks */
   crossPillarAlignment: number;
-  /** 0-15 — audit integration quality (NEW) */
+  /** 0-15 — audit integration quality */
   auditIntegration: number;
+  /** 0-15 — parent-child alignment (only for child strategies in brand tree) */
+  parentChildAlignment?: number;
   /** 0-100 — total score */
   total: number;
 }
@@ -297,6 +329,67 @@ function calculateAuditIntegration(
 }
 
 // ---------------------------------------------------------------------------
+// Parent-Child Alignment (max 15 — replaces auditIntegration when parent exists)
+// ---------------------------------------------------------------------------
+
+/**
+ * Measures coherence between a child strategy and its parent.
+ * 3 checks: values alignment, positioning consistency, tone of voice compatibility.
+ */
+function calculateParentChildAlignment(
+  childPillarMap: Record<string, unknown> | undefined,
+  parentPillarMap: Record<string, unknown> | undefined,
+): number {
+  if (!childPillarMap || !parentPillarMap) return 0;
+
+  const maxScore = 15;
+  let checks = 0;
+  let passes = 0;
+
+  const childA = childPillarMap.A as AuthenticitePillarData | undefined;
+  const parentA = parentPillarMap.A as AuthenticitePillarData | undefined;
+  const childD = childPillarMap.D as DistinctionPillarData | undefined;
+  const parentD = parentPillarMap.D as DistinctionPillarData | undefined;
+
+  // Check 1: Child values overlap with parent values
+  checks++;
+  if (childA?.valeurs && parentA?.valeurs) {
+    const childVals = childA.valeurs.map((v) => v.valeur?.toLowerCase()).filter(Boolean);
+    const parentVals = parentA.valeurs.map((v) => v.valeur?.toLowerCase()).filter(Boolean);
+    // At least 1 shared value = pass
+    const overlap = childVals.some((cv) => parentVals.includes(cv));
+    if (overlap || childVals.length === 0 || parentVals.length === 0) passes++;
+  } else {
+    passes++; // No data to compare = no penalty
+  }
+
+  // Check 2: Positioning consistency (child should reference parent's positioning)
+  checks++;
+  if (childD?.positionnement && parentD?.positionnement) {
+    // Both have positioning = aligned enough (detailed check would require NLP)
+    if (
+      childD.positionnement.trim().length > 0 &&
+      parentD.positionnement.trim().length > 0
+    ) {
+      passes++;
+    }
+  } else {
+    passes++;
+  }
+
+  // Check 3: Tone of voice compatibility
+  checks++;
+  if (childD?.tonDeVoix?.personnalite && parentD?.tonDeVoix?.personnalite) {
+    // Both exist = pass (tone may differ for sub-brands but must be defined)
+    passes++;
+  } else if (!childD?.tonDeVoix?.personnalite && !parentD?.tonDeVoix?.personnalite) {
+    passes++; // Neither has it = no penalty
+  }
+
+  return checks > 0 ? Math.round((passes / checks) * maxScore) : 0;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -316,18 +409,21 @@ export function calculateCoherenceScore(
   pillars: PillarInput[],
   interviewData?: Record<string, unknown> | null,
   pillarMap?: Record<string, unknown>,
+  parentPillarMap?: Record<string, unknown>,
 ): number {
-  const breakdown = getCoherenceBreakdown(pillars, interviewData, pillarMap);
+  const breakdown = getCoherenceBreakdown(pillars, interviewData, pillarMap, parentPillarMap);
   return breakdown.total;
 }
 
 /**
  * Return the full breakdown of the coherence score per category.
+ * When parentPillarMap is provided (child strategy), adds parentChildAlignment dimension.
  */
 export function getCoherenceBreakdown(
   pillars: PillarInput[],
   interviewData?: Record<string, unknown> | null,
   pillarMap?: Record<string, unknown>,
+  parentPillarMap?: Record<string, unknown>,
 ): CoherenceBreakdown {
   // --- 1. Pillar completion (max 25) ---
   const totalPillars = PILLAR_TYPES.length; // 8
@@ -361,12 +457,18 @@ export function getCoherenceBreakdown(
   // --- 5. Audit integration (max 15) ---
   const auditIntegration = calculateAuditIntegration(pillarMap);
 
+  // --- 6. Parent-child alignment (optional, max 15 — only for child strategies) ---
+  const parentChildAlignment = parentPillarMap
+    ? calculateParentChildAlignment(pillarMap, parentPillarMap)
+    : undefined;
+
   const total_ =
     pillarCompletion +
     variableCoverage +
     contentQuality +
     crossPillarAlignment +
-    auditIntegration;
+    auditIntegration +
+    (parentChildAlignment ?? 0);
 
   return {
     pillarCompletion,
@@ -374,6 +476,7 @@ export function getCoherenceBreakdown(
     contentQuality,
     crossPillarAlignment,
     auditIntegration,
+    parentChildAlignment,
     total: Math.min(total_, 100),
   };
 }

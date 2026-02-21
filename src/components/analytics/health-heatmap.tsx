@@ -1,5 +1,7 @@
-// Health Heatmap — Grid of cells (1 per brand) colour-coded by health score.
-// Green = healthy, yellow = moderate, red = attention needed.
+// ==========================================================================
+// C.A6 — Health Heatmap
+// Strategy health visualization.
+// ==========================================================================
 
 "use client";
 

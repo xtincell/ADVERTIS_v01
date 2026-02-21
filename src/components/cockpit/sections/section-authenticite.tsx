@@ -1,3 +1,13 @@
+// =============================================================================
+// COMPONENT C.K2 — Section Authenticite
+// =============================================================================
+// Pillar A cockpit display: Brand DNA, Values, Identity.
+// Props: aContent (AuthenticitePillarData), implContent, pillar, vertical.
+// Key features: archetype display, citation fondatrice, Ikigai 4-quadrant,
+// Hero's Journey 5-act narrative, ranked values, community hierarchy,
+// timeline narrative. Falls back to implContent.brandIdentity then raw display.
+// =============================================================================
+
 // Section Authenticité (Pillar A) — Brand DNA, Values, Identity
 
 import {
@@ -26,16 +36,19 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 export function SectionAuthenticite({
   aContent,
   implContent,
   pillar,
+  vertical,
 }: {
   aContent: AuthenticitePillarData;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   return (
     <CockpitSection
@@ -44,6 +57,8 @@ export function SectionAuthenticite({
       title="ADN de Marque"
       subtitle="Authenticité — Identité, Valeurs, Raison d'être"
       color={PILLAR_CONFIG.A.color}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {aContent?.identite?.archetype || aContent?.identite?.noyauIdentitaire ? (
         <div className="space-y-5">

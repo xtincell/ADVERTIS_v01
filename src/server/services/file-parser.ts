@@ -1,6 +1,23 @@
-// File Parser Service
-// Extracts text from uploaded Excel (.xlsx), Word (.docx), and PDF (.pdf) files.
-// Used by the file import pipeline in the Strategy Creation Wizard.
+// =============================================================================
+// MODULE 16 — File Parser
+// =============================================================================
+// Parses uploaded documents (PDF, DOCX, XLSX) for data extraction. Extracts
+// raw text content from each format using specialized libraries (pdf-parse,
+// mammoth, xlsx). Truncates output to 50K characters to stay within AI context
+// limits. Used by the file import pipeline in the Strategy Creation Wizard.
+//
+// Public API:
+//   1. parseFile() — Parse a file buffer and extract text content
+//
+// Dependencies:
+//   - xlsx (XLSX)
+//   - mammoth (Word document parsing)
+//   - pdf-parse (PDF text extraction, ESM dynamic import)
+//
+// Called by:
+//   - Variable Mapper (Module 16B) — provides raw text for AI mapping
+//   - tRPC import router (import.parseFile)
+// =============================================================================
 
 import * as XLSX from "xlsx";
 import mammoth from "mammoth";

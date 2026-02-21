@@ -1,11 +1,20 @@
-// ADVERTIS AI Generation API Route
-// POST /api/ai/generate
-// Phase-aware generation: dispatches to the correct service based on pillar type.
-//   - A, D, V, E → generatePillarContent (ai-generation.ts) — structured JSON data
-//   - R → generateRiskAudit (audit-generation.ts) — micro-SWOTs + global SWOT
-//   - T → generateTrackAudit (audit-generation.ts) — market validation + TAM/SAM/SOM
-//   - I → generateImplementationData (implementation-generation.ts) — structured cockpit data
-//   - S → generateSyntheseContent (ai-generation.ts) — strategic synthesis
+// =============================================================================
+// ROUTE R.1 — AI Generation
+// =============================================================================
+// POST  /api/ai/generate
+// Phase-aware pillar generation dispatch. Routes to the correct AI service
+// based on pillar type:
+//   - A, D, V, E  -> generatePillarContent (ai-generation.ts) — structured JSON
+//   - R            -> generateRiskAudit (audit-generation.ts) — micro-SWOTs + global SWOT
+//   - T            -> generateTrackAudit (audit-generation.ts) — market validation + TAM/SAM/SOM
+//   - I            -> generateImplementationData (implementation-generation.ts) — cockpit data
+//   - S            -> generateSyntheseContent (ai-generation.ts) — strategic synthesis
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: ai-generation, audit-generation, implementation-generation,
+//               compute-engine, track-sync, stale-detector, score-engine,
+//               budget-tier-generator, pillar-parsers
+// maxDuration:  120s (Vercel serverless)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
@@ -16,6 +25,10 @@ import {
   generateTrackAudit,
 } from "~/server/services/audit-generation";
 import { generateImplementationData } from "~/server/services/implementation-generation";
+import { computeAllWidgets } from "~/server/services/widgets/compute-engine";
+import { syncTrackToMarketContext } from "~/server/services/track-sync";
+import { clearPillarStaleness } from "~/server/services/stale-detector";
+import { recalculateAllScores } from "~/server/services/score-engine";
 import { PILLAR_TYPES } from "~/lib/constants";
 import type { RiskAuditResult, TrackAuditResult } from "~/server/services/audit-generation";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
@@ -147,6 +160,8 @@ export async function POST(req: NextRequest) {
         ficheContent,
         strategy.brandName,
         strategy.sector ?? "",
+        { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
+        strategy.tagline,
       );
 
       generatedContent = riskResult;
@@ -174,14 +189,14 @@ export async function POST(req: NextRequest) {
       const { data: riskResults } = parsePillarContent<RiskAuditResult>("R", riskPillar?.content);
 
       // Load market study synthesis if available (enriches Track with real data)
+      // Accept any synthesis — even partial or AI-estimated — to enrich Track
       const marketStudy = await db.marketStudy.findUnique({
         where: { strategyId },
         select: { synthesis: true, status: true },
       });
-      const marketStudyData =
-        marketStudy?.status === "complete" && marketStudy.synthesis
-          ? (marketStudy.synthesis as unknown as MarketStudySynthesis)
-          : null;
+      const marketStudyData = marketStudy?.synthesis
+        ? (marketStudy.synthesis as unknown as MarketStudySynthesis)
+        : null;
 
       const trackResult = await generateTrackAudit(
         interviewData,
@@ -190,10 +205,15 @@ export async function POST(req: NextRequest) {
         strategy.brandName,
         strategy.sector ?? "",
         marketStudyData,
+        { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
+        strategy.tagline,
       );
 
       generatedContent = trackResult;
       summary = `Brand-Market Fit : ${trackResult.brandMarketFitScore}/100 — TAM: ${trackResult.tamSamSom.tam.value}. ${trackResult.summary}`;
+
+      // Auto-sync competitor snapshots + opportunity calendar from Track data
+      void syncTrackToMarketContext(strategyId, trackResult);
     } else if (pillarType === "I") {
       // ── IMPLEMENTATION DATA ──
       // Requires validated A-E fiche content + R+T audit results
@@ -228,6 +248,8 @@ export async function POST(req: NextRequest) {
         ficheContent,
         strategy.brandName,
         strategy.sector ?? "",
+        { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
+        strategy.tagline,
       );
 
       generatedContent = implResult;
@@ -250,6 +272,8 @@ export async function POST(req: NextRequest) {
         allCompletedPillars,
         strategy.brandName,
         strategy.sector ?? "",
+        { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
+        strategy.tagline,
       );
 
       generatedContent = syntheseResult;
@@ -262,6 +286,8 @@ export async function POST(req: NextRequest) {
         previousPillars,
         strategy.brandName,
         strategy.sector ?? "",
+        { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
+        strategy.tagline,
       );
 
       generatedContent = jsonContent;
@@ -316,6 +342,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Clear staleness on successful generation
+    void clearPillarStaleness(targetPillar.id);
+
+    // ---------------------------------------------------------------------------
+    // 9b. Recalculate all strategy scores (coherence, risk, BMF)
+    // ---------------------------------------------------------------------------
+    void recalculateAllScores(strategyId, "generation");
+
     // ---------------------------------------------------------------------------
     // 10. Phase advancement logic (new 9-phase pipeline)
     // ---------------------------------------------------------------------------
@@ -335,12 +369,29 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // I complete → advance to cockpit
+    // I complete → advance to cockpit + auto-seed budget tiers
     if (pillarType === "I") {
       await db.strategy.update({
         where: { id: strategyId },
         data: { phase: "cockpit", status: "generating" },
       });
+
+      // Auto-generate 5 contextualised budget tiers from Pillar I data
+      try {
+        const existingTiers = await db.budgetTier.count({ where: { strategyId } });
+        if (existingTiers === 0) {
+          const { generateBudgetTiers } = await import("~/server/services/budget-tier-generator");
+          const implData = generatedContent as import("~/lib/types/implementation-data").ImplementationData;
+          const tiers = await generateBudgetTiers(implData, strategy.brandName, strategy.sector ?? "");
+          await db.budgetTier.createMany({
+            data: tiers.map((t) => ({ strategyId, ...t })),
+          });
+          console.log(`[AI Generation] Auto-generated ${tiers.length} contextualised budget tiers for strategy ${strategyId}`);
+        }
+      } catch (seedError) {
+        // Non-critical: log but don't fail the generation
+        console.error("[AI Generation] Failed to generate budget tiers:", seedError);
+      }
     }
 
     // S complete → advance to complete
@@ -368,6 +419,11 @@ export async function POST(req: NextRequest) {
         },
       });
     }
+
+    // ---------------------------------------------------------------------------
+    // 11b. Auto-compute cockpit widgets (fire-and-forget)
+    // ---------------------------------------------------------------------------
+    void computeAllWidgets(strategyId);
 
     return NextResponse.json({
       success: true,

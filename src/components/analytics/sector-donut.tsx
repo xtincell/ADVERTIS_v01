@@ -1,5 +1,7 @@
-// Sector Donut — SVG donut chart showing brand distribution by sector.
-// Same custom SVG pattern as CoherenceGauge and PillarRadar — no external deps.
+// ==========================================================================
+// C.A4 — Sector Donut
+// Sector distribution chart.
+// ==========================================================================
 
 "use client";
 

@@ -1,3 +1,20 @@
+// =============================================================================
+// ROUTER T.9 — Document Router
+// =============================================================================
+// TranslationDocument (brief) management. CRUD + status queries + section regen.
+//
+// Procedures:
+//   getByStrategy      — Get all documents for a strategy
+//   getById            — Get a single document by ID
+//   getStatus          — Get lightweight document generation status summary
+//   regenerateSection  — Regenerate a single section of a completed document
+//   delete             — Delete a document
+//
+// Dependencies:
+//   ~/server/api/trpc — createTRPCRouter, protectedProcedure
+//   ~/lib/constants   — REPORT_TYPES
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 

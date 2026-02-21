@@ -1,4 +1,7 @@
-// Brand Card Grid — Visual card-based view of all brands for the agency dashboard.
+// ==========================================================================
+// C.D2 — Brand Card Grid
+// Strategy grid card view.
+// ==========================================================================
 
 "use client";
 

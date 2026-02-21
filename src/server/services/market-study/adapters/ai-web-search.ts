@@ -1,6 +1,26 @@
-// AI Web Search adapter — uses Claude with web search tool for flexible data collection.
-// This is the most flexible adapter: it can fill gaps left by other sources.
-// Uses the Anthropic API directly with the web_search tool.
+// =============================================================================
+// MODULE 25D — AI Web Search Adapter
+// =============================================================================
+// AI-powered web research adapter using Claude (claude-sonnet-4). The most
+// flexible adapter: sends purpose-specific prompts (market size, trends,
+// competitive landscape, TAM/SAM/SOM) and classifies response confidence.
+// Designed to fill gaps left by structured-data adapters.
+// Requires env ANTHROPIC_API_KEY (shared with the rest of the app).
+//
+// Implements: DataSourceAdapter { isConfigured(), collect(params) }
+// sourceId: "ai_web_search"
+//
+// Public API (exported):
+//   AIWebSearchAdapter class
+//
+// Dependencies:
+//   ai (Vercel AI SDK)               — generateText
+//   ../../anthropic-client            — anthropic model reference
+//   ~/lib/types/market-study          — CollectionParams, CollectionResult, AIWebSearch* types
+//
+// Called by:
+//   market-study/collection-orchestrator.ts (instantiated + collect())
+// =============================================================================
 
 import { generateText } from "ai";
 import { anthropic } from "../../anthropic-client";

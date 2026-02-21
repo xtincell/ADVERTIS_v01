@@ -15,6 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
+import { FreshnessBadge } from "~/components/ui/freshness-badge";
 import {
   Tooltip,
   TooltipTrigger,
@@ -127,6 +128,8 @@ export interface CoherenceBreakdownData {
   contentQuality: number;
   crossPillarAlignment: number;
   auditIntegration: number;
+  /** Only present for child strategies in the brand tree (max 15 pts) */
+  parentChildAlignment?: number;
   total: number;
 }
 
@@ -186,6 +189,10 @@ export function ScoreBreakdownTooltip({
       { label: "Alignement inter-piliers", value: b.crossPillarAlignment, max: 25 },
       { label: "Intégration audits", value: b.auditIntegration, max: 15 },
     );
+    // Parent-child alignment row (only for child strategies in the brand tree)
+    if (b.parentChildAlignment != null && b.parentChildAlignment > 0) {
+      rows.push({ label: "Alignement parent", value: b.parentChildAlignment, max: 15 });
+    }
   } else if (type === "risk") {
     const b = breakdown as RiskBreakdownData;
     rows.push(
@@ -302,6 +309,8 @@ export function CockpitSection({
   title,
   subtitle,
   color,
+  updatedAt,
+  vertical,
   children,
 }: {
   icon: React.ReactNode;
@@ -309,6 +318,8 @@ export function CockpitSection({
   title: string;
   subtitle: string;
   color: string;
+  updatedAt?: Date | string | null;
+  vertical?: string | null;
   children: React.ReactNode;
 }) {
   return (
@@ -333,6 +344,9 @@ export function CockpitSection({
               >
                 {pillarLetter}
               </span>
+              {updatedAt && (
+                <FreshnessBadge date={updatedAt} vertical={vertical} />
+              )}
             </div>
             <CardDescription>{subtitle}</CardDescription>
           </div>

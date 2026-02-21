@@ -111,7 +111,7 @@ export default function FreeTextInput({
               <p className="text-muted-foreground mt-1 text-sm">
                 Ecrivez tout ce que vous savez sur votre marque dans un seul
                 bloc de texte. L&apos;IA analysera votre description et
-                remplira automatiquement les 25 variables de la Fiche de
+                remplira automatiquement les 26 variables de la Fiche de
                 Marque. Plus vous donnez de details, meilleur sera le
                 resultat.
               </p>

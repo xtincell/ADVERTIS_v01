@@ -1,6 +1,13 @@
-// ADVERTIS PDF Export API Route
-// POST /api/export/pdf
-// Generates and returns a PDF document for a strategy.
+// =============================================================================
+// ROUTE R.9 — Export PDF
+// =============================================================================
+// POST  /api/export/pdf
+// Generates and downloads a PDF report for a strategy. Supports pillar
+// selection and optional cover page. Returns binary PDF with
+// Content-Disposition: attachment.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: pdf-generator service, Prisma (Strategy + Pillars)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
@@ -73,6 +80,7 @@ export async function POST(req: NextRequest) {
       {
         name: strategy.name,
         brandName: strategy.brandName,
+        tagline: strategy.tagline ?? undefined,
         sector: strategy.sector ?? undefined,
         coherenceScore: strategy.coherenceScore ?? undefined,
         createdAt: strategy.createdAt,

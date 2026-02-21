@@ -1,5 +1,7 @@
-// Audit Suggestions Panel — Displays AI-generated suggestions for updating A-D-V-E
-// based on audit R+T results. The user can accept or reject each suggestion.
+// ==========================================================================
+// C.AR5 — Audit Suggestions Panel
+// AI suggestion display.
+// ==========================================================================
 
 "use client";
 
@@ -36,7 +38,7 @@ import { Badge } from "~/components/ui/badge";
 // ---------------------------------------------------------------------------
 
 interface AuditSuggestion {
-  pillarType: "A" | "D" | "V" | "E";
+  pillarType: "A" | "D" | "V" | "E" | "R" | "T" | "I" | "S";
   field: string;
   fieldLabel: string;
   currentValue: string;
@@ -244,11 +246,11 @@ export function AuditSuggestionsPanel({
           <div>
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="h-4 w-4 text-violet-600" />
-              Suggestions d&apos;amélioration A-D-V-E
+              Suggestions d&apos;amélioration ADVERTIS
             </CardTitle>
             <CardDescription>
-              L&apos;IA analyse l&apos;audit pour proposer des mises à jour
-              concrètes des piliers de base
+              L&apos;IA analyse l&apos;audit R+T pour proposer des mises à jour
+              concrètes sur les 8 piliers
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
@@ -292,7 +294,7 @@ export function AuditSuggestionsPanel({
               </Button>
               <p className="text-xs text-muted-foreground">
                 L&apos;IA analysera les résultats de l&apos;audit R+T pour
-                proposer des améliorations des piliers A-D-V-E
+                proposer des améliorations sur les 8 piliers ADVERTIS
               </p>
             </div>
           )}

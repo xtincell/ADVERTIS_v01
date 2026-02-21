@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K5 — Section Engagement
+// =============================================================================
+// Pillar E cockpit display: Engagement strategy.
+// Props: eContent (EngagementPillarData), implContent, pillar, vertical.
+// Key features: AARRR funnel (5 stages), typed touchpoints (physique/digital/
+// humain), rituels with frequency badges, community principles & tabous,
+// gamification levels with rewards, KPI cards with targets and frequency.
+// Falls back to implContent.engagementStrategy.
+// =============================================================================
+
 // Section Engagement (Pillar E) — Touchpoints, Rituels, AARRR, Communaute, Gamification, KPIs
 
 import {
@@ -22,6 +33,7 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 const COLOR = PILLAR_CONFIG.E.color; // #3c7ac4
@@ -30,10 +42,12 @@ export function SectionEngagement({
   eContent,
   implContent,
   pillar,
+  vertical,
 }: {
   eContent: EngagementPillarData;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   // ---------------------------------------------------------------------------
   // Primary: Full EngagementPillarSchema data
@@ -59,8 +73,10 @@ export function SectionEngagement({
       icon={<Users className="h-5 w-5" />}
       pillarLetter="E"
       title="Engagement"
-      subtitle="Touchpoints, Rituels, AARRR, Communaut\u00e9"
+      subtitle="Touchpoints, Rituels, AARRR, Communauté"
       color={COLOR}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {hasFullData ? (
         <div className="space-y-5">

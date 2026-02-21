@@ -1,8 +1,18 @@
+// ==========================================================================
+// PAGE P.0 — Auth Layout
+// Root authenticated layout. Checks auth and wraps children in session provider.
+// Role-based shell routing is handled by sub-group layouts:
+//   (operator)/layout.tsx  → ADMIN, OPERATOR
+//   (freelance)/layout.tsx → FREELANCE
+//   (client)/layout.tsx    → CLIENT_RETAINER, CLIENT_STATIC
+// ==========================================================================
+
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
-import Sidebar from "~/components/layout/sidebar";
-import Header from "~/components/layout/header";
 import AuthSessionProvider from "~/components/providers/session-provider";
+import { RoleProvider } from "~/components/providers/role-provider";
+import { TooltipProvider } from "~/components/ui/tooltip";
+import { OfflineBanner } from "~/components/ui/offline-banner";
 
 export default async function AuthLayout({
   children,
@@ -17,13 +27,12 @@ export default async function AuthLayout({
 
   return (
     <AuthSessionProvider>
-      <div className="flex h-screen overflow-hidden">
-        <Sidebar />
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-auto bg-dotgrid p-6 animate-page-enter">{children}</main>
-        </div>
-      </div>
+      <TooltipProvider delayDuration={0}>
+        <OfflineBanner />
+        <RoleProvider>
+          {children}
+        </RoleProvider>
+      </TooltipProvider>
     </AuthSessionProvider>
   );
 }

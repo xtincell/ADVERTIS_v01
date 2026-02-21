@@ -1,6 +1,16 @@
-// Zod Schemas — Source of truth for all 8 ADVERTIS pillar data types.
+// =============================================================================
+// LIB L.3 — Pillar Schemas (Zod)
+// =============================================================================
+// Source of truth for all 8 ADVERTIS pillar data types (A/D/V/E/R/T/I/S).
 // TypeScript types are inferred from these schemas via z.infer<>.
 // Runtime validation replaces unsafe `as T` type assertions everywhere.
+// Exports: AuthenticitePillarSchema, DistinctionPillarSchema,
+//   ValeurPillarSchema, EngagementPillarSchema, RiskPillarSchema,
+//   TrackPillarSchema, ImplementationPillarSchema, SynthesePillarSchema,
+//   PILLAR_SCHEMAS map, and all inferred *Data types.
+// Used by: pillar-parsers.ts, pillar-data.ts, implementation-data.ts,
+//   tRPC routers, AI generators, cockpit components.
+// =============================================================================
 
 import { z } from "zod";
 
@@ -549,7 +559,7 @@ export const ImplementationDataSchema = z
       })
       .default({}),
 
-    // Optional enriched sections
+    // Enriched operational sections (generated in Pass 2)
     campaigns: z
       .object({
         annualCalendar: z
@@ -585,7 +595,7 @@ export const ImplementationDataSchema = z
           })
           .default({}),
       })
-      .optional(),
+      .default({}),
     budgetAllocation: z
       .object({
         enveloppeGlobale: z.string().default(""),
@@ -617,7 +627,7 @@ export const ImplementationDataSchema = z
           })
           .default({}),
       })
-      .optional(),
+      .default({}),
     teamStructure: z
       .object({
         equipeActuelle: z
@@ -650,7 +660,7 @@ export const ImplementationDataSchema = z
           )
           .default([]),
       })
-      .optional(),
+      .default({}),
     launchPlan: z
       .object({
         phases: z
@@ -676,7 +686,7 @@ export const ImplementationDataSchema = z
           )
           .default([]),
       })
-      .optional(),
+      .default({}),
     operationalPlaybook: z
       .object({
         rythmeQuotidien: z.array(z.string()).default([]),
@@ -701,7 +711,7 @@ export const ImplementationDataSchema = z
           )
           .default([]),
       })
-      .optional(),
+      .default({}),
 
     // ====== SECTIONS STRATÉGIQUES UPGRADERS ======
 
@@ -716,7 +726,7 @@ export const ImplementationDataSchema = z
         territory: z.string().default(""),
         tagline: z.string().default(""),
       })
-      .optional(),
+      .default({}),
 
     // Copy Strategy — Le contrat stratégique création/stratégie
     copyStrategy: z
@@ -727,7 +737,7 @@ export const ImplementationDataSchema = z
         tone: z.string().default(""),
         constraint: z.string().default(""),
       })
-      .optional(),
+      .default({}),
 
     // Big Idea — Le concept central déclinable
     bigIdea: z
@@ -744,7 +754,7 @@ export const ImplementationDataSchema = z
           )
           .default([]),
       })
-      .optional(),
+      .default({}),
 
     // Dispositif d'Activation — Axes owned/earned/paid/shared
     activationDispositif: z
@@ -787,7 +797,7 @@ export const ImplementationDataSchema = z
           .default([]),
         parcoursConso: z.string().default(""),
       })
-      .optional(),
+      .default({}),
 
     // Gouvernance — Modèle de pilotage et décision
     governance: z
@@ -823,7 +833,7 @@ export const ImplementationDataSchema = z
           )
           .default([]),
       })
-      .optional(),
+      .default({}),
 
     // Streams de travail — Organisation par flux
     workstreams: z
@@ -836,7 +846,7 @@ export const ImplementationDataSchema = z
           kpis: z.array(z.string()).default([]),
         }),
       )
-      .optional(),
+      .default([]),
 
     // Architecture de Marque — Hiérarchie et coexistence
     brandArchitecture: z
@@ -853,7 +863,7 @@ export const ImplementationDataSchema = z
           .default([]),
         coexistenceRules: z.string().default(""),
       })
-      .optional(),
+      .default({}),
 
     // Principes directeurs — Do's / Don'ts / Critères
     guidingPrinciples: z
@@ -863,7 +873,7 @@ export const ImplementationDataSchema = z
         communicationPrinciples: z.array(z.string()).default([]),
         coherenceCriteria: z.array(z.string()).default([]),
       })
-      .optional(),
+      .default({}),
 
     coherenceScore: z.coerce.number().min(0).max(100).catch(0),
     executiveSummary: z.string().default(""),
@@ -901,6 +911,56 @@ export const SynthesePillarSchema = z
       )
       .default([]),
     scoreCoherence: z.coerce.number().min(0).max(100).catch(0),
+
+    // --- Enriched fields (backward-compatible via defaults) ---
+
+    axesStrategiques: z
+      .array(
+        z.object({
+          axe: z.string().default(""),
+          description: z.string().default(""),
+          piliersLies: z.array(z.string()).default([]),
+          kpisCles: z.array(z.string()).default([]),
+        }),
+      )
+      .default([]),
+
+    sprint90Recap: z
+      .object({
+        actions: z
+          .array(
+            z.object({
+              action: z.string().default(""),
+              owner: z.string().default(""),
+              kpi: z.string().default(""),
+              status: z.string().default("à faire"),
+            }),
+          )
+          .default([]),
+        summary: z.string().default(""),
+      })
+      .default({}),
+
+    campaignsSummary: z
+      .object({
+        totalCampaigns: z.coerce.number().default(0),
+        highlights: z.array(z.string()).default([]),
+        budgetTotal: z.string().default(""),
+      })
+      .default({}),
+
+    activationSummary: z.string().default(""),
+
+    kpiDashboard: z
+      .array(
+        z.object({
+          pilier: z.string().default(""),
+          kpi: z.string().default(""),
+          cible: z.string().default(""),
+          statut: z.string().default(""),
+        }),
+      )
+      .default([]),
   })
   .strip();
 

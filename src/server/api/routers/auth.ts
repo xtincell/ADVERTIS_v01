@@ -1,3 +1,18 @@
+// =============================================================================
+// ROUTER T.0 — Auth Router
+// =============================================================================
+// Authentication procedures. User registration, profile read, profile update.
+//
+// Procedures:
+//   register      — Register a new user (public, email/password + optional company)
+//   getProfile    — Get current user's profile (protected)
+//   updateProfile — Update current user's name/company (protected)
+//
+// Dependencies:
+//   ~/server/api/trpc — createTRPCRouter, publicProcedure, protectedProcedure
+//   bcryptjs          — Password hashing
+// =============================================================================
+
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";

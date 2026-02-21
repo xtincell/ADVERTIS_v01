@@ -1,3 +1,20 @@
+// =============================================================================
+// ROUTER T.6 — Module Router
+// =============================================================================
+// Pluggable module execution system. Lists, executes, and tracks module runs.
+//
+// Procedures:
+//   list         — List all registered modules (optionally filtered by pillar type)
+//   execute      — Execute a module for a strategy (manual trigger)
+//   getRuns      — Get module run history for a strategy
+//   getLatestRun — Get the latest run for a specific module + strategy
+//   getRunById   — Get a single module run by ID
+//
+// Dependencies:
+//   ~/server/api/trpc         — createTRPCRouter, protectedProcedure
+//   ~/server/services/modules — getAllModules, getModule, getModulesForPillar, executeModule
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";

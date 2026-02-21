@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.S2 — Strategy Sub Nav
+// =============================================================================
+// Horizontal tab bar for navigating between strategy sub-pages.
+// Props: strategyId, className.
+// Key features: 5 tabs (Fiche, Pipeline, Cockpit, Fiche S, Etude de Marche),
+// Next.js Link + usePathname() for active state detection with underline
+// indicator, back arrow to /dashboard, scrollable overflow tab list,
+// backdrop blur background.
+// =============================================================================
+
 "use client";
 
 // Strategy Sub-Navigation — Horizontal tab bar for navigating between
@@ -15,6 +26,7 @@ import { cn } from "~/lib/utils";
 
 const STRATEGY_TABS = [
   { key: "fiche",        label: "Fiche",           suffix: "" },
+  { key: "generate",     label: "Pipeline",        suffix: "/generate" },
   { key: "cockpit",      label: "Cockpit",         suffix: "/cockpit" },
   { key: "presentation", label: "Fiche S",         suffix: "/presentation" },
   { key: "market-study", label: "Étude de Marché", suffix: "/market-study" },

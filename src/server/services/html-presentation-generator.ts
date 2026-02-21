@@ -1,8 +1,27 @@
-// HTML Presentation Generator — Transforms structured pillar data into a standalone
-// interactive HTML "Fiche de Marque" presentation. No AI needed — pure templating.
+// =============================================================================
+// MODULE 15C — HTML Presentation Generator
+// =============================================================================
+// Transforms structured pillar data into a standalone interactive HTML "Fiche
+// de Marque" presentation. Pure templating — no AI needed. Produces a single
+// self-contained HTML file with embedded CSS, navigation, slide transitions,
+// and white-label support. Handles all pillar types (A, D, V, E, R, T, I, S)
+// with dedicated renderers for scores, SWOT grids, tables, and charts.
+//
+// Public API:
+//   1. generateHTMLPresentation() — Generate a full HTML presentation from
+//                                   strategy and pillar data
+//
+// Dependencies:
+//   - ~/lib/types/pillar-parsers (parsePillarContent)
+//   - ~/lib/constants (PILLAR_CONFIG, FRESHNESS_THRESHOLDS, WHITE_LABEL_MAP)
+//   - Pillar type schemas (AuthenticitePillarData, DistinctionPillarData, etc.)
+//
+// Called by:
+//   - tRPC export router (export.html)
+// =============================================================================
 
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
-import { PILLAR_CONFIG } from "~/lib/constants";
+import { PILLAR_CONFIG, FRESHNESS_THRESHOLDS, WHITE_LABEL_MAP } from "~/lib/constants";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
@@ -21,6 +40,7 @@ import type {
 interface StrategyMeta {
   name: string;
   brandName: string;
+  tagline?: string;
   sector?: string;
   coherenceScore?: number;
   createdAt: Date;
@@ -34,6 +54,72 @@ interface PillarInput {
   status: string;
 }
 
+// Phase 4 data types for new sections
+interface DecisionData {
+  id: string;
+  title: string;
+  description?: string | null;
+  priority: string;
+  status: string;
+  deadline?: Date | null;
+  deadlineType?: string | null;
+  resolution?: string | null;
+  createdAt: Date;
+}
+
+interface CompetitorData {
+  id: string;
+  name: string;
+  sov?: number | null;
+  positioning?: string | null;
+  strengths: unknown;
+  weaknesses: unknown;
+  recentMoves: unknown;
+  lastUpdated: Date;
+}
+
+interface OpportunityData {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate?: Date | null;
+  type: string;
+  impact: string;
+  channels?: unknown;
+  linkedAxes?: unknown;
+  notes?: string | null;
+}
+
+interface BudgetTierData {
+  id: string;
+  tier: string;
+  minBudget: number;
+  maxBudget: number;
+  channels?: unknown;
+  kpis?: unknown;
+  description?: string | null;
+}
+
+interface BriefData {
+  id: string;
+  type: string;
+  version: number;
+  status: string;
+  staleReason?: string | null;
+  staleSince?: Date | null;
+  sourcePillars: unknown;
+  createdAt: Date;
+}
+
+interface InlineSourceRef {
+  pillar: string;
+  variableKey: string;
+  variableValue: string;
+  why: string;
+  updatedAt: string;
+  source: string;
+}
+
 export interface HTMLPresentationOptions {
   selectedPillars?: string[];
   brandAccent?: string;
@@ -42,6 +128,28 @@ export interface HTMLPresentationOptions {
   locale?: string;
   /** Custom image overrides per section (section id → URL) */
   sectionImages?: Partial<Record<string, string>>;
+  /** Phase 4: extra data */
+  decisions?: DecisionData[];
+  competitors?: CompetitorData[];
+  opportunities?: OpportunityData[];
+  budgetTiers?: BudgetTierData[];
+  briefs?: BriefData[];
+  parentBrand?: { id: string; brandName: string } | null;
+  childBrands?: { id: string; brandName: string }[];
+  userRole?: string;
+  vertical?: string;
+  /** SIS Signals */
+  signals?: SignalData[];
+}
+
+interface SignalData {
+  id: string;
+  title: string;
+  layer: string;
+  status: string;
+  pillar: string | null;
+  source: string | null;
+  detectedAt: Date;
 }
 
 // ---------------------------------------------------------------------------
@@ -67,6 +175,16 @@ const DEFAULT_SECTION_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&h=400&fit=crop&crop=center",
   implementation:
     "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200&h=400&fit=crop&crop=center",
+  decisions:
+    "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&h=400&fit=crop&crop=center",
+  competitors:
+    "https://images.unsplash.com/photo-1556761175-4b46a572b786?w=1200&h=400&fit=crop&crop=center",
+  briefs:
+    "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=1200&h=400&fit=crop&crop=center",
+  opportunities:
+    "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200&h=400&fit=crop&crop=center",
+  "budget-sim":
+    "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1200&h=400&fit=crop&crop=center",
 };
 
 function getSectionImage(sectionId: string, options: HTMLPresentationOptions): string {
@@ -128,6 +246,63 @@ function brandInitials(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Phase 4 Helpers — Freshness, SourceRef, White-Label
+// ---------------------------------------------------------------------------
+
+function getFreshnessThresholds(vertical?: string): { fresh: number; aging: number } {
+  if (vertical && FRESHNESS_THRESHOLDS[vertical]) {
+    return FRESHNESS_THRESHOLDS[vertical]!;
+  }
+  return FRESHNESS_THRESHOLDS.DEFAULT!;
+}
+
+function inlineFreshnessBadge(date: Date | string | null | undefined, vertical?: string): string {
+  if (!date) return "";
+  const days = Math.floor(
+    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24),
+  );
+  const thresholds = getFreshnessThresholds(vertical);
+  let levelClass = "fb-stale";
+  if (days <= thresholds.fresh) levelClass = "fb-fresh";
+  else if (days <= thresholds.aging) levelClass = "fb-aging";
+  const label = days < 0 ? "N/A" : `${days}j`;
+  return `<span class="freshness-badge ${levelClass}"><span class="fb-dot"></span>${label}</span>`;
+}
+
+function inlineSourceRef(ref: InlineSourceRef, children: string): string {
+  const pillarConfig = PILLAR_CONFIG[ref.pillar as keyof typeof PILLAR_CONFIG];
+  const pillarColor = pillarConfig?.color ?? "#6b7280";
+  const pillarTitle = pillarConfig?.title ?? ref.pillar;
+  const sourceLabels: Record<string, string> = {
+    generation: "AI",
+    manual: "Manuel",
+    market_study: "Etude",
+  };
+  return `<span class="source-ref">${children}<span class="source-ref-tooltip">
+    <div class="sr-header">
+      <span class="sr-pillar" style="background:${pillarColor}">${esc(ref.pillar)}</span>
+      <span style="font-size:var(--fs-small);font-weight:600;">${esc(pillarTitle)}</span>
+      ${inlineFreshnessBadge(ref.updatedAt)}
+    </div>
+    <div class="sr-var">Variable : ${esc(ref.variableKey)}</div>
+    <div class="sr-val">${esc(ref.variableValue)}</div>
+    <div class="sr-why">${esc(ref.why)}</div>
+    <div class="sr-source">Source : ${esc(sourceLabels[ref.source] ?? ref.source)}</div>
+  </span></span>`;
+}
+
+function wl(label: string, role?: string): string {
+  if (!role || role === "ADMIN" || role === "OPERATOR") return esc(label);
+  return esc(WHITE_LABEL_MAP[label] ?? label);
+}
+
+function formatShortDate(date: Date | string): string {
+  const d = new Date(date);
+  const months = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ---------------------------------------------------------------------------
 // Main export
 // ---------------------------------------------------------------------------
 
@@ -170,18 +345,28 @@ export function generateStrategyHTML(
   const riskScore = r.riskScore || 0;
   const bmfScore = t.brandMarketFitScore || 0;
 
+  // Phase 4: extract role and vertical for white-label + freshness
+  const role = options.userRole;
+  const vertical = options.vertical;
+
   // Build sections array for navigation
   const sections: { id: string; letter: string; label: string; score?: number }[] = [
-    { id: "dashboard", letter: "◉", label: "Dashboard" },
+    { id: "dashboard", letter: "\u25C9", label: "Dashboard" },
   ];
-  if (selected.has("S") || impl.campaigns) sections.push({ id: "strategie", letter: "S", label: "Stratégie" });
-  if (selected.has("A")) sections.push({ id: "authenticite", letter: "A", label: "Authenticité" });
-  if (selected.has("D")) sections.push({ id: "distinction", letter: "D", label: "Distinction" });
-  if (selected.has("V")) sections.push({ id: "valeur", letter: "V", label: "Valeur" });
-  if (selected.has("E")) sections.push({ id: "engagement", letter: "E", label: "Engagement" });
-  if (selected.has("R")) sections.push({ id: "risk", letter: "R", label: "Risk", score: riskScore });
-  if (selected.has("T")) sections.push({ id: "track", letter: "T", label: "Track", score: bmfScore });
-  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: "Implémentation", score: coherence });
+  if (selected.has("S") || impl.campaigns) sections.push({ id: "strategie", letter: "S", label: wl("Strat\u00e9gie", role) });
+  if (selected.has("A")) sections.push({ id: "authenticite", letter: "A", label: wl("Authenticit\u00e9", role) });
+  if (selected.has("D")) sections.push({ id: "distinction", letter: "D", label: wl("Distinction", role) });
+  if (selected.has("V")) sections.push({ id: "valeur", letter: "V", label: wl("Valeur", role) });
+  if (selected.has("E")) sections.push({ id: "engagement", letter: "E", label: wl("Engagement", role) });
+  if (selected.has("R")) sections.push({ id: "risk", letter: "R", label: wl("Risk", role), score: riskScore });
+  if (selected.has("T")) sections.push({ id: "track", letter: "T", label: wl("Track", role), score: bmfScore });
+  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: wl("Impl\u00e9mentation", role), score: coherence });
+  // Phase 4: new sections
+  if (options.decisions && options.decisions.length > 0) sections.push({ id: "decisions", letter: "\u26A1", label: wl("D\u00e9cisions", role) });
+  if (options.competitors && options.competitors.length > 0) sections.push({ id: "competitors", letter: "\uD83C\uDFAF", label: wl("Concurrents", role) });
+  if (options.briefs && options.briefs.length > 0) sections.push({ id: "briefs", letter: "\uD83D\uDCC4", label: wl("Briefs", role) });
+  if (options.opportunities && options.opportunities.length > 0) sections.push({ id: "opportunities", letter: "\u2191", label: wl("Opportunit\u00e9s", role) });
+  sections.push({ id: "budget-sim", letter: "\u00A4", label: wl("Simulateur", role) });
 
   // Assemble HTML
   return `<!DOCTYPE html>
@@ -198,7 +383,7 @@ ${buildCSS(accent1, accent2)}
 </style>
 </head>
 <body>
-${buildSidebar(meta, sections, riskScore, bmfScore, coherence, accent1, accent2, currency)}
+${buildSidebar(meta, sections, riskScore, bmfScore, coherence, accent1, accent2, currency, options.parentBrand, options.childBrands)}
 ${buildMobileNav(sections)}
 <main class="main">
 <div class="main-inner">
@@ -211,6 +396,12 @@ ${selected.has("E") ? buildSectionE(e, getSectionImage("engagement", options)) :
 ${selected.has("R") ? buildSectionR(r, getSectionImage("risk", options)) : ""}
 ${selected.has("T") ? buildSectionT(t, getSectionImage("track", options)) : ""}
 ${selected.has("I") ? buildSectionI(impl, currency, getSectionImage("implementation", options)) : ""}
+${options.decisions && options.decisions.length > 0 ? buildSectionDecisions(options.decisions, role, vertical, getSectionImage("decisions", options)) : ""}
+${options.competitors && options.competitors.length > 0 ? buildSectionCompetitors(options.competitors, meta.brandName, role, vertical, getSectionImage("competitors", options)) : ""}
+${options.briefs && options.briefs.length > 0 ? buildSectionBriefs(options.briefs, role, vertical, getSectionImage("briefs", options)) : ""}
+${options.opportunities && options.opportunities.length > 0 ? buildSectionOpportunities(options.opportunities, currency, role, getSectionImage("opportunities", options)) : ""}
+${buildSectionBudgetSim(options.budgetTiers, currency, getSectionImage("budget-sim", options))}
+${options.signals && options.signals.length > 0 ? buildSectionSignals(options.signals) : ""}
 ${buildFooter(meta, locale)}
 </div>
 </main>
@@ -509,6 +700,95 @@ section:first-child { padding-top: 50px; }
 .chart-container { position: relative; width: 100%; max-width: 400px; margin: 0 auto; }
 .chart-container canvas { max-height: 300px; }
 
+/* Opportunity Cards */
+.opp-timeline { display:flex; flex-direction:column; gap:10px; }
+.opp-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius-sm); padding:16px 20px; display:grid; grid-template-columns:80px 1fr auto; gap:16px; align-items:center; transition:all var(--duration-fast) ease; }
+.opp-card:hover { border-color:var(--accent-1); background:var(--bg-card-hover); }
+.opp-card .opp-date { font-family:'JetBrains Mono'; font-size:var(--fs-small); font-weight:600; color:var(--text-secondary); }
+.opp-card .opp-name { font-weight:600; font-size:var(--fs-small); }
+.opp-card .opp-type { font-size:var(--fs-micro); color:var(--text-tertiary); margin-top:2px; }
+.opp-card .opp-affinity { display:flex; gap:2px; }
+.opp-card .opp-star { color:var(--accent-3); font-size:0.7rem; }
+.opp-card .opp-star.dim { color:var(--text-tertiary); opacity:0.3; }
+.opp-peak { border-left:3px solid var(--risk-high); }
+.opp-normal { border-left:3px solid var(--risk-medium); }
+
+/* Budget Simulator */
+.budget-palier { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius); padding:24px; margin-bottom:16px; transition:all var(--duration-fast) ease; }
+.budget-palier:hover { border-color:var(--accent-1); }
+.budget-palier .bp-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.budget-palier .bp-name { font-family:'Outfit'; font-weight:800; font-size:var(--fs-h3); }
+.budget-palier .bp-range { font-family:'JetBrains Mono'; font-weight:700; color:var(--accent-1); font-size:var(--fs-small); }
+.budget-palier .bp-desc { font-size:var(--fs-small); color:var(--text-secondary); line-height:1.6; margin-bottom:12px; }
+.budget-palier .bp-kpis { display:flex; flex-wrap:wrap; gap:8px; }
+.budget-palier .bp-kpi { font-size:var(--fs-micro); padding:4px 10px; border-radius:4px; background:var(--bg-elevated); color:var(--text-secondary); font-weight:500; }
+
+/* MVA table */
+.mva-table { width:100%; border-collapse:separate; border-spacing:0; font-size:var(--fs-small); }
+.mva-table th { font-family:'Outfit'; font-weight:600; text-align:left; padding:10px 14px; border-bottom:2px solid var(--border-subtle); color:var(--text-secondary); font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.1em; }
+.mva-table td { padding:10px 14px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+.mva-table tr:last-child td { border-bottom:none; }
+
+/* Freshness Badge (inline) */
+.freshness-badge { display:inline-flex; align-items:center; gap:3px; font-family:'JetBrains Mono'; font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:100px; border:1px solid; vertical-align:middle; margin-left:6px; }
+.fb-dot { width:5px; height:5px; border-radius:50%; display:inline-block; }
+.fb-fresh { background:rgba(46,213,115,0.12); color:#2ED573; border-color:rgba(46,213,115,0.3); }
+.fb-fresh .fb-dot { background:#2ED573; }
+.fb-aging { background:rgba(255,165,2,0.12); color:#FFA502; border-color:rgba(255,165,2,0.3); }
+.fb-aging .fb-dot { background:#FFA502; }
+.fb-stale { background:rgba(255,71,87,0.12); color:#FF4757; border-color:rgba(255,71,87,0.3); }
+.fb-stale .fb-dot { background:#FF4757; }
+
+/* SourceRef Tooltip (pure CSS) */
+.source-ref { position:relative; cursor:help; border-bottom:1px dashed rgba(148,148,172,0.3); }
+.source-ref:hover { border-bottom-color:var(--accent-1); }
+.source-ref-tooltip { display:none; position:absolute; bottom:calc(100% + 8px); left:0; min-width:280px; max-width:340px; background:var(--bg-card); border:1px solid var(--border-default); border-radius:10px; padding:14px; box-shadow:0 8px 24px rgba(0,0,0,0.5); z-index:50; font-size:var(--fs-small); }
+.source-ref:hover .source-ref-tooltip { display:block; }
+.sr-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.sr-pillar { width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Outfit'; font-weight:800; font-size:0.6rem; color:white; flex-shrink:0; }
+.sr-var { font-size:var(--fs-micro); color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.08em; }
+.sr-val { font-weight:600; font-size:var(--fs-small); margin-bottom:6px; }
+.sr-why { background:var(--bg-elevated); border-radius:6px; padding:8px 10px; font-size:var(--fs-micro); color:var(--text-secondary); line-height:1.5; margin-bottom:6px; }
+.sr-source { font-size:var(--fs-micro); color:var(--text-tertiary); }
+
+/* Decision Cards */
+.decision-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius); padding:20px 24px; margin-bottom:16px; transition:all var(--duration-fast) ease; }
+.decision-card:hover { border-color:var(--border-default); }
+.decision-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.decision-header-left { display:flex; align-items:center; gap:10px; }
+.decision-deadline { font-family:'JetBrains Mono'; font-size:var(--fs-micro); font-weight:600; }
+.decision-options { display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-top:12px; }
+.decision-option { background:var(--bg-elevated); border-radius:8px; padding:10px 14px; }
+
+/* Competitor Table */
+.comp-table { width:100%; border-collapse:separate; border-spacing:0; font-size:var(--fs-small); }
+.comp-table th { font-family:'Outfit'; font-weight:600; text-align:center; padding:10px 14px; border-bottom:2px solid var(--border-subtle); color:var(--text-secondary); font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.1em; }
+.comp-table th:first-child { text-align:left; }
+.comp-table td { padding:10px 14px; border-bottom:1px solid var(--border-subtle); text-align:center; vertical-align:middle; }
+.comp-table td:first-child { text-align:left; font-weight:600; }
+.comp-highlight { color:var(--accent-1); font-weight:700; }
+
+/* Brief Cards */
+.brief-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius-sm); padding:16px 20px; display:flex; align-items:center; gap:16px; margin-bottom:10px; transition:all var(--duration-fast) ease; }
+.brief-card:hover { border-color:var(--accent-1); }
+.brief-type { font-family:'Outfit'; font-weight:700; font-size:var(--fs-small); flex:1; }
+.brief-meta { display:flex; align-items:center; gap:8px; }
+.brief-status { font-family:'JetBrains Mono'; font-size:var(--fs-micro); font-weight:700; padding:4px 10px; border-radius:6px; text-transform:uppercase; }
+.brief-validated { background:rgba(46,213,115,0.15); color:var(--score-excellent); }
+.brief-draft { background:rgba(148,148,172,0.15); color:var(--text-secondary); }
+.brief-stale { background:rgba(255,71,87,0.15); color:var(--risk-high); }
+.brief-pillars { display:flex; gap:4px; }
+.brief-pillar-tag { width:20px; height:20px; border-radius:4px; display:flex; align-items:center; justify-content:center; font-family:'Outfit'; font-weight:800; font-size:0.55rem; color:white; }
+
+/* Brand Tree */
+.brand-tree { padding:12px 24px; border-bottom:1px solid var(--border-subtle); }
+.brand-tree-label { font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.1em; color:var(--text-tertiary); margin-bottom:8px; font-weight:600; }
+.bt-nodes { display:flex; flex-direction:column; gap:4px; }
+.bt-node { font-size:var(--fs-small); padding:6px 10px; border-radius:6px; color:var(--text-secondary); }
+.bt-current { background:var(--accent-1-dim); color:var(--accent-1); font-weight:700; }
+.bt-parent { color:var(--text-tertiary); font-size:var(--fs-micro); }
+.bt-child { padding-left:20px; font-size:var(--fs-micro); color:var(--text-tertiary); }
+
 /* Mobile Nav */
 .mobile-nav { display: none; }
 
@@ -524,6 +804,10 @@ section:first-child { padding-top: 50px; }
   .calendar-grid { grid-template-columns: repeat(4, 1fr); }
   .ladder-row { grid-template-columns: 1fr; }
   .gamif-levels { flex-direction: column; }
+  .opp-card { grid-template-columns: 60px 1fr; }
+  .opp-card .opp-affinity { display: none; }
+  .decision-options { grid-template-columns: 1fr; }
+  .source-ref-tooltip { min-width: 220px; left: -20px; }
   .mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg-surface); border-top: 1px solid var(--border-subtle); z-index: 200; padding: 8px 12px; justify-content: space-around; backdrop-filter: blur(12px); }
   .mobile-nav a { display: flex; flex-direction: column; align-items: center; text-decoration: none; font-size: 0.6rem; font-weight: 700; color: var(--text-tertiary); padding: 4px; gap: 2px; }
   .mobile-nav a.active { color: var(--accent-1); }
@@ -540,6 +824,9 @@ section:first-child { padding-top: 50px; }
   .tam-circle.tam { width: 200px; height: 200px; }
   .tam-circle.sam { width: 140px; height: 140px; }
   .tam-circle.som { width: 80px; height: 80px; }
+  .opp-card { grid-template-columns: 1fr; }
+  .comp-table { font-size: var(--fs-micro); }
+  .comp-table th, .comp-table td { padding: 6px 8px; }
 }
 `;
 }
@@ -557,6 +844,8 @@ function buildSidebar(
   _accent1: string,
   _accent2: string,
   currency: string,
+  parentBrand?: { id: string; brandName: string } | null,
+  childBrands?: { id: string; brandName: string }[],
 ): string {
   const navLinks = sections
     .map(
@@ -568,7 +857,8 @@ function buildSidebar(
     )
     .join("\n");
 
-  const totalBudget = "—";
+  const totalBudget = "\u2014";
+  const brandTreeHtml = buildBrandTree(parentBrand, meta.brandName, childBrands);
 
   return `<aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
@@ -576,10 +866,11 @@ function buildSidebar(
       <div class="brand-icon">${esc(brandInitials(meta.brandName))}</div>
       <div>
         <h2>${esc(meta.brandName)}</h2>
-        <div class="brand-meta">${esc(meta.sector ?? "Marque")} · ${meta.createdAt.getFullYear()}</div>
+        <div class="brand-meta">${esc(meta.sector ?? "Marque")} \u00B7 ${meta.createdAt.getFullYear()}</div>
       </div>
     </div>
   </div>
+  ${brandTreeHtml}
   <nav class="sidebar-nav">
     <div class="sidebar-nav-group">
       <div class="sidebar-nav-label">Navigation</div>
@@ -676,8 +967,9 @@ function buildDashboard(
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.7), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">⚡ Fiche de Marque ADVERTIS</div>
+      <div class="section-tag">\u26A1 Fiche de Marque ADVERTIS ${inlineFreshnessBadge(meta.createdAt)}</div>
       <h1>${esc(meta.brandName)}</h1>
+      ${meta.tagline ? `<p style="font-style:italic;color:var(--accent-1);font-size:1.1rem;margin-bottom:8px;">\u201C${esc(meta.tagline)}\u201D</p>` : ""}
       <p class="section-summary">${esc(impl.brandIdentity?.narrative || impl.positioning?.statement || meta.sector || "")}</p>
       <div class="hero-scores">
         <div class="hero-score-badge">
@@ -918,6 +1210,98 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>`
       : "";
 
+  // ── Axes Stratégiques (new S fields) ──
+  const axesHtml = (sData as Record<string, unknown>).axesStrategiques
+    && Array.isArray((sData as Record<string, unknown>).axesStrategiques)
+    && ((sData as Record<string, unknown>).axesStrategiques as Array<Record<string, unknown>>).length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Axes stratégiques</h3>
+    <div class="grid-2">
+      ${((sData as Record<string, unknown>).axesStrategiques as Array<{
+        axe?: string; description?: string; piliersLies?: string[]; kpisCles?: string[];
+      }>).map((ax) => `<div class="card" style="border-left:4px solid var(--accent-1);">
+        <div style="font-weight:700;margin-bottom:4px;">${esc(ax.axe ?? "")}</div>
+        <p style="font-size:var(--fs-small);color:var(--text-secondary);margin-bottom:8px;">${esc(ax.description ?? "")}</p>
+        ${(ax.piliersLies ?? []).length > 0 ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;">${(ax.piliersLies ?? []).map((p) => `<span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(p)}</span>`).join("")}</div>` : ""}
+        ${(ax.kpisCles ?? []).length > 0 ? `<div style="font-size:11px;color:var(--text-tertiary);">KPIs : ${(ax.kpisCles ?? []).map((k) => esc(k)).join(", ")}</div>` : ""}
+      </div>`).join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // ── Sprint 90 Jours Recap ──
+  const sprint90 = (sData as Record<string, unknown>).sprint90Recap as { actions?: Array<{ action?: string; owner?: string; kpi?: string; status?: string }>; summary?: string } | undefined;
+  const sprint90Html = sprint90?.actions && sprint90.actions.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Sprint 90 jours — Récap</h3>
+    ${sprint90.summary ? `<p style="margin-bottom:12px;font-size:var(--fs-small);color:var(--text-secondary);">${esc(sprint90.summary)}</p>` : ""}
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="border-bottom:1px solid var(--border-subtle);">
+        <th style="text-align:left;padding:8px;font-size:12px;">Action</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">Owner</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">KPI</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">Statut</th>
+      </tr></thead>
+      <tbody>
+        ${sprint90.actions.map((a) => `<tr style="border-bottom:1px solid var(--border-subtle);">
+          <td style="padding:8px;font-weight:600;">${esc(a.action ?? "")}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(a.owner ?? "")}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(a.kpi ?? "")}</td>
+          <td style="padding:8px;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${(a.status ?? "").toLowerCase().includes("done") || (a.status ?? "").toLowerCase().includes("terminé") ? "rgba(34,197,94,0.15);color:#22C55E" : (a.status ?? "").toLowerCase().includes("progress") || (a.status ?? "").toLowerCase().includes("cours") ? "rgba(245,158,11,0.15);color:#F59E0B" : "rgba(156,163,175,0.15);color:#9CA3AF"}">${esc(a.status ?? "")}</span></td>
+        </tr>`).join("\n")}
+      </tbody>
+    </table>
+  </div>`
+    : "";
+
+  // ── KPI Dashboard consolidé ──
+  const kpis = (sData as Record<string, unknown>).kpiDashboard as Array<{ pilier?: string; kpi?: string; cible?: string; statut?: string }> | undefined;
+  const kpiHtml = kpis && kpis.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">KPI Dashboard consolidé</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <thead><tr style="border-bottom:1px solid var(--border-subtle);">
+        <th style="text-align:left;padding:8px;font-size:12px;">Pilier</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">KPI</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">Cible</th>
+        <th style="text-align:left;padding:8px;font-size:12px;">Statut</th>
+      </tr></thead>
+      <tbody>
+        ${kpis.map((k) => `<tr style="border-bottom:1px solid var(--border-subtle);">
+          <td style="padding:8px;"><span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(k.pilier ?? "")}</span></td>
+          <td style="padding:8px;font-weight:600;">${esc(k.kpi ?? "")}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(k.cible ?? "")}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(k.statut ?? "")}</td>
+        </tr>`).join("\n")}
+      </tbody>
+    </table>
+  </div>`
+    : "";
+
+  // ── Activation Summary ──
+  const activationStr = (sData as Record<string, unknown>).activationSummary as string | undefined;
+  const activationHtml = activationStr
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Résumé activation</h3>
+    <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(activationStr)}</p>
+    </div>
+  </div>`
+    : "";
+
+  // ── Campaigns Summary ──
+  const campSum = (sData as Record<string, unknown>).campaignsSummary as { totalCampaigns?: number; highlights?: string[]; budgetTotal?: string } | undefined;
+  const campSumHtml = campSum && (campSum.totalCampaigns || (campSum.highlights && campSum.highlights.length > 0))
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Résumé campagnes</h3>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
+      ${campSum.totalCampaigns ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Campagnes</div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-1);">${campSum.totalCampaigns}</div></div>` : ""}
+      ${campSum.budgetTotal ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Budget total</div><div style="font-size:1.1rem;font-weight:700;color:var(--accent-2);">${esc(campSum.budgetTotal)}</div></div>` : ""}
+    </div>
+    ${campSum.highlights && campSum.highlights.length > 0 ? `<ul style="list-style:none;padding:0;margin:0;">${campSum.highlights.map((h) => `<li style="padding:4px 0;color:var(--text-secondary);font-size:var(--fs-small);">&#x2022; ${esc(h)}</li>`).join("")}</ul>` : ""}
+  </div>`
+    : "";
+
   return `<section id="strategie">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
@@ -930,9 +1314,14 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>
   ${syntheseHtml}
   ${visionHtml}
+  ${axesHtml}
   ${coherenceHtml}
   ${facteursHtml}
   ${recoHtml}
+  ${sprint90Html}
+  ${kpiHtml}
+  ${campSumHtml}
+  ${activationHtml}
   ${templatesHtml}
   ${calendarHtml}
   ${budgetHtml}
@@ -1509,6 +1898,425 @@ function buildSectionI(impl: ImplementationData, currency: string, imageUrl?: st
   ${sprintHtml}
   ${visionHtml}
   ${summaryHtml}
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Decisions Section
+// ---------------------------------------------------------------------------
+
+function buildSectionDecisions(
+  decisions: DecisionData[],
+  role: string | undefined,
+  vertical: string | undefined,
+  imageUrl?: string,
+): string {
+  const pending = decisions.filter((d) => d.status === "PENDING" || d.status === "IN_PROGRESS");
+  const resolved = decisions.filter((d) => d.status === "RESOLVED" || d.status === "DEFERRED");
+
+  const priorityBorder: Record<string, string> = {
+    P0: "var(--risk-high)",
+    P1: "var(--risk-medium)",
+    P2: "var(--p2-color)",
+  };
+
+  const priorityBadge: Record<string, string> = {
+    P0: "badge-p0",
+    P1: "badge-p1",
+    P2: "badge-p2",
+  };
+
+  const renderDecision = (d: DecisionData) => `
+    <div class="decision-card" style="border-left:4px solid ${priorityBorder[d.priority] ?? "var(--border-default)"};">
+      <div class="decision-header">
+        <div class="decision-header-left">
+          <span class="card-badge ${priorityBadge[d.priority] ?? "badge-p2"}">${esc(d.priority)}</span>
+          <span style="font-family:'Outfit';font-weight:700;font-size:var(--fs-body);">${esc(d.title)}</span>
+        </div>
+        ${d.deadline ? `<span class="decision-deadline" style="color:${priorityBorder[d.priority] ?? "var(--text-tertiary)"};">Deadline : ${formatShortDate(d.deadline)}</span>` : ""}
+      </div>
+      ${d.description ? `<div style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(d.description)}</div>` : ""}
+      ${d.deadlineType ? `<div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:8px;">Type : ${esc(d.deadlineType)} ${inlineFreshnessBadge(d.createdAt, vertical)}</div>` : ""}
+      ${d.resolution ? `<div style="margin-top:10px;padding:10px 14px;background:var(--bg-elevated);border-radius:8px;font-size:var(--fs-small);"><span class="micro-text" style="color:var(--score-excellent);margin-bottom:4px;display:block;">Resolution</span>${esc(d.resolution)}</div>` : ""}
+    </div>`;
+
+  return `<section id="decisions">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(255,71,87,0.15);color:var(--risk-high);">&#x26A1; ${wl("Decisions", role)}</div>
+      <h1>File de d&eacute;cisions</h1>
+      <p class="section-summary">${pending.length} en attente, ${resolved.length} r&eacute;solue(s). Actions qui attendent un arbitrage.</p>
+    </div>
+  </div>
+
+  ${pending.length > 0 ? `<div class="sub-section">
+    <h3 class="sub-title">En attente</h3>
+    ${pending.map(renderDecision).join("\n")}
+  </div>` : ""}
+
+  ${resolved.length > 0 ? `<div class="sub-section">
+    <h3 class="sub-title">R&eacute;solues / Diff&eacute;r&eacute;es</h3>
+    ${resolved.map(renderDecision).join("\n")}
+  </div>` : ""}
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Competitors Section
+// ---------------------------------------------------------------------------
+
+function buildSectionCompetitors(
+  competitors: CompetitorData[],
+  brandName: string,
+  role: string | undefined,
+  vertical: string | undefined,
+  imageUrl?: string,
+): string {
+  if (competitors.length === 0) return "";
+
+  // Safe array cast for Prisma Json fields
+  const toArr = (v: unknown): string[] => Array.isArray(v) ? v.map(String) : [];
+
+  // Build comparison table
+  const metrics = ["SOV Social", "Positioning", "Force principale", "Menace principale"];
+  const getMetric = (c: CompetitorData, m: string): string => {
+    switch (m) {
+      case "SOV Social": return c.sov != null ? `${c.sov}%` : "\u2014";
+      case "Positioning": return c.positioning ?? "\u2014";
+      case "Force principale": return toArr(c.strengths)[0] ?? "\u2014";
+      case "Menace principale": return toArr(c.weaknesses)[0] ?? "\u2014";
+      default: return "\u2014";
+    }
+  };
+
+  const tableRows = metrics.map((m) =>
+    `<tr><td style="font-weight:600;">${esc(m)}</td>${competitors.map((c) =>
+      `<td style="text-align:center;font-size:var(--fs-small);${m === "SOV Social" ? "font-family:'JetBrains Mono';" : ""}color:var(--text-secondary);">${esc(getMetric(c, m))}</td>`
+    ).join("")}</tr>`
+  ).join("\n");
+
+  // Recent moves
+  const movesHtml = competitors
+    .filter((c) => toArr(c.recentMoves).length > 0)
+    .map((c) => `
+      <div class="card mb-2">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-family:'Outfit';font-weight:700;font-size:var(--fs-small);">${esc(c.name)}</span>
+          ${inlineFreshnessBadge(c.lastUpdated, vertical)}
+        </div>
+        <ul style="list-style:none;">${toArr(c.recentMoves).map((m) => `<li style="font-size:var(--fs-small);color:var(--text-secondary);padding:3px 0;">&#x2022; ${esc(m)}</li>`).join("")}</ul>
+      </div>`)
+    .join("\n");
+
+  return `<section id="competitors">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(45,90,61,0.22), rgba(6,6,11,0.95));"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(45,90,61,0.15);color:var(--accent-2);">&#x1F3AF; ${wl("Concurrents", role)}</div>
+      <h1>Snapshot concurrentiel</h1>
+      <p class="section-summary">${competitors.length} concurrent(s) suivis. Positionnement, SOV et mouvements r&eacute;cents.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Tableau comparatif</h3>
+    <div style="overflow-x:auto;">
+    <table class="comp-table">
+      <thead><tr><th></th>${competitors.map((c) => `<th style="text-align:center;">${esc(c.name)}</th>`).join("")}</tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    </div>
+  </div>
+
+  ${movesHtml ? `<div class="sub-section">
+    <h3 class="sub-title">Mouvements r&eacute;cents</h3>
+    ${movesHtml}
+  </div>` : ""}
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Briefs Section
+// ---------------------------------------------------------------------------
+
+function buildSectionBriefs(
+  briefs: BriefData[],
+  role: string | undefined,
+  vertical: string | undefined,
+  imageUrl?: string,
+): string {
+  if (briefs.length === 0) return "";
+
+  const statusClass: Record<string, string> = {
+    VALIDATED: "brief-validated",
+    DRAFT: "brief-draft",
+    STALE: "brief-stale",
+  };
+
+  const statusLabel: Record<string, string> = {
+    VALIDATED: "Valide",
+    DRAFT: "Brouillon",
+    STALE: "Perime",
+    ARCHIVED: "Archive",
+  };
+
+  const toArr = (v: unknown): string[] => Array.isArray(v) ? v.map(String) : [];
+
+  const briefCards = briefs.map((b) => `
+    <div class="brief-card">
+      <div class="brief-type">${esc(b.type.replace(/_/g, " "))}</div>
+      <div class="brief-pillars">
+        ${toArr(b.sourcePillars).map((p: string) => {
+          const cfg = PILLAR_CONFIG[p as keyof typeof PILLAR_CONFIG];
+          return cfg ? `<span class="brief-pillar-tag" style="background:${cfg.color};">${esc(p)}</span>` : "";
+        }).join("")}
+      </div>
+      <div class="brief-meta">
+        <span style="font-family:'JetBrains Mono';font-size:var(--fs-micro);color:var(--text-tertiary);">v${b.version}</span>
+        <span class="brief-status ${statusClass[b.status] ?? "brief-draft"}">${esc(statusLabel[b.status] ?? b.status)}</span>
+        ${inlineFreshnessBadge(b.staleSince ?? b.createdAt, vertical)}
+      </div>
+    </div>`).join("\n");
+
+  return `<section id="briefs">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(148,148,172,0.15);color:var(--text-secondary);">&#x1F4C4; ${wl("Briefs", role)}</div>
+      <h1>Bo&icirc;te &agrave; outils ex&eacute;cution</h1>
+      <p class="section-summary">${briefs.length} brief(s) g&eacute;n&eacute;r&eacute;s avec tra&ccedil;abilit&eacute; et fra&icirc;cheur.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    ${briefCards}
+  </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Opportunities Section
+// ---------------------------------------------------------------------------
+
+function buildSectionOpportunities(
+  opportunities: OpportunityData[],
+  currency: string,
+  role: string | undefined,
+  imageUrl?: string,
+): string {
+  if (opportunities.length === 0) return "";
+
+  const impactToPeak: Record<string, boolean> = { HIGH: true };
+  const impactStars: Record<string, number> = { HIGH: 5, MEDIUM: 4, LOW: 3 };
+
+  const oppCards = opportunities.map((o) => {
+    const isPeak = impactToPeak[o.impact] ?? false;
+    const stars = impactStars[o.impact] ?? 3;
+    const startStr = formatShortDate(o.startDate);
+    const endStr = o.endDate ? formatShortDate(o.endDate) : "";
+    const dateRange = endStr ? `${startStr}-${endStr}` : startStr;
+    const channels = Array.isArray(o.channels) ? (o.channels as string[]).join(", ") : "";
+
+    return `<div class="opp-card ${isPeak ? "opp-peak" : "opp-normal"}">
+      <div class="opp-date">${esc(dateRange)}</div>
+      <div>
+        <div class="opp-name">${esc(o.title)}</div>
+        <div class="opp-type">${esc(o.type)}${channels ? ` &middot; ${esc(channels)}` : ""}${o.notes ? ` &middot; ${esc(o.notes)}` : ""}</div>
+      </div>
+      <div class="opp-affinity">${Array.from({ length: 5 }, (_, i) => `<span class="opp-star${i >= stars ? " dim" : ""}">&#x2605;</span>`).join("")}</div>
+    </div>`;
+  }).join("\n");
+
+  return `<section id="opportunities">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(255,215,0,0.15);color:var(--accent-3);">&#x2191; ${wl("Opportunites", role)}</div>
+      <h1>Fen&ecirc;tres de prise de parole</h1>
+      <p class="section-summary">Calendrier pr&eacute;visible + opportunit&eacute;s tactiques. Quand parler, sur quoi, avec quel scoring.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Calendrier pr&eacute;visible</h3>
+    <div class="opp-timeline">
+      ${oppCards}
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Scoring d&#039;opportunit&eacute;</h3>
+    <div class="grid-2">
+      <div class="card" style="border-left:4px solid var(--score-excellent);"><div class="micro-text" style="color:var(--score-excellent);margin-bottom:8px;">Score &ge; 3.5 &rarr; GO</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">Ex&eacute;cution dans les heures. Le community manager a l&#039;autorit&eacute; de lancer.</p></div>
+      <div class="card" style="border-left:4px solid var(--risk-medium);"><div class="micro-text" style="color:var(--risk-medium);margin-bottom:8px;">Score 2.5-3.5 &rarr; PAUSE</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">Analyse rapide 30 min + validation Dir. Marketing.</p></div>
+    </div>
+    <div class="card" style="margin-top:12px;border-left:4px solid var(--text-tertiary);"><div class="micro-text" style="margin-bottom:8px;">Score &lt; 2.5 &rarr; PASS</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">On note pour le futur, on n&#039;agit pas.</p></div>
+    <div class="card" style="margin-top:20px;">
+      <table class="mva-table">
+        <thead><tr><th>Crit&egrave;re</th><th>Poids</th><th>Question</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:600;">Affinit&eacute;</td><td class="mono">30%</td><td>L&#039;opportunit&eacute; est-elle naturelle pour la marque ?</td></tr>
+          <tr><td style="font-weight:600;">Reach</td><td class="mono">20%</td><td>Combien de gens &ccedil;a touche ?</td></tr>
+          <tr><td style="font-weight:600;">Fen&ecirc;tre</td><td class="mono">15%</td><td>Combien de temps pour agir ?</td></tr>
+          <tr><td style="font-weight:600;">Risque</td><td class="mono">20%</td><td>Peut-on se tromper ?</td></tr>
+          <tr><td style="font-weight:600;">Co&ucirc;t</td><td class="mono">15%</td><td>Que faut-il mobiliser ?</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Budget Simulator Section
+// ---------------------------------------------------------------------------
+
+const DEFAULT_BUDGET_TIERS = [
+  { tier: "MICRO", range: "< 2M FCFA", desc: "Organique pur : 15 posts/mois + community management WhatsApp + 1-2 micro-influenceurs + 1 challenge UGC.", kpis: ["+500 membres", "200 UGC", "50K reach", "1 mois"] },
+  { tier: "STARTER", range: "2-5M FCFA", desc: "+ Paid social (Meta + TikTok Ads) + 3-5 videos + 1 influenceur mid-tier.", kpis: ["200K reach", "+2K membres", "500 UGC", "4-6 sem."] },
+  { tier: "IMPACT", range: "5-15M FCFA", desc: "+ Video hero + paid scaling + 1-2 events terrain + radio regionale + PLV.", kpis: ["1M reach", "+5K membres", "+8% ventes", "6-8 sem."] },
+  { tier: "CAMPAGNE", range: "15-35M FCFA", desc: "+ TV nationale + influenceurs top-tier + event flagship + RP.", kpis: ["5M reach", "+12% ventes", "+5pts notoriete", "2-3 mois"] },
+  { tier: "DOMINATION", range: "35-70M FCFA", desc: "Always-on 12 mois + 2-3 campagnes peak + evenementiel.", kpis: ["Objectifs annuels complets", "12 mois"] },
+];
+
+function buildSectionBudgetSim(
+  budgetTiers: BudgetTierData[] | undefined,
+  currency: string,
+  imageUrl?: string,
+): string {
+  // Use DB budget tiers if available, otherwise use defaults
+  const tiers = budgetTiers && budgetTiers.length > 0
+    ? budgetTiers.map((bt) => ({
+        tier: bt.tier,
+        range: `${(bt.minBudget / 1_000_000).toFixed(0)}-${(bt.maxBudget / 1_000_000).toFixed(0)}M ${currency}`,
+        desc: bt.description ?? "",
+        kpis: Array.isArray(bt.kpis) ? (bt.kpis as Array<{ kpi: string; target: string }>).map((k) => `${k.kpi}: ${k.target}`) : [],
+      }))
+    : DEFAULT_BUDGET_TIERS;
+
+  const tierCards = tiers.map((t) => `
+    <div class="budget-palier">
+      <div class="bp-header"><span class="bp-name">${esc(t.tier)}</span><span class="bp-range">${esc(t.range)}</span></div>
+      <div class="bp-desc">${esc(t.desc)}</div>
+      <div class="bp-kpis">${t.kpis.map((k) => `<span class="bp-kpi">${esc(k)}</span>`).join("")}</div>
+    </div>`).join("\n");
+
+  return `<section id="budget-sim">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(46,213,115,0.15);color:var(--score-excellent);">&#x00A4; Simulateur</div>
+      <h1>Que faire avec X ?</h1>
+      <p class="section-summary">Budget &rarr; actions possibles &rarr; KPIs attendus. Du Minimum Viable Action &agrave; la strat&eacute;gie annuelle.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Paliers budget &rarr; capacit&eacute; d&#039;action</h3>
+    ${tierCards}
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Minimum Viable Action par objectif</h3>
+    <table class="mva-table">
+      <thead><tr><th>Objectif</th><th>MVA</th><th>Budget min.</th><th>D&eacute;lai</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600;">Awareness</td><td>1 vid&eacute;o TikTok + 5 posts organiques</td><td class="mono" style="color:var(--accent-1);">500K</td><td class="mono">2 sem.</td></tr>
+        <tr><td style="font-weight:600;">Engagement</td><td>1 challenge communautaire WhatsApp</td><td class="mono" style="color:var(--accent-1);">200K</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">Conversion</td><td>1 promo flash in-store + relais social</td><td class="mono" style="color:var(--accent-1);">800K</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">R&eacute;tention</td><td>1 newsletter + 1 avantage fid&eacute;lit&eacute;</td><td class="mono" style="color:var(--accent-1);">150K</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">Lancement</td><td>Teaser social + 1 event local</td><td class="mono" style="color:var(--accent-1);">2M</td><td class="mono">3 sem.</td></tr>
+        <tr><td style="font-weight:600;">Crise</td><td>Statement officiel + Q&amp;A communaut&eacute;</td><td class="mono" style="color:var(--score-excellent);">0 (temps)</td><td class="mono">4h</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4: Brand Tree
+// ---------------------------------------------------------------------------
+
+function buildBrandTree(
+  parentBrand: { id: string; brandName: string } | null | undefined,
+  currentBrand: string,
+  childBrands: { id: string; brandName: string }[] | undefined,
+): string {
+  if (!parentBrand && (!childBrands || childBrands.length === 0)) return "";
+
+  return `<div class="brand-tree">
+    <div class="brand-tree-label">Arbre de marques</div>
+    <div class="bt-nodes">
+      ${parentBrand ? `<div class="bt-node bt-parent">&#x2190; ${esc(parentBrand.brandName)}</div>` : ""}
+      <div class="bt-node bt-current">&#x25C9; ${esc(currentBrand)}</div>
+      ${(childBrands ?? []).map((c) => `<div class="bt-node bt-child">&#x2514; ${esc(c.brandName)}</div>`).join("\n")}
+    </div>
+  </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// SIS Signals Section
+// ---------------------------------------------------------------------------
+
+function buildSectionSignals(signals: SignalData[]): string {
+  const layerConfig: Record<string, { label: string; color: string; bg: string }> = {
+    METRIC: { label: "Métrique", color: "#3B82F6", bg: "rgba(59,130,246,0.12)" },
+    STRONG: { label: "Fort", color: "#22C55E", bg: "rgba(34,197,94,0.12)" },
+    WEAK: { label: "Faible", color: "#F59E0B", bg: "rgba(245,158,11,0.12)" },
+  };
+
+  const grouped: Record<string, SignalData[]> = {};
+  for (const s of signals) {
+    const layer = s.layer ?? "WEAK";
+    (grouped[layer] ??= []).push(s);
+  }
+
+  const layerBlocks = Object.entries(grouped)
+    .sort(([a], [b]) => {
+      const order = ["METRIC", "STRONG", "WEAK"];
+      return order.indexOf(a) - order.indexOf(b);
+    })
+    .map(([layer, items]) => {
+      const cfg = layerConfig[layer] ?? layerConfig.WEAK!;
+      const rows = items.map((s) => `
+        <tr>
+          <td style="font-weight:600;">${esc(s.title)}</td>
+          <td><span style="background:${cfg.bg};color:${cfg.color};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">${esc(s.status)}</span></td>
+          <td style="color:var(--text-secondary);">${esc(s.pillar ?? "—")}</td>
+          <td style="color:var(--text-tertiary);font-size:12px;">${esc(s.source ?? "—")}</td>
+        </tr>`).join("\n");
+
+      return `
+      <div class="sub-section">
+        <h3 class="sub-title" style="color:${cfg.color};">&#x25CF; ${cfg.label} (${items.length})</h3>
+        <table style="width:100%;border-collapse:collapse;">
+          <thead><tr style="border-bottom:1px solid var(--border-subtle);">
+            <th style="text-align:left;padding:8px;font-size:12px;color:var(--text-tertiary);">Signal</th>
+            <th style="text-align:left;padding:8px;font-size:12px;color:var(--text-tertiary);">Statut</th>
+            <th style="text-align:left;padding:8px;font-size:12px;color:var(--text-tertiary);">Pilier</th>
+            <th style="text-align:left;padding:8px;font-size:12px;color:var(--text-tertiary);">Source</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    })
+    .join("\n");
+
+  return `<section id="signals">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(59,130,246,0.15);color:#3B82F6;">&#x1F4E1; SIS</div>
+      <h1>Signal Intelligence System</h1>
+      <p class="section-summary">${signals.length} signaux actifs — Veille strat&eacute;gique en 3 couches</p>
+    </div>
+  </div>
+  ${layerBlocks}
 </section>`;
 }
 

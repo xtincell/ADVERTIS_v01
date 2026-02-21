@@ -1,3 +1,16 @@
+// =============================================================================
+// COMPONENT C.S9 — Export Dialog
+// =============================================================================
+// Modal dialog for exporting strategy data to PDF, Excel, or HTML.
+// Props: strategyId, brandName, pillars (PillarInfo[]), children (trigger).
+// Key features: 3 format options (PDF with cover page option, Excel structured
+// spreadsheet, HTML interactive presentation), pillar checkbox selection with
+// toggle-all (only completed pillars selectable), format-specific visual cards
+// with color-coded borders, HTML preview in new tab via /api/export/html/preview,
+// blob download with sanitized brand name filename, reset selections on open,
+// toast success/error notifications.
+// =============================================================================
+
 "use client";
 
 import * as React from "react";

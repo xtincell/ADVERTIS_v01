@@ -1,5 +1,29 @@
-// Collection Orchestrator — runs all configured data source adapters in parallel,
-// stores results in the MarketStudy record, and updates source statuses.
+// =============================================================================
+// MODULE 25 — Market Study Collection Orchestrator
+// =============================================================================
+// Orchestrates multi-source data collection for a brand's market study.
+// Detects which adapters are configured, creates/updates MarketStudy record,
+// runs all adapters in parallel (Promise.allSettled), stores results in the
+// corresponding JSON columns, and sets per-source + overall status.
+//
+// Public API:
+//   runMarketStudyCollection(strategyId, brandName, sector, competitors, keywords?)
+//     -> { success, sourcesCompleted, sourcesTotal, errors }
+//   getAvailableDataSources()
+//     -> Array<{ sourceId, name, configured }>
+//
+// Dependencies:
+//   ~/server/db                              — Prisma client (marketStudy)
+//   ~/lib/types/market-study                 — DataSourceAdapter, CollectionParams, etc.
+//   ./adapters/brave-search                  — BraveSearchAdapter
+//   ./adapters/ai-web-search                 — AIWebSearchAdapter
+//   ./adapters/google-trends                 — GoogleTrendsAdapter
+//   ./adapters/crunchbase                    — CrunchbaseAdapter
+//   ./adapters/similarweb                    — SimilarWebAdapter
+//
+// Called by:
+//   tRPC market-study router (collect mutation)
+// =============================================================================
 
 import { db } from "~/server/db";
 import type {

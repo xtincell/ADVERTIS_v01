@@ -1,9 +1,32 @@
+// =============================================================================
+// ROUTER T.2 — Pillar Router
+// =============================================================================
+// Pillar content management + version history for ADVERTIS strategy pillars.
+//
+// Procedures:
+//   getByStrategy   — Get all pillars for a strategy, ordered by `order`
+//   getById         — Get a single pillar by ID (with strategy)
+//   update          — Update pillar fields (content, summary, status) + version snapshot
+//   getStale        — Get all stale pillars for a strategy
+//   updateStatus    — Update pillar status with optional error message
+//   getVersions     — Get version history for a pillar (newest first)
+//   restoreVersion  — Restore pillar content from a previous version
+//
+// Dependencies:
+//   ~/server/api/trpc                          — createTRPCRouter, protectedProcedure
+//   ~/lib/types/pillar-parsers                 — validatePillarContent
+//   ~/server/services/widgets/compute-engine   — invalidateWidgetsForPillar, computeAllWidgets
+//   ~/server/services/score-engine             — recalculateAllScores
+//   ~/server/services/stale-detector           — clearPillarStaleness
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { validatePillarContent } from "~/lib/types/pillar-parsers";
-import { invalidateWidgetsForPillar } from "~/server/services/widgets/compute-engine";
+import { invalidateWidgetsForPillar, computeAllWidgets } from "~/server/services/widgets/compute-engine";
 import { recalculateAllScores } from "~/server/services/score-engine";
+import { clearPillarStaleness } from "~/server/services/stale-detector";
 
 export const pillarRouter = createTRPCRouter({
   /**
@@ -133,6 +156,10 @@ export const pillarRouter = createTRPCRouter({
         void invalidateWidgetsForPillar(existing.strategyId, existing.type);
         // Recalculate all scores reactively on every content change
         void recalculateAllScores(existing.strategyId, "pillar_update");
+        // Auto-compute widgets eagerly
+        void computeAllWidgets(existing.strategyId);
+        // Clear staleness on content update
+        void clearPillarStaleness(existing.id);
       }
 
       return pillar;

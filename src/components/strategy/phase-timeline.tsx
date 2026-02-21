@@ -1,3 +1,16 @@
+// =============================================================================
+// COMPONENT C.S5 — Phase Timeline
+// =============================================================================
+// Visual pipeline phase indicator for the generation workflow.
+// Props (PhaseTimeline): currentPhase, className, orientation (horizontal/vertical).
+// Props (PhaseBadge): phase, className.
+// Key features: 9-phase canonical order from PHASES constant, 3 statuses
+// (complete/active/locked) with green/terracotta/gray styling, phase icons
+// mapped from PHASE_CONFIG, connector lines between phases, horizontal scroll
+// or vertical layout, legacy phase name resolution via LEGACY_PHASE_MAP,
+// PhaseBadge compact sub-component for headers.
+// =============================================================================
+
 "use client";
 
 import {

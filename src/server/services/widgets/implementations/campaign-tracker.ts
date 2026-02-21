@@ -1,6 +1,26 @@
-// Campaign Tracker Widget
-// Consumes pillar I (campaigns, bigIdea, budgetAllocation)
-// to produce a campaign readiness dashboard.
+// =============================================================================
+// MODULE 14W2 — Campaign Tracker Widget
+// =============================================================================
+// Consumes pillar I (campaigns calendar, Big Idea, activation plan, budget)
+// to produce a campaign readiness dashboard with annual calendar view,
+// activation phase completion, budget summary, and readiness score (0-100).
+// Pure compute -- no AI calls.
+//
+// Category: analytics  |  minimumPhase: implementation  |  size: large
+// Required pillars: I
+//
+// Public API (exported):
+//   default handler  — registered with registerWidget() at import time
+//
+// Dependencies:
+//   zod                              — CampaignTrackerOutputSchema
+//   ../registry                      — registerWidget
+//   ~/lib/types/cockpit-widgets      — WidgetHandler, WidgetInput, WidgetResult
+//
+// Called by:
+//   widgets/index.ts or auto-registration import
+//   tRPC cockpit router (widget compute)
+// =============================================================================
 
 import { z } from "zod";
 import { registerWidget } from "../registry";

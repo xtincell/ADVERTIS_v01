@@ -1,8 +1,14 @@
-// ============================================
-// MODULE SYSTEM — Type Definitions
-// ============================================
-// Each of the 279 ADVERTIS variables can have its own
-// collect → deduce → refine pipeline via a pluggable module.
+// =============================================================================
+// LIB L.9 — Module System Types
+// =============================================================================
+// Pluggable module system: each ADVERTIS variable can have its own
+// collect -> deduce -> refine pipeline. Modules declare inputs, outputs,
+// and validation schemas declaratively.
+// Exports: ModuleInputSource, ModuleOutputTarget, ModuleDescriptor,
+//   ModuleContext, ModuleResult, ModuleHandler, ModuleRunStatus,
+//   ModuleTriggeredBy.
+// Used by: module registry, module executor, admin module UI.
+// =============================================================================
 
 import { z } from "zod";
 

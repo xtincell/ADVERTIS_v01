@@ -1,5 +1,7 @@
-// Phase Pipeline — Horizontal stacked bar showing brand count per phase.
-// Pure CSS/HTML, no external chart lib.
+// ==========================================================================
+// C.A5 — Phase Pipeline
+// Phase distribution funnel chart.
+// ==========================================================================
 
 "use client";
 

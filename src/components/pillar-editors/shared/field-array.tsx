@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E.H2 — Field Array
+// Shared dynamic array field component.
+// ==========================================================================
+
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";

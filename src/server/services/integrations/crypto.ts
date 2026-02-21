@@ -1,5 +1,23 @@
-// Crypto utilities for encrypting/decrypting integration credentials.
-// Uses AES-256-GCM with a key derived from INTEGRATION_ENCRYPTION_KEY env var.
+// =============================================================================
+// MODULE 24A — Integration Crypto
+// =============================================================================
+// AES-256-GCM encryption / decryption for third-party API credentials.
+// Credentials are packed as a single Base64 string: IV (16 B) + authTag (16 B)
+// + ciphertext. The 32-byte key is read from INTEGRATION_ENCRYPTION_KEY
+// environment variable (64-char hex string).
+//
+// Public API:
+//   encryptCredentials(credentials)  — Record<string,string> -> Base64 string
+//   decryptCredentials(packed)       — Base64 string -> Record<string,string>
+//
+// Dependencies:
+//   node:crypto                      — createCipheriv, createDecipheriv, randomBytes
+//   env.INTEGRATION_ENCRYPTION_KEY   — 64-char hex (32 bytes)
+//
+// Called by:
+//   integrations/sync-orchestrator.ts (decryptCredentials for push/pull)
+//   tRPC integration router (encryptCredentials when saving credentials)
+// =============================================================================
 
 import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
 

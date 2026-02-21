@@ -1,8 +1,15 @@
-// ADVERTIS Report Generation API Route
-// POST /api/ai/reports
-// Generates reports ON DEMAND (decoupled from the main pipeline).
-// Available once audit R+T is complete (phase >= "audit-review").
+// =============================================================================
+// ROUTE R.4 — AI Reports
+// =============================================================================
+// POST  /api/ai/reports
+// Report generation endpoint. Generates reports ON DEMAND (decoupled from the
+// main pipeline). Available once audit R+T is complete (phase >= "audit-review").
 // Does NOT advance the strategy phase — reports are optional deliverables.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: report-generation service, constants (REPORT_TYPES, REPORT_CONFIG,
+//               PILLAR_CONFIG), Prisma (Document model)
+// maxDuration:  300s (5 minutes — multi-section report generation)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";

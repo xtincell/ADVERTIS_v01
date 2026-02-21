@@ -1,15 +1,40 @@
-// Audit Generation Service — Phase 2 (R + T)
-// R = Risk: micro-SWOT per A-E variable + global SWOT synthesis + risk score 0-100
-// T = Track: market validation, hypothesis triangulation, TAM/SAM/SOM
+// =============================================================================
+// MODULE 8 — Audit Generation Service (Pillars R + T)
+// =============================================================================
+//
+// R = Risk Audit: micro-SWOT per A-E variable + global SWOT synthesis + risk score 0-100.
+// T = Track Audit: market validation, hypothesis triangulation, TAM/SAM/SOM.
 // T can be enriched with real market study data when available.
+//
+// PUBLIC API :
+//   8.1  generateRiskAudit()   — Micro-SWOTs in parallel + synthesis → RiskAuditResult
+//   8.2  generateTrackAudit()  — Market validation + TAM/SAM/SOM → TrackAuditResult
+//
+// INTERNAL :
+//   8.H1  parseMicroSwots()         — JSON extraction for micro-SWOT batches
+//   8.H2  parseSynthesis()          — JSON extraction for global SWOT synthesis
+//   8.H3  parseTrackResult()        — JSON extraction for Track audit
+//   8.H4  buildMarketStudyContext()  — Market study data formatter for prompt
+//
+// DEPENDENCIES :
+//   - Module 5  (anthropic-client) → resilientGenerateText, anthropic, DEFAULT_MODEL
+//   - Module 5B (prompt-helpers)   → injectSpecialization, SpecializationOptions
+//   - lib/constants (PILLAR_CONFIG)
+//   - lib/interview-schema → getFicheDeMarqueSchema()
+//   - lib/types/market-study → MarketStudySynthesis
+//
+// CALLED BY :
+//   - API Route POST /api/ai/generate (pillarType R, T)
+//   - Module 10 (fiche-upgrade.ts) → regenerateAllPillars()
+//
+// =============================================================================
 
-import { generateText } from "ai";
-
-import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
+import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "./anthropic-client";
 import { PILLAR_CONFIG } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
 import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
+import { injectSpecialization, type SpecializationOptions } from "./prompt-helpers";
 
 // ---------------------------------------------------------------------------
 // Types — re-exported from Zod schemas (source of truth)
@@ -42,6 +67,8 @@ export async function generateRiskAudit(
   ficheContent: Array<{ type: string; content: string }>,
   brandName: string,
   sector: string,
+  specialization?: SpecializationOptions | null,
+  tagline?: string | null,
 ): Promise<RiskAuditResult> {
   const schema = getFicheDeMarqueSchema();
 
@@ -98,13 +125,14 @@ export async function generateRiskAudit(
         .map((v) => `- ${v.id} (${v.label}): ${v.value}`)
         .join("\n");
 
-      const { text } = await generateText({
+      const { text } = await resilientGenerateText({
+        label: `audit-R-microswot-${pillarType}`,
         model: anthropic(DEFAULT_MODEL),
-        system: `Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
+        system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
 Tu dois réaliser une analyse micro-SWOT pour chaque variable du Pilier ${pillarType} — ${PILLAR_CONFIG[pillarType as PillarType]?.title}.
 
 CONTEXTE DE LA MARQUE :
-- Marque : ${brandName}
+- Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
 - Secteur : ${sector || "Non spécifié"}
 
 DONNÉES DES PILIERS FICHE DE MARQUE :
@@ -133,7 +161,7 @@ Exemple :
     "riskLevel": "medium",
     "commentary": "L'identité est bien définie mais manque de différenciation..."
   }
-]`,
+]`, specialization),
         prompt: `Variables du Pilier ${pillarType} à analyser :\n\n${variablesList}`,
         maxOutputTokens: 4000,
         temperature: 0.4,
@@ -160,13 +188,14 @@ Exemple :
     )
     .join("\n\n");
 
-  const { text: synthesisText } = await generateText({
+  const { text: synthesisText } = await resilientGenerateText({
+    label: "audit-R-synthesis",
     model: anthropic(DEFAULT_MODEL),
-    system: `Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
+    system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
 Tu dois synthétiser les micro-SWOTs individuels en une analyse globale.
 
 CONTEXTE :
-- Marque : ${brandName}
+- Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
 - Secteur : ${sector || "Non spécifié"}
 
 INSTRUCTIONS :
@@ -193,7 +222,7 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide :
     { "risk": "...", "action": "...", "urgency": "immediate", "effort": "medium" }
   ],
   "summary": "Synthèse en 3-5 phrases..."
-}`,
+}`, specialization),
     prompt: `Voici les micro-SWOTs individuels de la marque "${brandName}" :\n\n${microSwotSummary}`,
     maxOutputTokens: 3000,
     temperature: 0.3,
@@ -250,6 +279,8 @@ export async function generateTrackAudit(
   brandName: string,
   sector: string,
   marketStudyData?: MarketStudySynthesis | null,
+  specialization?: SpecializationOptions | null,
+  tagline?: string | null,
 ): Promise<TrackAuditResult> {
   // Build comprehensive context
   const ficheContext = ficheContent
@@ -312,13 +343,14 @@ NOTE : Aucune étude de marché réelle n'est disponible.
 Toutes tes analyses seront basées sur tes connaissances du secteur.
 Indique explicitement quand tu spécules ou estimes.`;
 
-  const { text } = await generateText({
+  const { text } = await resilientGenerateText({
+    label: "audit-T-track",
     model: anthropic(DEFAULT_MODEL),
-    system: `Tu es un analyste marché expert utilisant la méthodologie ADVERTIS.
+    system: injectSpecialization(`Tu es un analyste marché expert utilisant la méthodologie ADVERTIS.
 Tu réalises le Pilier T — Track : validation de la stratégie par confrontation aux données marché.
 
 CONTEXTE DE LA MARQUE :
-- Marque : ${brandName}
+- Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
 - Secteur : ${sector || "Non spécifié"}
 
 DONNÉES FICHE DE MARQUE (A-D-V-E) :
@@ -377,7 +409,7 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide :
   "brandMarketFitJustification": "...",
   "strategicRecommendations": ["..."],
   "summary": "Synthèse en 3-5 phrases..."
-}`,
+}`, specialization),
     prompt: `Réalise l'analyse Track complète pour la marque "${brandName}" dans le secteur "${sector || "Non spécifié"}".
 
 ${hasMarketStudy ? "UTILISE EN PRIORITÉ les données réelles de l'étude de marché fournies dans le contexte." : "Base ton analyse sur les données fournies dans le contexte."} Sois factuel et précis. Si des données manquent, indique-le explicitement plutôt que d'inventer.`,

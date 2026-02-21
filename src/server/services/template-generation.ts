@@ -1,7 +1,23 @@
-// Template Generation Service — 3 UPGRADERS Deliverables
-// Generates structured templates (Protocole Stratégique, Reco Campagne, Mandat 360)
-// Uses the same section-by-section pattern as report-generation.ts.
-// Context = Pillar I (complet) + A-D-V-E + R-T.
+// =============================================================================
+// MODULE 15D — Template Generation Service
+// =============================================================================
+// AI-powered brief/template generation for 3 UPGRADERS deliverables: Protocole
+// Strategique, Reco Campagne, and Mandat 360. Uses the same section-by-section
+// chunked generation pattern as report-generation.ts. Context is built from
+// Pillar I (complete) plus A-D-V-E and R-T data. Supports both slide-based
+// and page-based output formats.
+//
+// Public API:
+//   1. generateTemplate() — Generate a single template, section by section
+//
+// Dependencies:
+//   - ai (generateText)
+//   - anthropic-client (anthropic, DEFAULT_MODEL)
+//   - ~/lib/constants (TEMPLATE_CONFIG, PILLAR_CONFIG)
+//
+// Called by:
+//   - tRPC template router (template.generate)
+// =============================================================================
 
 import { generateText } from "ai";
 
@@ -44,6 +60,7 @@ export interface TemplateProgress {
 
 export interface TemplateContext {
   brandName: string;
+  tagline?: string | null;
   sector: string;
   interviewData: Record<string, string>;
   pillarContents: Array<{
@@ -142,13 +159,22 @@ export async function generateTemplate(
     }
   }
 
+  // Check if any sections had generation errors
+  const errorSections = sections.filter((s) =>
+    s.content.startsWith("[Erreur"),
+  );
+  const hasErrors = errorSections.length > 0;
+
   return {
     type: templateType,
     title: config.title,
     sections,
     totalWordCount,
     totalSlides,
-    status: "complete",
+    status: hasErrors ? ("error" as const) : ("complete" as const),
+    errorMessage: hasErrors
+      ? `${errorSections.length}/${sections.length} section(s) en erreur de génération`
+      : undefined,
   };
 }
 
@@ -183,7 +209,7 @@ Tu rédiges un livrable professionnel de type "${config.title}" (${config.estima
 
 LIVRABLE : ${config.title}
 SECTION EN COURS : ${sectionTitle}
-MARQUE : ${context.brandName}
+MARQUE : ${context.brandName}${context.tagline ? `\nACCROCHE : "${context.tagline}"` : ""}
 SECTEUR : ${context.sector || "Non spécifié"}
 
 DESCRIPTION : ${config.subtitle}

@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E1 — Authenticite Editor
+// Pillar A content editor.
+// ==========================================================================
+
 "use client";
 
 import type { AuthenticitePillarData } from "~/lib/types/pillar-data";

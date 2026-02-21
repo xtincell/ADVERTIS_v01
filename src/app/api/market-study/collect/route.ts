@@ -1,7 +1,14 @@
-// Market Study Collection API Route
-// POST /api/market-study/collect
-// Launches automated data collection from all configured sources.
-// Long-running: up to 5 minutes for all adapters.
+// =============================================================================
+// ROUTE R.7 — Market Study Collect
+// =============================================================================
+// POST  /api/market-study/collect
+// Triggers multi-source data collection for market study. Launches automated
+// collection from all configured adapters (competitors, keywords, sector data).
+// Extracts competitor list from D2 pillar data when available.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: collection-orchestrator service, Prisma (Strategy + Pillars)
+// maxDuration:  300s (5 minutes — multiple external API calls)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";

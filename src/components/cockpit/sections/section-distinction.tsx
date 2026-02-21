@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K3 — Section Distinction
+// =============================================================================
+// Pillar D cockpit display: Positioning, Personas, Visual Identity.
+// Props: dContent (DistinctionPillarData), implContent, pillar, vertical.
+// Key features: positioning statement, master promise + sub-promises, tone of
+// voice (on-dit / on-ne-dit-pas), persona cards, competitive landscape,
+// visual identity (palette, mood, direction artistique), linguistic assets
+// (mantras, vocabulaire proprietaire). Falls back to implContent.positioning.
+// =============================================================================
+
 // Section Distinction (Pillar D) — Positioning, Personas, Visual Identity
 
 import {
@@ -25,6 +36,7 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 const COLOR = PILLAR_CONFIG.D.color; // #2d5a3d
@@ -33,10 +45,12 @@ export function SectionDistinction({
   dContent,
   implContent,
   pillar,
+  vertical,
 }: {
   dContent: DistinctionPillarData;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   // Check whether we have meaningful D-pillar data
   const hasDContent =
@@ -63,6 +77,8 @@ export function SectionDistinction({
       title="Positionnement & Identite"
       subtitle="Distinction — Personas, Concurrence, Identite visuelle"
       color={COLOR}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {hasDContent ? (
         <div className="space-y-5">

@@ -1,5 +1,32 @@
-// Unified Score Engine — Single entry point for recalculating ALL strategy scores.
-// Calls the 3 mathematical calculators, persists results, and creates snapshots.
+// =============================================================================
+// MODULE 6 — Score Engine (Unified Score Recalculation)
+// =============================================================================
+//
+// Single entry point for recalculating ALL strategy scores. Orchestrates
+// the 3 mathematical calculators, persists results to DB, and creates
+// ScoreSnapshot records for evolution tracking.
+//
+// PUBLIC API :
+//   6.1  recalculateAllScores() — Recomputes coherence + risk + BMF scores
+//
+// SCORE COMPONENTS :
+//   - Coherence (0-100) → Module 6A (coherence-calculator.ts)
+//   - Risk      (0-100) → Module 6B (risk-calculator.ts)
+//   - BMF       (0-100) → Module 6C (bmf-calculator.ts)
+//
+// DEPENDENCIES :
+//   - Module 6A (coherence-calculator)
+//   - Module 6B (risk-calculator)
+//   - Module 6C (bmf-calculator)
+//   - lib/types/pillar-parsers → parsePillarContent()
+//   - Prisma: Strategy, Pillar, ScoreSnapshot
+//
+// CALLED BY :
+//   - API Route POST /api/ai/generate (after each pillar generation)
+//   - Module 10 (fiche-upgrade.ts) → after full regeneration
+//   - tRPC router strategy.recalcScores
+//
+// =============================================================================
 
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
@@ -18,7 +45,7 @@ import {
 import type { RiskAuditResult, TrackAuditResult } from "~/lib/types/pillar-schemas";
 
 // ---------------------------------------------------------------------------
-// Public types
+// 6.0  Types
 // ---------------------------------------------------------------------------
 
 export interface AllScores {
@@ -28,10 +55,12 @@ export interface AllScores {
   riskBreakdown: RiskBreakdown | null;
   bmfScore: number | null;
   bmfBreakdown: BmfBreakdown | null;
+  /** Only present for child strategies in the brand tree */
+  parentCoherenceScore?: number | null;
 }
 
 // ---------------------------------------------------------------------------
-// Main recalculation function
+// 6.1  recalculateAllScores — Main recalculation function
 // ---------------------------------------------------------------------------
 
 /**
@@ -70,14 +99,35 @@ export async function recalculateAllScores(
     pillarMap[p.type] = data;
   }
 
-  // --- 1. Coherence Score (always calculable) ---
+  // --- Phase 1: Load parent pillars for parent-child coherence ---
+  let parentPillarMap: Record<string, unknown> | undefined;
+  if (strategy.parentId) {
+    try {
+      const parent = await db.strategy.findUnique({
+        where: { id: strategy.parentId },
+        include: { pillars: true },
+      });
+      if (parent) {
+        parentPillarMap = {};
+        for (const p of parent.pillars) {
+          const { data } = parsePillarContent(p.type, p.content);
+          parentPillarMap[p.type] = data;
+        }
+      }
+    } catch {
+      // Parent not found or error — continue without parent context
+    }
+  }
+
+  // --- 6.1.1  Coherence Score (always calculable) ---
   const coherenceBreakdown = getCoherenceBreakdown(
     strategy.pillars,
     strategy.interviewData as Record<string, unknown> | undefined,
     pillarMap,
+    parentPillarMap,
   );
 
-  // --- 2. Risk Score (only if R pillar is complete) ---
+  // --- 6.1.2  Risk Score (only if R pillar is complete) ---
   let riskScore: number | null = null;
   let riskBreakdown: RiskBreakdown | null = null;
   const rPillar = strategy.pillars.find((p) => p.type === "R");
@@ -92,7 +142,7 @@ export async function recalculateAllScores(
     }
   }
 
-  // --- 3. Brand-Market Fit Score (only if T pillar is complete) ---
+  // --- 6.1.3  Brand-Market Fit Score (only if T pillar is complete) ---
   let bmfScore: number | null = null;
   let bmfBreakdown: BmfBreakdown | null = null;
   const tPillar = strategy.pillars.find((p) => p.type === "T");
@@ -107,13 +157,13 @@ export async function recalculateAllScores(
     }
   }
 
-  // --- 4. Persist Strategy.coherenceScore ---
+  // --- 6.1.4  Persist Strategy.coherenceScore ---
   await db.strategy.update({
     where: { id: strategyId },
     data: { coherenceScore: coherenceBreakdown.total },
   });
 
-  // --- 5. Persist riskScore inside R pillar content (overwrite AI snapshot) ---
+  // --- 6.1.5  Persist riskScore inside R pillar content (overwrite AI snapshot) ---
   if (riskScore !== null && rPillar) {
     const rContent =
       typeof rPillar.content === "object" && rPillar.content !== null
@@ -135,7 +185,7 @@ export async function recalculateAllScores(
     });
   }
 
-  // --- 6. Persist bmfScore inside T pillar content (overwrite AI snapshot) ---
+  // --- 6.1.6  Persist bmfScore inside T pillar content (overwrite AI snapshot) ---
   if (bmfScore !== null && tPillar) {
     const tContent =
       typeof tPillar.content === "object" && tPillar.content !== null
@@ -157,7 +207,7 @@ export async function recalculateAllScores(
     });
   }
 
-  // --- 7. Create ScoreSnapshot for evolution tracking ---
+  // --- 6.1.7  Create ScoreSnapshot for evolution tracking ---
   try {
     await db.scoreSnapshot.create({
       data: {
@@ -180,5 +230,6 @@ export async function recalculateAllScores(
     riskBreakdown,
     bmfScore,
     bmfBreakdown,
+    parentCoherenceScore: coherenceBreakdown.parentChildAlignment ?? null,
   };
 }

@@ -1,9 +1,12 @@
-// ============================================
-// COCKPIT WIDGETS — Type Definitions
-// ============================================
-// Dashboard modules that only exist because the cockpit data exists.
-// They consume pillar data (read-only) and produce derived insights.
-// Example: Superfan Tracker, Brand Health Score, Engagement Heatmap.
+// =============================================================================
+// LIB L.8 — Cockpit Widget Types
+// =============================================================================
+// Type definitions for dashboard widgets that consume pillar data (read-only)
+// and produce derived insights (e.g. Superfan Tracker, Brand Health Score).
+// Exports: WidgetDescriptor, WidgetInput, WidgetResult, WidgetHandler,
+//   WidgetStatus.
+// Used by: cockpit dashboard, widget registry, widget compute pipeline.
+// =============================================================================
 
 import { z } from "zod";
 

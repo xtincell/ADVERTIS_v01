@@ -1,7 +1,24 @@
-// Google Trends adapter — fetches search interest data for brand/sector keywords.
-// Uses the unofficial Google Trends API (no key required).
-// Note: This is a simplified implementation. For production, consider using
-// a library like google-trends-api or a dedicated scraping service.
+// =============================================================================
+// MODULE 25E — Google Trends Adapter
+// =============================================================================
+// Fetches search interest data for brand, sector, and competitor keywords
+// via the unofficial Google Trends daily-trends endpoint (no API key needed).
+// Returns keyword timelines and related trending queries filtered by sector
+// relevance. Simplified implementation — production should use google-trends-api
+// npm package or SerpAPI.
+//
+// Implements: DataSourceAdapter { isConfigured(), collect(params) }
+// sourceId: "google_trends"  |  Always configured (public endpoint)
+//
+// Public API (exported):
+//   GoogleTrendsAdapter class
+//
+// Dependencies:
+//   ~/lib/types/market-study         — CollectionParams, CollectionResult, GoogleTrends* types
+//
+// Called by:
+//   market-study/collection-orchestrator.ts (instantiated + collect())
+// =============================================================================
 
 import type {
   CollectionParams,

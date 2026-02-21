@@ -1,15 +1,36 @@
-// ADVERTIS AI Generation Engine
-// Generates strategic content for each of the 8 ADVERTIS pillars sequentially,
-// using the Vercel AI SDK with Anthropic Claude.
+// =============================================================================
+// MODULE 7 — AI Generation Engine (Pillars A-D-V-E + Synthese S)
+// =============================================================================
 //
-// All pillars now generate structured JSON (not markdown).
+// Generates strategic content for ADVERTIS pillars using Claude AI.
+// All pillars produce structured JSON (not markdown). Each pillar builds
+// on context from previously generated pillars (cascade pattern).
+//
+// PUBLIC API :
+//   7.1  generatePillarContent()    — Generates A/D/V/E pillar content (structured JSON)
+//   7.2  generateSyntheseContent()  — Generates Pillar S (strategic synthesis)
+//
+// INTERNAL :
+//   7.H1  getSystemPrompt()     — Pillar-specific system prompt builder
+//   7.H2  buildUserPrompt()     — Interview data + cascade context assembler
+//   7.H3  parseAiResponse()     — JSON extraction from AI output
+//
+// DEPENDENCIES :
+//   - Module 5  (anthropic-client) → resilientGenerateText, anthropic, DEFAULT_MODEL
+//   - Module 5B (prompt-helpers)   → injectSpecialization (via GenerationOptions)
+//   - lib/constants (PILLAR_CONFIG, VERTICAL_DICTIONARY, MATURITY_CONFIG)
+//   - lib/interview-schema → getInterviewSchema()
+//
+// CALLED BY :
+//   - API Route POST /api/ai/generate (pillarType A/D/V/E/S)
+//   - Module 10 (fiche-upgrade.ts) → regenerateAllPillars()
+//
+// =============================================================================
 
-import { generateText } from "ai";
-
-import { PILLAR_CONFIG } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
+import { PILLAR_CONFIG, VERTICAL_DICTIONARY, MATURITY_CONFIG } from "~/lib/constants";
+import type { PillarType, MaturityProfile } from "~/lib/constants";
 import { getInterviewSchema } from "~/lib/interview-schema";
-import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
+import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "./anthropic-client";
 
 import type { SynthesePillarData } from "~/lib/types/pillar-data";
 import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
@@ -17,6 +38,19 @@ import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
+
+/**
+ * Options for Phase 1 brand tree / vertical / maturity context injection.
+ */
+export interface GenerationOptions {
+  parentContext?: {
+    brandName: string;
+    nodeType?: string;
+    pillars: Array<{ type: string; summary: string | null }>;
+  };
+  vertical?: string;
+  maturityProfile?: string;
+}
 
 /**
  * Generates the strategic content for one ADVERTIS pillar.
@@ -28,17 +62,22 @@ export async function generatePillarContent(
   previousPillars: Array<{ type: string; content: string }>,
   brandName: string,
   sector: string,
+  options?: GenerationOptions,
+  tagline?: string | null,
 ): Promise<unknown> {
-  const systemPrompt = getSystemPrompt(pillarType);
+  const systemPrompt = getSystemPrompt(pillarType, options);
   const userPrompt = buildUserPrompt(
     pillarType,
     interviewData,
     previousPillars,
     brandName,
     sector,
+    options,
+    tagline,
   );
 
-  const result = await generateText({
+  const result = await resilientGenerateText({
+    label: `pillar-${pillarType}`,
     model: anthropic(DEFAULT_MODEL),
     system: systemPrompt,
     prompt: userPrompt,
@@ -62,17 +101,22 @@ export async function generateSyntheseContent(
   allPillars: Array<{ type: string; content: string }>,
   brandName: string,
   sector: string,
+  options?: GenerationOptions,
+  tagline?: string | null,
 ): Promise<SynthesePillarData> {
-  const systemPrompt = getSystemPrompt("S");
+  const systemPrompt = getSystemPrompt("S", options);
   const userPrompt = buildUserPrompt(
     "S",
     interviewData,
     allPillars,
     brandName,
     sector,
+    options,
+    tagline,
   );
 
-  const result = await generateText({
+  const result = await resilientGenerateText({
+    label: "pillar-S-synthese",
     model: anthropic(DEFAULT_MODEL),
     system: systemPrompt,
     prompt: userPrompt,
@@ -333,20 +377,71 @@ FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
   "recommandationsPrioritaires": [
     { "action": "Action concrète", "priorite": 1, "impact": "Impact attendu", "delai": "Délai" }
   ],
-  "scoreCoherence": 75
+  "scoreCoherence": 75,
+  "axesStrategiques": [
+    {
+      "axe": "Nom de l'axe stratégique (ex: Différenciation premium)",
+      "description": "Description détaillée de l'axe et comment il se décline",
+      "piliersLies": ["A", "D", "V"],
+      "kpisCles": ["KPI mesurable 1", "KPI mesurable 2"]
+    }
+  ],
+  "sprint90Recap": {
+    "actions": [
+      { "action": "Action prioritaire sprint 90j", "owner": "Qui (ex: Marketing)", "kpi": "KPI de suivi", "status": "à faire" }
+    ],
+    "summary": "Résumé narratif du sprint 90 jours"
+  },
+  "campaignsSummary": {
+    "totalCampaigns": 6,
+    "highlights": ["Campagne 1 — desc courte", "Campagne 2 — desc courte"],
+    "budgetTotal": "Budget annuel estimé"
+  },
+  "activationSummary": "Résumé du dispositif d'activation : canaux, outils, stack techno",
+  "kpiDashboard": [
+    { "pilier": "A", "kpi": "Reconnaissance de marque", "cible": "+20% en 6 mois", "statut": "à mesurer" }
+  ]
 }
 
-Génère 5-7 facteurs clés de succès et 8-10 recommandations prioritaires ordonnées.
-Le scoreCoherence reflète la cohérence globale observée entre les piliers (0-100).
+INSTRUCTIONS :
+- Génère 5-7 facteurs clés de succès et 8-10 recommandations prioritaires ordonnées.
+- Le scoreCoherence reflète la cohérence globale entre les piliers (0-100).
+- axesStrategiques : 3-5 axes déduits des piliers D (positionnement, promesses) + I (activation). Chaque axe doit lier au moins 2 piliers.
+- sprint90Recap : Extrait les 8-12 actions les plus urgentes du pilier I (sprint90Days) avec propriétaire et KPI.
+- campaignsSummary : Résume le calendrier annuel de campagnes du pilier I (campaigns.annualCalendar). Nombre total, highlights, budget.
+- activationSummary : Résume le dispositif d'activation du pilier I (activationDispositif) en 3-5 phrases.
+- kpiDashboard : Consolide 1-2 KPIs par pilier (A-D-V-E-R-T-I) pour un tableau de bord stratégique global.
 ${JSON_RULES}`,
 };
 
-function getSystemPrompt(pillarType: string): string {
-  return (
+function getSystemPrompt(pillarType: string, options?: GenerationOptions): string {
+  let prompt =
     SYSTEM_PROMPTS[pillarType] ??
     `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS. Génère le contenu stratégique structuré pour le pilier ${pillarType} en JSON.
-${JSON_RULES}`
-  );
+${JSON_RULES}`;
+
+  // Append maturity profile instructions
+  if (options?.maturityProfile) {
+    const config = MATURITY_CONFIG[options.maturityProfile as MaturityProfile];
+    if (config) {
+      prompt += `\n\nPROFIL DE MATURITÉ : ${options.maturityProfile} (${config.ratio} descriptif/projectif)
+- Mode de génération : ${config.generationMode}
+- Focus cockpit : ${config.cockpitFocus}
+- Si le profil est STARTUP ou LAUNCH, privilégie les recommandations et hypothèses plutôt que les descriptions factuelles.
+- Si le profil est MATURE, base-toi uniquement sur les données fournies, pas de projections.`;
+    }
+  }
+
+  // Append vertical vocabulary instructions (system-level reinforcement)
+  if (options?.vertical && VERTICAL_DICTIONARY[options.vertical]) {
+    const dict = VERTICAL_DICTIONARY[options.vertical]!;
+    const vocab = Object.entries(dict)
+      .map(([key, val]) => `${key}="${val}"`)
+      .join(", ");
+    prompt += `\n\nVERTICAL : ${options.vertical}\nVocabulaire sectoriel : ${vocab}\nIMPORTANT : Utilise systématiquement le vocabulaire sectoriel ci-dessus au lieu des termes génériques.`;
+  }
+
+  return prompt;
 }
 
 // ---------------------------------------------------------------------------
@@ -359,6 +454,8 @@ function buildUserPrompt(
   previousPillars: Array<{ type: string; content: string }>,
   brandName: string,
   sector: string,
+  options?: GenerationOptions,
+  tagline?: string | null,
 ): string {
   const pillarConfig = PILLAR_CONFIG[pillarType as PillarType];
   const schema = getInterviewSchema();
@@ -367,10 +464,25 @@ function buildUserPrompt(
   // Header
   const lines: string[] = [
     `# Marque : ${brandName}`,
+    ...(tagline ? [`# Accroche : "${tagline}"`] : []),
     `# Secteur : ${sector || "Non spécifié"}`,
     `# Pilier : ${pillarType} — ${pillarConfig?.title ?? pillarType}`,
-    "",
   ];
+
+  // Vertical vocabulary injection
+  if (options?.vertical && VERTICAL_DICTIONARY[options.vertical]) {
+    const dict = VERTICAL_DICTIONARY[options.vertical]!;
+    const vocabParts = Object.entries(dict)
+      .map(([key, val]) => `${key}="${val}"`)
+      .join(", ");
+    lines.push(`# Vertical : ${options.vertical}`);
+    lines.push(`# Vocabulaire sectoriel : ${vocabParts}`);
+    lines.push(
+      "IMPORTANT : Utilise le vocabulaire sectoriel ci-dessus au lieu des termes génériques.",
+    );
+  }
+
+  lines.push("");
 
   // Interview data for this pillar
   if (pillarSection && pillarSection.variables.length > 0) {
@@ -430,6 +542,29 @@ function buildUserPrompt(
       lines.push(truncated);
       lines.push("");
     }
+  }
+
+  // Parent brand context (for child strategies in brand tree)
+  if (options?.parentContext) {
+    const pc = options.parentContext;
+    lines.push("## Contexte de la marque parente");
+    lines.push(
+      `Ce nœud est un ${options.parentContext.nodeType ?? "enfant"} de la marque **${pc.brandName}**.`,
+    );
+    lines.push(
+      "Le contenu généré doit être cohérent avec la stratégie parent tout en étant spécifique à ce nœud.",
+    );
+    lines.push("");
+
+    for (const pp of pc.pillars) {
+      if (pp.summary) {
+        const ppConfig = PILLAR_CONFIG[pp.type as PillarType];
+        lines.push(
+          `- **Pilier ${pp.type} — ${ppConfig?.title ?? pp.type}** : ${pp.summary.substring(0, 500)}`,
+        );
+      }
+    }
+    lines.push("");
   }
 
   lines.push("---");

@@ -1,8 +1,23 @@
-// Report Generation Service — Phase 3 (Implementation)
-// Generates 6 comprehensive reports (Rapport A through Rapport T), each 15-80 pages.
-// Uses chunked section-by-section generation to handle the large output (~384K tokens total).
-// Each report has 7-9 predefined sections from REPORT_CONFIG.
-// Saves progress incrementally after each section.
+// =============================================================================
+// MODULE 15 — Report Generation Service
+// =============================================================================
+// Generates 6 comprehensive reports (Rapport A through Rapport T), each 15-80
+// pages. Uses chunked section-by-section AI generation to handle the large
+// output (~384K tokens total). Each report has 7-9 predefined sections from
+// REPORT_CONFIG. Saves progress incrementally after each section.
+//
+// Public API:
+//   1. generateReport()      — Generate a single report, section by section
+//   2. generateAllReports()  — Generate all 6 reports sequentially
+//
+// Dependencies:
+//   - ai (generateText)
+//   - anthropic-client (anthropic, DEFAULT_MODEL)
+//   - ~/lib/constants (REPORT_CONFIG, PILLAR_CONFIG)
+//
+// Called by:
+//   - tRPC report router (report.generate, report.generateAll)
+// =============================================================================
 
 import { generateText } from "ai";
 

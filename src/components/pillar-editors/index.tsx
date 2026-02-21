@@ -1,14 +1,21 @@
+// ==========================================================================
+// C.E0 — Pillar Editors Index
+// Dynamic editor loader by pillar type.
+// ==========================================================================
+
 "use client";
 
 import { AuthenticiteEditor } from "./authenticite-editor";
 import { DistinctionEditor } from "./distinction-editor";
 import { ValeurEditor } from "./valeur-editor";
 import { EngagementEditor } from "./engagement-editor";
+import { TrackEditor } from "./track-editor";
 
 import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
 import type { DistinctionPillarData } from "~/lib/types/pillar-data";
 import type { ValeurPillarData } from "~/lib/types/pillar-data";
 import type { EngagementPillarData } from "~/lib/types/pillar-data";
+import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 
 // ---------------------------------------------------------------------------
@@ -54,7 +61,11 @@ export function StructuredPillarEditor({
       const { data } = parsePillarContent<EngagementPillarData>("E", content);
       return <EngagementEditor data={data} onChange={onChange} />;
     }
-    // R, T, I, S — generic object display for now (could add dedicated editors later)
+    case "T": {
+      const { data } = parsePillarContent<TrackAuditResult>("T", content);
+      return <TrackEditor data={data} onChange={onChange} />;
+    }
+    // R, I, S — generic object display for now (could add dedicated editors later)
     default:
       return null;
   }

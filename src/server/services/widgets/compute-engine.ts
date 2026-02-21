@@ -1,5 +1,29 @@
-// Widget Compute Engine — Fetches pillar data, runs widget compute(),
-// validates output, and stores result in CockpitWidget record.
+// =============================================================================
+// MODULE 14 — Widget Compute Engine
+// =============================================================================
+//
+// Orchestrates cockpit widget computation. Fetches pillar data, runs each
+// widget's compute() function, validates output against Zod schema, and
+// stores the result in CockpitWidget records.
+//
+// PUBLIC API :
+//   14.1  computeWidget()                — Compute a single widget by ID
+//   14.2  computeAllWidgets()            — Compute all available widgets for a strategy
+//   14.3  invalidateWidgetsForPillar()   — Mark dependent widgets as pending
+//
+// DEPENDENCIES :
+//   - Module 14R (widgets/registry) → getWidget(), getAllWidgets()
+//   - lib/types/pillar-parsers → parsePillarContent()
+//   - lib/types/cockpit-widgets → WidgetInput
+//   - Prisma: CockpitWidget, Strategy, Pillar
+//
+// CALLED BY :
+//   - API Route POST /api/ai/generate → computeAllWidgets (fire-and-forget)
+//   - Module 10 (fiche-upgrade.ts) → computeAllWidgets after regeneration
+//   - tRPC router widget.computeAll
+//   - UI: SectionWidgets auto-compute useEffect
+//
+// =============================================================================
 
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
@@ -7,7 +31,7 @@ import { getWidget, getAllWidgets } from "./registry";
 import type { WidgetInput } from "~/lib/types/cockpit-widgets";
 
 // ---------------------------------------------------------------------------
-// Compute a single widget
+// 14.1  computeWidget — Compute a single widget
 // ---------------------------------------------------------------------------
 
 export async function computeWidget(
@@ -94,7 +118,7 @@ export async function computeWidget(
 }
 
 // ---------------------------------------------------------------------------
-// Compute all available widgets for a strategy
+// 14.2  computeAllWidgets — Compute all available widgets for a strategy
 // ---------------------------------------------------------------------------
 
 export async function computeAllWidgets(
@@ -135,7 +159,7 @@ export async function computeAllWidgets(
 }
 
 // ---------------------------------------------------------------------------
-// Invalidate widgets that depend on a specific pillar type
+// 14.3  invalidateWidgetsForPillar — Mark dependent widgets as pending
 // ---------------------------------------------------------------------------
 
 export async function invalidateWidgetsForPillar(

@@ -1,6 +1,26 @@
-// Direction Artistique Widget
-// Consumes pillar D (identiteVisuelle, tonDeVoix, assetsLinguistiques)
-// to produce a visual identity completeness & quality score.
+// =============================================================================
+// MODULE 14W3 — DA Visual Identity Widget
+// =============================================================================
+// Consumes pillar D (identiteVisuelle, tonDeVoix, assetsLinguistiques) to
+// produce a weighted visual-identity completeness score (0-100), component
+// breakdown, and actionable insights on missing brand elements.
+// Pure compute -- no AI calls.
+//
+// Category: analytics  |  minimumPhase: fiche  |  size: medium
+// Required pillars: D
+//
+// Public API (exported):
+//   default handler  — registered with registerWidget() at import time
+//
+// Dependencies:
+//   zod                              — DaOutputSchema
+//   ../registry                      — registerWidget
+//   ~/lib/types/cockpit-widgets      — WidgetHandler, WidgetInput, WidgetResult
+//
+// Called by:
+//   widgets/index.ts or auto-registration import
+//   tRPC cockpit router (widget compute)
+// =============================================================================
 
 import { z } from "zod";
 import { registerWidget } from "../registry";

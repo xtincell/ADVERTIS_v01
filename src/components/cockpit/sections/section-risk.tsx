@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K6 — Section Risk
+// =============================================================================
+// Pillar R cockpit display: Risk Audit.
+// Props: rContent (RiskAuditResult), implContent, pillar, vertical.
+// Key features: risk score circle with justification, summary, global SWOT
+// (4-quadrant), micro-SWOTs per variable with risk level badges, probability x
+// impact matrix sorted by priority, mitigation priorities with urgency/effort,
+// top risks from implementation with mitigation actions.
+// =============================================================================
+
 // Section Risk (Pillar R) — Risk Audit: Micro-SWOTs, Score, Matrice P*I, Mitigation
 
 import { Shield, AlertTriangle } from "lucide-react";
@@ -22,16 +33,19 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 export function SectionRisk({
   rContent,
   implContent,
   pillar,
+  vertical,
 }: {
   rContent: RiskAuditResult;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   // Fallback check: if no meaningful R data, use PillarContentDisplay
   const hasData =
@@ -46,6 +60,8 @@ export function SectionRisk({
       title="Analyse des Risques"
       subtitle="Micro-SWOTs, Score de risque, Mitigation"
       color={PILLAR_CONFIG.R.color}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {hasData ? (
         <div className="space-y-5">

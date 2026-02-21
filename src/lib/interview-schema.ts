@@ -1,7 +1,15 @@
-// ADVERTIS Interview Schema — Fiche de Marque (A-D-V-E)
-// Maps the 25 user-input variables to form fields for the Strategy Creation Wizard.
-// Only pillars A, D, V, E accept user input. R+T are AI-generated audits, I generates reports, S is the cockpit.
-// Variables marked with priority: true correspond to the original methodology's star (★) indicators.
+// =============================================================================
+// LIB L.2 — Interview Schema
+// =============================================================================
+// Defines the 26 Fiche de Marque variables across A-D-V-E input pillars.
+// Only pillars A, D, V, E accept user input; R+T are AI-generated audits,
+// I generates reports, S is the cockpit. Priority variables correspond to
+// the original methodology's star indicators.
+// Exports: InterviewVariable, PillarInterviewSection,
+//   getFicheDeMarqueSchema(), getInterviewSchema(), getPriorityVariables(),
+//   getFicheVariableCount(), getAllFicheVariableIds().
+// Used by: Strategy Creation Wizard, fiche form components, phase1 router.
+// =============================================================================
 
 export interface InterviewVariable {
   id: string; // e.g. "A1", "D3"
@@ -20,11 +28,21 @@ export interface PillarInterviewSection {
 }
 
 // ---------------------------------------------------------------------------
-// Fiche de Marque — 25 variables across 4 input pillars (A-D-V-E)
+// Fiche de Marque — 26 variables across 4 input pillars (A-D-V-E)
 // Pillars R, T (Audit), I (Implementation), S (Cockpit) are AI-generated.
 // ---------------------------------------------------------------------------
 
 const PILLAR_A_VARIABLES: InterviewVariable[] = [
+  {
+    id: "A0",
+    label: "Marque & Accroche",
+    description:
+      "Le socle fondateur — nom de marque, signature/accroche (tagline), et positionnement en une phrase. Ce champ ancre toute la strategie ADVERTIS.",
+    placeholder:
+      'Ex: Bonnet Rouge — « Le gout de la famille, depuis 1970 ». Lait concentre leader en Afrique Centrale.',
+    priority: true,
+    type: "textarea",
+  },
   {
     id: "A1",
     label: "Identite de Marque",
@@ -291,7 +309,7 @@ const PILLAR_E_VARIABLES: InterviewVariable[] = [
 // ---------------------------------------------------------------------------
 
 /**
- * Returns the Fiche de Marque schema: 25 variables across pillars A-D-V-E.
+ * Returns the Fiche de Marque schema: 26 variables across pillars A-D-V-E.
  * Only these pillars accept user input. R, T, I, S are AI-generated.
  */
 export function getFicheDeMarqueSchema(): PillarInterviewSection[] {
@@ -348,7 +366,7 @@ export function getFicheVariableCount(): number {
 }
 
 /**
- * Returns all variable IDs for the Fiche de Marque (A1-A6, D1-D7, V1-V6, E1-E6).
+ * Returns all variable IDs for the Fiche de Marque (A0-A6, D1-D7, V1-V6, E1-E6).
  */
 export function getAllFicheVariableIds(): string[] {
   return getFicheDeMarqueSchema().flatMap((section) =>

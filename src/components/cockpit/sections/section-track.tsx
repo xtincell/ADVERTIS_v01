@@ -1,3 +1,14 @@
+// =============================================================================
+// COMPONENT C.K7 — Section Track
+// =============================================================================
+// Pillar T cockpit display: Track Audit / Market Validation.
+// Props: tContent (TrackAuditResult), implContent, pillar, vertical.
+// Key features: brand-market fit score circle, summary, triangulation (internal/
+// market/customer data), TAM/SAM/SOM cards with methodology, hypothesis
+// validation grid with status icons, market reality (macro trends, weak signals,
+// emerging patterns), competitive benchmark, merged strategic recommendations.
+// =============================================================================
+
 // Section Track (Pillar T) — Track Audit / Market Validation
 // Renders triangulation, TAM/SAM/SOM, hypothesis validation, market reality,
 // competitive benchmark, brand-market fit score, and strategic recommendations.
@@ -35,6 +46,7 @@ interface PillarData {
   status: string;
   summary: string | null;
   content: unknown;
+  updatedAt?: Date | string | null;
 }
 
 const COLOR = PILLAR_CONFIG.T.color; // #8c3cc4
@@ -61,10 +73,12 @@ export function SectionTrack({
   tContent,
   implContent,
   pillar,
+  vertical,
 }: {
   tContent: TrackAuditResult;
   implContent: ImplementationData;
   pillar?: PillarData | null;
+  vertical?: string | null;
 }) {
   // -------------------------------------------------------------------------
   // Fallback check: if tContent has no meaningful data, use PillarContentDisplay
@@ -85,8 +99,10 @@ export function SectionTrack({
       icon={<BarChart3 className="h-5 w-5" />}
       pillarLetter="T"
       title="Track Audit"
-      subtitle="Validation march\u00e9 \u2014 Triangulation, TAM/SAM/SOM, Benchmark"
+      subtitle="Validation marché — Triangulation, TAM/SAM/SOM, Benchmark"
       color={COLOR}
+      updatedAt={pillar?.updatedAt}
+      vertical={vertical}
     >
       {hasData ? (
         <div className="space-y-5">

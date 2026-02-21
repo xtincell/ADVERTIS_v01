@@ -1,6 +1,25 @@
-// Module Executor — Orchestrates the full lifecycle of a module run:
-// create run → resolve inputs → validate → execute → validate output → apply → update run.
-// Mirrors the collection-orchestrator.ts pattern from market-study.
+// =============================================================================
+// MODULE 23A — Module Executor
+// =============================================================================
+// Orchestrates the full lifecycle of a single module run:
+//   create run record -> resolve inputs -> validate inputs -> execute handler
+//   -> validate outputs -> apply outputs to pillars -> update run record.
+// Mirrors the collection-orchestrator pattern from the market-study system.
+//
+// Public API:
+//   executeModule(moduleId, strategyId, userId, triggeredBy?)
+//     -> { success, runId, error? }
+//
+// Dependencies:
+//   ~/server/db                      — Prisma client (moduleRun, strategy)
+//   ./registry                       — getModule
+//   ./input-resolver                 — resolveModuleInputs
+//   ./output-applier                 — applyModuleOutputs
+//   ~/lib/types/module-system        — ModuleContext, ModuleResult, ModuleTriggeredBy
+//
+// Called by:
+//   modules/index.ts (re-exports)  ·  tRPC module.execute mutation
+// =============================================================================
 
 import { db } from "~/server/db";
 import { getModule } from "./registry";

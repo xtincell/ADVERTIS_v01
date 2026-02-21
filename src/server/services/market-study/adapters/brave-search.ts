@@ -1,6 +1,24 @@
-// Brave Search adapter — multi-query web search for market data.
-// Uses the Brave Search API to run targeted queries about market size,
-// competitors, trends, and TAM/SAM/SOM.
+// =============================================================================
+// MODULE 25C — Brave Search Adapter
+// =============================================================================
+// Multi-query web search adapter using the Brave Search API. Runs a set of
+// targeted queries (market size, trends, competitors, TAM/SAM) sequentially
+// with rate-limit pauses, and aggregates results into BraveSearchData.
+// Requires env BRAVE_SEARCH_API_KEY.
+//
+// Implements: DataSourceAdapter { isConfigured(), collect(params) }
+// sourceId: "brave_search"
+//
+// Public API (exported):
+//   BraveSearchAdapter class
+//
+// Dependencies:
+//   ~/lib/types/market-study         — CollectionParams, CollectionResult, BraveSearch* types
+//   ./base-adapter                   — getEnvVar, buildSearchQueries
+//
+// Called by:
+//   market-study/collection-orchestrator.ts (instantiated + collect())
+// =============================================================================
 
 import type {
   CollectionParams,

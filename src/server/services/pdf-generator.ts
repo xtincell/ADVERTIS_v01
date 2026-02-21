@@ -1,6 +1,27 @@
-// ADVERTIS PDF Generator Service
-// Server-side PDF generation using @react-pdf/renderer
-// Renders structured, professional PDF documents matching cockpit UI quality.
+// =============================================================================
+// MODULE 15A — PDF Generator
+// =============================================================================
+// Server-side PDF generation using @react-pdf/renderer. Renders structured,
+// professional PDF documents matching cockpit UI quality. Supports standard
+// (full quality) and lightweight (< 5 Mo, mobile-optimized) export modes.
+// Contains dedicated renderers for each pillar type (Risk, Track, Implementation,
+// and generic text content).
+//
+// Public API:
+//   1. generateStrategyPDF() — Generate a full strategy PDF with cover, TOC,
+//                              and per-pillar pages
+//
+// Dependencies:
+//   - @react-pdf/renderer (Document, Page, Text, View, renderToBuffer)
+//   - ~/lib/constants (PILLAR_CONFIG)
+//   - ~/lib/types/implementation-data (ImplementationData)
+//   - ./audit-generation (RiskAuditResult, TrackAuditResult)
+//   - ~/lib/types/pillar-parsers (parsePillarContent)
+//
+// Called by:
+//   - tRPC export router (export.pdf)
+//   - Report Generation Service (Module 15)
+// =============================================================================
 
 import React from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
@@ -24,6 +45,7 @@ import { parsePillarContent } from "~/lib/types/pillar-parsers";
 interface StrategyData {
   name: string;
   brandName: string;
+  tagline?: string;
   sector?: string;
   coherenceScore?: number;
   createdAt: Date;
@@ -40,6 +62,8 @@ interface PillarData {
 interface PDFOptions {
   selectedPillars?: string[];
   includeCover?: boolean;
+  /** Export mode: "standard" (full quality) or "lightweight" (< 5 Mo, mobile-optimized, no embedded images) */
+  mode?: "lightweight" | "standard";
 }
 
 // ---------------------------------------------------------------------------
@@ -1245,6 +1269,9 @@ function CoverPage({ strategy }: { strategy: StrategyData }): React.ReactElement
       View,
       { style: { alignItems: "center" as const } },
       el(Text, { style: sty.coverBrandName }, strategy.brandName),
+      strategy.tagline
+        ? el(Text, { style: { ...sty.coverSubtitle, fontStyle: "italic" as const, color: C.terracotta } }, `\u201C${strategy.tagline}\u201D`)
+        : null,
       el(Text, { style: sty.coverSubtitle }, strategy.name),
       el(View, { style: sty.coverDivider }),
       strategy.sector
@@ -1344,6 +1371,7 @@ export async function generateStrategyPDF(
 ): Promise<Buffer> {
   const includeCover = options?.includeCover ?? true;
   const selectedPillars = options?.selectedPillars;
+  const isLightweight = options?.mode === "lightweight";
 
   // Filter and sort pillars
   const filteredPillars = selectedPillars
@@ -1356,11 +1384,42 @@ export async function generateStrategyPDF(
     return orderA - orderB;
   });
 
+  // Lightweight overrides for mobile-optimized PDF (< 5 Mo, B&W friendly)
+  const lwPageStyle = isLightweight
+    ? { ...sty.page, fontSize: 8.5, paddingTop: 35, paddingBottom: 35, paddingHorizontal: 30 }
+    : sty.page;
+
   // Build document pages
   const pages: React.ReactElement[] = [];
 
   if (includeCover) {
-    pages.push(el(CoverPage, { key: "cover", strategy }));
+    if (isLightweight) {
+      // Lightweight cover: minimal, no decorative elements
+      pages.push(
+        el(
+          Page,
+          { key: "cover", size: "A4", style: { ...sty.coverPage, padding: 30 } },
+          el(Text, { style: { ...sty.coverBrand, fontSize: 10, marginBottom: 20, letterSpacing: 4 } }, "ADVERTIS"),
+          el(View, { style: { alignItems: "center" as const } },
+            el(Text, { style: { ...sty.coverBrandName, fontSize: 26, marginBottom: 6 } }, strategy.brandName),
+            strategy.tagline
+              ? el(Text, { style: { ...sty.coverSubtitle, fontSize: 12, marginBottom: 20, fontStyle: "italic" as const } }, `\u201C${strategy.tagline}\u201D`)
+              : null,
+            el(Text, { style: { ...sty.coverSubtitle, fontSize: 11, marginBottom: 20 } }, strategy.name),
+            el(View, { style: { ...sty.coverDivider, width: 50, height: 2 } }),
+            strategy.sector
+              ? el(Text, { style: { ...sty.coverMeta, fontSize: 9 } }, `Secteur : ${strategy.sector}`)
+              : null,
+            strategy.coherenceScore != null
+              ? el(Text, { style: { ...sty.coverMeta, fontSize: 9 } }, `Score de coh\u00E9rence : ${strategy.coherenceScore}/100`)
+              : null,
+            el(Text, { style: { ...sty.coverMeta, fontSize: 8, color: C.grayMed } }, `Mode l\u00E9ger \u2014 ${formatDate(strategy.createdAt)}`)
+          )
+        )
+      );
+    } else {
+      pages.push(el(CoverPage, { key: "cover", strategy }));
+    }
   }
 
   if (sortedPillars.length > 1) {
@@ -1368,7 +1427,12 @@ export async function generateStrategyPDF(
   }
 
   for (const pillar of sortedPillars) {
-    pages.push(el(PillarPage, { key: `pillar-${pillar.type}`, pillar }));
+    if (isLightweight) {
+      // Lightweight pillar page: reduced sizes, compact layout
+      pages.push(el(LightweightPillarPage, { key: `pillar-${pillar.type}`, pillar, pageStyle: lwPageStyle }));
+    } else {
+      pages.push(el(PillarPage, { key: `pillar-${pillar.type}`, pillar }));
+    }
   }
 
   // Create and render Document
@@ -1385,4 +1449,112 @@ export async function generateStrategyPDF(
 
   const buffer = await renderToBuffer(doc);
   return Buffer.from(buffer);
+}
+
+// ---------------------------------------------------------------------------
+// Lightweight Pillar Page — Condensed layout for mobile export (< 5 Mo)
+// ---------------------------------------------------------------------------
+
+function LightweightPillarPage({
+  pillar,
+  pageStyle,
+}: {
+  pillar: PillarData;
+  pageStyle: Record<string, unknown>;
+}): React.ReactElement {
+  const config = PILLAR_CONFIG[pillar.type as PillarType];
+  const color = config?.color ?? C.terracotta;
+
+  // Choose renderer based on pillar type (same logic, content is reusable)
+  let contentElements: React.ReactElement[];
+  switch (pillar.type) {
+    case "R":
+      contentElements = renderRiskContent(pillar.content);
+      break;
+    case "T":
+      contentElements = renderTrackContent(pillar.content);
+      break;
+    case "I":
+      contentElements = renderImplementationContent(pillar.content);
+      break;
+    default:
+      contentElements = renderTextContent(pillar.content);
+      break;
+  }
+
+  return el(
+    Page,
+    { size: "A4", style: pageStyle, wrap: true } as Record<string, unknown>,
+    // Compact header
+    el(
+      View,
+      {
+        style: {
+          flexDirection: "row" as const,
+          alignItems: "center" as const,
+          marginBottom: 10,
+          paddingBottom: 6,
+          borderBottomWidth: 1.5,
+          borderBottomColor: color,
+        },
+      },
+      el(
+        View,
+        {
+          style: {
+            width: 18,
+            height: 18,
+            borderRadius: 3,
+            backgroundColor: color,
+            alignItems: "center" as const,
+            justifyContent: "center" as const,
+            marginRight: 6,
+          },
+        },
+        el(Text, { style: { fontSize: 9, fontWeight: 700, color: C.white } }, pillar.type),
+      ),
+      el(
+        View,
+        { style: { flex: 1 } },
+        el(Text, { style: { fontSize: 11, fontWeight: 700, color: C.dark } }, config?.title ?? pillar.title),
+      ),
+    ),
+    // Summary (condensed)
+    pillar.summary
+      ? el(
+          View,
+          { style: { backgroundColor: C.grayLight, padding: 6, borderRadius: 3, marginBottom: 8 } },
+          el(Text, { style: { fontSize: 7.5, fontWeight: 700, color: C.gray, marginBottom: 2 } }, "Synth\u00E8se"),
+          el(Text, { style: { fontSize: 7.5, color: C.dark, lineHeight: 1.3 } }, pillar.summary),
+        )
+      : null,
+    // Content (same renderers)
+    ...contentElements,
+    // Compact footer
+    el(
+      View,
+      {
+        style: {
+          position: "absolute" as const,
+          bottom: 15,
+          left: 30,
+          right: 30,
+          borderTopWidth: 0.5,
+          borderTopColor: C.grayBorder,
+          paddingTop: 4,
+          flexDirection: "row" as const,
+          justifyContent: "space-between" as const,
+        },
+      },
+      el(Text, { style: { fontSize: 6, color: C.grayMed } }, "ADVERTIS \u2014 Mode l\u00E9ger"),
+      el(
+        Text,
+        {
+          style: { fontSize: 6, color: C.grayMed },
+          render: ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
+            `${pageNumber} / ${totalPages}`,
+        } as Record<string, unknown>,
+      ),
+    ),
+  );
 }

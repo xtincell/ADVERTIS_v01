@@ -1,9 +1,21 @@
+// =============================================================================
+// COMPONENT C.K10 — Section Widgets
+// =============================================================================
+// Widget grid with auto-compute for cockpit analytics.
+// Props: strategyId.
+// Key features: 4 widget types (superfan_tracker, campaign_tracker,
+// da_visual_identity, codb_calculator), auto-compute on first load if pending,
+// per-widget data fetching via tRPC, specialized renderers per widget type
+// (score gauges, fan level bars, campaign calendar preview, health indicators,
+// DA completeness breakdown), manual recalculate button.
+// =============================================================================
+
 "use client";
 
 // Section Widgets — Displays all cockpit widgets (superfan, campaign, DA, CoDB)
 // in a responsive grid inside the cockpit view.
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   BarChart3,
   Calendar,
@@ -444,6 +456,7 @@ function WidgetCard({
 
 export function SectionWidgets({ strategyId }: { strategyId: string }) {
   const [isComputing, setIsComputing] = useState(false);
+  const autoComputeTriggered = useRef(false);
 
   const {
     data: widgets,
@@ -461,6 +474,18 @@ export function SectionWidgets({ strategyId }: { strategyId: string }) {
       void refetch();
     },
   });
+
+  // Auto-compute widgets on first load if any are pending but available
+  useEffect(() => {
+    if (!widgets || autoComputeTriggered.current || isComputing) return;
+    const hasPending = widgets.some((w) => w.available && w.status !== "complete");
+    const hasAvailable = widgets.some((w) => w.available);
+    if (hasPending && hasAvailable) {
+      autoComputeTriggered.current = true;
+      computeAll.mutate({ strategyId });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [widgets, strategyId]);
 
   if (isLoading || !widgets) return null;
 

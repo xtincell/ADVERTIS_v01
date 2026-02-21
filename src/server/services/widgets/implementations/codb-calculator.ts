@@ -1,6 +1,27 @@
-// Cost of Doing Business Widget
-// Consumes pillar V (unitEconomics, coutMarque, coutClient)
-// and optionally pillar I (budgetAllocation) for a financial readiness view.
+// =============================================================================
+// MODULE 14W4 — Cost of Doing Business Widget
+// =============================================================================
+// Consumes pillar V (unitEconomics, coutMarque, coutClient) and optionally
+// pillar I (budgetAllocation) to produce a financial readiness dashboard:
+// LTV/CAC ratio health, cost structure, budget summary with ROI projections,
+// health indicators, and a CODB readiness score (0-100).
+// Pure compute -- no AI calls.
+//
+// Category: financial  |  minimumPhase: fiche  |  size: medium
+// Required pillars: V (optional: I for budget data)
+//
+// Public API (exported):
+//   default handler  — registered with registerWidget() at import time
+//
+// Dependencies:
+//   zod                              — CodbOutputSchema
+//   ../registry                      — registerWidget
+//   ~/lib/types/cockpit-widgets      — WidgetHandler, WidgetInput, WidgetResult
+//
+// Called by:
+//   widgets/index.ts or auto-registration import
+//   tRPC cockpit router (widget compute)
+// =============================================================================
 
 import { z } from "zod";
 import { registerWidget } from "../registry";

@@ -1,5 +1,7 @@
-// Activity Timeline — Vertical timeline of recent brand activity.
-// Pure HTML/CSS, no external deps.
+// ==========================================================================
+// C.A7 — Activity Timeline
+// Recent activity chronology.
+// ==========================================================================
 
 "use client";
 

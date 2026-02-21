@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.IM1 — File Upload Zone
+// Drag & drop file upload.
+// ==========================================================================
+
 "use client";
 
 import { useState, useRef, useCallback } from "react";

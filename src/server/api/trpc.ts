@@ -1,3 +1,31 @@
+// =============================================================================
+// INFRA I.2 — tRPC Configuration
+// =============================================================================
+// Context creation + middleware + procedure definitions.
+// Central tRPC setup: initializes context, transformer, error formatting,
+// and defines the three procedure types used across all routers.
+//
+// Exports:
+//   createTRPCContext      — Async context creator (db, session, headers)
+//   createCallerFactory    — Server-side caller factory
+//   createTRPCRouter       — Router constructor (t.router)
+//   publicProcedure        — Unauthenticated procedure (with timing middleware)
+//   protectedProcedure     — Authenticated procedure (session.user guaranteed)
+//   roleProtectedProcedure — Factory for role-restricted procedures (ADMIN, OPERATOR, etc.)
+//
+// Middleware:
+//   timingMiddleware — Logs execution time + artificial delay in dev
+//   auth guard       — Verifies session for protectedProcedure
+//   role guard       — Verifies role for roleProtectedProcedure
+//
+// Dependencies:
+//   @trpc/server — initTRPC, TRPCError
+//   superjson    — Transformer for serialization
+//   zod          — ZodError for validation error formatting
+//   ~/server/auth — auth() session resolver
+//   ~/server/db   — Prisma client
+// =============================================================================
+
 /**
  * YOU PROBABLY DON'T NEED TO EDIT THIS FILE, UNLESS:
  * 1. You want to modify request context (see Part 1).
@@ -131,3 +159,35 @@ export const protectedProcedure = t.procedure
       },
     });
   });
+
+/**
+ * Role-restricted procedure factory.
+ * Creates a procedure requiring one of the specified roles.
+ * Handles backward compat: "user" → "OPERATOR", "admin" → "ADMIN".
+ *
+ * @example
+ * const adminProcedure = roleProtectedProcedure(["ADMIN"]);
+ * const opsProcedure = roleProtectedProcedure(["ADMIN", "OPERATOR"]);
+ */
+export function roleProtectedProcedure(allowedRoles: string[]) {
+  return protectedProcedure.use(({ ctx, next }) => {
+    const rawRole = ctx.session.user.role ?? "OPERATOR";
+    // Normalize legacy role values
+    const normalizedRole =
+      rawRole === "user" ? "OPERATOR" : rawRole === "admin" ? "ADMIN" : rawRole;
+
+    if (!allowedRoles.includes(normalizedRole)) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: `Accès refusé. Rôle requis : ${allowedRoles.join(", ")}`,
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        userRole: normalizedRole,
+      },
+    });
+  });
+}

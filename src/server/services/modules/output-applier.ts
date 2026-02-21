@@ -1,5 +1,30 @@
-// Output Applier — Applies module outputs as partial updates to pillar content.
-// Uses dot-notation paths to deep-set values, then re-validates with Zod.
+// =============================================================================
+// MODULE 23C — Module Output Applier
+// =============================================================================
+// Applies module outputs as partial (deep) updates to pillar JSON content.
+// Uses dot-notation paths to deep-set values, supports three merge strategies
+// (replace, append, merge), then re-validates the updated pillar with its
+// Zod schema before persisting.
+//
+// Public API:
+//   applyModuleOutputs(descriptor, strategyId, outputData)
+//     -> void (writes to DB)
+//
+// Internal helpers:
+//   deepSet(obj, dotPath, value)     — Dot-notation property setter
+//   deepGet(obj, dotPath)            — Dot-notation property getter
+//   applyMerge(existing, incoming, strategy) — Replace / append / merge
+//
+// Dependencies:
+//   ~/server/db                      — Prisma client (pillar)
+//   ~/lib/types/pillar-parsers       — parsePillarContent
+//   ~/lib/types/pillar-schemas       — PILLAR_SCHEMAS (Zod re-validation)
+//   ~/lib/types/module-system        — ModuleDescriptor, ModuleOutputTarget
+//
+// Called by:
+//   modules/executor.ts (step 5 of run lifecycle)
+//   modules/index.ts (re-exports)
+// =============================================================================
 
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";

@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.P1 — Session Provider
+// Auth session context provider.
+// ==========================================================================
+
 "use client";
 
 import { SessionProvider } from "next-auth/react";

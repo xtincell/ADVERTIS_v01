@@ -1,6 +1,15 @@
-// Webhook Handler — Receives incoming webhooks from external tools.
-// This is a Next.js API route (not tRPC) since webhooks are unauthenticated external calls.
-// Security: HMAC signature verification per integration.
+// =============================================================================
+// ROUTE R.15 — Webhooks
+// =============================================================================
+// POST  /api/webhooks/[providerId]
+// External integration webhook handler. Receives incoming webhooks from
+// external tools (not tRPC — webhooks are unauthenticated external calls).
+// Security: HMAC-SHA256 signature verification per integration. Matches
+// webhook to integration via signature, then delegates to provider adapter.
+// Auth:         HMAC signature (no session — external callers)
+// Dependencies: integrations/registry (getIntegration), crypto (HMAC),
+//               Prisma (Integration model)
+// =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac } from "crypto";

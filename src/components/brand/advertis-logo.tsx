@@ -1,5 +1,7 @@
-// ADVERTIS Brand Mark — SVG Logo Components
-// Exports: AdvertisMonogram, AdvertisWordmark, AdvertisLogoFull
+// ==========================================================================
+// C.B1 — Advertis Logo
+// Brand logo component.
+// ==========================================================================
 
 import { cn } from "~/lib/utils";
 

@@ -1,5 +1,25 @@
-// SimilarWeb adapter — fetches web traffic analytics for competitor domains.
-// Uses the SimilarWeb Digital Data API (requires SIMILARWEB_API_KEY).
+// =============================================================================
+// MODULE 25G — SimilarWeb Adapter
+// =============================================================================
+// Fetches web traffic analytics (monthly visits, global/country rank, bounce
+// rate, avg visit duration, pages per visit, traffic source breakdown) for
+// competitor domains from the SimilarWeb Digital Data API v1.
+// Includes a domain-extraction heuristic for company names.
+// Requires env SIMILARWEB_API_KEY.
+//
+// Implements: DataSourceAdapter { isConfigured(), collect(params) }
+// sourceId: "similarweb"
+//
+// Public API (exported):
+//   SimilarWebAdapter class
+//
+// Dependencies:
+//   ~/lib/types/market-study         — CollectionParams, CollectionResult, SimilarWeb* types
+//   ./base-adapter                   — getEnvVar
+//
+// Called by:
+//   market-study/collection-orchestrator.ts (instantiated + collect())
+// =============================================================================
 
 import type {
   CollectionParams,

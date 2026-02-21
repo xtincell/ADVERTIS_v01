@@ -1,3 +1,13 @@
+// =============================================================================
+// COMPONENT C.K1 — Cockpit Share Dialog
+// =============================================================================
+// Public sharing configuration modal for the cockpit view.
+// Props: strategyId, onClose.
+// Key features: password-protected share link creation, toggle active/disabled
+// state, copy-to-clipboard URL, view count display, password update, accessible
+// dialog with Escape close and focus trap.
+// =============================================================================
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";

@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E.H1 — Field Input
+// Shared form field component for editors.
+// ==========================================================================
+
 "use client";
 
 import { Input } from "~/components/ui/input";

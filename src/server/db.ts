@@ -1,3 +1,17 @@
+// =============================================================================
+// INFRA I.0 — Database Client
+// =============================================================================
+// Prisma singleton. Creates a single PrismaClient instance and caches it on
+// globalThis to prevent multiple instances during hot-reload in development.
+//
+// Exports:
+//   db — PrismaClient singleton instance
+//
+// Dependencies:
+//   ~/env              — Environment variables (NODE_ENV)
+//   generated/prisma   — PrismaClient (generated from schema)
+// =============================================================================
+
 import { env } from "~/env";
 import { PrismaClient } from "../../generated/prisma";
 

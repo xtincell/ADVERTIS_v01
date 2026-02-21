@@ -1,3 +1,16 @@
+// =============================================================================
+// COMPONENT C.S6 — Report Card
+// =============================================================================
+// Status card for generated report documents (Fiche S, presentations, etc.).
+// Props: reportType, status (pending/generating/complete/error), pageCount,
+// sectionCount, totalSections, errorMessage, generatedAt, onGenerate, onView,
+// onDownload, onRegenerate, className.
+// Key features: 4 status states with color-coded borders and icons, progress
+// bar during generation (section X/Y), estimated page range from REPORT_CONFIG,
+// section checklist on completion, StatusBadge sub-component, generate/view/
+// download/regenerate action buttons.
+// =============================================================================
+
 "use client";
 
 import {

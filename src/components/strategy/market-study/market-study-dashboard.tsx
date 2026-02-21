@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.MS1 — Market Study Dashboard
+// Multi-source data collection UI.
+// ==========================================================================
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -302,36 +307,38 @@ export function MarketStudyDashboard({
                 <p className="text-sm text-muted-foreground">
                   {hasAnyData
                     ? "Lancez la synthèse pour analyser les données collectées."
-                    : "Collectez d'abord des données (automatiques ou manuelles) avant de lancer la synthèse."}
+                    : "Aucune donnée collectée. La synthèse sera 100\u00A0% basée sur les connaissances IA du secteur et les données de la fiche de marque."}
                 </p>
               </div>
             )}
 
-            {/* Synthesize button */}
-            {hasAnyData && (
-              <button
-                onClick={onSynthesize}
-                disabled={isSynthesizing}
-                className={cn(
-                  "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
-                  isSynthesizing
-                    ? "bg-terracotta/50 text-white cursor-not-allowed"
-                    : "bg-terracotta text-white hover:bg-terracotta/90",
-                )}
-              >
-                {isSynthesizing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Synthèse en cours…
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4" />
-                    {synthesis ? "Relancer la synthèse" : "Lancer la synthèse IA"}
-                  </>
-                )}
-              </button>
-            )}
+            {/* Synthesize button — always visible, works even without collected data */}
+            <button
+              onClick={onSynthesize}
+              disabled={isSynthesizing}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
+                isSynthesizing
+                  ? "bg-terracotta/50 text-white cursor-not-allowed"
+                  : "bg-terracotta text-white hover:bg-terracotta/90",
+              )}
+            >
+              {isSynthesizing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Synthèse en cours…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  {synthesis
+                    ? "Relancer la synthèse"
+                    : hasAnyData
+                      ? "Lancer la synthèse IA"
+                      : "Générer une estimation IA"}
+                </>
+              )}
+            </button>
           </div>
         )}
       </div>

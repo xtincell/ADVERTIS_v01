@@ -1,10 +1,37 @@
-// Market Study Synthesis Service
-// Uses Claude to synthesize all collected data (automated + manual) into a
-// structured MarketStudySynthesis with confidence annotations.
+// =============================================================================
+// MODULE 25A — Market Study Synthesis
+// =============================================================================
+// AI-powered synthesis of all collected market data (automated sources +
+// manual entries + uploaded files) into a structured MarketStudySynthesis
+// with per-datum confidence annotations (high / medium / low / ai_estimated).
+// Uses Claude (claude-sonnet-4) for the synthesis call.
+//
+// Public API:
+//   synthesizeMarketStudy(strategyId)
+//     -> MarketStudySynthesis
+//
+// Internal helpers:
+//   buildSynthesisContext(data, interviewData?, completedPillars?)
+//     — Compiles all source data into a single context string for the LLM
+//   parseSynthesisResponse(responseText)
+//     — Extracts & defaults the JSON synthesis from Claude's response
+//
+// Dependencies:
+//   ../anthropic-client              — anthropic model ref, resilientGenerateText
+//   ~/server/db                      — Prisma client (marketStudy, strategy)
+//   ~/lib/interview-schema           — getFicheDeMarqueSchema
+//   ~/lib/constants                  — PILLAR_CONFIG
+//   ~/lib/types/market-study         — MarketStudySynthesis + all source data types
+//
+// Called by:
+//   tRPC market-study router (synthesize mutation)
+// =============================================================================
 
-import { generateText } from "ai";
-import { anthropic } from "../anthropic-client";
+import { anthropic, resilientGenerateText } from "../anthropic-client";
 import { db } from "~/server/db";
+import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
+import { PILLAR_CONFIG } from "~/lib/constants";
+import type { PillarType } from "~/lib/constants";
 import type {
   MarketStudySynthesis,
   BraveSearchData,
@@ -40,10 +67,20 @@ export async function synthesizeMarketStudy(
     throw new Error("Market study not found for strategy " + strategyId);
   }
 
-  // Also load strategy context for brand/sector info
+  // Also load strategy context for brand/sector info + completed pillars
   const strategy = await db.strategy.findUnique({
     where: { id: strategyId },
-    select: { brandName: true, sector: true, interviewData: true },
+    select: {
+      brandName: true,
+      tagline: true,
+      sector: true,
+      interviewData: true,
+      pillars: {
+        where: { status: "complete", type: { in: ["A", "D", "V", "E"] } },
+        select: { type: true, content: true, summary: true },
+        orderBy: { order: "asc" },
+      },
+    },
   });
 
   if (!strategy) {
@@ -51,24 +88,31 @@ export async function synthesizeMarketStudy(
   }
 
   // 2. Build context from all data sources
-  const context = buildSynthesisContext({
-    braveSearch: marketStudy.braveSearchResults as BraveSearchData | null,
-    googleTrends: marketStudy.googleTrendsData as GoogleTrendsData | null,
-    crunchbase: marketStudy.crunchbaseData as CrunchbaseData | null,
-    similarWeb: marketStudy.similarWebData as SimilarWebData | null,
-    aiWebSearch: marketStudy.aiWebSearchResults as AIWebSearchData | null,
-    manualData: marketStudy.manualData as ManualDataStore | null,
-    uploadedFiles: marketStudy.uploadedFiles as UploadedFileEntry[] | null,
-  });
+  const context = buildSynthesisContext(
+    {
+      braveSearch: marketStudy.braveSearchResults as BraveSearchData | null,
+      googleTrends: marketStudy.googleTrendsData as GoogleTrendsData | null,
+      crunchbase: marketStudy.crunchbaseData as CrunchbaseData | null,
+      similarWeb: marketStudy.similarWebData as SimilarWebData | null,
+      aiWebSearch: marketStudy.aiWebSearchResults as AIWebSearchData | null,
+      manualData: marketStudy.manualData as ManualDataStore | null,
+      uploadedFiles: marketStudy.uploadedFiles as UploadedFileEntry[] | null,
+    },
+    strategy.interviewData as Record<string, string> | null,
+    strategy.pillars,
+  );
 
   // 3. Call Claude for synthesis
-  const { text } = await generateText({
-    model: anthropic("claude-sonnet-4-20250514"),
-    system: `Tu es un analyste marché senior spécialisé dans la synthèse de données multi-sources.
+  let text: string;
+  try {
+    const result = await resilientGenerateText({
+      label: "market-study-synthesis",
+      model: anthropic("claude-sonnet-4-20250514"),
+      system: `Tu es un analyste marché senior spécialisé dans la synthèse de données multi-sources.
 Tu travailles pour le module d'étude de marché ADVERTIS.
 
 CONTEXTE :
-- Marque : ${strategy.brandName}
+- Marque : ${strategy.brandName}${strategy.tagline ? `\n- Accroche : "${strategy.tagline}"` : ""}
 - Secteur : ${strategy.sector ?? "Non spécifié"}
 
 RÈGLES DE CONFIANCE :
@@ -139,22 +183,36 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide conforme au type MarketSt
     "byConfidence": { "high": 10, "medium": 15, "low": 5, "ai_estimated": 12 }
   }
 }`,
-    prompt: `DONNÉES COLLECTÉES :\n\n${context}\n\nSynthétise ces données en une analyse marché structurée pour la marque "${strategy.brandName}" dans le secteur "${strategy.sector ?? "Non spécifié"}".`,
-    maxOutputTokens: 8000,
-    temperature: 0.2,
-  });
+      prompt: `DONNÉES COLLECTÉES :\n\n${context}\n\nSynthétise ces données en une analyse marché structurée pour la marque "${strategy.brandName}"${strategy.tagline ? ` (accroche: "${strategy.tagline}")` : ""} dans le secteur "${strategy.sector ?? "Non spécifié"}".`,
+      maxOutputTokens: 8000,
+      temperature: 0.2,
+    });
+    text = result.text;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[MarketStudy Synthesis] Anthropic API call failed:",
+      message,
+    );
+    throw new Error(`Erreur lors de l'appel IA : ${message}`);
+  }
 
   // 4. Parse the synthesis
   const synthesis = parseSynthesisResponse(text);
 
   // 5. Store in database
-  await db.marketStudy.update({
-    where: { strategyId },
-    data: {
-      synthesis: JSON.parse(JSON.stringify(synthesis)),
-      synthesizedAt: new Date(),
-    },
-  });
+  try {
+    await db.marketStudy.update({
+      where: { strategyId },
+      data: {
+        synthesis: JSON.parse(JSON.stringify(synthesis)),
+        synthesizedAt: new Date(),
+      },
+    });
+  } catch (dbErr) {
+    console.error("[MarketStudy Synthesis] DB update failed:", dbErr);
+    throw new Error("Erreur lors de la sauvegarde de la synthèse");
+  }
 
   return synthesis;
 }
@@ -173,7 +231,11 @@ interface AllSourceData {
   uploadedFiles: UploadedFileEntry[] | null;
 }
 
-function buildSynthesisContext(data: AllSourceData): string {
+function buildSynthesisContext(
+  data: AllSourceData,
+  interviewData?: Record<string, string> | null,
+  completedPillars?: Array<{ type: string; content: unknown; summary: string | null }>,
+): string {
   const sections: string[] = [];
 
   // Brave Search results
@@ -296,8 +358,56 @@ function buildSynthesisContext(data: AllSourceData): string {
     }
   }
 
+  // When no external data was collected, enrich with fiche de marque context
+  // so the AI has material for estimation
   if (sections.length === 0) {
-    return "Aucune donnée collectée. Génère une analyse basée uniquement sur tes connaissances du secteur (marque toutes les données comme 'ai_estimated').";
+    sections.push("## AUCUNE DONNÉE EXTERNE COLLECTÉE");
+    sections.push(
+      "Toutes les analyses devront être basées sur les données internes " +
+      "de la fiche de marque ci-dessous et tes connaissances du secteur. " +
+      "Marque TOUTES les données comme 'ai_estimated'.",
+    );
+  }
+
+  // Always inject interview data as internal context for richer estimation
+  if (interviewData && Object.keys(interviewData).length > 0) {
+    const schema = getFicheDeMarqueSchema();
+    const interviewLines: string[] = [];
+
+    for (const section of schema) {
+      for (const variable of section.variables) {
+        const raw = interviewData[variable.id];
+        const value = (typeof raw === "string" ? raw : JSON.stringify(raw ?? "")).trim();
+        if (value && value !== '""') {
+          interviewLines.push(`- ${variable.id} (${variable.label}): ${value}`);
+        }
+      }
+    }
+
+    if (interviewLines.length > 0) {
+      sections.push("## DONNÉES INTERNES — FICHE DE MARQUE (entretien)");
+      sections.push(interviewLines.join("\n"));
+    }
+  }
+
+  // Inject completed pillar summaries for strategic context
+  if (completedPillars?.length) {
+    sections.push("## PILIERS STRATÉGIQUES COMPLÉTÉS (A-D-V-E)");
+    for (const p of completedPillars) {
+      const config = PILLAR_CONFIG[p.type as PillarType];
+      const label = config?.title ?? p.type;
+      const contentStr =
+        typeof p.content === "string"
+          ? p.content
+          : JSON.stringify(p.content ?? "");
+      const truncated =
+        contentStr.length > 2000
+          ? contentStr.substring(0, 2000) + "\n[... tronqué ...]"
+          : contentStr;
+      sections.push(`### Pilier ${p.type} — ${label}`);
+      if (p.summary) sections.push(`Résumé : ${p.summary}`);
+      sections.push(truncated);
+    }
   }
 
   return sections.join("\n\n");

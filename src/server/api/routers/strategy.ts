@@ -1,3 +1,35 @@
+// =============================================================================
+// ROUTER T.1 — Strategy Router
+// =============================================================================
+// CRUD + phase management + score recalculation for Strategy entities.
+//
+// Procedures:
+//   create            — Create a new strategy with 8 empty ADVERTIS pillars
+//   getAll            — List all strategies for current user (optional tree view)
+//   getById           — Get a single strategy by ID (ownership check)
+//   update            — Update strategy fields (name, brand, sector, etc.)
+//   delete            — Delete a strategy (cascade deletes pillars)
+//   duplicate         — Duplicate a strategy and all its pillars
+//   archive           — Archive a strategy
+//   unarchive         — Unarchive a strategy (back to "draft")
+//   updateInterviewData — Update the interviewData JSON field
+//   confirmImport     — Merge imported file data into interviewData
+//   advancePhase      — Advance strategy to the next phase
+//   revertPhase       — Revert strategy to a previous phase
+//   validateFicheReview — Validate fiche review + advance to audit-r
+//   validateAuditReview — Validate audit review + advance to implementation
+//   createChild       — Create a child strategy (brand tree)
+//   getTree           — Get nested strategy tree (up to 3 levels)
+//   getAncestors      — Get ancestor chain from current to root
+//   getChildren       — Get direct children of a strategy
+//
+// Dependencies:
+//   ~/server/api/trpc          — createTRPCRouter, protectedProcedure
+//   ~/lib/constants            — PILLAR_TYPES, PILLAR_CONFIG, PHASES, SKIPPABLE_PHASES, LEGACY_PHASE_MAP
+//   ~/server/services/score-engine — recalculateAllScores
+//   ~/lib/types/phase1-schemas — CreateChildStrategySchema
+// =============================================================================
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
@@ -5,6 +37,7 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { PILLAR_TYPES, PILLAR_CONFIG, PHASES, SKIPPABLE_PHASES, LEGACY_PHASE_MAP } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
 import { recalculateAllScores } from "~/server/services/score-engine";
+import { CreateChildStrategySchema } from "~/lib/types/phase1-schemas";
 
 export const strategyRouter = createTRPCRouter({
   /**
@@ -17,6 +50,10 @@ export const strategyRouter = createTRPCRouter({
         brandName: z.string().min(1, "Le nom de marque est requis"),
         sector: z.string().optional(),
         description: z.string().optional(),
+        nodeType: z.string().optional(),
+        vertical: z.string().optional(),
+        maturityProfile: z.string().optional(),
+        deliveryMode: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -26,6 +63,10 @@ export const strategyRouter = createTRPCRouter({
           brandName: input.brandName,
           sector: input.sector,
           description: input.description,
+          nodeType: input.nodeType ?? "BRAND",
+          vertical: input.vertical ?? null,
+          maturityProfile: input.maturityProfile ?? null,
+          deliveryMode: input.deliveryMode ?? null,
           status: "draft",
           userId: ctx.session.user.id,
           pillars: {
@@ -51,30 +92,44 @@ export const strategyRouter = createTRPCRouter({
    * Get all strategies for the current user, ordered by updatedAt desc.
    * Includes a count of completed pillars for each strategy.
    */
-  getAll: protectedProcedure.query(async ({ ctx }) => {
-    const strategies = await ctx.db.strategy.findMany({
-      where: { userId: ctx.session.user.id },
-      orderBy: { updatedAt: "desc" },
-      include: {
-        pillars: {
-          select: {
-            id: true,
-            type: true,
-            status: true,
+  getAll: protectedProcedure
+    .input(
+      z.object({
+        treeView: z.boolean().optional(),
+      }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const where: Record<string, unknown> = { userId: ctx.session.user.id };
+
+      // Tree view: only show root strategies (no parent)
+      if (input?.treeView) {
+        where.parentId = null;
+      }
+
+      const strategies = await ctx.db.strategy.findMany({
+        where,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          pillars: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+            },
           },
-        },
-        _count: {
-          select: {
-            pillars: {
-              where: { status: "complete" },
+          _count: {
+            select: {
+              pillars: {
+                where: { status: "complete" },
+              },
+              children: true,
             },
           },
         },
-      },
-    });
+      });
 
-    return strategies;
-  }),
+      return strategies;
+    }),
 
   /**
    * Get a single strategy by ID with all pillars ordered by `order`.
@@ -111,6 +166,7 @@ export const strategyRouter = createTRPCRouter({
         id: z.string(),
         name: z.string().min(1).optional(),
         brandName: z.string().min(1).optional(),
+        tagline: z.string().optional(),
         sector: z.string().optional(),
         description: z.string().optional(),
         interviewData: z.any().optional(),
@@ -622,5 +678,204 @@ export const strategyRouter = createTRPCRouter({
       void recalculateAllScores(input.id, "audit_review");
 
       return updatedStrategy;
+    }),
+
+  // =========================================================================
+  // Brand Tree procedures
+  // =========================================================================
+
+  /**
+   * Create a child strategy under a parent.
+   * Inherits userId from parent, sets depth = parent.depth + 1, creates 8 empty pillars.
+   */
+  createChild: protectedProcedure
+    .input(CreateChildStrategySchema)
+    .mutation(async ({ ctx, input }) => {
+      const parent = await ctx.db.strategy.findUnique({
+        where: { id: input.parentId },
+        select: { id: true, userId: true, depth: true, vertical: true },
+      });
+
+      if (!parent || parent.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie parente non trouvée",
+        });
+      }
+
+      const child = await ctx.db.strategy.create({
+        data: {
+          name: input.name,
+          brandName: input.brandName,
+          sector: input.sector ?? null,
+          description: input.description ?? null,
+          status: "draft",
+          userId: ctx.session.user.id,
+          parentId: input.parentId,
+          depth: parent.depth + 1,
+          nodeType: input.nodeType ?? "BRAND",
+          deliveryMode: input.deliveryMode ?? null,
+          vertical: input.vertical ?? parent.vertical ?? null,
+          maturityProfile: input.maturityProfile ?? null,
+          pillars: {
+            create: PILLAR_TYPES.map((type) => ({
+              type,
+              title: PILLAR_CONFIG[type].title,
+              order: PILLAR_CONFIG[type].order,
+              status: "pending",
+            })),
+          },
+        },
+        include: {
+          pillars: { orderBy: { order: "asc" } },
+        },
+      });
+
+      return child;
+    }),
+
+  /**
+   * Get the full strategy tree starting from a root strategy.
+   * Returns nested children up to 3 levels deep.
+   */
+  getTree: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.id },
+        include: {
+          pillars: {
+            select: { id: true, type: true, status: true },
+            orderBy: { order: "asc" },
+          },
+          children: {
+            include: {
+              pillars: {
+                select: { id: true, type: true, status: true },
+                orderBy: { order: "asc" },
+              },
+              children: {
+                include: {
+                  pillars: {
+                    select: { id: true, type: true, status: true },
+                    orderBy: { order: "asc" },
+                  },
+                  children: {
+                    include: {
+                      pillars: {
+                        select: { id: true, type: true, status: true },
+                        orderBy: { order: "asc" },
+                      },
+                    },
+                    orderBy: { createdAt: "asc" },
+                  },
+                },
+                orderBy: { createdAt: "asc" },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
+        },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      return strategy;
+    }),
+
+  /**
+   * Get ancestors of a strategy (from current up to root).
+   */
+  getAncestors: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const ancestors: Array<{
+        id: string;
+        name: string;
+        brandName: string;
+        nodeType: string;
+        depth: number;
+      }> = [];
+
+      let currentId: string | null = input.id;
+
+      // Walk up the tree (max 10 levels to prevent infinite loops)
+      for (let i = 0; i < 10 && currentId; i++) {
+        const node: {
+          id: string;
+          name: string;
+          brandName: string;
+          nodeType: string;
+          depth: number;
+          parentId: string | null;
+          userId: string;
+        } | null = await ctx.db.strategy.findUnique({
+          where: { id: currentId },
+          select: {
+            id: true,
+            name: true,
+            brandName: true,
+            nodeType: true,
+            depth: true,
+            parentId: true,
+            userId: true,
+          },
+        });
+
+        if (!node || node.userId !== ctx.session.user.id) break;
+
+        // Don't include the starting node itself
+        if (node.id !== input.id) {
+          ancestors.unshift({
+            id: node.id,
+            name: node.name,
+            brandName: node.brandName,
+            nodeType: node.nodeType,
+            depth: node.depth,
+          });
+        }
+
+        currentId = node.parentId;
+      }
+
+      return ancestors;
+    }),
+
+  /**
+   * Get direct children of a strategy.
+   */
+  getChildren: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.id },
+        select: { id: true, userId: true },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      return ctx.db.strategy.findMany({
+        where: { parentId: input.id },
+        include: {
+          pillars: {
+            select: { id: true, type: true, status: true },
+            orderBy: { order: "asc" },
+          },
+          _count: {
+            select: { children: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      });
     }),
 });

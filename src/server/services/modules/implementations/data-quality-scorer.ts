@@ -1,6 +1,25 @@
-// Data Quality Scorer Module
-// Computes a per-field quality/completeness score for pillars A-D-V-E.
-// Pure mathematical — no AI calls. Read-only (does not modify pillars).
+// =============================================================================
+// MODULE 23D — Data Quality Scorer
+// =============================================================================
+// Computes a per-field quality / completeness score for pillars A-D-V-E.
+// Pure mathematical module -- no AI calls, no side-effects on pillar data.
+// Outputs a globalScore (0-100), per-pillar breakdown, and a ranked list
+// of top gaps (empty fields, placeholders, too-short values).
+//
+// Category: compute  |  autoTrigger: true  |  outputs: [] (read-only)
+//
+// Public API (exported):
+//   default handler  — registered with registerModule() at import time
+//
+// Dependencies:
+//   zod                              — Output schema definition
+//   ../registry                      — registerModule
+//   ~/lib/types/module-system        — ModuleHandler, ModuleDescriptor, etc.
+//
+// Called by:
+//   modules/index.ts (side-effect import triggers registration)
+//   modules/executor.ts (executeModule -> handler.execute)
+// =============================================================================
 
 import { z } from "zod";
 import { registerModule } from "../registry";

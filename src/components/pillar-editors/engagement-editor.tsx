@@ -1,3 +1,8 @@
+// ==========================================================================
+// C.E4 — Engagement Editor
+// Pillar E content editor.
+// ==========================================================================
+
 "use client";
 
 import type { EngagementPillarData } from "~/lib/types/pillar-data";

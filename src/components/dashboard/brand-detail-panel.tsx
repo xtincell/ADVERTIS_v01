@@ -1,4 +1,7 @@
-// Brand Detail Panel — Full scorecard view for a single brand.
+// ==========================================================================
+// C.D3 — Brand Detail Panel
+// Strategy summary side panel.
+// ==========================================================================
 
 "use client";
 

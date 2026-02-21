@@ -1,5 +1,26 @@
-// Base interface for all market study data source adapters.
-// Each adapter implements isConfigured() + collect() to fetch data from a specific source.
+// =============================================================================
+// MODULE 25B — Base Market Data Adapter
+// =============================================================================
+// Abstract adapter interface and shared utilities for all market study data
+// source adapters. Re-exports the DataSourceAdapter interface from types and
+// provides helper functions used by concrete adapters.
+//
+// Public API (re-exported types):
+//   DataSourceAdapter, CollectionParams, CollectionResult, DataSourceName
+//
+// Public utilities:
+//   getEnvVar(name)                  — Safe env var read (undefined if empty)
+//   buildSearchQueries(params)       — Generate categorised search queries
+//                                      for market size, trends, competitors, TAM/SAM
+//
+// Dependencies:
+//   ~/lib/types/market-study         — DataSourceAdapter, CollectionParams, etc.
+//
+// Called by:
+//   adapters/brave-search.ts  ·  adapters/crunchbase.ts
+//   adapters/similarweb.ts    ·  adapters/ai-web-search.ts
+//   adapters/google-trends.ts
+// =============================================================================
 
 import type {
   DataSourceAdapter,

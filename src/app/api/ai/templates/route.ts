@@ -1,8 +1,16 @@
-// ADVERTIS Template Generation API Route
-// POST /api/ai/templates
-// Generates UPGRADERS deliverable templates (Protocole Stratégique, Reco Campagne, Mandat 360).
-// Available once Pillar I is complete (phase >= "cockpit").
-// Does NOT advance the strategy phase — templates are optional deliverables.
+// =============================================================================
+// ROUTE R.5 — AI Templates
+// =============================================================================
+// POST  /api/ai/templates
+// Template generation endpoint. Generates UPGRADERS deliverable templates
+// (Protocole Strategique, Reco Campagne, Mandat 360). Available once Pillar I
+// is complete (phase >= "cockpit"). Does NOT advance the strategy phase —
+// templates are optional deliverables.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: template-generation service, constants (TEMPLATE_TYPES,
+//               TEMPLATE_CONFIG, PILLAR_CONFIG), Prisma (Document model)
+// maxDuration:  300s (5 minutes — multi-section template generation)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
@@ -112,6 +120,7 @@ export async function POST(req: NextRequest) {
 
   const context: TemplateContext = {
     brandName: strategy.brandName,
+    tagline: strategy.tagline,
     sector: strategy.sector ?? "",
     interviewData,
     pillarContents,
@@ -130,19 +139,18 @@ export async function POST(req: NextRequest) {
   // ---------------------------------------------------------------------------
   // 6. Generate templates
   // ---------------------------------------------------------------------------
-  try {
-    const results = [];
+  const results = [];
 
-    for (let i = 0; i < typesToGenerate.length; i++) {
-      const tt = typesToGenerate[i]!;
-      const config = TEMPLATE_CONFIG[tt];
+  for (let i = 0; i < typesToGenerate.length; i++) {
+    const tt = typesToGenerate[i]!;
+    const config = TEMPLATE_CONFIG[tt];
 
-      // Create or update document record (reuse the Document model)
+    // Create or update document record (reuse the Document model)
+    let docId: string;
+    try {
       const existingDoc = await db.document.findUnique({
         where: { strategyId_type: { strategyId, type: tt } },
       });
-
-      let docId: string;
 
       if (existingDoc) {
         await db.document.update({
@@ -164,7 +172,20 @@ export async function POST(req: NextRequest) {
         });
         docId = newDoc.id;
       }
+    } catch (error) {
+      console.error(`[Template Generation] Error initializing ${tt}:`, error);
+      results.push({
+        type: tt,
+        title: config.title,
+        totalSlides: 0,
+        totalWordCount: 0,
+        sectionCount: 0,
+        status: "error" as const,
+      });
+      continue;
+    }
 
+    try {
       // Generate template section by section
       const result = await generateTemplate(tt, context);
 
@@ -175,7 +196,7 @@ export async function POST(req: NextRequest) {
           status: result.status,
           sections: JSON.parse(JSON.stringify(result.sections)),
           content: JSON.parse(JSON.stringify(result)),
-          pageCount: result.totalSlides,
+          pageCount: result.totalSlides || null,
           generatedAt: new Date(),
           errorMessage: result.errorMessage ?? null,
         },
@@ -189,26 +210,42 @@ export async function POST(req: NextRequest) {
         sectionCount: result.sections.length,
         status: result.status,
       });
+    } catch (error) {
+      console.error(`[Template Generation] Error generating ${tt}:`, error);
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Erreur inconnue lors de la génération";
+
+      // Mark document as error but continue with next template
+      await db.document.update({
+        where: { id: docId },
+        data: {
+          status: "error",
+          errorMessage,
+        },
+      });
+
+      results.push({
+        type: tt,
+        title: config.title,
+        totalSlides: 0,
+        totalWordCount: 0,
+        sectionCount: 0,
+        status: "error" as const,
+      });
+      continue; // Continue with next template
     }
-
-    return NextResponse.json({
-      success: true,
-      templates: results,
-    });
-  } catch (error) {
-    console.error("[Template Generation] Error:", error);
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Unknown error during template generation";
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: errorMessage,
-      },
-      { status: 500 },
-    );
   }
+
+  const hasErrors = results.some((r) => r.status === "error");
+
+  return NextResponse.json({
+    success: !hasErrors,
+    templates: results,
+    ...(hasErrors && {
+      warning: `${results.filter((r) => r.status === "error").length}/${results.length} template(s) en erreur`,
+    }),
+  });
 }

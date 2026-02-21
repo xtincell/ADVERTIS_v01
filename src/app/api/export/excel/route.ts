@@ -1,6 +1,12 @@
-// ADVERTIS Excel Export API Route
-// POST /api/export/excel
-// Generates and returns an Excel document for a strategy.
+// =============================================================================
+// ROUTE R.11 — Export Excel
+// =============================================================================
+// POST  /api/export/excel
+// Generates an Excel spreadsheet (.xlsx) for a strategy. Supports pillar
+// selection. Returns binary XLSX with Content-Disposition: attachment.
+// Auth:         Session required (ownership verified against strategy.userId)
+// Dependencies: excel-generator service, Prisma (Strategy + Pillars)
+// =============================================================================
 
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "~/server/auth";
@@ -71,6 +77,7 @@ export async function POST(req: NextRequest) {
       {
         name: strategy.name,
         brandName: strategy.brandName,
+        tagline: strategy.tagline ?? undefined,
         sector: strategy.sector ?? undefined,
         coherenceScore: strategy.coherenceScore ?? undefined,
       },
