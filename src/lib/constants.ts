@@ -432,6 +432,7 @@ export const VIEW_MODE_SECTIONS: Record<ViewMode, string[]> = {
   EXECUTIVE: [
     "synthese", "coherence", "risk", "bmf", "decisions",
     "kpi-dashboard", "budget-sim", "axes-strategiques", "audit-suggestions",
+    "livrables",
   ],
   MARKETING: [
     "synthese", "authenticite", "distinction", "valeur", "engagement",

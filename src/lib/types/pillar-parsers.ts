@@ -2,7 +2,8 @@
 // LIB L.4 — Pillar Parsers
 // =============================================================================
 // Runtime validation utilities for all 8 ADVERTIS pillar types.
-// 3-tier fallback: strict parse -> partial coerce -> full defaults.
+// 4-tier fallback: strict parse -> partial coerce -> deep-merge raw+defaults
+//   -> full defaults.
 // Replaces unsafe `as T` type assertions and legacy parseJsonObject().
 // Exports: ParseResult<T>, parsePillarContent<T>(),
 //   validatePillarContent(), parseAiGeneratedContent<T>().
@@ -22,6 +23,49 @@ export interface ParseResult<T> {
 }
 
 // ---------------------------------------------------------------------------
+// Deep merge utility — recursively merges defaults with raw data so nested
+// object defaults (like valeurMarque.intangible: []) are preserved even when
+// the raw data only has valeurMarque.tangible.
+// ---------------------------------------------------------------------------
+
+function deepMerge<T extends Record<string, unknown>>(
+  defaults: T,
+  raw: Record<string, unknown>,
+): T {
+  const result = { ...defaults } as Record<string, unknown>;
+  for (const key of Object.keys(raw)) {
+    const rawVal = raw[key];
+    const defVal = result[key];
+    if (
+      rawVal !== null &&
+      rawVal !== undefined &&
+      typeof rawVal === "object" &&
+      !Array.isArray(rawVal) &&
+      typeof defVal === "object" &&
+      defVal !== null &&
+      !Array.isArray(defVal)
+    ) {
+      // Both are plain objects — recurse
+      result[key] = deepMerge(
+        defVal as Record<string, unknown>,
+        rawVal as Record<string, unknown>,
+      );
+    } else if (rawVal !== undefined && rawVal !== null) {
+      // Primitive, array, or null — raw wins over default
+      result[key] = rawVal;
+    }
+    // If rawVal is undefined/null, keep the default
+  }
+  return result as T;
+}
+
+/** Get schema defaults (always safe — schemas have .default({}) on all fields) */
+function getSchemaDefaults(schema: (typeof PILLAR_SCHEMAS)[string]): Record<string, unknown> {
+  const r = schema.safeParse({});
+  return (r.success ? r.data : {}) as Record<string, unknown>;
+}
+
+// ---------------------------------------------------------------------------
 // 1. parsePillarContent — For consumers (cockpit, PDF, editors)
 // ---------------------------------------------------------------------------
 
@@ -29,6 +73,12 @@ export interface ParseResult<T> {
  * Parse and validate pillar content from the database.
  * Handles: null, string (legacy markdown), object (current JSON), malformed data.
  * Always returns a usable `data` with defaults applied for missing fields.
+ *
+ * 4-tier fallback chain:
+ *   1. Strict safeParse → perfect data
+ *   2. Coerce parse → auto-fix minor issues
+ *   3. Deep-merge raw + schema defaults → preserve valid fields
+ *   4. Full schema defaults → last resort
  */
 export function parsePillarContent<T>(
   pillarType: string,
@@ -43,12 +93,13 @@ export function parsePillarContent<T>(
     };
   }
 
-  // Handle null/undefined
+  const defaults = getSchemaDefaults(schema);
+
+  // Handle null/undefined → return full schema defaults
   if (content === null || content === undefined) {
-    const result = schema.safeParse({});
     return {
       success: false,
-      data: (result.success ? result.data : {}) as T,
+      data: defaults as T,
       errors: ["Content is null"],
     };
   }
@@ -59,21 +110,22 @@ export function parsePillarContent<T>(
     try {
       resolved = JSON.parse(content);
     } catch {
+      // Non-JSON string (legacy markdown) → return schema defaults, not bare {}
       return {
         success: false,
-        data: {} as T,
+        data: defaults as T,
         errors: ["Content is a legacy string, not structured JSON"],
       };
     }
   }
 
-  // Validate with schema
+  // Tier 1: Strict validation — all fields match perfectly
   const result = schema.safeParse(resolved);
   if (result.success) {
     return { success: true, data: result.data as T };
   }
 
-  // Partial parse: try to salvage what we can with defaults
+  // Tier 2: Coerce — schema.parse() can auto-fix some issues
   try {
     const coerced = schema.parse(resolved);
     return {
@@ -84,15 +136,35 @@ export function parsePillarContent<T>(
       ),
     };
   } catch {
-    // Schema couldn't coerce at all — return full defaults
-    const defaultResult = schema.safeParse({});
-    return {
-      success: false,
-      data: (defaultResult.success ? defaultResult.data : {}) as T,
-      errors: result.error.issues.map(
-        (i) => `${i.path.join(".")}: ${i.message}`,
-      ),
-    };
+    // Tier 3: Deep-merge raw data with schema defaults
+    // Preserves all valid fields from DB even when some are malformed.
+    // Deep merge ensures nested object defaults survive (e.g., valeurMarque.intangible).
+    try {
+      const rawObj = typeof resolved === "object" && resolved
+        ? (resolved as Record<string, unknown>)
+        : {};
+      const merged = deepMerge(defaults as Record<string, unknown>, rawObj) as T;
+      console.warn(
+        `[parsePillarContent] Pillar ${pillarType}: schema failed, using deep-merge raw+defaults.`,
+        result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+      );
+      return {
+        success: false,
+        data: merged,
+        errors: result.error.issues.map(
+          (i) => `${i.path.join(".")}: ${i.message}`,
+        ),
+      };
+    } catch {
+      // Tier 4: Full schema defaults — absolute last resort
+      return {
+        success: false,
+        data: defaults as T,
+        errors: result.error.issues.map(
+          (i) => `${i.path.join(".")}: ${i.message}`,
+        ),
+      };
+    }
   }
 }
 
@@ -113,9 +185,9 @@ export function validatePillarContent(
     return { success: false, errors: [`Unknown pillar type: ${pillarType}`] };
   }
 
-  // Skip validation for legacy string content
+  // Legacy string content — can't validate structure, warn but allow
   if (typeof content === "string") {
-    return { success: true };
+    return { success: true, errors: ["Content is a legacy string — structural validation skipped"] };
   }
 
   const result = schema.safeParse(content);
@@ -138,7 +210,7 @@ export function validatePillarContent(
 /**
  * Parse AI-generated JSON text into validated pillar data.
  * Strips markdown code blocks, parses JSON, validates with schema.
- * Replaces: parseJsonObject() + applyDefaults() in one step.
+ * Uses the same 4-tier fallback as parsePillarContent.
  */
 export function parseAiGeneratedContent<T>(
   pillarType: string,
@@ -152,6 +224,8 @@ export function parseAiGeneratedContent<T>(
       errors: [`Unknown pillar type: ${pillarType}`],
     };
   }
+
+  const defaults = getSchemaDefaults(schema);
 
   // Strip markdown code blocks if present
   let jsonString = responseText.trim();
@@ -169,21 +243,20 @@ export function parseAiGeneratedContent<T>(
       `[Validation] Failed to parse JSON for pillar ${pillarType}:`,
       responseText.substring(0, 200),
     );
-    const defaultResult = schema.safeParse({});
     return {
       success: false,
-      data: (defaultResult.success ? defaultResult.data : {}) as T,
+      data: defaults as T,
       errors: ["JSON parse failed"],
     };
   }
 
-  // Validate with schema
+  // Tier 1: Strict validation
   const result = schema.safeParse(parsed);
   if (result.success) {
     return { success: true, data: result.data as T };
   }
 
-  // Try to salvage with defaults
+  // Tier 2: Coerce
   try {
     const coerced = schema.parse(parsed);
     const warnings = result.error.issues.map(
@@ -195,13 +268,33 @@ export function parseAiGeneratedContent<T>(
     );
     return { success: true, data: coerced as T, errors: warnings };
   } catch {
-    const defaultResult = schema.safeParse({});
-    return {
-      success: false,
-      data: (defaultResult.success ? defaultResult.data : {}) as T,
-      errors: result.error.issues.map(
-        (i) => `${i.path.join(".")}: ${i.message}`,
-      ),
-    };
+    // Tier 3: Deep-merge AI data with schema defaults
+    // Preserves valid AI-generated fields even when some fail validation
+    try {
+      const rawObj = typeof parsed === "object" && parsed
+        ? (parsed as Record<string, unknown>)
+        : {};
+      const merged = deepMerge(defaults as Record<string, unknown>, rawObj) as T;
+      console.warn(
+        `[Validation] Pillar ${pillarType}: coerce failed, using deep-merge.`,
+        result.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),
+      );
+      return {
+        success: false,
+        data: merged,
+        errors: result.error.issues.map(
+          (i) => `${i.path.join(".")}: ${i.message}`,
+        ),
+      };
+    } catch {
+      // Tier 4: Full defaults
+      return {
+        success: false,
+        data: defaults as T,
+        errors: result.error.issues.map(
+          (i) => `${i.path.join(".")}: ${i.message}`,
+        ),
+      };
+    }
   }
 }

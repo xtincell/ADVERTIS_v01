@@ -11,8 +11,7 @@
 //   - S            -> generateSyntheseContent (ai-generation.ts) — strategic synthesis
 // Auth:         Session required (ownership verified against strategy.userId)
 // Dependencies: ai-generation, audit-generation, implementation-generation,
-//               compute-engine, track-sync, stale-detector, score-engine,
-//               budget-tier-generator, pillar-parsers
+//               track-sync, pipeline-orchestrator, pillar-parsers
 // maxDuration:  120s (Vercel serverless)
 // =============================================================================
 
@@ -25,10 +24,8 @@ import {
   generateTrackAudit,
 } from "~/server/services/audit-generation";
 import { generateImplementationData } from "~/server/services/implementation-generation";
-import { computeAllWidgets } from "~/server/services/widgets/compute-engine";
 import { syncTrackToMarketContext } from "~/server/services/track-sync";
-import { clearPillarStaleness } from "~/server/services/stale-detector";
-import { recalculateAllScores } from "~/server/services/score-engine";
+import { onPillarGenerated } from "~/server/services/pipeline-orchestrator";
 import { PILLAR_TYPES } from "~/lib/constants";
 import type { RiskAuditResult, TrackAuditResult } from "~/server/services/audit-generation";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
@@ -342,88 +339,10 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Clear staleness on successful generation
-    void clearPillarStaleness(targetPillar.id);
-
     // ---------------------------------------------------------------------------
-    // 9b. Recalculate all strategy scores (coherence, risk, BMF)
+    // 10. Post-generation orchestration (phase advance, scores, widgets, etc.)
     // ---------------------------------------------------------------------------
-    void recalculateAllScores(strategyId, "generation");
-
-    // ---------------------------------------------------------------------------
-    // 10. Phase advancement logic (new 9-phase pipeline)
-    // ---------------------------------------------------------------------------
-    // R complete → advance to market-study
-    if (pillarType === "R") {
-      await db.strategy.update({
-        where: { id: strategyId },
-        data: { phase: "market-study", status: "generating" },
-      });
-    }
-
-    // T complete → advance to audit-review
-    if (pillarType === "T") {
-      await db.strategy.update({
-        where: { id: strategyId },
-        data: { phase: "audit-review", status: "generating" },
-      });
-    }
-
-    // I complete → advance to cockpit + auto-seed budget tiers
-    if (pillarType === "I") {
-      await db.strategy.update({
-        where: { id: strategyId },
-        data: { phase: "cockpit", status: "generating" },
-      });
-
-      // Auto-generate 5 contextualised budget tiers from Pillar I data
-      try {
-        const existingTiers = await db.budgetTier.count({ where: { strategyId } });
-        if (existingTiers === 0) {
-          const { generateBudgetTiers } = await import("~/server/services/budget-tier-generator");
-          const implData = generatedContent as import("~/lib/types/implementation-data").ImplementationData;
-          const tiers = await generateBudgetTiers(implData, strategy.brandName, strategy.sector ?? "");
-          await db.budgetTier.createMany({
-            data: tiers.map((t) => ({ strategyId, ...t })),
-          });
-          console.log(`[AI Generation] Auto-generated ${tiers.length} contextualised budget tiers for strategy ${strategyId}`);
-        }
-      } catch (seedError) {
-        // Non-critical: log but don't fail the generation
-        console.error("[AI Generation] Failed to generate budget tiers:", seedError);
-      }
-    }
-
-    // S complete → advance to complete
-    if (pillarType === "S") {
-      await db.strategy.update({
-        where: { id: strategyId },
-        data: { phase: "complete", status: "complete" },
-      });
-    }
-
-    // Check if all pillars are now complete (legacy + new flow)
-    const allPillars = await db.pillar.findMany({
-      where: { strategyId },
-      select: { status: true },
-    });
-
-    const allComplete = allPillars.every((p) => p.status === "complete");
-
-    if (allComplete) {
-      await db.strategy.update({
-        where: { id: strategyId },
-        data: {
-          status: "complete",
-          generatedAt: new Date(),
-        },
-      });
-    }
-
-    // ---------------------------------------------------------------------------
-    // 11b. Auto-compute cockpit widgets (fire-and-forget)
-    // ---------------------------------------------------------------------------
-    void computeAllWidgets(strategyId);
+    await onPillarGenerated(strategyId, targetPillar.id, pillarType, generatedContent);
 
     return NextResponse.json({
       success: true,
@@ -433,7 +352,6 @@ export async function POST(req: NextRequest) {
         status: updatedPillar.status,
         content: updatedPillar.content,
       },
-      allComplete,
     });
   } catch (error) {
     // ---------------------------------------------------------------------------

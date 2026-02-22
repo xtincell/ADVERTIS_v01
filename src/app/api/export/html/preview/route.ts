@@ -86,6 +86,13 @@ export async function POST(req: NextRequest) {
         orderBy: { detectedAt: "desc" },
         take: 50,
       },
+      documents: {
+        where: {
+          type: { in: ["protocole_strategique", "reco_campagne", "mandat_360"] },
+          status: "complete",
+        },
+        orderBy: { type: "asc" },
+      },
     },
   });
 
@@ -131,6 +138,7 @@ export async function POST(req: NextRequest) {
         userRole: userRole ?? session.user.role ?? undefined,
         vertical: strategy.vertical ?? undefined,
         signals: strategy.signals,
+        documents: strategy.documents,
       },
     );
 

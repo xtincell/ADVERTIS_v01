@@ -224,7 +224,7 @@ export function BrandDetailPanel({ brand, onBack }: BrandDetailPanelProps) {
             {/* Fiche S */}
             {brand.pillars.some((p) => p.status === "complete") && (
               <Link
-                href={`/strategy/${brand.id}/presentation`}
+                href={`/brand/${brand.id}/oracle`}
                 className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-[#8b5cf6]/5 to-[#8b5cf6]/10 p-4 transition-all hover:border-[#8b5cf6]/30 hover:shadow-md"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#8b5cf6]/10 text-[#8b5cf6] transition-transform group-hover:scale-110">
@@ -240,7 +240,7 @@ export function BrandDetailPanel({ brand, onBack }: BrandDetailPanelProps) {
 
             {/* Cockpit */}
             <Link
-              href={`/strategy/${brand.id}/cockpit`}
+              href={`/brand/${brand.id}`}
               className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-terracotta/5 to-terracotta/10 p-4 transition-all hover:border-terracotta/30 hover:shadow-md"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-terracotta/10 text-terracotta transition-transform group-hover:scale-110">
@@ -255,7 +255,7 @@ export function BrandDetailPanel({ brand, onBack }: BrandDetailPanelProps) {
 
             {/* Modifier la fiche */}
             <Link
-              href={`/strategy/${brand.id}`}
+              href={`/brand/${brand.id}/generate`}
               className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-forest/5 to-forest/10 p-4 transition-all hover:border-forest/30 hover:shadow-md"
             >
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest/10 text-forest transition-transform group-hover:scale-110">

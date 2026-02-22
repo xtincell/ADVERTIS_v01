@@ -91,7 +91,7 @@ function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-flex items-center gap-1 text-xs font-medium text-terracotta hover:underline"
             >
               Voir toutes <ArrowRight className="h-3 w-3" />
@@ -143,7 +143,7 @@ function AdminDashboard() {
         <CardContent>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center gap-3 rounded-lg border p-3 transition-colors hover:bg-muted/50"
             >
               <Layers className="h-5 w-5 text-terracotta" />

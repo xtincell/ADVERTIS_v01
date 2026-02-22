@@ -89,6 +89,9 @@ model Strategy {
     // Interview data (structured JSON from wizard)
     interviewData Json?
 
+    // Input method chosen during creation (interview, import, freetext)
+    inputMethod String?
+
     // Generation metadata
     generationMode String? // wizard, copilot
     generatedAt    DateTime?

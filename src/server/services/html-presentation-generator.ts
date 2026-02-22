@@ -21,7 +21,8 @@
 // =============================================================================
 
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
-import { PILLAR_CONFIG, FRESHNESS_THRESHOLDS, WHITE_LABEL_MAP } from "~/lib/constants";
+import { PILLAR_CONFIG, FRESHNESS_THRESHOLDS, WHITE_LABEL_MAP, TEMPLATE_CONFIG } from "~/lib/constants";
+import type { TemplateType } from "~/lib/constants";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
@@ -140,6 +141,8 @@ export interface HTMLPresentationOptions {
   vertical?: string;
   /** SIS Signals */
   signals?: SignalData[];
+  /** Template documents (Protocole, Reco, Mandat) */
+  documents?: TemplateDocumentData[];
 }
 
 interface SignalData {
@@ -150,6 +153,16 @@ interface SignalData {
   pillar: string | null;
   source: string | null;
   detectedAt: Date;
+}
+
+interface TemplateDocumentData {
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  sections?: unknown;
+  pageCount?: number | null;
+  generatedAt?: Date | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,6 +198,8 @@ const DEFAULT_SECTION_IMAGES: Record<string, string> = {
     "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=1200&h=400&fit=crop&crop=center",
   "budget-sim":
     "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=1200&h=400&fit=crop&crop=center",
+  templates:
+    "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=1200&h=400&fit=crop&crop=center",
 };
 
 function getSectionImage(sectionId: string, options: HTMLPresentationOptions): string {
@@ -200,13 +215,94 @@ function heroImgTag(imageUrl: string | undefined): string {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function esc(str: string): string {
-  return str
+function esc(str: string | undefined | null): string {
+  return (str ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+/** Validate hex color to prevent CSS injection */
+function sanitizeColor(color: string | undefined, fallback: string): string {
+  if (!color) return fallback;
+  return /^#[0-9a-fA-F]{3,8}$/.test(color.trim()) ? color.trim() : fallback;
+}
+
+/**
+ * Lightweight markdown → HTML formatter for template document content.
+ * Handles: **bold**, *italic*, ## headings, - bullet lists, numbered lists,
+ * blank-line paragraph breaks, and inline `code`.
+ * Input is raw text (already safe for HTML — esc() is called on each line).
+ */
+function formatDocContent(raw: string): string {
+  const lines = raw.split("\n");
+  const out: string[] = [];
+  let inUl = false;
+  let inOl = false;
+
+  const closeList = () => {
+    if (inUl) { out.push("</ul>"); inUl = false; }
+    if (inOl) { out.push("</ol>"); inOl = false; }
+  };
+
+  const inlineFmt = (text: string): string => {
+    let s = esc(text);
+    // `code`
+    s = s.replace(/`([^`]+)`/g, '<code style="font-family:\'JetBrains Mono\';font-size:0.85em;background:var(--bg-surface);padding:1px 5px;border-radius:4px;">$1</code>');
+    // **bold**
+    s = s.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+    // *italic*
+    s = s.replace(/\*(.+?)\*/g, "<em>$1</em>");
+    return s;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    // Blank line → close list, add spacer
+    if (trimmed === "") {
+      closeList();
+      out.push('<div style="height:8px;"></div>');
+      continue;
+    }
+
+    // Headings: ### h3, ## h2
+    const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)/);
+    if (headingMatch) {
+      closeList();
+      const level = headingMatch[1]!.length;
+      const tag = level === 1 ? "h3" : level === 2 ? "h4" : "h5";
+      const fontSize = level === 1 ? "var(--fs-h3)" : level === 2 ? "1rem" : "var(--fs-small)";
+      out.push(`<${tag} style="font-family:'Outfit';font-weight:700;font-size:${fontSize};color:var(--text-primary);margin:12px 0 6px;">${inlineFmt(headingMatch[2]!)}</${tag}>`);
+      continue;
+    }
+
+    // Bullet list: - item or * item
+    const bulletMatch = trimmed.match(/^[-*]\s+(.+)/);
+    if (bulletMatch) {
+      if (inOl) { out.push("</ol>"); inOl = false; }
+      if (!inUl) { out.push('<ul style="padding-left:20px;margin:4px 0;">'); inUl = true; }
+      out.push(`<li style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;margin-bottom:3px;">${inlineFmt(bulletMatch[1]!)}</li>`);
+      continue;
+    }
+
+    // Numbered list: 1. item
+    const numMatch = trimmed.match(/^(\d+)[.)]\s+(.+)/);
+    if (numMatch) {
+      if (inUl) { out.push("</ul>"); inUl = false; }
+      if (!inOl) { out.push('<ol style="padding-left:20px;margin:4px 0;">'); inOl = true; }
+      out.push(`<li style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;margin-bottom:3px;">${inlineFmt(numMatch[2]!)}</li>`);
+      continue;
+    }
+
+    // Regular paragraph line
+    closeList();
+    out.push(`<p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;margin:2px 0;">${inlineFmt(trimmed)}</p>`);
+  }
+  closeList();
+  return out.join("\n");
 }
 
 function scoreColor(score: number): string {
@@ -258,9 +354,9 @@ function getFreshnessThresholds(vertical?: string): { fresh: number; aging: numb
 
 function inlineFreshnessBadge(date: Date | string | null | undefined, vertical?: string): string {
   if (!date) return "";
-  const days = Math.floor(
-    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const ts = new Date(date).getTime();
+  if (isNaN(ts)) return "";
+  const days = Math.floor((Date.now() - ts) / (1000 * 60 * 60 * 24));
   const thresholds = getFreshnessThresholds(vertical);
   let levelClass = "fb-stale";
   if (days <= thresholds.fresh) levelClass = "fb-fresh";
@@ -291,6 +387,19 @@ function inlineSourceRef(ref: InlineSourceRef, children: string): string {
   </span></span>`;
 }
 
+/** Fallback card for sections that have a hero but no content below */
+function emptyPillarFallback(pillarLetter: string, items: Array<{icon: string; label: string; desc: string}>): string {
+  return `<div class="sub-section">
+    <div class="grid-${Math.min(items.length, 3)}" style="opacity:0.65;">
+      ${items.map((item) => `<div class="card" style="border-top:3px solid var(--accent-1);text-align:center;padding:28px 20px;">
+        <div style="font-size:1.4rem;margin-bottom:8px;">${item.icon}</div>
+        <div class="micro-text" style="margin-bottom:6px;">${esc(item.label)}</div>
+        <div style="font-size:var(--fs-small);color:var(--text-tertiary);">${esc(item.desc)}</div>
+      </div>`).join("\n")}
+    </div>
+  </div>`;
+}
+
 function wl(label: string, role?: string): string {
   if (!role || role === "ADMIN" || role === "OPERATOR") return esc(label);
   return esc(WHITE_LABEL_MAP[label] ?? label);
@@ -298,8 +407,226 @@ function wl(label: string, role?: string): string {
 
 function formatShortDate(date: Date | string): string {
   const d = new Date(date);
+  if (isNaN(d.getTime())) return "N/A";
   const months = ["Jan", "Fev", "Mar", "Avr", "Mai", "Jun", "Jul", "Aou", "Sep", "Oct", "Nov", "Dec"];
   return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ---------------------------------------------------------------------------
+// Oracle Data Resolution — Modular Cross-Pillar Data Layer
+// ---------------------------------------------------------------------------
+// Central resolution for all fields that can come from multiple pillars.
+// Each field is resolved via a prioritized fallback chain:
+//   PRIMARY (pillar I) → SECONDARY (pillar S / V / meta) → DEFAULT
+// Section builders consume this resolved context — no more hacky cross-pillar
+// access or `as Record<string, unknown>` type casts.
+// ---------------------------------------------------------------------------
+
+const DEFAULT_SPRINT_ACTIONS: Array<{ action: string; owner: string; kpi: string }> = [
+  { action: "Audit complet de la présence digitale", owner: "Équipe Marketing", kpi: "Rapport d'audit livré" },
+  { action: "Définir le positionnement de marque", owner: "Direction Stratégique", kpi: "Charte de positionnement validée" },
+  { action: "Lancer la première campagne pilote", owner: "Growth Manager", kpi: "Taux d'engagement > 3%" },
+];
+
+/**
+ * Resolved data context for Oracle HTML. All cross-pillar fields are resolved
+ * here with documented fallback chains. Every section builder reads from this
+ * instead of reaching into other pillars.
+ */
+interface OracleResolved {
+  // ── Scores ──
+  /** I.coherenceScore → S.scoreCoherence → meta.coherenceScore → 0 */
+  coherenceScore: number;
+  /** R.riskScore → 0 */
+  riskScore: number;
+  /** T.brandMarketFitScore → 0 */
+  bmfScore: number;
+  /** I.valueArchitecture.unitEconomics.ratio → V.unitEconomics.ratio → "—" */
+  ltvCac: string;
+  /** Radar chart scores for all 8 pillars */
+  advertisScores: [number, number, number, number, number, number, number, number];
+
+  // ── Narrative ──
+  /** I.brandIdentity.narrative → I.positioning.statement → meta.sector → "" */
+  narrative: string;
+  /** I.executiveSummary → S.syntheseExecutive → "" */
+  executiveSummary: string;
+  /** I.strategicRoadmap.year3Vision → S.visionStrategique → "" */
+  visionStrategique: string;
+  /** I.strategicRoadmap.year1Priorities → [] */
+  year1Priorities: string[];
+
+  // ── Sprint 90 ──
+  /** I.strategicRoadmap.sprint90Days → S.sprint90Recap.actions → DEFAULT_SPRINT_ACTIONS */
+  sprint90Actions: Array<{ action: string; owner: string; kpi: string }>;
+  sprint90IsDefault: boolean;
+  /** S.sprint90Recap.summary → "" */
+  sprint90Summary: string;
+
+  // ── Implementation passthrough (from pillar I) ──
+  campaigns: ImplementationData["campaigns"];
+  budgetAllocation: ImplementationData["budgetAllocation"];
+  engagementStrategy: ImplementationData["engagementStrategy"];
+  brandIdentity: ImplementationData["brandIdentity"];
+  positioning: ImplementationData["positioning"];
+  teamStructure: ImplementationData["teamStructure"];
+  launchPlan: ImplementationData["launchPlan"];
+  operationalPlaybook: ImplementationData["operationalPlaybook"];
+  brandPlatform: ImplementationData["brandPlatform"];
+  copyStrategy: ImplementationData["copyStrategy"];
+  bigIdea: ImplementationData["bigIdea"];
+  activationDispositif: ImplementationData["activationDispositif"];
+  governance: ImplementationData["governance"];
+  workstreams: ImplementationData["workstreams"];
+  brandArchitecture: ImplementationData["brandArchitecture"];
+  guidingPrinciples: ImplementationData["guidingPrinciples"];
+
+  // ── Budget derived ──
+  /** I.budgetAllocation.enveloppeGlobale (only if contains digits) */
+  enveloppeGlobale: string;
+  hasRealBudget: boolean;
+  /** Filtered parPoste with real amounts */
+  budgetParPosteFiltered: Array<{ poste: string; montant: string; pourcentage: number; justification: string }>;
+
+  // ── Synthèse passthrough (from pillar S) — properly typed ──
+  syntheseExecutive: string;
+  syntheseVision: string;
+  coherencePiliers: SynthesePillarData["coherencePiliers"];
+  facteursClesSucces: SynthesePillarData["facteursClesSucces"];
+  recommandationsPrioritaires: SynthesePillarData["recommandationsPrioritaires"];
+  axesStrategiques: SynthesePillarData["axesStrategiques"];
+  kpiDashboard: SynthesePillarData["kpiDashboard"];
+  campaignsSummary: SynthesePillarData["campaignsSummary"];
+  activationSummary: string;
+  sprint90Recap: SynthesePillarData["sprint90Recap"];
+  scoreCoherence: number;
+
+  // ── Source tracking for debugging ──
+  _sources: Record<string, string>;
+}
+
+/** First non-empty value from a list of candidates */
+function firstOf<T>(candidates: Array<[T | undefined | null, string]>, fallback: T, sources: Record<string, string>, key: string): T {
+  for (const [val, src] of candidates) {
+    if (val === undefined || val === null) continue;
+    if (typeof val === "string" && val.trim() === "") continue;
+    if (Array.isArray(val) && val.length === 0) continue;
+    if (typeof val === "number" && val === 0) continue;
+    sources[key] = src;
+    return val;
+  }
+  sources[key] = "default";
+  return fallback;
+}
+
+function resolveOracleData(
+  meta: StrategyMeta,
+  a: AuthenticitePillarData,
+  d: DistinctionPillarData,
+  v: ValeurPillarData,
+  e: EngagementPillarData,
+  r: RiskAuditResult,
+  t: TrackAuditResult,
+  impl: ImplementationData,
+  s: SynthesePillarData,
+): OracleResolved {
+  const _sources: Record<string, string> = {};
+
+  // Sprint resolution
+  const implSprint = impl.strategicRoadmap?.sprint90Days?.filter(act => act.action?.trim()) ?? [];
+  const sSprint = s.sprint90Recap?.actions?.filter(act => act.action?.trim()).map(act => ({
+    action: act.action ?? "", owner: act.owner ?? "", kpi: act.kpi ?? "",
+  })) ?? [];
+  let sprint90Actions: Array<{ action: string; owner: string; kpi: string }>;
+  let sprint90IsDefault = false;
+  if (implSprint.length > 0) {
+    sprint90Actions = implSprint;
+    _sources["sprint90Actions"] = "I";
+  } else if (sSprint.length > 0) {
+    sprint90Actions = sSprint;
+    _sources["sprint90Actions"] = "S";
+  } else {
+    sprint90Actions = DEFAULT_SPRINT_ACTIONS;
+    sprint90IsDefault = true;
+    _sources["sprint90Actions"] = "default";
+  }
+
+  // Budget derived
+  const rawEnveloppe = impl.budgetAllocation?.enveloppeGlobale?.trim() ?? "";
+  const hasRealBudget = rawEnveloppe.length > 0 && rawEnveloppe !== "\u2014" && /\d/.test(rawEnveloppe);
+  const budgetParPosteFiltered = impl.budgetAllocation?.parPoste?.filter(
+    (p) => p.poste && /\d/.test(p.montant),
+  ) ?? [];
+
+  return {
+    // Scores
+    coherenceScore: firstOf<number>([
+      [impl.coherenceScore, "I"], [s.scoreCoherence, "S"], [meta.coherenceScore, "meta"],
+    ], 0, _sources, "coherenceScore"),
+    riskScore: r.riskScore || 0,
+    bmfScore: t.brandMarketFitScore || 0,
+    ltvCac: firstOf<string>([
+      [impl.valueArchitecture?.unitEconomics?.ratio, "I"], [v.unitEconomics?.ratio, "V"],
+    ], "\u2014", _sources, "ltvCac"),
+    advertisScores: computeADVERTISScores(a, d, v, e, r, t, impl, s),
+
+    // Narrative
+    narrative: firstOf<string>([
+      [impl.brandIdentity?.narrative, "I"], [impl.positioning?.statement, "I"], [meta.sector, "meta"],
+    ], "", _sources, "narrative"),
+    executiveSummary: firstOf<string>([
+      [impl.executiveSummary, "I"], [s.syntheseExecutive, "S"],
+    ], "", _sources, "executiveSummary"),
+    visionStrategique: firstOf<string>([
+      [impl.strategicRoadmap?.year3Vision, "I"], [s.visionStrategique, "S"],
+    ], "", _sources, "visionStrategique"),
+    year1Priorities: firstOf<string[]>([
+      [impl.strategicRoadmap?.year1Priorities, "I"],
+    ], [], _sources, "year1Priorities"),
+
+    // Sprint
+    sprint90Actions,
+    sprint90IsDefault,
+    sprint90Summary: s.sprint90Recap?.summary ?? "",
+
+    // Implementation passthrough
+    campaigns: impl.campaigns,
+    budgetAllocation: impl.budgetAllocation,
+    engagementStrategy: impl.engagementStrategy,
+    brandIdentity: impl.brandIdentity,
+    positioning: impl.positioning,
+    teamStructure: impl.teamStructure,
+    launchPlan: impl.launchPlan,
+    operationalPlaybook: impl.operationalPlaybook,
+    brandPlatform: impl.brandPlatform,
+    copyStrategy: impl.copyStrategy,
+    bigIdea: impl.bigIdea,
+    activationDispositif: impl.activationDispositif,
+    governance: impl.governance,
+    workstreams: impl.workstreams,
+    brandArchitecture: impl.brandArchitecture,
+    guidingPrinciples: impl.guidingPrinciples,
+
+    // Budget derived
+    enveloppeGlobale: hasRealBudget ? rawEnveloppe : "",
+    hasRealBudget,
+    budgetParPosteFiltered,
+
+    // Synthèse passthrough — properly typed, no more `as Record<string, unknown>`
+    syntheseExecutive: s.syntheseExecutive,
+    syntheseVision: s.visionStrategique,
+    coherencePiliers: s.coherencePiliers,
+    facteursClesSucces: s.facteursClesSucces,
+    recommandationsPrioritaires: s.recommandationsPrioritaires,
+    axesStrategiques: s.axesStrategiques,
+    kpiDashboard: s.kpiDashboard,
+    campaignsSummary: s.campaignsSummary,
+    activationSummary: s.activationSummary ?? "",
+    sprint90Recap: s.sprint90Recap,
+    scoreCoherence: s.scoreCoherence,
+
+    _sources,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -311,8 +638,8 @@ export function generateStrategyHTML(
   pillars: PillarInput[],
   options: HTMLPresentationOptions = {},
 ): string {
-  const accent1 = options.brandAccent ?? "#c45a3c";
-  const accent2 = options.brandAccent2 ?? "#2d5a3d";
+  const accent1 = sanitizeColor(options.brandAccent, "#c45a3c");
+  const accent2 = sanitizeColor(options.brandAccent2, "#2d5a3d");
   const currency = options.currency ?? "FCFA";
   const locale = options.locale ?? "fr-FR";
 
@@ -332,18 +659,26 @@ export function generateStrategyHTML(
   const iP = getPillar("I");
   const sP = getPillar("S");
 
-  const { data: a } = parsePillarContent<AuthenticitePillarData>("A", aP?.content);
-  const { data: d } = parsePillarContent<DistinctionPillarData>("D", dP?.content);
-  const { data: v } = parsePillarContent<ValeurPillarData>("V", vP?.content);
-  const { data: e } = parsePillarContent<EngagementPillarData>("E", eP?.content);
-  const { data: r } = parsePillarContent<RiskAuditResult>("R", rP?.content);
-  const { data: t } = parsePillarContent<TrackAuditResult>("T", tP?.content);
-  const { data: impl } = parsePillarContent<ImplementationData>("I", iP?.content);
-  const { data: s } = parsePillarContent<SynthesePillarData>("S", sP?.content);
+  const parseA = parsePillarContent<AuthenticitePillarData>("A", aP?.content);
+  const parseD = parsePillarContent<DistinctionPillarData>("D", dP?.content);
+  const parseV = parsePillarContent<ValeurPillarData>("V", vP?.content);
+  const parseE = parsePillarContent<EngagementPillarData>("E", eP?.content);
+  const parseR = parsePillarContent<RiskAuditResult>("R", rP?.content);
+  const parseT = parsePillarContent<TrackAuditResult>("T", tP?.content);
+  const parseI = parsePillarContent<ImplementationData>("I", iP?.content);
+  const parseS = parsePillarContent<SynthesePillarData>("S", sP?.content);
 
-  const coherence = impl.coherenceScore || s.scoreCoherence || meta.coherenceScore || 0;
-  const riskScore = r.riskScore || 0;
-  const bmfScore = t.brandMarketFitScore || 0;
+  const { data: a } = parseA;
+  const { data: d } = parseD;
+  const { data: v } = parseV;
+  const { data: e } = parseE;
+  const { data: r } = parseR;
+  const { data: t } = parseT;
+  const { data: impl } = parseI;
+  const { data: s } = parseS;
+
+  // ── Resolve all cross-pillar data via the modular resolution layer ──
+  const ctx = resolveOracleData(meta, a, d, v, e, r, t, impl, s);
 
   // Phase 4: extract role and vertical for white-label + freshness
   const role = options.userRole;
@@ -353,28 +688,30 @@ export function generateStrategyHTML(
   const sections: { id: string; letter: string; label: string; score?: number }[] = [
     { id: "dashboard", letter: "\u25C9", label: "Dashboard" },
   ];
-  if (selected.has("S") || impl.campaigns) sections.push({ id: "strategie", letter: "S", label: wl("Strat\u00e9gie", role) });
+  const hasCampaignData = (ctx.campaigns?.annualCalendar?.length ?? 0) > 0 || (ctx.campaigns?.templates?.length ?? 0) > 0;
+  if (selected.has("S") || hasCampaignData) sections.push({ id: "strategie", letter: "S", label: wl("Strat\u00e9gie", role) });
   if (selected.has("A")) sections.push({ id: "authenticite", letter: "A", label: wl("Authenticit\u00e9", role) });
   if (selected.has("D")) sections.push({ id: "distinction", letter: "D", label: wl("Distinction", role) });
   if (selected.has("V")) sections.push({ id: "valeur", letter: "V", label: wl("Valeur", role) });
   if (selected.has("E")) sections.push({ id: "engagement", letter: "E", label: wl("Engagement", role) });
-  if (selected.has("R")) sections.push({ id: "risk", letter: "R", label: wl("Risk", role), score: riskScore });
-  if (selected.has("T")) sections.push({ id: "track", letter: "T", label: wl("Track", role), score: bmfScore });
-  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: wl("Impl\u00e9mentation", role), score: coherence });
+  if (selected.has("R")) sections.push({ id: "risk", letter: "R", label: wl("Risk", role), score: ctx.riskScore });
+  if (selected.has("T")) sections.push({ id: "track", letter: "T", label: wl("Track", role), score: ctx.bmfScore });
+  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: wl("Impl\u00e9mentation", role), score: ctx.coherenceScore });
   // Phase 4: new sections
   if (options.decisions && options.decisions.length > 0) sections.push({ id: "decisions", letter: "\u26A1", label: wl("D\u00e9cisions", role) });
   if (options.competitors && options.competitors.length > 0) sections.push({ id: "competitors", letter: "\uD83C\uDFAF", label: wl("Concurrents", role) });
   if (options.briefs && options.briefs.length > 0) sections.push({ id: "briefs", letter: "\uD83D\uDCC4", label: wl("Briefs", role) });
   if (options.opportunities && options.opportunities.length > 0) sections.push({ id: "opportunities", letter: "\u2191", label: wl("Opportunit\u00e9s", role) });
+  if (options.documents && options.documents.length > 0) sections.push({ id: "templates", letter: "\uD83D\uDCCB", label: wl("Templates", role) });
   sections.push({ id: "budget-sim", letter: "\u00A4", label: wl("Simulateur", role) });
 
-  // Assemble HTML
+  // Assemble HTML — each section builder reads from the resolved context (ctx)
   return `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADVERTIS — ${esc(meta.brandName)} | Fiche de Marque</title>
+<title>L'ORACLE — ${esc(meta.brandName)} | ADVERTIS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\/script>
@@ -383,24 +720,25 @@ ${buildCSS(accent1, accent2)}
 </style>
 </head>
 <body>
-${buildSidebar(meta, sections, riskScore, bmfScore, coherence, accent1, accent2, currency, options.parentBrand, options.childBrands)}
+${buildSidebar(meta, sections, ctx.riskScore, ctx.bmfScore, ctx.coherenceScore, accent1, accent2, currency, options.parentBrand, options.childBrands)}
 ${buildMobileNav(sections)}
 <main class="main">
 <div class="main-inner">
-${buildDashboard(meta, a, d, v, e, r, t, impl, s, coherence, riskScore, bmfScore, currency, getSectionImage("dashboard", options))}
-${selected.has("S") || impl.campaigns ? buildSectionS(impl, s, currency, getSectionImage("strategie", options)) : ""}
+${buildDashboard(meta, ctx, currency, getSectionImage("dashboard", options), options)}
+${selected.has("S") || hasCampaignData ? buildSectionSynthese(ctx, currency, getSectionImage("strategie", options)) : ""}
 ${selected.has("A") ? buildSectionA(a, getSectionImage("authenticite", options)) : ""}
 ${selected.has("D") ? buildSectionD(d, getSectionImage("distinction", options)) : ""}
 ${selected.has("V") ? buildSectionV(v, currency, getSectionImage("valeur", options)) : ""}
 ${selected.has("E") ? buildSectionE(e, getSectionImage("engagement", options)) : ""}
 ${selected.has("R") ? buildSectionR(r, getSectionImage("risk", options)) : ""}
 ${selected.has("T") ? buildSectionT(t, getSectionImage("track", options)) : ""}
-${selected.has("I") ? buildSectionI(impl, currency, getSectionImage("implementation", options)) : ""}
+${selected.has("I") ? buildSectionImpl(ctx, currency, getSectionImage("implementation", options)) : ""}
 ${options.decisions && options.decisions.length > 0 ? buildSectionDecisions(options.decisions, role, vertical, getSectionImage("decisions", options)) : ""}
 ${options.competitors && options.competitors.length > 0 ? buildSectionCompetitors(options.competitors, meta.brandName, role, vertical, getSectionImage("competitors", options)) : ""}
 ${options.briefs && options.briefs.length > 0 ? buildSectionBriefs(options.briefs, role, vertical, getSectionImage("briefs", options)) : ""}
 ${options.opportunities && options.opportunities.length > 0 ? buildSectionOpportunities(options.opportunities, currency, role, getSectionImage("opportunities", options)) : ""}
-${buildSectionBudgetSim(options.budgetTiers, currency, getSectionImage("budget-sim", options))}
+${options.documents && options.documents.length > 0 ? buildSectionTemplates(options.documents, meta.brandName, getSectionImage("templates", options)) : ""}
+${buildSectionBudgetSim(options.budgetTiers, currency, getSectionImage("budget-sim", options), ctx)}
 ${options.signals && options.signals.length > 0 ? buildSectionSignals(options.signals) : ""}
 ${buildFooter(meta, locale)}
 </div>
@@ -451,7 +789,7 @@ function buildCSS(accent1: string, accent2: string): string {
   --score-critical: #FF4757;
   --sidebar-width: 260px;
   --content-max: 1200px;
-  --section-gap: 100px;
+  --section-gap: 60px;
   --card-radius: 14px;
   --card-radius-sm: 10px;
   --fs-hero: clamp(2.4rem, 4vw, 3.6rem);
@@ -512,7 +850,7 @@ section { padding-top: var(--section-gap); padding-bottom: 20px; }
 section:first-child { padding-top: 50px; }
 
 /* Section Hero */
-.section-hero { position: relative; border-radius: var(--card-radius); overflow: hidden; margin-bottom: 48px; min-height: 220px; display: flex; align-items: flex-end; padding: 36px; }
+.section-hero { position: relative; border-radius: var(--card-radius); overflow: hidden; margin-bottom: 36px; min-height: 220px; display: flex; align-items: flex-end; padding: 36px; }
 .section-hero-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.18; z-index: 0; pointer-events: none; }
 .section-hero-overlay { position: absolute; inset: 0; background: linear-gradient(0deg, rgba(6,6,11,0.95) 0%, rgba(6,6,11,0.4) 100%); z-index: 1; }
 .section-hero-content { position: relative; z-index: 2; width: 100%; }
@@ -547,7 +885,7 @@ section:first-child { padding-top: 50px; }
 /* Sub-sections */
 .sub-title { font-family: 'Outfit'; font-size: var(--fs-h2); font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; }
 .sub-title::before { content: ''; width: 4px; height: 24px; background: var(--accent-1); border-radius: 2px; }
-.sub-section { margin-bottom: 48px; }
+.sub-section { margin-bottom: 36px; }
 
 /* Score Ring */
 .score-ring { position: relative; width: 120px; height: 120px; }
@@ -645,13 +983,20 @@ section:first-child { padding-top: 50px; }
 .swot-threats li::before { background: var(--risk-medium); }
 
 /* TAM/SAM/SOM */
-.tam-circles { display: flex; align-items: center; justify-content: center; position: relative; height: 300px; margin-bottom: 20px; }
-.tam-circle { position: absolute; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 2px solid; }
-.tam-circle.tam { width: 280px; height: 280px; border-color: rgba(255,107,53,0.3); background: rgba(255,107,53,0.05); }
-.tam-circle.sam { width: 190px; height: 190px; border-color: rgba(46,139,87,0.4); background: rgba(46,139,87,0.08); }
-.tam-circle.som { width: 110px; height: 110px; border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.1); }
-.tam-circle .tam-val { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.1rem; }
+.tam-circles { display: flex; align-items: center; justify-content: center; position: relative; height: 320px; margin-bottom: 20px; }
+.tam-circle { position: absolute; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; border: 2px solid; padding: 8px; box-sizing: border-box; overflow: hidden; }
+.tam-circle.tam { width: 300px; height: 300px; border-color: rgba(255,107,53,0.3); background: rgba(255,107,53,0.05); }
+.tam-circle.sam { width: 200px; height: 200px; border-color: rgba(46,139,87,0.4); background: rgba(46,139,87,0.08); }
+.tam-circle.som { width: 115px; height: 115px; border-color: rgba(255,215,0,0.4); background: rgba(255,215,0,0.1); }
+.tam-circle .tam-val { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 0.85rem; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.2; }
 .tam-circle .tam-label { font-size: var(--fs-micro); color: var(--text-tertiary); margin-top: 2px; }
+@media (max-width: 480px) {
+  .tam-circles { height: 260px; }
+  .tam-circle.tam { width: 240px; height: 240px; }
+  .tam-circle.sam { width: 160px; height: 160px; }
+  .tam-circle.som { width: 95px; height: 95px; }
+  .tam-circle .tam-val { font-size: 0.75rem; }
+}
 
 /* KPI cards */
 .kpi-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--card-radius-sm); padding: 18px; }
@@ -686,10 +1031,10 @@ section:first-child { padding-top: 50px; }
 .value-item .vi-label { color: var(--text-tertiary); font-size: var(--fs-micro); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
 
 /* Unit economics */
-.ue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
-.ue-cell { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--card-radius-sm); padding: 16px; text-align: center; }
-.ue-cell .ue-val { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 1.2rem; color: var(--accent-1); }
-.ue-cell .ue-label { font-size: var(--fs-micro); color: var(--text-tertiary); margin-top: 4px; }
+.ue-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.ue-cell { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--card-radius-sm); padding: 16px; text-align: center; overflow: hidden; }
+.ue-cell .ue-val { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 0.95rem; color: var(--accent-1); word-break: break-word; overflow-wrap: break-word; line-height: 1.3; }
+.ue-cell .ue-label { font-size: var(--fs-micro); color: var(--text-tertiary); margin-top: 6px; word-break: break-word; }
 
 /* Margin utils */
 .mb-2 { margin-bottom: 16px; }
@@ -728,6 +1073,47 @@ section:first-child { padding-top: 50px; }
 .mva-table th { font-family:'Outfit'; font-weight:600; text-align:left; padding:10px 14px; border-bottom:2px solid var(--border-subtle); color:var(--text-secondary); font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.1em; }
 .mva-table td { padding:10px 14px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
 .mva-table tr:last-child td { border-bottom:none; }
+
+/* Calendar table (campaigns) */
+.cal-table { width:100%; border-collapse:separate; border-spacing:0; font-size:var(--fs-small); }
+.cal-table th { font-family:'Outfit'; font-weight:600; text-align:left; padding:10px 14px; border-bottom:2px solid var(--border-subtle); color:var(--text-secondary); font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.08em; }
+.cal-table td { padding:10px 14px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+.cal-table tr:last-child td { border-bottom:none; }
+.cal-table .cal-mois { font-family:'JetBrains Mono'; font-weight:700; color:var(--accent-1); white-space:nowrap; }
+.cal-table .cal-canaux { display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.cal-table .cal-canal { font-size:var(--fs-micro); padding:2px 8px; border-radius:4px; background:var(--bg-elevated); color:var(--text-tertiary); }
+
+/* Activation phases */
+.activation-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+.activation-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius-sm); padding:20px; position:relative; overflow:hidden; }
+.activation-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.activation-card:nth-child(1)::before { background:var(--accent-1); }
+.activation-card:nth-child(2)::before { background:var(--accent-2); }
+.activation-card:nth-child(3)::before { background:var(--accent-3); }
+.activation-card:nth-child(4)::before { background:#6366f1; }
+.activation-card .ac-phase { font-family:'Outfit'; font-weight:700; font-size:var(--fs-small); margin-bottom:8px; color:var(--text-primary); }
+.activation-card .ac-desc { font-size:var(--fs-small); color:var(--text-secondary); line-height:1.6; }
+
+/* ROI projections */
+.roi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; }
+.roi-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius-sm); padding:18px; text-align:center; }
+.roi-card .roi-period { font-size:var(--fs-micro); color:var(--text-tertiary); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+.roi-card .roi-val { font-family:'JetBrains Mono'; font-weight:700; font-size:1rem; color:var(--score-excellent); word-break:break-word; }
+
+/* Phase timeline (parPhase) */
+.phase-timeline { display:flex; flex-direction:column; gap:12px; }
+.phase-row { display:grid; grid-template-columns:120px 1fr 140px; gap:16px; align-items:center; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius-sm); padding:14px 18px; }
+.phase-row .ph-name { font-weight:700; font-size:var(--fs-small); color:var(--text-primary); }
+.phase-row .ph-focus { font-size:var(--fs-small); color:var(--text-secondary); }
+.phase-row .ph-montant { font-family:'JetBrains Mono'; font-weight:700; color:var(--accent-1); font-size:var(--fs-small); text-align:right; }
+@media (max-width: 600px) {
+  .phase-row { grid-template-columns:1fr; gap:6px; }
+  .phase-row .ph-montant { text-align:left; }
+}
+
+/* Budget channels breakdown */
+.channels-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+.channels-row .ch-tag { font-size:var(--fs-micro); padding:3px 10px; border-radius:4px; background:rgba(196,90,60,0.12); color:var(--accent-1); font-weight:500; }
 
 /* Freshness Badge (inline) */
 .freshness-badge { display:inline-flex; align-items:center; gap:3px; font-family:'JetBrains Mono'; font-size:0.65rem; font-weight:600; padding:2px 7px; border-radius:100px; border:1px solid; vertical-align:middle; margin-left:6px; }
@@ -788,6 +1174,39 @@ section:first-child { padding-top: 50px; }
 .bt-current { background:var(--accent-1-dim); color:var(--accent-1); font-weight:700; }
 .bt-parent { color:var(--text-tertiary); font-size:var(--fs-micro); }
 .bt-child { padding-left:20px; font-size:var(--fs-micro); color:var(--text-tertiary); }
+
+/* Template Document Cards */
+.tpl-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:var(--card-radius); overflow:hidden; transition:all var(--duration-fast) ease; }
+.tpl-card:hover { border-color:var(--accent-1); transform:translateY(-2px); }
+.tpl-card-header { padding:24px; border-bottom:1px solid var(--border-subtle); }
+.tpl-card-header h3 { font-family:'Outfit'; font-weight:800; font-size:var(--fs-h3); margin-bottom:4px; }
+.tpl-card-header .tpl-subtitle { font-size:var(--fs-small); color:var(--text-secondary); }
+.tpl-card-meta { display:flex; align-items:center; gap:12px; margin-top:10px; }
+.tpl-card-meta .tpl-badge { font-family:'JetBrains Mono'; font-size:var(--fs-micro); font-weight:700; padding:3px 10px; border-radius:6px; background:rgba(46,213,115,0.15); color:var(--score-excellent); text-transform:uppercase; }
+.tpl-card-meta .tpl-pages { font-family:'JetBrains Mono'; font-size:var(--fs-micro); color:var(--text-tertiary); }
+.tpl-sections { padding:20px 24px; }
+.tpl-sections-title { font-size:var(--fs-micro); text-transform:uppercase; letter-spacing:0.1em; color:var(--text-tertiary); font-weight:600; margin-bottom:12px; }
+.tpl-section-item { display:flex; align-items:flex-start; gap:10px; padding:8px 0; border-bottom:1px solid var(--border-subtle); }
+.tpl-section-item:last-child { border-bottom:none; }
+.tpl-section-num { font-family:'JetBrains Mono'; font-weight:700; font-size:var(--fs-micro); color:var(--accent-1); min-width:22px; }
+.tpl-section-title { font-size:var(--fs-small); font-weight:600; }
+.tpl-section-content { font-size:var(--fs-small); color:var(--text-secondary); line-height:1.7; margin-top:4px; }
+.tpl-section-content strong { color:var(--text-primary); font-weight:700; }
+.tpl-section-content em { color:var(--accent-2); font-style:italic; }
+.tpl-section-content h3 { font-size:var(--fs-h3); color:var(--text-primary); border-bottom:1px solid var(--border-subtle); padding-bottom:6px; }
+.tpl-section-content h4 { font-size:1rem; color:var(--text-primary); }
+.tpl-section-content h5 { font-size:var(--fs-small); color:var(--text-primary); text-transform:uppercase; letter-spacing:0.05em; }
+.tpl-section-content ul, .tpl-section-content ol { color:var(--text-secondary); }
+.tpl-section-content li::marker { color:var(--accent-1); }
+.tpl-section-content p + p { margin-top:6px; }
+.tpl-section-word-count { font-family:'JetBrains Mono'; font-size:var(--fs-micro); color:var(--text-tertiary); }
+.tpl-section-expandable { cursor:pointer; }
+.tpl-section-expandable:hover > div:first-child { background:var(--bg-card-hover); border-radius:6px; margin:0 -6px; padding:4px 6px; }
+.tpl-section-body { display:none; padding:16px 0 16px 32px; border-left:2px solid var(--accent-1-dim); margin-left:10px; margin-top:8px; max-height:800px; overflow-y:auto; scrollbar-width:thin; }
+.tpl-section-expandable.open .tpl-section-body { display:block; animation:tplFadeIn 0.3s ease; }
+@keyframes tplFadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+.tpl-section-toggle { font-size:0.7rem; color:var(--text-tertiary); transition:transform 0.2s; }
+.tpl-section-expandable.open .tpl-section-toggle { transform:rotate(90deg); }
 
 /* Mobile Nav */
 .mobile-nav { display: none; }
@@ -919,36 +1338,123 @@ function buildMobileNav(
 }
 
 // ---------------------------------------------------------------------------
+// ADVE Score Calculator — estimates pillar completeness from data
+// ---------------------------------------------------------------------------
+
+function computeADVERTISScores(
+  a: AuthenticitePillarData,
+  d: DistinctionPillarData,
+  v: ValeurPillarData,
+  e: EngagementPillarData,
+  r: RiskAuditResult,
+  t: TrackAuditResult,
+  impl: ImplementationData,
+  s: SynthesePillarData,
+): [number, number, number, number, number, number, number, number] {
+  const nonEmpty = (val: unknown): boolean => {
+    if (val == null) return false;
+    if (typeof val === "string") return val.trim().length > 0;
+    if (typeof val === "number") return val > 0;
+    if (Array.isArray(val)) return val.length > 0;
+    if (typeof val === "object") return Object.values(val as Record<string, unknown>).some(nonEmpty);
+    return false;
+  };
+
+  // A — Authenticité
+  const aFields = [
+    a.identite?.archetype, a.identite?.citationFondatrice, a.identite?.noyauIdentitaire,
+    a.ikigai?.aimer, a.ikigai?.competence, a.ikigai?.besoinMonde, a.ikigai?.remuneration,
+    a.valeurs, a.hierarchieCommunautaire, a.herosJourney,
+  ];
+  const aScore = Math.round((aFields.filter(nonEmpty).length / aFields.length) * 100);
+
+  // D — Distinction
+  const dFields = [
+    d.personas, d.positionnement, d.tonDeVoix?.personnalite,
+    d.tonDeVoix?.onDit, d.tonDeVoix?.onNeditPas,
+    d.paysageConcurrentiel?.concurrents, d.promessesDeMarque?.promesseMaitre,
+    d.identiteVisuelle?.directionArtistique,
+  ];
+  const dScore = Math.round((dFields.filter(nonEmpty).length / dFields.length) * 100);
+
+  // V — Valeur
+  const vFields = [
+    v.productLadder, v.unitEconomics?.cac, v.unitEconomics?.ltv,
+    v.unitEconomics?.ratio, v.unitEconomics?.marges,
+    v.valeurMarque?.tangible, v.valeurClient?.fonctionnels,
+  ];
+  const vScore = Math.round((vFields.filter(nonEmpty).length / vFields.length) * 100);
+
+  // E — Engagement
+  const eFields = [
+    e.touchpoints, e.rituels, e.principesCommunautaires?.principes,
+    e.gamification, e.kpis,
+    e.aarrr?.acquisition, e.aarrr?.activation, e.aarrr?.retention,
+  ];
+  const eScore = Math.round((eFields.filter(nonEmpty).length / eFields.length) * 100);
+
+  // R — Risk: use riskScore directly (inverted: low risk = high score)
+  const rScore = r.riskScore > 0
+    ? Math.min(100, Math.max(0, 100 - r.riskScore))
+    : (() => {
+        const rFields = [r.microSwots, r.globalSwot?.strengths, r.globalSwot?.weaknesses, r.globalSwot?.opportunities, r.globalSwot?.threats, r.probabilityImpactMatrix, r.mitigationPriorities, r.summary];
+        return Math.round((rFields.filter(nonEmpty).length / rFields.length) * 100);
+      })();
+
+  // T — Track: use brandMarketFitScore directly if available
+  const tScore = t.brandMarketFitScore > 0
+    ? Math.min(100, Math.max(0, t.brandMarketFitScore))
+    : (() => {
+        const tFields = [t.triangulation, t.hypothesisValidation, t.marketReality, t.tamSamSom, t.competitiveBenchmark, t.strategicRecommendations, t.summary];
+        return Math.round((tFields.filter(nonEmpty).length / tFields.length) * 100);
+      })();
+
+  // I — Implémentation
+  const iFields = [
+    impl.strategicRoadmap?.sprint90Days, impl.strategicRoadmap?.year1Priorities,
+    impl.strategicRoadmap?.year3Vision, impl.executiveSummary,
+    impl.campaigns, impl.budgetAllocation,
+  ];
+  const iScore = impl.coherenceScore && impl.coherenceScore > 0
+    ? Math.min(100, Math.max(0, impl.coherenceScore))
+    : Math.round((iFields.filter(nonEmpty).length / iFields.length) * 100);
+
+  // S — Synthèse
+  const sFields = [
+    s.syntheseExecutive, s.visionStrategique, s.coherencePiliers,
+    s.facteursClesSucces, s.recommandationsPrioritaires,
+  ];
+  const sScore = s.scoreCoherence && s.scoreCoherence > 0
+    ? Math.min(100, Math.max(0, s.scoreCoherence))
+    : Math.round((sFields.filter(nonEmpty).length / sFields.length) * 100);
+
+  return [
+    Math.min(100, Math.max(0, aScore)),
+    Math.min(100, Math.max(0, dScore)),
+    Math.min(100, Math.max(0, vScore)),
+    Math.min(100, Math.max(0, eScore)),
+    rScore,
+    tScore,
+    iScore,
+    sScore,
+  ];
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard
 // ---------------------------------------------------------------------------
 
 function buildDashboard(
   meta: StrategyMeta,
-  _a: AuthenticitePillarData,
-  _d: DistinctionPillarData,
-  _v: ValeurPillarData,
-  _e: EngagementPillarData,
-  _r: RiskAuditResult,
-  t: TrackAuditResult,
-  impl: ImplementationData,
-  s: SynthesePillarData,
-  coherence: number,
-  riskScore: number,
-  bmfScore: number,
+  ctx: OracleResolved,
   currency: string,
   imageUrl?: string,
+  options?: HTMLPresentationOptions,
 ): string {
-  const ue = impl.valueArchitecture?.unitEconomics;
-  const ltvCac = ue?.ratio || "—";
-  const summary = impl.executiveSummary || s.syntheseExecutive || "";
-
-  // Sprint 90 days
-  const sprintActions = impl.strategicRoadmap?.sprint90Days ?? [];
-  const sprintHtml = sprintActions
-    .slice(0, 6)
+  const sprintHtml = ctx.sprint90Actions.slice(0, 6)
     .map(
       (act) =>
-        `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--bg-elevated);border-radius:8px;">
+        `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:var(--bg-elevated);border-radius:8px;${ctx.sprint90IsDefault ? "opacity:0.65;" : ""}">
           <span class="card-badge badge-p0" style="flex-shrink:0;">P0</span>
           <div>
             <div style="font-weight:600;font-size:var(--fs-small);">${esc(act.action)}</div>
@@ -958,67 +1464,85 @@ function buildDashboard(
     )
     .join("\n");
 
-  // Budget
-  const budgetAlloc = impl.budgetAllocation;
-  const enveloppe = budgetAlloc?.enveloppeGlobale || "—";
-
   return `<section id="dashboard">
   <div class="section-hero" style="min-height:280px;background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.7), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">\u26A1 Fiche de Marque ADVERTIS ${inlineFreshnessBadge(meta.createdAt)}</div>
+      <div class="section-tag">\u26A1 L'ORACLE — Intelligence Strat\u00e9gique ${inlineFreshnessBadge(meta.createdAt)}</div>
       <h1>${esc(meta.brandName)}</h1>
       ${meta.tagline ? `<p style="font-style:italic;color:var(--accent-1);font-size:1.1rem;margin-bottom:8px;">\u201C${esc(meta.tagline)}\u201D</p>` : ""}
-      <p class="section-summary">${esc(impl.brandIdentity?.narrative || impl.positioning?.statement || meta.sector || "")}</p>
+      <p class="section-summary">${esc(ctx.narrative)}</p>
       <div class="hero-scores">
         <div class="hero-score-badge">
-          <div class="hsb-val" style="color:${scoreColor(bmfScore)}">${bmfScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
+          <div class="hsb-val" style="color:${scoreColor(ctx.bmfScore)}">${ctx.bmfScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
           <div class="hsb-label">Brand-Market Fit</div>
         </div>
         <div class="hero-score-badge">
-          <div class="hsb-val" style="color:${scoreColor(100 - riskScore)}">${riskScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
+          <div class="hsb-val" style="color:${scoreColor(100 - ctx.riskScore)}">${ctx.riskScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
           <div class="hsb-label">Score de risque</div>
         </div>
         <div class="hero-score-badge">
-          <div class="hsb-val" style="color:${scoreColor(coherence)}">${coherence}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
-          <div class="hsb-label">Cohérence</div>
+          <div class="hsb-val" style="color:${scoreColor(ctx.coherenceScore)}">${ctx.coherenceScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
+          <div class="hsb-label">Coh\u00e9rence</div>
         </div>
-        ${ltvCac !== "—" ? `<div class="hero-score-badge"><div class="hsb-val" style="color:var(--accent-1)">${esc(ltvCac)}</div><div class="hsb-label">LTV/CAC</div></div>` : ""}
+        ${ctx.ltvCac !== "\u2014" ? `<div class="hero-score-badge"><div class="hsb-val" style="color:var(--accent-1)">${esc(ctx.ltvCac)}</div><div class="hsb-label">LTV/CAC</div></div>` : ""}
       </div>
     </div>
   </div>
 
   ${
-    budgetAlloc
+    ctx.hasRealBudget
       ? `<h3 class="sub-title">Investissement</h3>
   <div class="card mb-4" style="text-align:center;">
     <div class="micro-text" style="margin-bottom:8px;">Enveloppe globale</div>
-    <div class="mono" style="font-size:2rem;font-weight:800;color:var(--accent-1);">${esc(enveloppe)} <span style="font-size:0.9rem;color:var(--text-secondary)">${esc(currency)}</span></div>
+    <div class="mono" style="font-size:2rem;font-weight:800;color:var(--accent-1);">${esc(ctx.enveloppeGlobale)} <span style="font-size:0.9rem;color:var(--text-secondary)">${esc(currency)}</span></div>
   </div>`
       : ""
   }
 
   <div class="grid-2 mb-4">
     <div class="card">
-      <div class="card-header"><span class="card-title">Radar ADVE</span></div>
-      <div class="chart-container" style="max-width:280px;">
-        <canvas id="radarChart"></canvas>
+      <div class="card-header"><span class="card-title">Radar ADVERTIS</span></div>
+      <div class="chart-container" style="max-width:340px;margin:0 auto;">
+        <canvas id="radarChart" data-scores="${ctx.advertisScores.join(",")}"></canvas>
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Sprint 90 jours</span></div>
+      <div class="card-header">
+        <span class="card-title">Sprint 90 jours</span>
+        ${ctx.sprint90IsDefault ? '<span class="card-badge" style="background:rgba(255,165,2,0.15);color:var(--risk-medium);font-size:0.65rem;">\u00c0 D\u00c9FINIR</span>' : ""}
+      </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
-        ${sprintHtml || '<div style="color:var(--text-tertiary);font-size:var(--fs-small);">Aucune action définie.</div>'}
+        ${sprintHtml}
       </div>
     </div>
   </div>
 
+  <div class="grid-4 mb-4">
+    <div class="card" style="text-align:center;padding:16px;">
+      <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-1);">${options?.decisions?.length ?? 0}</div>
+      <div class="micro-text" style="margin-top:4px;">D\u00e9cisions</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-2);">${options?.competitors?.length ?? 0}</div>
+      <div class="micro-text" style="margin-top:4px;">Concurrents</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div class="mono" style="font-size:1.4rem;font-weight:800;color:#818cf8;">${options?.opportunities?.length ?? 0}</div>
+      <div class="micro-text" style="margin-top:4px;">Opportunit\u00e9s</div>
+    </div>
+    <div class="card" style="text-align:center;padding:16px;">
+      <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-3);">${options?.signals?.length ?? 0}</div>
+      <div class="micro-text" style="margin-top:4px;">Signaux</div>
+    </div>
+  </div>
+
   ${
-    summary
+    ctx.executiveSummary
       ? `<div class="card mb-4" style="background:linear-gradient(135deg, var(--accent-1-dim), var(--bg-card));border:1px solid var(--accent-1);padding:32px;">
-    <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synthèse exécutive</div>
-    <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(summary)}</p>
+    <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synth\u00e8se ex\u00e9cutive</div>
+    <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(ctx.executiveSummary)}</p>
   </div>`
       : ""
   }
@@ -1029,38 +1553,37 @@ function buildDashboard(
 // S — Stratégie
 // ---------------------------------------------------------------------------
 
-function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, currency: string, imageUrl?: string): string {
+function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: string): string {
   // If neither pillar S data nor campaigns, nothing to render
-  const campaigns = impl.campaigns;
-  const hasSData = sData.syntheseExecutive || sData.visionStrategique || sData.coherencePiliers.length > 0 || sData.facteursClesSucces.length > 0 || sData.recommandationsPrioritaires.length > 0;
-  if (!campaigns && !hasSData) return "";
+  const hasSData = ctx.syntheseExecutive || ctx.syntheseVision || ctx.coherencePiliers.length > 0 || ctx.facteursClesSucces.length > 0 || ctx.recommandationsPrioritaires.length > 0;
+  if (!ctx.campaigns && !hasSData) return "";
 
   // ── Synthèse Executive ──
-  const syntheseHtml = sData.syntheseExecutive
+  const syntheseHtml = ctx.syntheseExecutive
     ? `<div class="sub-section">
-    <h3 class="sub-title">Synthèse exécutive</h3>
+    <h3 class="sub-title">Synth\u00e8se ex\u00e9cutive</h3>
     <div class="card" style="border-left:4px solid var(--accent-1);padding:1.5rem;">
-      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(sData.syntheseExecutive)}</p>
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.syntheseExecutive)}</p>
     </div>
   </div>`
     : "";
 
   // ── Vision Stratégique ──
-  const visionHtml = sData.visionStrategique
+  const visionHtml = ctx.syntheseVision
     ? `<div class="sub-section">
-    <h3 class="sub-title">Vision stratégique</h3>
+    <h3 class="sub-title">Vision strat\u00e9gique</h3>
     <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
-      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(sData.visionStrategique)}</p>
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.syntheseVision)}</p>
     </div>
   </div>`
     : "";
 
   // ── Cohérence inter-piliers ──
-  const coherenceHtml = sData.coherencePiliers.length > 0
+  const coherenceHtml = ctx.coherencePiliers.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Cohérence inter-piliers</h3>
+    <h3 class="sub-title">Coh\u00e9rence inter-piliers</h3>
     <div class="grid-3">
-      ${sData.coherencePiliers
+      ${ctx.coherencePiliers
         .map(
           (cp) => `<div class="card" style="border-top:3px solid var(--accent-1);">
         <div class="micro-text mb-2">${esc(cp.pilier)}</div>
@@ -1074,12 +1597,12 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
     : "";
 
   // ── Facteurs clés de succès ──
-  const fcIcons = ["🎯", "⚡", "🛡️", "🚀", "💎", "🔑", "✨", "🏆"];
-  const facteursHtml = sData.facteursClesSucces.length > 0
+  const fcIcons = ["\uD83C\uDFAF", "\u26A1", "\uD83D\uDEE1\uFE0F", "\uD83D\uDE80", "\uD83D\uDC8E", "\uD83D\uDD11", "\u2728", "\uD83C\uDFC6"];
+  const facteursHtml = ctx.facteursClesSucces.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Facteurs clés de succès</h3>
+    <h3 class="sub-title">Facteurs cl\u00e9s de succ\u00e8s</h3>
     <div class="grid-2">
-      ${sData.facteursClesSucces
+      ${ctx.facteursClesSucces
         .map(
           (fc, i) => `<div class="card" style="display:flex;align-items:flex-start;gap:0.75rem;">
         <span style="font-size:1.3rem;">${fcIcons[i % fcIcons.length]}</span>
@@ -1092,20 +1615,20 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
     : "";
 
   // ── Recommandations prioritaires ──
-  const recoHtml = sData.recommandationsPrioritaires.length > 0
+  const recoHtml = ctx.recommandationsPrioritaires.length > 0
     ? `<div class="sub-section">
     <h3 class="sub-title">Recommandations prioritaires</h3>
     <table class="budget-table">
-      <thead><tr><th>Action</th><th>Priorité</th><th>Impact</th><th>Délai</th></tr></thead>
+      <thead><tr><th>Action</th><th>Priorit\u00e9</th><th>Impact</th><th>D\u00e9lai</th></tr></thead>
       <tbody>
-        ${sData.recommandationsPrioritaires
+        ${[...ctx.recommandationsPrioritaires]
           .sort((a, b) => a.priorite - b.priorite)
           .map(
-            (r) => `<tr class="budget-row">
-          <td style="font-weight:600;">${esc(r.action)}</td>
-          <td class="mono" style="text-align:center;">P${r.priorite}</td>
-          <td style="color:var(--text-secondary);">${esc(r.impact)}</td>
-          <td style="color:var(--text-secondary);">${esc(r.delai)}</td>
+            (rec) => `<tr class="budget-row">
+          <td style="font-weight:600;">${esc(rec.action)}</td>
+          <td class="mono" style="text-align:center;">P${rec.priorite}</td>
+          <td style="color:var(--text-secondary);">${esc(rec.impact)}</td>
+          <td style="color:var(--text-secondary);">${esc(rec.delai)}</td>
         </tr>`,
           )
           .join("\n")}
@@ -1114,7 +1637,8 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>`
     : "";
 
-  // Campaign templates as pillars
+  // ── Campaign templates ──
+  const campaigns = ctx.campaigns;
   const templatesHtml =
     campaigns && campaigns.templates.length > 0
       ? `<div class="sub-section">
@@ -1123,11 +1647,11 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
       ${campaigns.templates
         .map(
           (tpl, i) => `<div class="pillar-card">
-        <div class="pillar-icon" style="background:var(--accent-1-dim);">${["📢", "🤝", "💰", "🚀"][i % 4]}</div>
+        <div class="pillar-icon" style="background:var(--accent-1-dim);">${["\uD83D\uDCE2", "\uD83E\uDD1D", "\uD83D\uDCB0", "\uD83D\uDE80"][i % 4]}</div>
         <h3>${esc(tpl.nom)}</h3>
         <div class="pillar-objective">${esc(tpl.description)}</div>
         <div class="pillar-channels">${tpl.canauxPrincipaux.map((c) => `<span class="pillar-channel-tag">${esc(c)}</span>`).join("")}</div>
-        <div class="pillar-kpis">${tpl.messagesCles.map((m) => esc(m)).join(" · ")}</div>
+        <div class="pillar-kpis">${tpl.messagesCles.map((m) => esc(m)).join(" \u00b7 ")}</div>
       </div>`,
         )
         .join("\n")}
@@ -1135,7 +1659,7 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>`
       : "";
 
-  // Calendar
+  // ── Calendar ──
   const calendarHtml =
     campaigns && campaigns.annualCalendar.length > 0
       ? `<div class="sub-section">
@@ -1154,15 +1678,15 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>`
       : "";
 
-  // Budget
-  const budgetAlloc = impl.budgetAllocation;
-  const budgetHtml = budgetAlloc
+  // ── Budget — only if real line items ──
+  const budgetHasData = ctx.budgetParPosteFiltered.length > 0;
+  const budgetHtml = budgetHasData
     ? `<div class="sub-section">
-    <h3 class="sub-title">Budget opérationnel</h3>
+    <h3 class="sub-title">Budget op\u00e9rationnel</h3>
     <table class="budget-table">
       <thead><tr><th>Poste</th><th>Montant</th><th>%</th><th>Justification</th></tr></thead>
       <tbody>
-        ${budgetAlloc.parPoste
+        ${ctx.budgetParPosteFiltered
           .map(
             (p) => `<tr class="budget-row">
           <td style="font-weight:600;">${esc(p.poste)}</td>
@@ -1172,19 +1696,19 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
         </tr>`,
           )
           .join("\n")}
-        <tr class="budget-total-row">
+        ${ctx.hasRealBudget ? `<tr class="budget-total-row">
           <td>Total</td>
-          <td>${esc(budgetAlloc.enveloppeGlobale)} ${esc(currency)}</td>
+          <td>${esc(ctx.enveloppeGlobale)} ${esc(currency)}</td>
           <td>100%</td>
           <td></td>
-        </tr>
+        </tr>` : ""}
       </tbody>
     </table>
   </div>`
     : "";
 
-  // Funnel AARRR
-  const aarrr = impl.engagementStrategy?.aarrr;
+  // ── Funnel AARRR ──
+  const aarrr = ctx.engagementStrategy?.aarrr;
   const funnelColors = ["rgba(255,71,87,0.15)", "rgba(255,165,2,0.15)", "rgba(46,213,115,0.15)", "rgba(55,66,250,0.15)", "rgba(140,60,196,0.15)"];
   const funnelTextColors = ["#FF4757", "#FFA502", "#2ED573", "#3742FA", "#8c3cc4"];
   const funnelSteps = [
@@ -1193,7 +1717,7 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
     { label: "Retention", desc: aarrr?.retention },
     { label: "Revenue", desc: aarrr?.revenue },
     { label: "Referral", desc: aarrr?.referral },
-  ].filter((s) => s.desc);
+  ].filter((step) => step.desc);
 
   const funnelHtml =
     funnelSteps.length > 0
@@ -1210,30 +1734,26 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   </div>`
       : "";
 
-  // ── Axes Stratégiques (new S fields) ──
-  const axesHtml = (sData as Record<string, unknown>).axesStrategiques
-    && Array.isArray((sData as Record<string, unknown>).axesStrategiques)
-    && ((sData as Record<string, unknown>).axesStrategiques as Array<Record<string, unknown>>).length > 0
+  // ── Axes Stratégiques — properly typed from ctx ──
+  const axesHtml = ctx.axesStrategiques.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Axes stratégiques</h3>
+    <h3 class="sub-title">Axes strat\u00e9giques</h3>
     <div class="grid-2">
-      ${((sData as Record<string, unknown>).axesStrategiques as Array<{
-        axe?: string; description?: string; piliersLies?: string[]; kpisCles?: string[];
-      }>).map((ax) => `<div class="card" style="border-left:4px solid var(--accent-1);">
-        <div style="font-weight:700;margin-bottom:4px;">${esc(ax.axe ?? "")}</div>
-        <p style="font-size:var(--fs-small);color:var(--text-secondary);margin-bottom:8px;">${esc(ax.description ?? "")}</p>
-        ${(ax.piliersLies ?? []).length > 0 ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;">${(ax.piliersLies ?? []).map((p) => `<span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(p)}</span>`).join("")}</div>` : ""}
-        ${(ax.kpisCles ?? []).length > 0 ? `<div style="font-size:11px;color:var(--text-tertiary);">KPIs : ${(ax.kpisCles ?? []).map((k) => esc(k)).join(", ")}</div>` : ""}
+      ${ctx.axesStrategiques.map((ax) => `<div class="card" style="border-left:4px solid var(--accent-1);">
+        <div style="font-weight:700;margin-bottom:4px;">${esc(ax.axe)}</div>
+        <p style="font-size:var(--fs-small);color:var(--text-secondary);margin-bottom:8px;">${esc(ax.description)}</p>
+        ${ax.piliersLies.length > 0 ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;">${ax.piliersLies.map((p) => `<span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(p)}</span>`).join("")}</div>` : ""}
+        ${ax.kpisCles.length > 0 ? `<div style="font-size:11px;color:var(--text-tertiary);">KPIs : ${ax.kpisCles.map((k) => esc(k)).join(", ")}</div>` : ""}
       </div>`).join("\n")}
     </div>
   </div>`
     : "";
 
-  // ── Sprint 90 Jours Recap ──
-  const sprint90 = (sData as Record<string, unknown>).sprint90Recap as { actions?: Array<{ action?: string; owner?: string; kpi?: string; status?: string }>; summary?: string } | undefined;
-  const sprint90Html = sprint90?.actions && sprint90.actions.length > 0
+  // ── Sprint 90 Jours Recap — properly typed from ctx ──
+  const sprint90 = ctx.sprint90Recap;
+  const sprint90Html = sprint90.actions.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Sprint 90 jours — Récap</h3>
+    <h3 class="sub-title">Sprint 90 jours \u2014 R\u00e9cap</h3>
     ${sprint90.summary ? `<p style="margin-bottom:12px;font-size:var(--fs-small);color:var(--text-secondary);">${esc(sprint90.summary)}</p>` : ""}
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr style="border-bottom:1px solid var(--border-subtle);">
@@ -1243,22 +1763,21 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
         <th style="text-align:left;padding:8px;font-size:12px;">Statut</th>
       </tr></thead>
       <tbody>
-        ${sprint90.actions.map((a) => `<tr style="border-bottom:1px solid var(--border-subtle);">
-          <td style="padding:8px;font-weight:600;">${esc(a.action ?? "")}</td>
-          <td style="padding:8px;color:var(--text-secondary);">${esc(a.owner ?? "")}</td>
-          <td style="padding:8px;color:var(--text-secondary);">${esc(a.kpi ?? "")}</td>
-          <td style="padding:8px;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${(a.status ?? "").toLowerCase().includes("done") || (a.status ?? "").toLowerCase().includes("terminé") ? "rgba(34,197,94,0.15);color:#22C55E" : (a.status ?? "").toLowerCase().includes("progress") || (a.status ?? "").toLowerCase().includes("cours") ? "rgba(245,158,11,0.15);color:#F59E0B" : "rgba(156,163,175,0.15);color:#9CA3AF"}">${esc(a.status ?? "")}</span></td>
+        ${sprint90.actions.map((act) => `<tr style="border-bottom:1px solid var(--border-subtle);">
+          <td style="padding:8px;font-weight:600;">${esc(act.action)}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(act.owner)}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(act.kpi)}</td>
+          <td style="padding:8px;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${act.status.toLowerCase().includes("done") || act.status.toLowerCase().includes("termin\u00e9") ? "rgba(34,197,94,0.15);color:#22C55E" : act.status.toLowerCase().includes("progress") || act.status.toLowerCase().includes("cours") ? "rgba(245,158,11,0.15);color:#F59E0B" : "rgba(156,163,175,0.15);color:#9CA3AF"}">${esc(act.status)}</span></td>
         </tr>`).join("\n")}
       </tbody>
     </table>
   </div>`
     : "";
 
-  // ── KPI Dashboard consolidé ──
-  const kpis = (sData as Record<string, unknown>).kpiDashboard as Array<{ pilier?: string; kpi?: string; cible?: string; statut?: string }> | undefined;
-  const kpiHtml = kpis && kpis.length > 0
+  // ── KPI Dashboard consolidé — properly typed from ctx ──
+  const kpiHtml = ctx.kpiDashboard.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">KPI Dashboard consolidé</h3>
+    <h3 class="sub-title">KPI Dashboard consolid\u00e9</h3>
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr style="border-bottom:1px solid var(--border-subtle);">
         <th style="text-align:left;padding:8px;font-size:12px;">Pilier</th>
@@ -1267,11 +1786,11 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
         <th style="text-align:left;padding:8px;font-size:12px;">Statut</th>
       </tr></thead>
       <tbody>
-        ${kpis.map((k) => `<tr style="border-bottom:1px solid var(--border-subtle);">
-          <td style="padding:8px;"><span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(k.pilier ?? "")}</span></td>
-          <td style="padding:8px;font-weight:600;">${esc(k.kpi ?? "")}</td>
-          <td style="padding:8px;color:var(--text-secondary);">${esc(k.cible ?? "")}</td>
-          <td style="padding:8px;color:var(--text-secondary);">${esc(k.statut ?? "")}</td>
+        ${ctx.kpiDashboard.map((k) => `<tr style="border-bottom:1px solid var(--border-subtle);">
+          <td style="padding:8px;"><span style="background:var(--accent-1-dim);color:var(--accent-1);padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;">${esc(k.pilier)}</span></td>
+          <td style="padding:8px;font-weight:600;">${esc(k.kpi)}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(k.cible)}</td>
+          <td style="padding:8px;color:var(--text-secondary);">${esc(k.statut)}</td>
         </tr>`).join("\n")}
       </tbody>
     </table>
@@ -1279,37 +1798,38 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
     : "";
 
   // ── Activation Summary ──
-  const activationStr = (sData as Record<string, unknown>).activationSummary as string | undefined;
-  const activationHtml = activationStr
+  const activationHtml = ctx.activationSummary
     ? `<div class="sub-section">
-    <h3 class="sub-title">Résumé activation</h3>
+    <h3 class="sub-title">R\u00e9sum\u00e9 activation</h3>
     <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
-      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(activationStr)}</p>
+      <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.activationSummary)}</p>
     </div>
   </div>`
     : "";
 
   // ── Campaigns Summary ──
-  const campSum = (sData as Record<string, unknown>).campaignsSummary as { totalCampaigns?: number; highlights?: string[]; budgetTotal?: string } | undefined;
-  const campSumHtml = campSum && (campSum.totalCampaigns || (campSum.highlights && campSum.highlights.length > 0))
+  const campSum = ctx.campaignsSummary;
+  const campSumHtml = campSum.totalCampaigns > 0 || campSum.highlights.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Résumé campagnes</h3>
+    <h3 class="sub-title">R\u00e9sum\u00e9 campagnes</h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
       ${campSum.totalCampaigns ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Campagnes</div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-1);">${campSum.totalCampaigns}</div></div>` : ""}
       ${campSum.budgetTotal ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Budget total</div><div style="font-size:1.1rem;font-weight:700;color:var(--accent-2);">${esc(campSum.budgetTotal)}</div></div>` : ""}
     </div>
-    ${campSum.highlights && campSum.highlights.length > 0 ? `<ul style="list-style:none;padding:0;margin:0;">${campSum.highlights.map((h) => `<li style="padding:4px 0;color:var(--text-secondary);font-size:var(--fs-small);">&#x2022; ${esc(h)}</li>`).join("")}</ul>` : ""}
+    ${campSum.highlights.length > 0 ? `<ul style="list-style:none;padding:0;margin:0;">${campSum.highlights.map((h) => `<li style="padding:4px 0;color:var(--text-secondary);font-size:var(--fs-small);">&#x2022; ${esc(h)}</li>`).join("")}</ul>` : ""}
   </div>`
     : "";
+
+  const allParts = [syntheseHtml, visionHtml, axesHtml, coherenceHtml, facteursHtml, recoHtml, sprint90Html, kpiHtml, campSumHtml, activationHtml, templatesHtml, calendarHtml, budgetHtml, funnelHtml];
 
   return `<section id="strategie">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.8), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">S — Synthèse Stratégique</div>
-      <h1>Synthèse &amp; Plan d'attaque</h1>
-      <p class="section-summary">Vision stratégique, cohérence inter-piliers, recommandations prioritaires, campagnes et budget.</p>
+      <div class="section-tag">S \u2014 Synth\u00e8se Strat\u00e9gique</div>
+      <h1>Synth\u00e8se &amp; Plan d'attaque</h1>
+      <p class="section-summary">Vision strat\u00e9gique, coh\u00e9rence inter-piliers, recommandations prioritaires, campagnes et budget.</p>
     </div>
   </div>
   ${syntheseHtml}
@@ -1326,6 +1846,13 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
   ${calendarHtml}
   ${budgetHtml}
   ${funnelHtml}
+  ${allParts.every(p => !p)
+    ? emptyPillarFallback("S", [
+        { icon: "\uD83C\uDFAF", label: "Vision strat\u00e9gique", desc: "Vision \u00e0 long terme \u00e0 formuler" },
+        { icon: "\uD83D\uDD17", label: "Coh\u00e9rence", desc: "Liens inter-piliers \u00e0 \u00e9tablir" },
+        { icon: "\u26A1", label: "Recommandations", desc: "Actions prioritaires \u00e0 d\u00e9finir" },
+      ])
+    : ""}
 </section>`;
 }
 
@@ -1334,26 +1861,28 @@ function buildSectionS(impl: ImplementationData, sData: SynthesePillarData, curr
 // ---------------------------------------------------------------------------
 
 function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
+  // Safe access — deep merge guarantees nested objects, but belt-and-suspenders
+  const id = a.identite ?? { archetype: "", citationFondatrice: "", noyauIdentitaire: "" };
   const identityHtml = `<div class="sub-section">
     <h3 class="sub-title">Identité de marque</h3>
     <div class="grid-3">
       <div class="card" style="border-top:3px solid var(--accent-1);">
         <div class="micro-text mb-2">Archétype</div>
-        <div style="font-family:'Outfit';font-weight:800;font-size:1.3rem;color:var(--accent-1);">${esc(a.identite.archetype || "—")}</div>
+        <div style="font-family:'Outfit';font-weight:800;font-size:1.3rem;color:var(--accent-1);">${esc(id.archetype || "À définir")}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent-2);">
         <div class="micro-text mb-2">Noyau identitaire</div>
-        <div style="font-size:var(--fs-small);line-height:1.7;">${esc(a.identite.noyauIdentitaire || "—")}</div>
+        <div style="font-size:var(--fs-small);line-height:1.7;">${esc(id.noyauIdentitaire || "En cours d'analyse")}</div>
       </div>
       <div class="card" style="border-top:3px solid var(--accent-3);">
         <div class="micro-text mb-2">Citation fondatrice</div>
-        <div style="font-style:italic;color:var(--text-secondary);font-size:var(--fs-small);">"${esc(a.identite.citationFondatrice || "—")}"</div>
+        <div style="font-style:italic;color:var(--text-secondary);font-size:var(--fs-small);">"${esc(id.citationFondatrice || "Citation à intégrer")}"</div>
       </div>
     </div>
   </div>`;
 
-  // Hero's Journey
-  const journey = a.herosJourney;
+  // Hero's Journey — safe access
+  const journey = a.herosJourney ?? { acte1Origines: "", acte2Appel: "", acte3Epreuves: "", acte4Transformation: "", acte5Revelation: "" };
   const acts = [
     { label: "Origines", text: journey.acte1Origines },
     { label: "L'Appel", text: journey.acte2Appel },
@@ -1377,13 +1906,13 @@ function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Values
+  // Values (Schwartz framework)
   const valuesHtml =
-    a.valeurs.length > 0
+    (a.valeurs?.length ?? 0) > 0
       ? `<div class="sub-section">
-    <h3 class="sub-title">Valeurs fondatrices</h3>
+    <h3 class="sub-title">Valeurs fondatrices <span style="font-size:0.7em;font-weight:400;color:var(--text-tertiary);">(Mod\u00e8le de Schwartz)</span></h3>
     <div class="grid-3">
-      ${a.valeurs
+      ${(a.valeurs ?? [])
         .map(
           (v) =>
             `<div class="card"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><span class="mono" style="font-size:1.2rem;font-weight:800;color:var(--accent-1);">#${v.rang}</span><span style="font-family:'Outfit';font-weight:700;">${esc(v.valeur)}</span></div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(v.justification)}</p></div>`,
@@ -1395,11 +1924,11 @@ function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
 
   // Community Hierarchy
   const hierarchyHtml =
-    a.hierarchieCommunautaire.length > 0
+    (a.hierarchieCommunautaire?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Hiérarchie communautaire</h3>
     <div class="hierarchy-levels">
-      ${a.hierarchieCommunautaire
+      ${(a.hierarchieCommunautaire ?? [])
         .map(
           (h) =>
             `<div class="hierarchy-level"><span class="hl-rank">${h.niveau}</span><span class="hl-name">${esc(h.nom)}</span><span class="hl-desc">${esc(h.description)}</span><span class="hl-priv">${esc(h.privileges)}</span></div>`,
@@ -1431,18 +1960,35 @@ function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
 // ---------------------------------------------------------------------------
 
 function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
-  // Personas
+  // Personas — with generated avatar initials
+  const personaGradients = [
+    "linear-gradient(135deg, var(--accent-1), #e07a5f)",
+    "linear-gradient(135deg, var(--accent-2), #5fba7d)",
+    "linear-gradient(135deg, #6366f1, #8b5cf6)",
+    "linear-gradient(135deg, #f59e0b, #ef4444)",
+    "linear-gradient(135deg, #06b6d4, #3b82f6)",
+  ];
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0]![0] ?? "").toUpperCase() + (parts[1]![0] ?? "").toUpperCase();
+    return (name[0] ?? "?").toUpperCase();
+  };
   const personasHtml =
-    d.personas.length > 0
+    (d.personas?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Personas</h3>
     <div class="grid-3">
-      ${d.personas
+      ${(d.personas ?? [])
         .map(
-          (p) => `<div class="persona-card">
+          (p, idx) => `<div class="persona-card">
         <div class="persona-body">
-          <div class="persona-priority" style="color:var(--accent-1);">Priorité ${p.priorite}</div>
-          <h3>${esc(p.nom)}</h3>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:${personaGradients[idx % personaGradients.length]};display:flex;align-items:center;justify-content:center;font-family:'Outfit';font-weight:700;font-size:1.1rem;color:white;flex-shrink:0;">${getInitials(p.nom)}</div>
+            <div>
+              <div class="persona-priority" style="color:var(--accent-1);margin-bottom:2px;">Priorit\u00e9 ${p.priorite}</div>
+              <h3 style="margin:0;">${esc(p.nom)}</h3>
+            </div>
+          </div>
           <div class="persona-demo">${esc(p.demographie)}</div>
           ${p.psychographie ? `<div class="persona-detail-row"><span class="pdr-label">Psycho</span><span class="pdr-val">${esc(p.psychographie)}</span></div>` : ""}
           ${p.motivations ? `<div class="persona-detail-row"><span class="pdr-label">Motivations</span><span class="pdr-val">${esc(p.motivations)}</span></div>` : ""}
@@ -1463,21 +2009,22 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
   </div>`
     : "";
 
-  // Tone of voice
+  // Tone of voice — safe access
+  const ton = d.tonDeVoix ?? { personnalite: "", onDit: [], onNeditPas: [] };
   const tonHtml =
-    d.tonDeVoix.personnalite || d.tonDeVoix.onDit.length > 0
+    ton.personnalite || (ton.onDit?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Ton de voix</h3>
-    ${d.tonDeVoix.personnalite ? `<div class="card mb-3"><div class="micro-text mb-2">Personnalité</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(d.tonDeVoix.personnalite)}</p></div>` : ""}
+    ${ton.personnalite ? `<div class="card mb-3"><div class="micro-text mb-2">Personnalité</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(ton.personnalite)}</p></div>` : ""}
     <div class="grid-2">
-      ${d.tonDeVoix.onDit.length > 0 ? `<div class="card" style="border-top:3px solid var(--score-excellent);"><div class="micro-text mb-2" style="color:var(--score-excellent);">✓ On dit</div><ul style="list-style:none;">${d.tonDeVoix.onDit.map((s) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(s)}</li>`).join("")}</ul></div>` : ""}
-      ${d.tonDeVoix.onNeditPas.length > 0 ? `<div class="card" style="border-top:3px solid var(--risk-high);"><div class="micro-text mb-2" style="color:var(--risk-high);">✗ On ne dit pas</div><ul style="list-style:none;">${d.tonDeVoix.onNeditPas.map((s) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(s)}</li>`).join("")}</ul></div>` : ""}
+      ${(ton.onDit?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--score-excellent);"><div class="micro-text mb-2" style="color:var(--score-excellent);">✓ On dit</div><ul style="list-style:none;">${(ton.onDit ?? []).map((s) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(s)}</li>`).join("")}</ul></div>` : ""}
+      ${(ton.onNeditPas?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--risk-high);"><div class="micro-text mb-2" style="color:var(--risk-high);">✗ On ne dit pas</div><ul style="list-style:none;">${(ton.onNeditPas ?? []).map((s) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(s)}</li>`).join("")}</ul></div>` : ""}
     </div>
   </div>`
       : "";
 
-  // Competitors
-  const concurrents = d.paysageConcurrentiel.concurrents;
+  // Competitors — safe access
+  const concurrents = d.paysageConcurrentiel?.concurrents ?? [];
   const compHtml =
     concurrents.length > 0
       ? `<div class="sub-section">
@@ -1493,6 +2040,13 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
   </div>`
       : "";
 
+  const dParts = [personasHtml, posHtml, tonHtml, compHtml];
+  const dFallback = dParts.every(p => !p) ? emptyPillarFallback("D", [
+    { icon: "👥", label: "Personas", desc: "Profils cibles à définir" },
+    { icon: "🎯", label: "Positionnement", desc: "Statement à formuler" },
+    { icon: "🗣️", label: "Ton de voix", desc: "Charte éditoriale à créer" },
+  ]) : "";
+
   return `<section id="distinction">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
@@ -1507,6 +2061,7 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
   ${posHtml}
   ${tonHtml}
   ${compHtml}
+  ${dFallback}
 </section>`;
 }
 
@@ -1515,17 +2070,24 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
 // ---------------------------------------------------------------------------
 
 function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string): string {
-  // Product Ladder
+  // Strip existing currency symbols/codes from price strings to avoid duplication
+  const cleanPrice = (prix: string) => {
+    return prix
+      .replace(/\s*(FCFA|XOF|XAF|EUR|\u20AC|USD|\$|GBP|\u00A3|MAD|DH|TND|DT)\s*/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+  // Product Ladder — safe access
   const ladderHtml =
-    v.productLadder.length > 0
+    (v.productLadder?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Product Ladder</h3>
     <div class="ladder-row">
-      ${v.productLadder
+      ${(v.productLadder ?? [])
         .map(
           (tier) => `<div class="ladder-step">
         <div class="ladder-name">${esc(tier.tier)}</div>
-        <div class="ladder-price">${esc(tier.prix)} ${esc(currency)}</div>
+        <div class="ladder-price">${esc(cleanPrice(tier.prix))} ${esc(currency)}</div>
         <div class="ladder-target">${esc(tier.cible)}</div>
         <div class="ladder-desc">${esc(tier.description)}</div>
       </div>`,
@@ -1535,8 +2097,8 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
   </div>`
       : "";
 
-  // Unit Economics
-  const ue = v.unitEconomics;
+  // Unit Economics — safe access
+  const ue = v.unitEconomics ?? { cac: "", ltv: "", ratio: "", pointMort: "", marges: "", notes: "" };
   const ueHtml =
     ue.cac || ue.ltv
       ? `<div class="sub-section">
@@ -1552,30 +2114,38 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
   </div>`
       : "";
 
-  // Value Brand
-  const brandVal = v.valeurMarque;
+  // Value Brand — safe access
+  const brandVal = v.valeurMarque ?? { tangible: [], intangible: [] };
   const brandValHtml =
-    brandVal.tangible.length > 0 || brandVal.intangible.length > 0
+    (brandVal.tangible?.length ?? 0) > 0 || (brandVal.intangible?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Création de valeur</h3>
     <div class="grid-2">
-      ${brandVal.tangible.length > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Tangible</div><ul style="list-style:none;">${brandVal.tangible.map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
-      ${brandVal.intangible.length > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Intangible</div><ul style="list-style:none;">${brandVal.intangible.map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(brandVal.tangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Tangible</div><ul style="list-style:none;">${(brandVal.tangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(brandVal.intangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Intangible</div><ul style="list-style:none;">${(brandVal.intangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
     </div>
   </div>`
       : "";
 
-  // Cost structure
+  // Cost structure — safe access
+  const cm = v.coutMarque ?? { capex: "", opex: "", coutsCaches: [] };
   const costHtml =
-    v.coutMarque.capex || v.coutMarque.opex
+    cm.capex || cm.opex
       ? `<div class="sub-section">
     <h3 class="sub-title">Structure de coûts</h3>
     <div class="grid-2">
-      ${v.coutMarque.capex ? `<div class="card"><div class="micro-text mb-2">CAPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(v.coutMarque.capex)}</p></div>` : ""}
-      ${v.coutMarque.opex ? `<div class="card"><div class="micro-text mb-2">OPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(v.coutMarque.opex)}</p></div>` : ""}
+      ${cm.capex ? `<div class="card"><div class="micro-text mb-2">CAPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(cm.capex)}</p></div>` : ""}
+      ${cm.opex ? `<div class="card"><div class="micro-text mb-2">OPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(cm.opex)}</p></div>` : ""}
     </div>
   </div>`
       : "";
+
+  const vParts = [ladderHtml, ueHtml, brandValHtml, costHtml];
+  const vFallback = vParts.every(p => !p) ? emptyPillarFallback("V", [
+    { icon: "📦", label: "Product Ladder", desc: "Gamme de produits à structurer" },
+    { icon: "📈", label: "Unit Economics", desc: "LTV, CAC et marges à calculer" },
+    { icon: "💎", label: "Valeur de marque", desc: "Actifs tangibles et intangibles à évaluer" },
+  ]) : "";
 
   return `<section id="valeur">
   <div class="section-hero" style="background:var(--bg-surface);">
@@ -1591,6 +2161,7 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
   ${ueHtml}
   ${brandValHtml}
   ${costHtml}
+  ${vFallback}
 </section>`;
 }
 
@@ -1599,13 +2170,13 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
 // ---------------------------------------------------------------------------
 
 function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
-  // KPIs
+  // KPIs — safe access
   const kpisHtml =
-    e.kpis.length > 0
+    (e.kpis?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">KPIs</h3>
     <div class="grid-4">
-      ${e.kpis
+      ${(e.kpis ?? [])
         .map(
           (k) =>
             `<div class="kpi-card"><div class="kpi-label">${esc(k.nom || k.variable)}</div><div class="kpi-value" style="color:var(--accent-1);">${esc(k.cible)}</div><div class="kpi-freq">${esc(k.frequence)}</div></div>`,
@@ -1615,13 +2186,13 @@ function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Rituals
+  // Rituals — safe access
   const ritualsHtml =
-    e.rituels.length > 0
+    (e.rituels?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Rituels</h3>
     <div class="grid-3">
-      ${e.rituels
+      ${(e.rituels ?? [])
         .map(
           (rit) =>
             `<div class="card"><div class="card-badge" style="margin-bottom:12px;${rit.type === "always-on" ? "background:rgba(46,213,115,0.15);color:#2ED573;" : "background:rgba(255,165,2,0.15);color:#FFA502;"}">${esc(rit.type)}</div><h4 style="margin-bottom:6px;">${esc(rit.nom)}</h4><p style="font-size:var(--fs-small);color:var(--text-secondary);margin-bottom:4px;">${esc(rit.description)}</p><div style="font-size:var(--fs-micro);color:var(--text-tertiary);">${esc(rit.frequence)}</div></div>`,
@@ -1631,13 +2202,13 @@ function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Gamification
+  // Gamification — safe access
   const gamifHtml =
-    e.gamification.length > 0
+    (e.gamification?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Gamification</h3>
     <div class="gamif-levels">
-      ${e.gamification
+      ${(e.gamification ?? [])
         .map(
           (g) =>
             `<div class="gamif-level"><div class="gamif-num">${g.niveau}</div><div class="gamif-name">${esc(g.nom)}</div><div class="gamif-cond">${esc(g.condition)}</div><div class="gamif-reward">${esc(g.recompense)}</div></div>`,
@@ -1647,27 +2218,35 @@ function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Community principles
+  // Community principles — safe access
+  const pc = e.principesCommunautaires ?? { principes: [], tabous: [] };
   const communityHtml =
-    e.principesCommunautaires.principes.length > 0
+    (pc.principes?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Principes communautaires</h3>
     <div class="grid-2">
       <div class="card" style="border-top:3px solid var(--score-excellent);">
         <div class="micro-text mb-2" style="color:var(--score-excellent);">Principes</div>
-        <ul style="list-style:none;">${e.principesCommunautaires.principes.map((p) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(p)}</li>`).join("")}</ul>
+        <ul style="list-style:none;">${(pc.principes ?? []).map((p) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(p)}</li>`).join("")}</ul>
       </div>
       ${
-        e.principesCommunautaires.tabous.length > 0
+        (pc.tabous?.length ?? 0) > 0
           ? `<div class="card" style="border-top:3px solid var(--risk-high);">
         <div class="micro-text mb-2" style="color:var(--risk-high);">Tabous</div>
-        <ul style="list-style:none;">${e.principesCommunautaires.tabous.map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul>
+        <ul style="list-style:none;">${(pc.tabous ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul>
       </div>`
           : ""
       }
     </div>
   </div>`
       : "";
+
+  const eParts = [kpisHtml, ritualsHtml, gamifHtml, communityHtml];
+  const eFallback = eParts.every(p => !p) ? emptyPillarFallback("E", [
+    { icon: "📊", label: "KPIs", desc: "Indicateurs de performance à définir" },
+    { icon: "🔄", label: "Rituels", desc: "Rituels d'engagement à créer" },
+    { icon: "🎮", label: "Gamification", desc: "Mécaniques de jeu à imaginer" },
+  ]) : "";
 
   return `<section id="engagement">
   <div class="section-hero" style="background:var(--bg-surface);">
@@ -1683,6 +2262,7 @@ function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
   ${ritualsHtml}
   ${gamifHtml}
   ${communityHtml}
+  ${eFallback}
 </section>`;
 }
 
@@ -1691,27 +2271,28 @@ function buildSectionE(e: EngagementPillarData, imageUrl?: string): string {
 // ---------------------------------------------------------------------------
 
 function buildSectionR(r: RiskAuditResult, imageUrl?: string): string {
-  // Global SWOT
-  const gs = r.globalSwot;
-  const swotHtml = `<div class="sub-section">
+  // Global SWOT — only render if at least one quadrant has data
+  const gs = r.globalSwot ?? { strengths: [], weaknesses: [], opportunities: [], threats: [] };
+  const hasSwot = (gs.strengths?.length ?? 0) + (gs.weaknesses?.length ?? 0) + (gs.opportunities?.length ?? 0) + (gs.threats?.length ?? 0) > 0;
+  const swotHtml = hasSwot ? `<div class="sub-section">
     <h3 class="sub-title">SWOT Globale</h3>
     <div class="swot-grid">
-      <div class="swot-cell swot-strengths"><h4>💪 Forces</h4><ul>${gs.strengths.map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>
-      <div class="swot-cell swot-weaknesses"><h4>⚠️ Faiblesses</h4><ul>${gs.weaknesses.map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>
-      <div class="swot-cell swot-opportunities"><h4>🌟 Opportunités</h4><ul>${gs.opportunities.map((o) => `<li>${esc(o)}</li>`).join("")}</ul></div>
-      <div class="swot-cell swot-threats"><h4>🔥 Menaces</h4><ul>${gs.threats.map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
+      <div class="swot-cell swot-strengths"><h4>💪 Forces</h4><ul>${(gs.strengths ?? []).map((s) => `<li>${esc(s)}</li>`).join("")}</ul></div>
+      <div class="swot-cell swot-weaknesses"><h4>⚠️ Faiblesses</h4><ul>${(gs.weaknesses ?? []).map((w) => `<li>${esc(w)}</li>`).join("")}</ul></div>
+      <div class="swot-cell swot-opportunities"><h4>🌟 Opportunités</h4><ul>${(gs.opportunities ?? []).map((o) => `<li>${esc(o)}</li>`).join("")}</ul></div>
+      <div class="swot-cell swot-threats"><h4>🔥 Menaces</h4><ul>${(gs.threats ?? []).map((t) => `<li>${esc(t)}</li>`).join("")}</ul></div>
     </div>
-  </div>`;
+  </div>` : "";
 
-  // Risk matrix
+  // Risk matrix — safe access
   const matrixHtml =
-    r.probabilityImpactMatrix.length > 0
+    (r.probabilityImpactMatrix?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Matrice probabilité × impact</h3>
     <table class="risk-matrix-table">
       <thead><tr><th>Risque</th><th>Probabilité</th><th>Impact</th><th>Priorité</th></tr></thead>
       <tbody>
-        ${r.probabilityImpactMatrix
+        ${(r.probabilityImpactMatrix ?? [])
           .map(
             (row) =>
               `<tr><td style="font-weight:600;">${esc(row.risk)}</td><td><span class="card-badge ${badgeClass(row.probability)}">${esc(row.probability)}</span></td><td><span class="card-badge ${badgeClass(row.impact)}">${esc(row.impact)}</span></td><td class="mono" style="font-weight:700;color:var(--accent-1);">${row.priority}/5</td></tr>`,
@@ -1722,13 +2303,13 @@ function buildSectionR(r: RiskAuditResult, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Mitigation
+  // Mitigation — safe access
   const mitigHtml =
-    r.mitigationPriorities.length > 0
+    (r.mitigationPriorities?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Plan de mitigation</h3>
     <div style="display:flex;flex-direction:column;gap:12px;">
-      ${r.mitigationPriorities
+      ${(r.mitigationPriorities ?? [])
         .map(
           (m) =>
             `<div class="card" style="border-left:3px solid ${riskColor(m.effort)};"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><span style="font-weight:700;">${esc(m.risk)}</span><span class="card-badge ${badgeClass(m.urgency === "immediate" ? "high" : m.urgency === "short_term" ? "medium" : "low")}">${esc(m.urgency)}</span></div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(m.action)}</p></div>`,
@@ -1759,10 +2340,10 @@ function buildSectionR(r: RiskAuditResult, imageUrl?: string): string {
 // ---------------------------------------------------------------------------
 
 function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
-  // TAM/SAM/SOM
-  const tss = t.tamSamSom;
+  // TAM/SAM/SOM — safe access for nested objects
+  const tss = t.tamSamSom ?? { tam: { value: "", description: "" }, sam: { value: "", description: "" }, som: { value: "", description: "" }, methodology: "" };
   const tamHtml =
-    tss.tam.value || tss.sam.value || tss.som.value
+    tss.tam?.value || tss.sam?.value || tss.som?.value
       ? `<div class="sub-section">
     <h3 class="sub-title">TAM / SAM / SOM</h3>
     <div class="tam-circles">
@@ -1774,26 +2355,27 @@ function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
   </div>`
       : "";
 
-  // Trends
+  // Trends — safe access
+  const mr = t.marketReality ?? { macroTrends: [], weakSignals: [], emergingPatterns: [] };
   const trendsHtml =
-    t.marketReality.macroTrends.length > 0
+    (mr.macroTrends?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Tendances marché</h3>
     <div class="grid-3">
-      ${t.marketReality.macroTrends.length > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Macro-tendances</div><ul style="list-style:none;">${t.marketReality.macroTrends.map((tr) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(tr)}</li>`).join("")}</ul></div>` : ""}
-      ${t.marketReality.weakSignals.length > 0 ? `<div class="card" style="border-top:3px solid var(--risk-medium);"><div class="micro-text mb-2">Signaux faibles</div><ul style="list-style:none;">${t.marketReality.weakSignals.map((ws) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(ws)}</li>`).join("")}</ul></div>` : ""}
-      ${t.marketReality.emergingPatterns.length > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Patterns émergents</div><ul style="list-style:none;">${t.marketReality.emergingPatterns.map((ep) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(ep)}</li>`).join("")}</ul></div>` : ""}
+      ${(mr.macroTrends?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Macro-tendances</div><ul style="list-style:none;">${(mr.macroTrends ?? []).map((tr) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(tr)}</li>`).join("")}</ul></div>` : ""}
+      ${(mr.weakSignals?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--risk-medium);"><div class="micro-text mb-2">Signaux faibles</div><ul style="list-style:none;">${(mr.weakSignals ?? []).map((ws) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(ws)}</li>`).join("")}</ul></div>` : ""}
+      ${(mr.emergingPatterns?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Patterns émergents</div><ul style="list-style:none;">${(mr.emergingPatterns ?? []).map((ep) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(ep)}</li>`).join("")}</ul></div>` : ""}
     </div>
   </div>`
       : "";
 
   // Hypothesis validation
   const hypoHtml =
-    t.hypothesisValidation.length > 0
+    (t.hypothesisValidation?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Validation des hypothèses</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      ${t.hypothesisValidation
+      ${(t.hypothesisValidation ?? [])
         .map(
           (h) =>
             `<div class="card" style="display:flex;align-items:flex-start;gap:14px;"><span class="card-badge badge-${h.status === "validated" ? "validated" : h.status === "invalidated" ? "risk-high" : "to-test"}" style="flex-shrink:0;margin-top:2px;">${esc(h.status)}</span><div><p style="font-weight:600;font-size:var(--fs-small);margin-bottom:4px;">${esc(h.hypothesis)}</p><p style="font-size:var(--fs-micro);color:var(--text-tertiary);">${esc(h.evidence)}</p></div></div>`,
@@ -1805,14 +2387,21 @@ function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
 
   // Recommendations
   const recoHtml =
-    t.strategicRecommendations.length > 0
+    (t.strategicRecommendations?.length ?? 0) > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Recommandations stratégiques</h3>
     <div style="display:flex;flex-direction:column;gap:8px;">
-      ${t.strategicRecommendations.map((rec, i) => `<div class="card" style="border-left:3px solid var(--accent-1);"><span class="mono" style="color:var(--accent-1);font-weight:700;margin-right:8px;">${i + 1}.</span>${esc(rec)}</div>`).join("\n")}
+      ${(t.strategicRecommendations ?? []).map((rec, i) => `<div class="card" style="border-left:3px solid var(--accent-1);"><span class="mono" style="color:var(--accent-1);font-weight:700;margin-right:8px;">${i + 1}.</span>${esc(rec)}</div>`).join("\n")}
     </div>
   </div>`
       : "";
+
+  const tParts = [tamHtml, trendsHtml, hypoHtml, recoHtml];
+  const tFallback = tParts.every(p => !p) ? emptyPillarFallback("T", [
+    { icon: "🌍", label: "TAM/SAM/SOM", desc: "Dimensionnement marché à calculer" },
+    { icon: "📡", label: "Signaux faibles", desc: "Tendances à surveiller" },
+    { icon: "🧪", label: "Hypothèses", desc: "Validation terrain à lancer" },
+  ]) : "";
 
   return `<section id="track">
   <div class="section-hero" style="background:var(--bg-surface);">
@@ -1821,13 +2410,14 @@ function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
     <div class="section-hero-content">
       <div class="section-tag">T — Track</div>
       <h1>Validation marché</h1>
-      <p class="section-summary">Brand-Market Fit : <strong style="color:${scoreColor(t.brandMarketFitScore)}">${t.brandMarketFitScore}/100</strong> — ${esc(t.summary || "")}</p>
+      <p class="section-summary">Brand-Market Fit : <strong style="color:${scoreColor(t.brandMarketFitScore)}">${t.brandMarketFitScore}/100</strong> — ${esc(t.summary || "Analyse en cours")}</p>
     </div>
   </div>
   ${tamHtml}
   ${trendsHtml}
   ${hypoHtml}
   ${recoHtml}
+  ${tFallback}
 </section>`;
 }
 
@@ -1835,69 +2425,189 @@ function buildSectionT(t: TrackAuditResult, imageUrl?: string): string {
 // I — Implémentation
 // ---------------------------------------------------------------------------
 
-function buildSectionI(impl: ImplementationData, currency: string, imageUrl?: string): string {
-  // Sprint 90 days
+function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: string): string {
+  // Sprint 90 — uses resolved actions (already fallback-resolved via ctx)
   const sprintHtml =
-    impl.strategicRoadmap.sprint90Days.length > 0
+    !ctx.sprint90IsDefault && ctx.sprint90Actions.length > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Sprint 90 jours</h3>
     <div style="display:flex;flex-direction:column;gap:10px;">
-      ${impl.strategicRoadmap.sprint90Days
+      ${ctx.sprint90Actions
         .map(
           (act) =>
-            `<div class="card" style="display:flex;align-items:flex-start;gap:14px;"><span class="card-badge badge-p0" style="flex-shrink:0;">Action</span><div><p style="font-weight:600;font-size:var(--fs-small);">${esc(act.action)}</p><div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:4px;">Owner: ${esc(act.owner)} · KPI: ${esc(act.kpi)}</div></div></div>`,
+            `<div class="card" style="display:flex;align-items:flex-start;gap:14px;"><span class="card-badge badge-p0" style="flex-shrink:0;">Action</span><div><p style="font-weight:600;font-size:var(--fs-small);">${esc(act.action)}</p><div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:4px;">Owner: ${esc(act.owner)} \u00b7 KPI: ${esc(act.kpi)}</div></div></div>`,
         )
         .join("\n")}
     </div>
   </div>`
       : "";
 
-  // Year 1 + Year 3
-  const visionHtml = `<div class="sub-section">
-    <h3 class="sub-title">Vision stratégique</h3>
+  // Year 1 + Year 3 — from resolved context
+  const hasYear1 = ctx.year1Priorities.length > 0;
+  const hasYear3 = !!ctx.visionStrategique;
+  const visionHtml = (hasYear1 || hasYear3) ? `<div class="sub-section">
+    <h3 class="sub-title">Vision strat\u00e9gique</h3>
     <div class="grid-2">
       ${
-        impl.strategicRoadmap.year1Priorities.length > 0
+        hasYear1
           ? `<div class="card" style="border-top:3px solid var(--accent-1);">
-        <div class="micro-text mb-2">Année 1 — Priorités</div>
-        <ul style="list-style:none;">${impl.strategicRoadmap.year1Priorities.map((p) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(p)}</li>`).join("")}</ul>
+        <div class="micro-text mb-2">Ann\u00e9e 1 \u2014 Priorit\u00e9s</div>
+        <ul style="list-style:none;">${ctx.year1Priorities.map((p) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">\u2022 ${esc(p)}</li>`).join("")}</ul>
       </div>`
           : ""
       }
       ${
-        impl.strategicRoadmap.year3Vision
+        hasYear3
           ? `<div class="card" style="border-top:3px solid var(--accent-3);">
         <div class="micro-text mb-2">Vision 3 ans</div>
-        <p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(impl.strategicRoadmap.year3Vision)}</p>
+        <p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(ctx.visionStrategique)}</p>
       </div>`
           : ""
       }
     </div>
-  </div>`;
+  </div>` : "";
 
-  // Executive Summary
-  const summaryHtml = impl.executiveSummary
+  // Executive Summary — from resolved context
+  const summaryHtml = ctx.executiveSummary
     ? `<div class="sub-section">
     <div class="card" style="background:linear-gradient(135deg, var(--accent-1-dim), var(--bg-card));border:1px solid var(--accent-1);padding:32px;">
-      <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synthèse exécutive</div>
-      <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(impl.executiveSummary)}</p>
+      <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synth\u00e8se ex\u00e9cutive</div>
+      <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(ctx.executiveSummary)}</p>
     </div>
   </div>`
     : "";
+
+  // Campaigns — Annual Calendar (from ctx.campaigns)
+  const calendarItems = ctx.campaigns?.annualCalendar?.filter((c) => c.mois || c.campagne) ?? [];
+  const calendarHtml = calendarItems.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Calendrier annuel des campagnes</h3>
+    <div style="overflow-x:auto;">
+      <table class="cal-table">
+        <thead><tr><th>Mois</th><th>Campagne</th><th>Objectif</th><th>Canaux</th><th>Budget</th><th>KPI cible</th></tr></thead>
+        <tbody>
+          ${calendarItems.map((c) => `<tr>
+            <td class="cal-mois">${esc(c.mois)}</td>
+            <td style="font-weight:600;">${esc(c.campagne)}</td>
+            <td style="color:var(--text-secondary);">${esc(c.objectif)}</td>
+            <td>${c.canaux.length > 0 ? `<div class="cal-canaux">${c.canaux.map((ch) => `<span class="cal-canal">${esc(ch)}</span>`).join("")}</div>` : "\u2014"}</td>
+            <td class="mono" style="color:var(--accent-1);">${esc(c.budget) || "\u2014"}</td>
+            <td style="color:var(--text-secondary);">${esc(c.kpiCible) || "\u2014"}</td>
+          </tr>`).join("\n")}
+        </tbody>
+      </table>
+    </div>
+  </div>`
+    : "";
+
+  // Campaigns — Templates
+  const templates = ctx.campaigns?.templates?.filter((tpl) => tpl.nom) ?? [];
+  const templatesHtml = templates.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Templates de campagne</h3>
+    <div class="grid-2">
+      ${templates.map((tpl) => `<div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="card-badge" style="background:rgba(99,102,241,0.15);color:#818cf8;">${esc(tpl.type)}</span>
+          <span style="font-weight:700;font-size:var(--fs-small);">${esc(tpl.nom)}</span>
+        </div>
+        <p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">${esc(tpl.description)}</p>
+        ${tpl.duree ? `<div style="font-size:var(--fs-micro);color:var(--text-tertiary);">Dur\u00e9e: ${esc(tpl.duree)}</div>` : ""}
+        ${tpl.canauxPrincipaux.length > 0 ? `<div class="cal-canaux" style="margin-top:8px;">${tpl.canauxPrincipaux.map((ch) => `<span class="cal-canal">${esc(ch)}</span>`).join("")}</div>` : ""}
+        ${tpl.messagesCles.length > 0 ? `<div style="margin-top:8px;"><div class="micro-text" style="margin-bottom:4px;">Messages cl\u00e9s</div><ul style="list-style:none;">${tpl.messagesCles.map((m) => `<li style="font-size:var(--fs-small);padding:2px 0;color:var(--text-secondary);">\u2022 ${esc(m)}</li>`).join("")}</ul></div>` : ""}
+      </div>`).join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // Campaigns — Activation Plan (4 phases)
+  const ap = ctx.campaigns?.activationPlan;
+  const activationPhases = [
+    { label: "Phase 1 \u2014 Teasing", desc: ap?.phase1Teasing ?? "" },
+    { label: "Phase 2 \u2014 Lancement", desc: ap?.phase2Lancement ?? "" },
+    { label: "Phase 3 \u2014 Amplification", desc: ap?.phase3Amplification ?? "" },
+    { label: "Phase 4 \u2014 Fid\u00e9lisation", desc: ap?.phase4Fidelisation ?? "" },
+  ].filter((p) => p.desc.trim().length > 0);
+  const activationHtml = activationPhases.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Plan d\u2019activation</h3>
+    <div class="activation-grid">
+      ${activationPhases.map((p) => `<div class="activation-card">
+        <div class="ac-phase">${esc(p.label)}</div>
+        <div class="ac-desc">${esc(p.desc)}</div>
+      </div>`).join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // Budget — Par Phase
+  const phases = ctx.budgetAllocation?.parPhase?.filter((p) => p.phase || p.montant) ?? [];
+  const phasesHtml = phases.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Budget par phase</h3>
+    <div class="phase-timeline">
+      ${phases.map((p) => `<div class="phase-row">
+        <div class="ph-name">${esc(p.phase)}</div>
+        <div class="ph-focus">${esc(p.focus)}</div>
+        <div class="ph-montant">${esc(p.montant)}</div>
+      </div>`).join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // ROI Projections
+  const roi = ctx.budgetAllocation?.roiProjections;
+  const roiEntries = [
+    { period: "6 mois", val: roi?.mois6 ?? "" },
+    { period: "12 mois", val: roi?.mois12 ?? "" },
+    { period: "24 mois", val: roi?.mois24 ?? "" },
+  ].filter((entry) => entry.val.trim().length > 0);
+  const roiHtml = roiEntries.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Projections ROI</h3>
+    <div class="roi-grid">
+      ${roiEntries.map((entry) => `<div class="roi-card">
+        <div class="roi-period">${esc(entry.period)}</div>
+        <div class="roi-val">${esc(entry.val)}</div>
+      </div>`).join("\n")}
+    </div>
+    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypoth\u00e8ses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
+  </div>`
+    : "";
+
+  // Count sub-sections
+  const allParts = [sprintHtml, visionHtml, calendarHtml, templatesHtml, activationHtml, phasesHtml, roiHtml, summaryHtml];
+  const subSectionCount = allParts.filter(Boolean).length;
+  const summaryText = subSectionCount > 3
+    ? "Roadmap compl\u00e8te : sprint 90 jours, calendrier campagnes, plan d\u2019activation, projections ROI."
+    : "Sprint 90 jours, vision strat\u00e9gique et synth\u00e8se ex\u00e9cutive.";
+
+  // Fallback when all sub-sections are empty
+  const fallbackHtml = subSectionCount === 0 ? emptyPillarFallback("I", [
+    { icon: "\uD83D\uDCC5\uFE0F", label: "Sprint 90 jours", desc: "Actions prioritaires \u00e0 d\u00e9finir" },
+    { icon: "\uD83D\uDCCA", label: "Calendrier campagnes", desc: "Campagnes annuelles \u00e0 planifier" },
+    { icon: "\uD83D\uDCB0", label: "Budget & ROI", desc: "Projections budg\u00e9taires \u00e0 compl\u00e9ter" },
+  ]) : "";
 
   return `<section id="implementation">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.I.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">I — Implémentation</div>
-      <h1>Roadmap &amp; Exécution</h1>
-      <p class="section-summary">Sprint 90 jours, vision stratégique et synthèse exécutive.</p>
+      <div class="section-tag">I \u2014 Impl\u00e9mentation</div>
+      <h1>Roadmap &amp; Ex\u00e9cution</h1>
+      <p class="section-summary">${summaryText}</p>
     </div>
   </div>
+  ${summaryHtml}
   ${sprintHtml}
   ${visionHtml}
-  ${summaryHtml}
+  ${calendarHtml}
+  ${templatesHtml}
+  ${activationHtml}
+  ${phasesHtml}
+  ${roiHtml}
+  ${fallbackHtml}
 </section>`;
 }
 
@@ -1983,11 +2693,11 @@ function buildSectionCompetitors(
   const metrics = ["SOV Social", "Positioning", "Force principale", "Menace principale"];
   const getMetric = (c: CompetitorData, m: string): string => {
     switch (m) {
-      case "SOV Social": return c.sov != null ? `${c.sov}%` : "\u2014";
-      case "Positioning": return c.positioning ?? "\u2014";
-      case "Force principale": return toArr(c.strengths)[0] ?? "\u2014";
-      case "Menace principale": return toArr(c.weaknesses)[0] ?? "\u2014";
-      default: return "\u2014";
+      case "SOV Social": return c.sov != null ? `${c.sov}%` : "Non suivi";
+      case "Positioning": return c.positioning?.trim() || "À analyser";
+      case "Force principale": return toArr(c.strengths)[0] || "À identifier";
+      case "Menace principale": return toArr(c.weaknesses)[0] || "À identifier";
+      default: return "N/A";
     }
   };
 
@@ -2173,69 +2883,330 @@ function buildSectionOpportunities(
 }
 
 // ---------------------------------------------------------------------------
+// Templates Section — Protocole Stratégique, Reco Campagne, Mandat 360
+// ---------------------------------------------------------------------------
+
+function buildSectionTemplates(
+  documents: TemplateDocumentData[],
+  brandName: string,
+  imageUrl?: string,
+): string {
+  if (documents.length === 0) return "";
+
+  const templateIcons: Record<string, string> = {
+    protocole_strategique: "\uD83D\uDCCA",
+    reco_campagne: "\uD83C\uDFAF",
+    mandat_360: "\uD83D\uDCC5",
+  };
+
+  const templateColors: Record<string, string> = {
+    protocole_strategique: "var(--accent-1)",
+    reco_campagne: "var(--accent-2)",
+    mandat_360: "var(--accent-3)",
+  };
+
+  const templateCards = documents.map((doc, idx) => {
+    const config = TEMPLATE_CONFIG[doc.type as TemplateType];
+    const icon = templateIcons[doc.type] ?? "\uD83D\uDCC4";
+    const color = templateColors[doc.type] ?? "var(--accent-1)";
+    const title = config?.title ?? doc.title;
+    const subtitle = config?.subtitle ?? "";
+    const unit = config?.unit ?? "pages";
+
+    // Parse sections
+    const sections = Array.isArray(doc.sections) ? (doc.sections as Array<{
+      title?: string;
+      content?: string;
+      order?: number;
+      wordCount?: number;
+    }>) : [];
+
+    const totalWords = sections.reduce((acc, s) => acc + (s.wordCount ?? 0), 0);
+    const pageEstimate = doc.pageCount ?? Math.max(1, Math.round(totalWords / 250));
+
+    // Build sections with rich formatted content — open by default for full readability
+    const sectionsList = sections.map((s, i) => {
+      const hasContent = s.content && s.content.trim().length > 0;
+      const formattedContent = hasContent ? formatDocContent(s.content!) : "";
+      // Sections with content are open by default — click to collapse
+      const isOpen = hasContent;
+
+      return `<div class="tpl-section-item${hasContent ? " tpl-section-expandable" : ""}${isOpen ? " open" : ""}" ${hasContent ? `onclick="this.classList.toggle('open')"` : ""}>
+        <div style="display:flex;align-items:flex-start;gap:10px;width:100%;">
+          <span class="tpl-section-num">${String(i + 1).padStart(2, "0")}</span>
+          <div style="flex:1;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              ${hasContent ? `<span class="tpl-section-toggle">&#x25B6;</span>` : ""}
+              <span class="tpl-section-title">${esc(s.title ?? `Section ${i + 1}`)}</span>
+              ${s.wordCount ? `<span class="tpl-section-word-count" style="display:inline;margin-left:8px;">${s.wordCount.toLocaleString("fr-FR")} mots</span>` : ""}
+            </div>
+          </div>
+        </div>
+        ${hasContent ? `<div class="tpl-section-body"><div class="tpl-section-content">${formattedContent}</div></div>` : ""}
+      </div>`;
+    }).join("\n");
+
+    return `<div class="tpl-card" style="border-top:3px solid ${color};">
+      <div class="tpl-card-header">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <span style="font-size:1.5rem;">${icon}</span>
+          <div>
+            <h3>${esc(title)}</h3>
+            ${subtitle ? `<div class="tpl-subtitle">${esc(subtitle)}</div>` : ""}
+          </div>
+        </div>
+        <div class="tpl-card-meta">
+          <span class="tpl-badge">${esc(doc.status === "complete" ? "Pr\u00eat" : doc.status)}</span>
+          <span class="tpl-pages">~${pageEstimate} ${esc(unit)}</span>
+          ${totalWords > 0 ? `<span class="tpl-pages">\u00B7 ${totalWords.toLocaleString("fr-FR")} mots</span>` : ""}
+        </div>
+      </div>
+      ${sections.length > 0 ? `<div class="tpl-sections">
+        <div class="tpl-sections-title">Sections (${sections.length})</div>
+        ${sectionsList}
+      </div>` : ""}
+    </div>`;
+  }).join("\n");
+
+  return `<section id="templates">
+  <div class="section-hero" style="background:var(--bg-surface);">
+    ${heroImgTag(imageUrl)}
+    <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(196,90,60,0.12), rgba(6,6,11,0.95));"></div>
+    <div class="section-hero-content">
+      <div class="section-tag" style="background:rgba(196,90,60,0.15);color:var(--accent-1);">&#x1F4CB; Templates Strat\u00e9giques</div>
+      <h1>Livrables pour ${esc(brandName)}</h1>
+      <p class="section-summary">${documents.length} template(s) g\u00e9n\u00e9r\u00e9(s) — Documents op\u00e9rationnels pr\u00eats \u00e0 l\u2019emploi.</p>
+    </div>
+  </div>
+
+  <div class="sub-section">
+    <h3 class="sub-title">Documents strat\u00e9giques</h3>
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      ${templateCards}
+    </div>
+  </div>
+</section>`;
+}
+
+// ---------------------------------------------------------------------------
 // Phase 4: Budget Simulator Section
 // ---------------------------------------------------------------------------
 
 const DEFAULT_BUDGET_TIERS = [
-  { tier: "MICRO", range: "< 2M FCFA", desc: "Organique pur : 15 posts/mois + community management WhatsApp + 1-2 micro-influenceurs + 1 challenge UGC.", kpis: ["+500 membres", "200 UGC", "50K reach", "1 mois"] },
-  { tier: "STARTER", range: "2-5M FCFA", desc: "+ Paid social (Meta + TikTok Ads) + 3-5 videos + 1 influenceur mid-tier.", kpis: ["200K reach", "+2K membres", "500 UGC", "4-6 sem."] },
-  { tier: "IMPACT", range: "5-15M FCFA", desc: "+ Video hero + paid scaling + 1-2 events terrain + radio regionale + PLV.", kpis: ["1M reach", "+5K membres", "+8% ventes", "6-8 sem."] },
-  { tier: "CAMPAGNE", range: "15-35M FCFA", desc: "+ TV nationale + influenceurs top-tier + event flagship + RP.", kpis: ["5M reach", "+12% ventes", "+5pts notoriete", "2-3 mois"] },
-  { tier: "DOMINATION", range: "35-70M FCFA", desc: "Always-on 12 mois + 2-3 campagnes peak + evenementiel.", kpis: ["Objectifs annuels complets", "12 mois"] },
+  {
+    tier: "MICRO", range: "< 2M FCFA",
+    desc: "Organique pur : 15 posts/mois + community management WhatsApp + 1\u20132 micro-influenceurs + 1 challenge UGC avec lots produits. On existe.",
+    kpis: ["+500 membres", "200 UGC", "50K reach organique", "1 mois"],
+  },
+  {
+    tier: "STARTER", range: "2\u20135M FCFA",
+    desc: "+ Paid social (Meta + TikTok Ads) + 3\u20135 vid\u00e9os qualit\u00e9 + 1 influenceur mid-tier. On acc\u00e9l\u00e8re.",
+    kpis: ["200K reach", "+2K membres", "500 UGC", "50 conversions", "4\u20136 sem."],
+  },
+  {
+    tier: "IMPACT", range: "5\u201315M FCFA",
+    desc: "+ Vid\u00e9o hero (spot 30\u201360s) + paid scaling + 1\u20132 events terrain + radio r\u00e9gionale + PLV 200 supports. On frappe.",
+    kpis: ["1M reach", "+5K membres", "+8% ventes", "200 leads B2B", "6\u20138 sem."],
+  },
+  {
+    tier: "CAMPAGNE", range: "15\u201335M FCFA",
+    desc: "+ TV nationale 3 semaines + influenceurs top-tier + event flagship + RP + \u00e9tudes d\u2019impact pr\u00e9/post. On domine le moment.",
+    kpis: ["5M reach", "+15K membres", "+12% ventes", "+5pts notori\u00e9t\u00e9", "2\u20133 mois"],
+  },
+  {
+    tier: "DOMINATION", range: "35\u201370M FCFA",
+    desc: "Always-on 12 mois + 2\u20133 campagnes peak + paid annual + \u00e9tudes continues + \u00e9v\u00e9nementiel (4\u20136/an) + innovation produit. On est le march\u00e9.",
+    kpis: ["Objectifs annuels complets", "12 mois"],
+  },
 ];
 
 function buildSectionBudgetSim(
   budgetTiers: BudgetTierData[] | undefined,
   currency: string,
   imageUrl?: string,
+  ctx?: OracleResolved,
 ): string {
-  // Use DB budget tiers if available, otherwise use defaults
-  const tiers = budgetTiers && budgetTiers.length > 0
-    ? budgetTiers.map((bt) => ({
-        tier: bt.tier,
-        range: `${(bt.minBudget / 1_000_000).toFixed(0)}-${(bt.maxBudget / 1_000_000).toFixed(0)}M ${currency}`,
-        desc: bt.description ?? "",
-        kpis: Array.isArray(bt.kpis) ? (bt.kpis as Array<{ kpi: string; target: string }>).map((k) => `${k.kpi}: ${k.target}`) : [],
-      }))
-    : DEFAULT_BUDGET_TIERS;
+  // Helper to extract channels array from unknown
+  const extractChannels = (ch: unknown): string[] => {
+    if (Array.isArray(ch)) return ch.map((c) => typeof c === "string" ? c : (c as { canal?: string; channel?: string; name?: string })?.canal ?? (c as { channel?: string })?.channel ?? (c as { name?: string })?.name ?? "").filter(Boolean);
+    return [];
+  };
 
-  const tierCards = tiers.map((t) => `
+  // Helper to extract KPIs from unknown
+  const extractKpis = (kpis: unknown): string[] => {
+    if (Array.isArray(kpis)) return kpis.map((k) => {
+      if (typeof k === "string") return k;
+      const obj = k as { kpi?: string; target?: string; name?: string; value?: string };
+      if (obj.kpi && obj.target) return `${obj.kpi}: ${obj.target}`;
+      if (obj.name && obj.value) return `${obj.name}: ${obj.value}`;
+      if (obj.kpi) return obj.kpi;
+      if (obj.name) return obj.name;
+      return "";
+    }).filter(Boolean);
+    return [];
+  };
+
+  // Format budget amount (handle millions)
+  const fmtBudget = (min: number, max: number): string => {
+    if (min >= 1_000_000 || max >= 1_000_000) {
+      const fmtM = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n.toLocaleString("fr-FR");
+      return `${fmtM(min)}\u2013${fmtM(max)} ${currency}`;
+    }
+    return `${min.toLocaleString("fr-FR")}\u2013${max.toLocaleString("fr-FR")} ${currency}`;
+  };
+
+  // Match DB tiers to enriched defaults by normalized name
+  const defaultByName = new Map(DEFAULT_BUDGET_TIERS.map((d) => [d.tier.toUpperCase().trim(), d]));
+
+  // Use DB budget tiers if available, enriched with default data when DB is sparse
+  const hasDbTiers = budgetTiers && budgetTiers.length > 0;
+  const tierCards = hasDbTiers
+    ? budgetTiers!.map((bt, idx) => {
+        const channels = extractChannels(bt.channels);
+        const kpis = extractKpis(bt.kpis);
+        const tierColors = ["var(--accent-1)", "var(--accent-2)", "var(--accent-3)", "#6366f1", "#f59e0b"];
+        const color = tierColors[idx % tierColors.length];
+
+        // Enrich sparse DB data with defaults if available
+        const fallback = defaultByName.get(bt.tier.toUpperCase().trim());
+        const descText = bt.description && bt.description.trim().length > 20
+          ? bt.description
+          : fallback?.desc ?? bt.description ?? "";
+        const displayKpis = kpis.length > 0 ? kpis : (fallback?.kpis ?? []);
+
+        return `
+    <div class="budget-palier" style="border-left:3px solid ${color};">
+      <div class="bp-header"><span class="bp-name">${esc(bt.tier)}</span><span class="bp-range">${esc(fmtBudget(bt.minBudget, bt.maxBudget))}</span></div>
+      ${descText ? `<div class="bp-desc">${esc(descText)}</div>` : ""}
+      ${channels.length > 0 ? `<div class="channels-row">${channels.map((ch) => `<span class="ch-tag">${esc(ch)}</span>`).join("")}</div>` : ""}
+      ${displayKpis.length > 0 ? `<div class="bp-kpis" style="margin-top:10px;">${displayKpis.map((k) => `<span class="bp-kpi">${esc(k)}</span>`).join("")}</div>` : ""}
+    </div>`;
+      }).join("\n")
+    : DEFAULT_BUDGET_TIERS.map((t) => `
     <div class="budget-palier">
       <div class="bp-header"><span class="bp-name">${esc(t.tier)}</span><span class="bp-range">${esc(t.range)}</span></div>
       <div class="bp-desc">${esc(t.desc)}</div>
       <div class="bp-kpis">${t.kpis.map((k) => `<span class="bp-kpi">${esc(k)}</span>`).join("")}</div>
     </div>`).join("\n");
 
+  // Budget par poste — from resolved context (already filtered in resolveOracleData)
+  const parPoste = ctx?.budgetParPosteFiltered ?? [];
+  const budgetAllocHtml = parPoste.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">R\u00e9partition budg\u00e9taire d\u00e9taill\u00e9e</h3>
+    <table class="mva-table">
+      <thead><tr><th>Poste</th><th>Montant</th><th>%</th><th>Justification</th></tr></thead>
+      <tbody>
+        ${parPoste.map((p) => `<tr>
+          <td style="font-weight:600;">${esc(p.poste)}</td>
+          <td class="mono" style="color:var(--accent-1);">${esc(p.montant)}</td>
+          <td class="mono">${p.pourcentage > 0 ? `${p.pourcentage}%` : "\u2014"}</td>
+          <td style="color:var(--text-secondary);font-size:var(--fs-small);">${esc(p.justification)}</td>
+        </tr>`).join("\n")}
+      </tbody>
+    </table>
+  </div>`
+    : "";
+
+  // MVA table — always show as a useful reference
+  const mvaHtml = `<div class="sub-section">
+    <h3 class="sub-title">Minimum Viable Action par objectif</h3>
+    <table class="mva-table">
+      <thead><tr><th>Objectif</th><th>MVA (action minimale)</th><th>Budget min.</th><th>D\u00e9lai</th></tr></thead>
+      <tbody>
+        <tr><td style="font-weight:600;">Awareness</td><td>1 vid\u00e9o TikTok boost\u00e9e + 5 posts organiques</td><td class="mono" style="color:var(--accent-1);">500K ${esc(currency)}</td><td class="mono">2 sem.</td></tr>
+        <tr><td style="font-weight:600;">Engagement</td><td>1 challenge communautaire WhatsApp + 1 jeu-concours</td><td class="mono" style="color:var(--accent-1);">200K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">Conversion</td><td>1 promo flash in-store + relais social + code promo</td><td class="mono" style="color:var(--accent-1);">800K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">R\u00e9tention</td><td>1 newsletter recettes + 1 avantage fid\u00e9lit\u00e9</td><td class="mono" style="color:var(--accent-1);">150K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">Lancement</td><td>Teaser social + 1 event d\u00e9gustation local</td><td class="mono" style="color:var(--accent-1);">2M ${esc(currency)}</td><td class="mono">3 sem.</td></tr>
+        <tr><td style="font-weight:600;">Crise</td><td>Statement officiel + Q&amp;A communaut\u00e9</td><td class="mono" style="color:var(--score-excellent);">0 (temps)</td><td class="mono">4h</td></tr>
+      </tbody>
+    </table>
+  </div>`;
+
+  // ── Enveloppe globale headline ──
+  const enveloppe = ctx?.enveloppeGlobale ?? "";
+  const enveloppeHtml = enveloppe
+    ? `<div class="sub-section">
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div class="card" style="flex:1;min-width:200px;text-align:center;padding:28px 24px;">
+        <div class="micro-text" style="margin-bottom:8px;">Enveloppe globale recommand\u00e9e</div>
+        <div class="mono" style="font-size:2rem;font-weight:800;color:var(--accent-1);">${esc(enveloppe)} <span style="font-size:0.9rem;color:var(--text-secondary);">${esc(currency)}</span></div>
+      </div>
+      ${ctx?.ltvCac && ctx.ltvCac !== "\u2014" ? `<div class="card" style="flex:0 0 auto;text-align:center;padding:28px 24px;">
+        <div class="micro-text" style="margin-bottom:8px;">Ratio LTV / CAC</div>
+        <div class="mono" style="font-size:1.5rem;font-weight:800;color:var(--score-excellent);">${esc(ctx.ltvCac)}</div>
+      </div>` : ""}
+    </div>
+  </div>`
+    : "";
+
+  // ── Budget par phase (from ctx.budgetAllocation) ──
+  const phases = ctx?.budgetAllocation?.parPhase?.filter((p) => p.phase || p.montant) ?? [];
+  const phasesHtml = phases.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">\u00C9chelonnement budg\u00e9taire par phase</h3>
+    <div class="phase-timeline">
+      ${phases.map((p, i) => {
+        const phaseColors = ["var(--accent-1)", "var(--accent-2)", "var(--accent-3)", "#6366f1"];
+        return `<div class="phase-row" style="border-left:3px solid ${phaseColors[i % phaseColors.length]};">
+        <div class="ph-name">${esc(p.phase)}</div>
+        <div class="ph-focus">${esc(p.focus)}</div>
+        <div class="ph-montant">${esc(p.montant)}</div>
+      </div>`;
+      }).join("\n")}
+    </div>
+  </div>`
+    : "";
+
+  // ── ROI Projections (from ctx.budgetAllocation) ──
+  const roi = ctx?.budgetAllocation?.roiProjections;
+  const roiEntries = [
+    { period: "6 mois", val: roi?.mois6 ?? "" },
+    { period: "12 mois", val: roi?.mois12 ?? "" },
+    { period: "24 mois", val: roi?.mois24 ?? "" },
+  ].filter((entry) => entry.val.trim().length > 0);
+  const roiHtml = roiEntries.length > 0
+    ? `<div class="sub-section">
+    <h3 class="sub-title">Projections ROI</h3>
+    <div class="roi-grid">
+      ${roiEntries.map((entry) => `<div class="roi-card">
+        <div class="roi-period">${esc(entry.period)}</div>
+        <div class="roi-val">${esc(entry.val)}</div>
+      </div>`).join("\n")}
+    </div>
+    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypoth\u00e8ses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
+  </div>`
+    : "";
+
+  // Count how many enriched sub-sections we have
+  const hasEnrichedContent = enveloppe || parPoste.length > 0 || phases.length > 0 || roiEntries.length > 0;
+  const summaryLine = hasEnrichedContent
+    ? `Enveloppe, r\u00e9partition, paliers d\u2019action, projections ROI \u2014 tout en un.`
+    : `Budget \u2192 actions possibles \u2192 KPIs attendus. Du Minimum Viable Action \u00e0 la strat\u00e9gie annuelle.`;
+
   return `<section id="budget-sim">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay"></div>
     <div class="section-hero-content">
-      <div class="section-tag" style="background:rgba(46,213,115,0.15);color:var(--score-excellent);">&#x00A4; Simulateur</div>
+      <div class="section-tag" style="background:rgba(46,213,115,0.15);color:var(--score-excellent);">&#x00A4; Simulateur Budg\u00e9taire</div>
       <h1>Que faire avec X ?</h1>
-      <p class="section-summary">Budget &rarr; actions possibles &rarr; KPIs attendus. Du Minimum Viable Action &agrave; la strat&eacute;gie annuelle.</p>
+      <p class="section-summary">${summaryLine}</p>
     </div>
   </div>
 
+  ${enveloppeHtml}
+
   <div class="sub-section">
-    <h3 class="sub-title">Paliers budget &rarr; capacit&eacute; d&#039;action</h3>
+    <h3 class="sub-title">Paliers budget \u2192 capacit\u00e9 d\u2019action</h3>
     ${tierCards}
   </div>
 
-  <div class="sub-section">
-    <h3 class="sub-title">Minimum Viable Action par objectif</h3>
-    <table class="mva-table">
-      <thead><tr><th>Objectif</th><th>MVA</th><th>Budget min.</th><th>D&eacute;lai</th></tr></thead>
-      <tbody>
-        <tr><td style="font-weight:600;">Awareness</td><td>1 vid&eacute;o TikTok + 5 posts organiques</td><td class="mono" style="color:var(--accent-1);">500K</td><td class="mono">2 sem.</td></tr>
-        <tr><td style="font-weight:600;">Engagement</td><td>1 challenge communautaire WhatsApp</td><td class="mono" style="color:var(--accent-1);">200K</td><td class="mono">1 sem.</td></tr>
-        <tr><td style="font-weight:600;">Conversion</td><td>1 promo flash in-store + relais social</td><td class="mono" style="color:var(--accent-1);">800K</td><td class="mono">1 sem.</td></tr>
-        <tr><td style="font-weight:600;">R&eacute;tention</td><td>1 newsletter + 1 avantage fid&eacute;lit&eacute;</td><td class="mono" style="color:var(--accent-1);">150K</td><td class="mono">1 sem.</td></tr>
-        <tr><td style="font-weight:600;">Lancement</td><td>Teaser social + 1 event local</td><td class="mono" style="color:var(--accent-1);">2M</td><td class="mono">3 sem.</td></tr>
-        <tr><td style="font-weight:600;">Crise</td><td>Statement officiel + Q&amp;A communaut&eacute;</td><td class="mono" style="color:var(--score-excellent);">0 (temps)</td><td class="mono">4h</td></tr>
-      </tbody>
-    </table>
-  </div>
+  ${budgetAllocHtml}
+  ${phasesHtml}
+  ${roiHtml}
+  ${mvaHtml}
 </section>`;
 }
 
@@ -2288,8 +3259,8 @@ function buildSectionSignals(signals: SignalData[]): string {
         <tr>
           <td style="font-weight:600;">${esc(s.title)}</td>
           <td><span style="background:${cfg.bg};color:${cfg.color};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;">${esc(s.status)}</span></td>
-          <td style="color:var(--text-secondary);">${esc(s.pillar ?? "—")}</td>
-          <td style="color:var(--text-tertiary);font-size:12px;">${esc(s.source ?? "—")}</td>
+          <td style="color:var(--text-secondary);">${esc(s.pillar ?? "Global")}</td>
+          <td style="color:var(--text-tertiary);font-size:12px;">${esc(s.source ?? "Veille")}</td>
         </tr>`).join("\n");
 
       return `
@@ -2330,7 +3301,7 @@ function buildFooter(meta: StrategyMeta, locale: string): string {
     A D V E R T I S
   </div>
   <div style="font-size:var(--fs-micro);color:var(--text-tertiary);letter-spacing:0.1em;text-transform:uppercase;">
-    ${esc(meta.brandName)} — Fiche de Marque · ${esc(formatDate(meta.createdAt, locale))}
+    ${esc(meta.brandName)} — L'ORACLE · ${esc(formatDate(meta.createdAt, locale))}
   </div>
   <div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:4px;">
     Document confidentiel · Propriété intellectuelle UPGRADERS SARL
@@ -2348,22 +3319,26 @@ function buildScripts(
   const sectionIds = JSON.stringify(sections.map((s) => s.id));
 
   return `
-// Radar Chart
+// Radar Chart — full 8-pillar ADVERTIS radar
 (function() {
   var ctx = document.getElementById('radarChart');
   if (!ctx || typeof Chart === 'undefined') return;
+  var rawScores = ctx.getAttribute('data-scores');
+  var scores = rawScores ? rawScores.split(',').map(Number) : [0, 0, 0, 0, 0, 0, 0, 0];
+  var accent1 = getComputedStyle(document.documentElement).getPropertyValue('--accent-1').trim() || '#c45a3c';
+  var accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim() || '#2d5a3d';
   new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: ['Authenticité', 'Distinction', 'Valeur', 'Engagement'],
+      labels: ['A — Authenticit\u00e9', 'D — Distinction', 'V — Valeur', 'E — Engagement', 'R — Risk', 'T — Track', 'I — Impl\u00e9mentation', 'S — Synth\u00e8se'],
       datasets: [{
-        label: 'Score ADVE',
-        data: [70, 60, 65, 70],
+        label: 'Score ADVERTIS',
+        data: scores,
         fill: true,
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-1-dim').trim() || 'rgba(196,90,60,0.15)',
-        borderColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-1').trim() || '#c45a3c',
+        backgroundColor: accent1 + '1A',
+        borderColor: accent1,
         borderWidth: 2,
-        pointBackgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--accent-1').trim() || '#c45a3c',
+        pointBackgroundColor: accent1,
         pointRadius: 5,
         pointHoverRadius: 7
       }]
@@ -2376,10 +3351,10 @@ function buildScripts(
         r: {
           beginAtZero: true,
           max: 100,
-          ticks: { stepSize: 25, color: '#6A6A80', backdropColor: 'transparent', font: { family: 'JetBrains Mono', size: 10 } },
+          ticks: { stepSize: 25, color: '#6A6A80', backdropColor: 'transparent', font: { family: 'JetBrains Mono', size: 9 } },
           grid: { color: 'rgba(42,42,58,0.6)' },
           angleLines: { color: 'rgba(42,42,58,0.4)' },
-          pointLabels: { color: '#9494AC', font: { family: 'Outfit', size: 12, weight: '600' } }
+          pointLabels: { color: '#9494AC', font: { family: 'Outfit', size: 11, weight: '600' } }
         }
       }
     }

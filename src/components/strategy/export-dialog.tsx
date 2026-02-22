@@ -201,7 +201,9 @@ export function ExportDialog({
         .substring(0, 50);
 
       const extension = format === "pdf" ? "pdf" : format === "html" ? "html" : "xlsx";
-      a.download = `ADVERTIS-${safeBrandName}-Fiche-de-Marque.${extension}`;
+      a.download = format === "html"
+        ? `ORACLE-${safeBrandName}.html`
+        : `ADVERTIS-${safeBrandName}.${extension}`;
       document.body.appendChild(a);
       a.click();
 
@@ -215,7 +217,7 @@ export function ExportDialog({
         format === "pdf"
           ? "PDF téléchargé avec succès"
           : format === "html"
-            ? "Présentation HTML téléchargée avec succès"
+            ? "L'ORACLE téléchargé avec succès"
             : "Excel téléchargé avec succès"
       );
       setOpen(false);
@@ -322,10 +324,10 @@ export function ExportDialog({
                     format === "html" ? "text-[#8b5cf6]" : "text-foreground"
                   }`}
                 >
-                  HTML
+                  L&apos;ORACLE
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  Présentation interactive
+                  HTML interactif
                 </span>
               </button>
             </div>

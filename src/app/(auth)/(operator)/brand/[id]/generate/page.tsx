@@ -24,6 +24,8 @@ import {
   Shield,
   BarChart3,
   Presentation,
+  Upload,
+  PenLine,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -59,7 +61,6 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { ScrollArea } from "~/components/ui/scroll-area";
 import { PhaseTimeline } from "~/components/strategy/phase-timeline";
 import { ReportCard } from "~/components/strategy/report-card";
 import { TemplateCard } from "~/components/strategy/template-card";
@@ -67,6 +68,10 @@ import { AuditReviewForm } from "~/components/strategy/audit-review/audit-review
 import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
 import { FicheReviewForm } from "~/components/strategy/fiche-review/fiche-review-form";
 import { MarketStudyDashboard } from "~/components/strategy/market-study/market-study-dashboard";
+import FileUploadZone, {
+  type ImportResult,
+} from "~/components/strategy/import/file-upload-zone";
+import FreeTextInput from "~/components/strategy/import/free-text-input";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -112,11 +117,9 @@ export default function BrandGeneratePage(props: {
   const [isValidatingFiche, setIsValidatingFiche] = useState(false);
   const [isCollecting, setIsCollecting] = useState(false);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
-  const [previewContent, setPreviewContent] = useState<{
-    title: string;
-    content: string;
-  } | null>(null);
+  const [ingestionComplete, setIngestionComplete] = useState(false);
   const cancelledRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Fetch strategy
   const {
@@ -153,6 +156,9 @@ export default function BrandGeneratePage(props: {
   const validateFicheMutation =
     api.strategy.validateFicheReview.useMutation();
   const advancePhaseMutation = api.strategy.advancePhase.useMutation();
+  const updateInterviewDataMutation =
+    api.strategy.updateInterviewData.useMutation();
+  const confirmImportMutation = api.strategy.confirmImport.useMutation();
   const revertPhaseMutation = api.strategy.revertPhase.useMutation();
   const addManualDataMutation = api.marketStudy.addManualData.useMutation();
   const removeManualDataMutation =
@@ -198,10 +204,13 @@ export default function BrandGeneratePage(props: {
       );
 
       try {
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
         const response = await fetch("/api/ai/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ strategyId, pillarType }),
+          signal: controller.signal,
         });
 
         if (!response.ok) {
@@ -229,7 +238,7 @@ export default function BrandGeneratePage(props: {
           );
           const pillarConfig = PILLAR_CONFIG[pillarType as PillarType];
           toast.success(
-            `Pilier ${pillarConfig?.title ?? pillarType} g\u00e9n\u00e9r\u00e9 avec succ\u00e8s.`,
+            `Pilier ${pillarConfig?.title ?? pillarType} généré avec succès.`,
           );
           return true;
         } else {
@@ -254,7 +263,7 @@ export default function BrandGeneratePage(props: {
                   ...p,
                   status: "error" as PillarStatus,
                   errorMessage:
-                    error instanceof Error ? error.message : "Erreur r\u00e9seau",
+                    error instanceof Error ? error.message : "Erreur réseau",
                 }
               : p,
           ),
@@ -275,7 +284,7 @@ export default function BrandGeneratePage(props: {
           interviewData: editedData,
         });
         await refetchStrategy();
-        toast.success("Fiche valid\u00e9e \u2014 Lancement de l\u2019audit Risk\u2026");
+        toast.success("Fiche validée — Lancement de l’audit Risk…");
 
         setIsGenerating(true);
         setCurrentAction("audit-r");
@@ -316,6 +325,50 @@ export default function BrandGeneratePage(props: {
     await refetchStrategy();
   }, [pillars, generateSinglePillar, refetchStrategy]);
 
+  // ---------------------------------------------------------------------------
+  // Ingestion handlers (called from Phase 0 data ingestion step)
+  // ---------------------------------------------------------------------------
+
+  // Handle import file result (import method)
+  const handleImportComplete = useCallback(
+    async (result: ImportResult) => {
+      try {
+        if (result.importedFileId) {
+          // Confirm import (saves mapped variables into interviewData)
+          await confirmImportMutation.mutateAsync({
+            strategyId,
+            importedFileId: result.importedFileId,
+            confirmedData: result.mappedVariables,
+          });
+        } else {
+          // Direct mapped variables (from freetext or other)
+          await updateInterviewDataMutation.mutateAsync({
+            id: strategyId,
+            data: result.mappedVariables,
+          });
+        }
+        await refetchStrategy();
+        setIngestionComplete(true);
+        toast.success(
+          `${Object.keys(result.mappedVariables).length} variables import\u00e9es avec succ\u00e8s !`,
+        );
+
+        // Auto-launch ADVE generation
+        await handleLaunchFiche();
+      } catch (error) {
+        toast.error("Erreur lors de la sauvegarde des donn\u00e9es import\u00e9es.");
+        console.error("[Ingestion] Import save failed:", error);
+      }
+    },
+    [
+      strategyId,
+      confirmImportMutation,
+      updateInterviewDataMutation,
+      refetchStrategy,
+      handleLaunchFiche,
+    ],
+  );
+
   // Advance fiche -> fiche-review
   const handleAdvanceToFicheReview = useCallback(async () => {
     try {
@@ -324,9 +377,9 @@ export default function BrandGeneratePage(props: {
         targetPhase: "fiche-review",
       });
       await refetchStrategy();
-      toast.success("Fiche valid\u00e9e \u2014 Passez \u00e0 l\u2019audit Risk.");
+      toast.success("Fiche validée — Passez à l’audit Risk.");
     } catch (error) {
-      toast.error("Erreur lors de l\u2019avancement de phase.");
+      toast.error("Erreur lors de l’avancement de phase.");
       console.error("[Pipeline] Advance to fiche-review failed:", error);
     }
   }, [strategyId, advancePhaseMutation, refetchStrategy]);
@@ -367,12 +420,12 @@ export default function BrandGeneratePage(props: {
         error?: string;
       };
       if (!response.ok || result.success === false) {
-        throw new Error(result.error ?? "\u00c9chec de la collecte");
+        throw new Error(result.error ?? "Échec de la collecte");
       }
       await refetchMarketStudy();
-      toast.success("Collecte termin\u00e9e !");
+      toast.success("Collecte terminée !");
     } catch (error) {
-      toast.error("Erreur lors de la collecte des donn\u00e9es march\u00e9.");
+      toast.error("Erreur lors de la collecte des données marché.");
       console.error("[MarketStudy] Collection failed:", error);
     } finally {
       setIsCollecting(false);
@@ -389,9 +442,9 @@ export default function BrandGeneratePage(props: {
       try {
         await addManualDataMutation.mutateAsync({ strategyId, ...data });
         await refetchMarketStudy();
-        toast.success("Donn\u00e9es ajout\u00e9es avec succ\u00e8s.");
+        toast.success("Données ajoutées avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l\u2019ajout des donn\u00e9es.");
+        toast.error("Erreur lors de l’ajout des données.");
         console.error("[MarketStudy] Add manual data failed:", error);
       }
     },
@@ -403,7 +456,7 @@ export default function BrandGeneratePage(props: {
       try {
         await removeManualDataMutation.mutateAsync({ strategyId, entryId });
         await refetchMarketStudy();
-        toast.success("Entr\u00e9e supprim\u00e9e.");
+        toast.success("Entrée supprimée.");
       } catch (error) {
         toast.error("Erreur lors de la suppression.");
         console.error("[MarketStudy] Remove manual data failed:", error);
@@ -427,9 +480,9 @@ export default function BrandGeneratePage(props: {
           throw new Error(`Upload failed: ${response.status}`);
         }
         await refetchMarketStudy();
-        toast.success("Fichier import\u00e9 avec succ\u00e8s.");
+        toast.success("Fichier importé avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l\u2019import du fichier.");
+        toast.error("Erreur lors de l’import du fichier.");
         console.error("[MarketStudy] Upload failed:", error);
       }
     },
@@ -441,9 +494,9 @@ export default function BrandGeneratePage(props: {
     try {
       await synthesizeMarketStudyMutation.mutateAsync({ strategyId });
       await refetchMarketStudy();
-      toast.success("Synth\u00e8se g\u00e9n\u00e9r\u00e9e avec succ\u00e8s !");
+      toast.success("Synthèse générée avec succès !");
     } catch (error) {
-      toast.error("Erreur lors de la synth\u00e8se.");
+      toast.error("Erreur lors de la synthèse.");
       console.error("[MarketStudy] Synthesis failed:", error);
     } finally {
       setIsSynthesizing(false);
@@ -454,9 +507,9 @@ export default function BrandGeneratePage(props: {
     try {
       await skipMarketStudyMutation.mutateAsync({ strategyId });
       await refetchStrategy();
-      toast.success("\u00c9tude de march\u00e9 pass\u00e9e.");
+      toast.success("Étude de marché passée.");
     } catch (error) {
-      toast.error("Erreur lors du passage de l\u2019\u00e9tude.");
+      toast.error("Erreur lors du passage de l’étude.");
       console.error("[MarketStudy] Skip failed:", error);
     }
   }, [strategyId, skipMarketStudyMutation, refetchStrategy]);
@@ -465,7 +518,7 @@ export default function BrandGeneratePage(props: {
     try {
       await completeMarketStudyMutation.mutateAsync({ strategyId });
       await refetchStrategy();
-      toast.success("\u00c9tude de march\u00e9 valid\u00e9e !");
+      toast.success("Étude de marché validée !");
     } catch (error) {
       toast.error("Erreur lors de la validation.");
       console.error("[MarketStudy] Complete failed:", error);
@@ -479,13 +532,13 @@ export default function BrandGeneratePage(props: {
       try {
         await validateAuditMutation.mutateAsync({
           id: strategyId,
-          riskAuditData: JSON.parse(JSON.stringify(riskData)),
-          trackAuditData: JSON.parse(JSON.stringify(trackData)),
+          riskAuditData: structuredClone(riskData),
+          trackAuditData: structuredClone(trackData),
         });
         await refetchStrategy();
-        toast.success("Audit valid\u00e9 avec succ\u00e8s !");
+        toast.success("Audit validé avec succès !");
       } catch (error) {
-        toast.error("Erreur lors de la validation de l\u2019audit.");
+        toast.error("Erreur lors de la validation de l’audit.");
         console.error("[Audit Review] Validation failed:", error);
       } finally {
         setIsValidatingAudit(false);
@@ -494,16 +547,45 @@ export default function BrandGeneratePage(props: {
     [strategyId, validateAuditMutation, refetchStrategy],
   );
 
-  // Launch Implementation (Pillar I)
+  // Launch Implementation (Pillar I) + auto-chain template generation
   const handleLaunchImplementation = useCallback(async () => {
     setIsGenerating(true);
     setCurrentAction("implementation");
     cancelledRef.current = false;
-    await generateSinglePillar("I");
+    const success = await generateSinglePillar("I");
+
+    // Auto-generate all 3 UPGRADERS templates after Pillar I completes
+    if (success && !cancelledRef.current) {
+      setCurrentAction("templates");
+      try {
+        const response = await fetch("/api/ai/templates", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ strategyId }),
+        });
+        const data = (await response.json()) as {
+          success: boolean;
+          error?: string;
+          warning?: string;
+        };
+        if (data.success) {
+          toast.success("Templates UPGRADERS générés automatiquement !");
+        } else if (data.warning) {
+          toast.warning(data.warning);
+        } else if (data.error) {
+          toast.error(data.error);
+        }
+      } catch (error) {
+        console.error("[Templates] Auto-generation error:", error);
+        toast.error("Erreur lors de la génération automatique des templates.");
+      }
+      await refetchDocuments();
+    }
+
     setIsGenerating(false);
     setCurrentAction(null);
     await refetchStrategy();
-  }, [generateSinglePillar, refetchStrategy]);
+  }, [strategyId, generateSinglePillar, refetchStrategy, refetchDocuments]);
 
   // Launch Synthese (Pillar S)
   const handleLaunchSynthese = useCallback(async () => {
@@ -530,9 +612,10 @@ export default function BrandGeneratePage(props: {
     [isGenerating, generateSinglePillar, refetchStrategy],
   );
 
-  // Cancel
+  // Cancel — abort in-flight fetch + prevent next pillar in sequence
   const handleCancel = () => {
     cancelledRef.current = true;
+    abortControllerRef.current?.abort();
   };
 
   // Revert phase
@@ -543,10 +626,10 @@ export default function BrandGeneratePage(props: {
         await revertPhaseMutation.mutateAsync({ id: strategyId, targetPhase });
         await refetchStrategy();
         toast.success(
-          `Retour \u00e0 la phase "${PHASE_CONFIG[targetPhase].title}"`,
+          `Retour à la phase "${PHASE_CONFIG[targetPhase].title}"`,
         );
       } catch (error) {
-        toast.error("Erreur lors du retour en arri\u00e8re.");
+        toast.error("Erreur lors du retour en arrière.");
         console.error("[Pipeline] Revert phase failed:", error);
       }
     },
@@ -570,10 +653,10 @@ export default function BrandGeneratePage(props: {
           error?: string;
         };
         if (!data.success) {
-          toast.error(data.error ?? "Erreur lors de la g\u00e9n\u00e9ration du rapport.");
+          toast.error(data.error ?? "Erreur lors de la génération du rapport.");
         }
       } catch (error) {
-        toast.error("Erreur r\u00e9seau lors de la g\u00e9n\u00e9ration.");
+        toast.error("Erreur réseau lors de la génération.");
         console.error("[Reports] Error:", error);
       }
       setIsGenerating(false);
@@ -602,13 +685,13 @@ export default function BrandGeneratePage(props: {
         };
         if (!data.success) {
           toast.error(
-            data.error ?? "Erreur lors de la g\u00e9n\u00e9ration du template.",
+            data.error ?? "Erreur lors de la génération du template.",
           );
         } else {
-          toast.success("Template g\u00e9n\u00e9r\u00e9 avec succ\u00e8s !");
+          toast.success("Template généré avec succès !");
         }
       } catch (error) {
-        toast.error("Erreur r\u00e9seau lors de la g\u00e9n\u00e9ration.");
+        toast.error("Erreur réseau lors de la génération.");
         console.error("[Templates] Error:", error);
       }
       setIsGenerating(false);
@@ -666,6 +749,16 @@ export default function BrandGeneratePage(props: {
   const interviewData =
     (strategy?.interviewData as Record<string, string>) ?? {};
 
+  // Ingestion step: show when in fiche phase, no ADVE pillars are complete, and inputMethod is set
+  const inputMethod = strategy?.inputMethod as string | null;
+  const hasInterviewData = Object.keys(interviewData).length > 0;
+  const needsIngestion =
+    currentPhase === "fiche" &&
+    !ficheComplete &&
+    !ingestionComplete &&
+    !hasInterviewData &&
+    !!inputMethod;
+
   // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
@@ -718,12 +811,55 @@ export default function BrandGeneratePage(props: {
       {/* Phase Timeline */}
       <PhaseTimeline currentPhase={currentPhase} />
 
+      {/* Phase 0: Data Ingestion (before pipeline) */}
+      {needsIngestion && (
+        <Card className="border-terracotta/30 bg-gradient-to-br from-terracotta/5 to-transparent">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              {inputMethod === "import" ? (
+                <Upload className="h-5 w-5 text-terracotta" />
+              ) : (
+                <PenLine className="h-5 w-5 text-terracotta" />
+              )}
+              Saisie des donn&eacute;es de marque
+              <Badge className="bg-terracotta text-white text-xs">
+                &Eacute;tape pr&eacute;alable
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              {inputMethod === "import"
+                ? "Importez un document existant (PDF, DOCX, Excel) pour extraire les donn\u00e9es"
+                : "D\u00e9crivez votre marque librement, l\u0027IA analysera le texte"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {inputMethod === "import" && (
+              <FileUploadZone
+                strategyId={strategyId}
+                brandName={strategy.brandName}
+                sector={strategy.sector ?? ""}
+                onUploadComplete={(result) => void handleImportComplete(result)}
+                onError={(err) => toast.error(err)}
+              />
+            )}
+            {(inputMethod === "freetext" || inputMethod === "interview") && (
+              <FreeTextInput
+                brandName={strategy.brandName}
+                sector={strategy.sector ?? ""}
+                onAnalysisComplete={(result) => void handleImportComplete(result)}
+                onError={(err) => toast.error(err)}
+              />
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Phase 1: Fiche de Marque */}
       <PhaseSection
         phase="fiche"
         currentPhase={currentPhase}
         title="Phase 1 : Fiche de Marque"
-        description="Donn\u00e9es collect\u00e9es via le formulaire ou l\u2019import de fichier"
+        description="Donn\u00e9es collect\u00e9es via le formulaire ou l\u0027import de fichier"
         onRevert={() => handleRevertPhase("fiche")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -791,7 +927,7 @@ export default function BrandGeneratePage(props: {
         phase="fiche-review"
         currentPhase={currentPhase}
         title="Phase 2 : Validation de la Fiche"
-        description="V\u00e9rifiez et corrigez les donn\u00e9es A-D-V-E avant l\u2019audit"
+        description="Vérifiez et corrigez les données A-D-V-E avant l’audit"
         onRevert={() => handleRevertPhase("fiche-review")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -799,14 +935,20 @@ export default function BrandGeneratePage(props: {
           <FicheReviewForm
             strategyId={strategyId}
             interviewData={interviewData}
+            pillarContents={fichePillars.map((p) => ({
+              type: p.type,
+              content: p.content,
+            }))}
+            riskData={rComplete ? riskData : null}
+            trackData={tComplete ? trackData : null}
             onValidate={handleValidateFiche}
             isValidating={isValidatingFiche}
           />
         ) : (
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("fiche-review")
-              ? "Fiche valid\u00e9e."
-              : "La fiche doit \u00eatre compl\u00e9t\u00e9e avant la validation."}
+              ? "Fiche validée."
+              : "La fiche doit être complétée avant la validation."}
           </p>
         )}
       </PhaseSection>
@@ -851,8 +993,8 @@ export default function BrandGeneratePage(props: {
       <PhaseSection
         phase="market-study"
         currentPhase={currentPhase}
-        title="Phase 4 : \u00c9tude de March\u00e9"
-        description="Collecte de donn\u00e9es march\u00e9 r\u00e9elles (optionnel)"
+        title="Phase 4 : Étude de Marché"
+        description="Collecte de données marché réelles (optionnel)"
         optional
         onRevert={() => handleRevertPhase("market-study")}
         isReverting={revertPhaseMutation.isPending}
@@ -890,8 +1032,8 @@ export default function BrandGeneratePage(props: {
         ) : (
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("market-study")
-              ? "\u00c9tude de march\u00e9 termin\u00e9e."
-              : "L\u2019audit Risk doit \u00eatre compl\u00e9t\u00e9 avant."}
+              ? "Étude de marché terminée."
+              : "L’audit Risk doit être complété avant."}
           </p>
         )}
       </PhaseSection>
@@ -901,7 +1043,7 @@ export default function BrandGeneratePage(props: {
         phase="audit-t"
         currentPhase={currentPhase}
         title="Phase 5 : Audit Track (T)"
-        description="Validation march\u00e9, TAM/SAM/SOM, benchmarking"
+        description="Validation marché, TAM/SAM/SOM, benchmarking"
         onRevert={() => handleRevertPhase("audit-t")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -936,8 +1078,8 @@ export default function BrandGeneratePage(props: {
       <PhaseSection
         phase="audit-review"
         currentPhase={currentPhase}
-        title="Phase 6 : Validation de l\u2019audit"
-        description="Revue et correction manuelle des r\u00e9sultats R+T"
+        title="Phase 6 : Validation de l’audit"
+        description="Revue et correction manuelle des résultats R+T"
         onRevert={() => handleRevertPhase("audit-review")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -962,8 +1104,8 @@ export default function BrandGeneratePage(props: {
         ) : (
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("audit-review")
-              ? "Audit valid\u00e9."
-              : "L\u2019audit doit \u00eatre compl\u00e9t\u00e9 avant la validation."}
+              ? "Audit validé."
+              : "L’audit doit être complété avant la validation."}
           </p>
         )}
       </PhaseSection>
@@ -972,8 +1114,8 @@ export default function BrandGeneratePage(props: {
       <PhaseSection
         phase="implementation"
         currentPhase={currentPhase}
-        title="Phase 7 : Donn\u00e9es strat\u00e9giques"
-        description="G\u00e9n\u00e9ration des donn\u00e9es cockpit (Pilier I)"
+        title="Phase 7 : Données stratégiques"
+        description="Génération des données cockpit (Pilier I)"
         onRevert={() => handleRevertPhase("implementation")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -996,11 +1138,19 @@ export default function BrandGeneratePage(props: {
             </Button>
           </div>
         )}
-        {implComplete && (
+        {isGenerating && currentAction === "templates" && (
+          <div className="mt-4 flex items-center gap-2 rounded-lg border border-terracotta/30 bg-terracotta/5 p-3 animate-pulse">
+            <Loader2 className="h-4 w-4 animate-spin text-terracotta" />
+            <span className="text-sm text-terracotta">
+              G&eacute;n&eacute;ration automatique des templates UPGRADERS en cours&hellip;
+            </span>
+          </div>
+        )}
+        {implComplete && currentAction !== "templates" && (
           <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3">
             <Check className="h-4 w-4 text-green-600" />
             <span className="text-sm text-green-700">
-              Donn\u00e9es strat\u00e9giques g\u00e9n\u00e9r\u00e9es
+              Données stratégiques générées
             </span>
           </div>
         )}
@@ -1010,8 +1160,8 @@ export default function BrandGeneratePage(props: {
       <PhaseSection
         phase="cockpit"
         currentPhase={currentPhase}
-        title="Phase 8 : Synth\u00e8se strat\u00e9gique & Cockpit"
-        description="Pilier S \u2014 Bible strat\u00e9gique, puis cockpit interactif"
+        title="Phase 8 : Synthèse stratégique & Cockpit"
+        description="Pilier S — Bible stratégique, puis cockpit interactif"
         onRevert={() => handleRevertPhase("cockpit")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -1183,14 +1333,6 @@ export default function BrandGeneratePage(props: {
         )}
       </div>
 
-      {/* Preview overlay */}
-      {previewContent && (
-        <PreviewOverlay
-          title={previewContent.title}
-          content={previewContent.content}
-          onClose={() => setPreviewContent(null)}
-        />
-      )}
     </div>
   );
 }
@@ -1316,7 +1458,7 @@ function PillarStatusCard({
         <p className="text-sm font-medium">{config.title}</p>
         <p className="truncate text-xs text-muted-foreground">
           {pillar.status === "complete"
-            ? "G\u00e9n\u00e9r\u00e9"
+            ? "Généré"
             : pillar.status === "generating"
               ? "En cours..."
               : pillar.status === "error"
@@ -1352,44 +1494,3 @@ function PillarStatusCard({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Preview Overlay
-// ---------------------------------------------------------------------------
-
-function PreviewOverlay({
-  title,
-  content,
-  onClose,
-}: {
-  title: string;
-  content: string;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
-      <Card className="flex max-h-[80vh] w-full max-w-3xl flex-col">
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-3">
-          <CardTitle className="text-lg">{title}</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-hidden">
-          <ScrollArea className="h-[60vh]">
-            <div className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap">
-              {content}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}

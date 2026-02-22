@@ -17,7 +17,7 @@ import { BottomNav, type BottomNavItem } from "./bottom-nav";
 import { RailNav, type RailNavItem } from "./rail-nav";
 
 const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
-  { href: "/", label: "Marques", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Marques", icon: LayoutDashboard },
   { href: "/tree", label: "Arbre", icon: GitBranch },
   { href: "/new", label: "Nouveau", icon: Plus },
   { href: "/missions", label: "Missions", icon: Briefcase },

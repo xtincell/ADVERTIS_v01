@@ -5,7 +5,7 @@
 // Props: open, onOpenChange.
 // Step 1: Name (brandName), Sector (select), Node Type (select).
 // Step 2: Parent strategy selector (optional, from api.strategy.getAll).
-// Step 3: Input method choice (Interview Express, Import fichier, Saisie libre).
+// Step 3: Input method choice (Saisie libre, Import fichier).
 // On confirm: calls api.strategy.create mutation, redirects to /brand/${newId}.
 // =============================================================================
 
@@ -25,7 +25,6 @@ import {
   Map,
   BookOpen,
   Heart,
-  Mic,
   Upload,
   PenLine,
   ChevronLeft,
@@ -101,22 +100,16 @@ const NODE_TYPE_OPTIONS = [
 
 const INPUT_METHODS = [
   {
-    key: "interview",
-    title: "Interview Express",
-    description: "Répondez à quelques questions guidées par l'IA",
-    icon: Mic,
+    key: "freetext",
+    title: "Saisie libre",
+    description: "Décrivez votre marque librement — l'IA analyse et remplit la fiche",
+    icon: PenLine,
   },
   {
     key: "import",
     title: "Import fichier",
     description: "Importez un document existant (PDF, DOCX, etc.)",
     icon: Upload,
-  },
-  {
-    key: "freetext",
-    title: "Saisie libre",
-    description: "Remplissez les champs manuellement",
-    icon: PenLine,
   },
 ] as const;
 
@@ -174,7 +167,8 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
       toast.success("Marque créée");
       onOpenChange(false);
       resetForm();
-      router.push(`/brand/${data.id}`);
+      // Redirect to the generate/pipeline page so the ingestion step starts
+      router.push(`/brand/${data.id}/generate`);
     },
     onError: () => {
       toast.error("Erreur");
@@ -206,6 +200,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
       brandName: brandName.trim(),
       sector,
       nodeType,
+      inputMethod: inputMethod ?? undefined,
     });
   }
 

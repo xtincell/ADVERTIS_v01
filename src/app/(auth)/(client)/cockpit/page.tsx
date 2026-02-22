@@ -98,6 +98,7 @@ export default function ClientHomePage() {
         <CockpitContent
           data={cockpitData as CockpitData}
           isPublic={false}
+          isClientView={true}
           initialViewMode="EXECUTIVE"
         />
       )}

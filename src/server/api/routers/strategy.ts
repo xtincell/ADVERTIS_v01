@@ -25,8 +25,9 @@
 //
 // Dependencies:
 //   ~/server/api/trpc          — createTRPCRouter, protectedProcedure
-//   ~/lib/constants            — PILLAR_TYPES, PILLAR_CONFIG, PHASES, SKIPPABLE_PHASES, LEGACY_PHASE_MAP
+//   ~/lib/constants            — PILLAR_TYPES, PILLAR_CONFIG
 //   ~/server/services/score-engine — recalculateAllScores
+//   ~/server/services/pipeline-orchestrator — validatePhaseTransition, validatePhaseReversion
 //   ~/lib/types/phase1-schemas — CreateChildStrategySchema
 // =============================================================================
 
@@ -34,9 +35,13 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { PILLAR_TYPES, PILLAR_CONFIG, PHASES, SKIPPABLE_PHASES, LEGACY_PHASE_MAP } from "~/lib/constants";
+import { PILLAR_TYPES, PILLAR_CONFIG } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
 import { recalculateAllScores } from "~/server/services/score-engine";
+import {
+  validatePhaseTransition,
+  validatePhaseReversion,
+} from "~/server/services/pipeline-orchestrator";
 import { CreateChildStrategySchema } from "~/lib/types/phase1-schemas";
 
 export const strategyRouter = createTRPCRouter({
@@ -54,6 +59,7 @@ export const strategyRouter = createTRPCRouter({
         vertical: z.string().optional(),
         maturityProfile: z.string().optional(),
         deliveryMode: z.string().optional(),
+        inputMethod: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -67,6 +73,7 @@ export const strategyRouter = createTRPCRouter({
           vertical: input.vertical ?? null,
           maturityProfile: input.maturityProfile ?? null,
           deliveryMode: input.deliveryMode ?? null,
+          inputMethod: input.inputMethod ?? null,
           status: "draft",
           userId: ctx.session.user.id,
           pillars: {
@@ -447,39 +454,13 @@ export const strategyRouter = createTRPCRouter({
         });
       }
 
-      // Resolve legacy phase names for backward compatibility
-      const resolvedPhase = LEGACY_PHASE_MAP[strategy.phase] ?? strategy.phase;
-
-      // Validate phase transition order
-      const currentPhaseIndex = PHASES.indexOf(resolvedPhase as Phase);
-      const targetPhaseIndex = PHASES.indexOf(input.targetPhase);
-
-      if (currentPhaseIndex === -1) {
+      // Validate phase transition via pipeline orchestrator
+      const transition = validatePhaseTransition(strategy.phase, input.targetPhase);
+      if (!transition.valid) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Phase actuelle inconnue : "${strategy.phase}"`,
+          message: transition.error!,
         });
-      }
-
-      if (targetPhaseIndex <= currentPhaseIndex) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Impossible de revenir à la phase "${input.targetPhase}" depuis "${strategy.phase}"`,
-        });
-      }
-
-      // Allow skipping skippable phases (e.g., market-study)
-      // Check that we're jumping at most over skippable phases
-      if (targetPhaseIndex > currentPhaseIndex + 1) {
-        const skippedPhases = PHASES.slice(currentPhaseIndex + 1, targetPhaseIndex);
-        const allSkippable = skippedPhases.every((p) => SKIPPABLE_PHASES.includes(p));
-
-        if (!allSkippable) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: `Impossible de sauter directement à la phase "${input.targetPhase}". Complétez d'abord la phase en cours.`,
-          });
-        }
       }
 
       const updatedStrategy = await ctx.db.strategy.update({
@@ -526,22 +507,12 @@ export const strategyRouter = createTRPCRouter({
         });
       }
 
-      // Resolve legacy phase names
-      const resolvedPhase = LEGACY_PHASE_MAP[strategy.phase] ?? strategy.phase;
-      const currentPhaseIndex = PHASES.indexOf(resolvedPhase as Phase);
-      const targetPhaseIndex = PHASES.indexOf(input.targetPhase);
-
-      if (currentPhaseIndex === -1) {
+      // Validate phase reversion via pipeline orchestrator
+      const reversion = validatePhaseReversion(strategy.phase, input.targetPhase);
+      if (!reversion.valid) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `Phase actuelle inconnue : "${strategy.phase}"`,
-        });
-      }
-
-      if (targetPhaseIndex >= currentPhaseIndex) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: `Impossible de revenir à la phase "${input.targetPhase}" — la stratégie est déjà en phase "${strategy.phase}" ou antérieure.`,
+          message: reversion.error!,
         });
       }
 

@@ -19,9 +19,7 @@
 //   - tRPC template router (template.generate)
 // =============================================================================
 
-import { generateText } from "ai";
-
-import { anthropic, DEFAULT_MODEL } from "./anthropic-client";
+import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "./anthropic-client";
 import { TEMPLATE_CONFIG, PILLAR_CONFIG } from "~/lib/constants";
 import type { TemplateType, PillarType } from "~/lib/constants";
 
@@ -103,7 +101,8 @@ export async function generateTemplate(
         })
         .join("\n\n");
 
-      const { text } = await generateText({
+      const { text } = await resilientGenerateText({
+        label: `template-${templateType}-section-${i + 1}`,
         model: anthropic(DEFAULT_MODEL),
         system: buildTemplateSystemPrompt(templateType, sectionTitle, context),
         prompt: buildTemplateSectionPrompt(

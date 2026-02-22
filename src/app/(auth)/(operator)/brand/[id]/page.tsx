@@ -97,7 +97,7 @@ export default function BrandCockpitPage(props: {
         <AlertTriangle className="h-8 w-8 text-amber-500" />
         <p className="text-sm font-medium">Cockpit non disponible</p>
         <Button variant="outline" size="sm" asChild>
-          <Link href="/">
+          <Link href="/dashboard">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Retour
           </Link>

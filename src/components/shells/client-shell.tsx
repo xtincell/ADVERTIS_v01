@@ -8,6 +8,7 @@
 
 import {
   BarChart3,
+  Eye,
   FileText,
   MessageSquare,
 } from "lucide-react";
@@ -15,8 +16,9 @@ import { BottomNav, type BottomNavItem } from "./bottom-nav";
 import { RailNav, type RailNavItem } from "./rail-nav";
 
 const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
-  { href: "/", label: "Cockpit", icon: BarChart3 },
-  { href: "/briefs", label: "Briefs", icon: FileText },
+  { href: "/cockpit", label: "Cockpit", icon: BarChart3 },
+  { href: "/oracle", label: "L'Oracle", icon: Eye },
+  { href: "/my-documents", label: "Documents", icon: FileText },
   { href: "/requests", label: "Demandes", icon: MessageSquare },
 ];
 

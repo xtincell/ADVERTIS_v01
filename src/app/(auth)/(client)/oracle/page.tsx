@@ -1,0 +1,338 @@
+// ==========================================================================
+// PAGE P.ORC2 — L'ORACLE (Client)
+// ==========================================================================
+// Client-facing immersive HTML presentation of their brand strategy.
+// Auto-detects the client's strategy and renders the HTML presentation
+// with white-label role passed to the generator.
+// ==========================================================================
+
+"use client";
+
+import { useState, useRef, useCallback } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Download,
+  Loader2,
+  Maximize2,
+  Minimize2,
+  Eye,
+  RefreshCw,
+  AlertTriangle,
+  AlertCircle,
+} from "lucide-react";
+
+import { api } from "~/trpc/react";
+import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
+
+// ---------------------------------------------------------------------------
+// Oracle Page — Client
+// ---------------------------------------------------------------------------
+
+export default function ClientOraclePage() {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [iframeReady, setIframeReady] = useState(false);
+
+  // Step 1: Get the client's strategies — pick the first one
+  const {
+    data: strategies,
+    isLoading: strategiesLoading,
+    error: strategiesError,
+  } = api.strategy.getAll.useQuery({});
+
+  const firstStrategy = strategies?.[0] as
+    | { id: string; brandName: string }
+    | undefined;
+
+  const strategyId = firstStrategy?.id;
+
+  // ---------------------------------------------------------------------------
+  // Load the HTML presentation into the iframe via POST
+  // ---------------------------------------------------------------------------
+  const loadPresentation = useCallback(
+    async (iframe: HTMLIFrameElement) => {
+      if (!strategyId) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/export/html/preview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            strategyId,
+            userRole: "CLIENT_RETAINER",
+          }),
+        });
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          throw new Error(
+            (errBody as { error?: string }).error ??
+              `Erreur ${res.status}`,
+          );
+        }
+
+        const html = await res.text();
+
+        const doc = iframe.contentDocument;
+        if (doc) {
+          doc.open();
+          doc.write(html);
+          doc.close();
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Erreur lors du chargement",
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [strategyId],
+  );
+
+  // Ref callback — triggers load once strategy is available
+  const iframeRefCallback = useCallback(
+    (node: HTMLIFrameElement | null) => {
+      if (node) {
+        (iframeRef as React.MutableRefObject<HTMLIFrameElement>).current = node;
+        setIframeReady(true);
+        if (strategyId) void loadPresentation(node);
+      }
+    },
+    [loadPresentation, strategyId],
+  );
+
+  // Auto-load when strategy becomes available and iframe is ready
+  const prevStrategyIdRef = useRef<string | undefined>(undefined);
+  if (
+    strategyId &&
+    strategyId !== prevStrategyIdRef.current &&
+    iframeReady &&
+    iframeRef.current
+  ) {
+    prevStrategyIdRef.current = strategyId;
+    void loadPresentation(iframeRef.current);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Download handler
+  // ---------------------------------------------------------------------------
+  const handleDownload = async () => {
+    if (!strategyId) return;
+    try {
+      const res = await fetch("/api/export/html", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          strategyId,
+          userRole: "CLIENT_RETAINER",
+        }),
+      });
+
+      if (!res.ok) throw new Error("Erreur lors du téléchargement");
+
+      const blob = await res.blob();
+      const disposition = res.headers.get("Content-Disposition") ?? "";
+      const filenameMatch = disposition.match(/filename="?([^"]+)"?/);
+      const filename = filenameMatch?.[1] ?? "ORACLE.html";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Erreur lors du téléchargement");
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Fullscreen toggle
+  // ---------------------------------------------------------------------------
+  const toggleFullscreen = () => {
+    const container = document.getElementById("oracle-container");
+    if (!container) return;
+
+    if (!document.fullscreenElement) {
+      void container.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      void document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // Strategy loading state
+  // ---------------------------------------------------------------------------
+  if (strategiesLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#06060B]">
+        <Loader2 className="h-6 w-6 animate-spin text-[#c45a3c]" />
+      </div>
+    );
+  }
+
+  if (strategiesError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-[#06060B]">
+        <AlertCircle className="h-8 w-8 text-red-400/50" />
+        <p className="text-sm text-white/50">
+          Erreur lors du chargement de votre marque.
+        </p>
+      </div>
+    );
+  }
+
+  if (!firstStrategy) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-[#06060B]">
+        <Eye className="h-8 w-8 text-white/20" />
+        <p className="text-sm text-white/50">
+          Aucune marque associée à votre compte.
+        </p>
+      </div>
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Render
+  // ---------------------------------------------------------------------------
+  return (
+    <div
+      id="oracle-container"
+      className="flex h-screen flex-col bg-[#06060B]"
+    >
+      {/* ── Top toolbar ── */}
+      <div className="flex items-center justify-between border-b border-white/10 bg-[#0A0A12] px-4 py-2.5">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/cockpit"
+            className="flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Cockpit</span>
+          </Link>
+          <div className="h-4 w-px bg-white/10" />
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#c45a3c] to-[#2d5a3d]">
+              <Eye className="h-3.5 w-3.5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold text-white tracking-tight">
+                L&apos;ORACLE
+              </h1>
+              <p className="text-[10px] uppercase tracking-widest text-white/40">
+                {firstStrategy.brandName}
+              </p>
+            </div>
+          </div>
+          <Badge className="ml-2 bg-[#c45a3c]/15 text-[#c45a3c] border-[#c45a3c]/20 text-[10px] font-semibold uppercase tracking-wider">
+            Interactif
+          </Badge>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-white/60 hover:text-white hover:bg-white/5"
+            onClick={() => {
+              if (iframeRef.current) void loadPresentation(iframeRef.current);
+            }}
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline text-xs">Rafraîchir</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1.5 text-white/60 hover:text-white hover:bg-white/5"
+            onClick={() => void handleDownload()}
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline text-xs">Télécharger</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 text-white/60 hover:text-white hover:bg-white/5"
+            onClick={toggleFullscreen}
+          >
+            {isFullscreen ? (
+              <Minimize2 className="h-3.5 w-3.5" />
+            ) : (
+              <Maximize2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Content area ── */}
+      <div className="relative flex-1 overflow-hidden">
+        {/* Loading overlay */}
+        {loading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#06060B]">
+            <div className="relative">
+              <div className="absolute inset-0 animate-ping rounded-full bg-[#c45a3c]/20" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#c45a3c]/10 border border-[#c45a3c]/20">
+                <Loader2 className="h-7 w-7 animate-spin text-[#c45a3c]" />
+              </div>
+            </div>
+            <p className="mt-4 text-sm font-medium text-white/60">
+              Génération de L&apos;ORACLE...
+            </p>
+            <p className="mt-1 text-xs text-white/30">
+              Votre stratégie de marque complète
+            </p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && !loading && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#06060B]">
+            <AlertTriangle className="h-10 w-10 text-red-400/60" />
+            <p className="mt-3 text-sm font-medium text-white/70">
+              {error}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-4 border-white/10 text-white/60 hover:text-white hover:bg-white/5"
+              onClick={() => {
+                if (iframeRef.current)
+                  void loadPresentation(iframeRef.current);
+              }}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Réessayer
+            </Button>
+          </div>
+        )}
+
+        {/* The iframe */}
+        <iframe
+          ref={iframeRefCallback}
+          title="L'ORACLE — Votre Marque"
+          className="h-full w-full border-0"
+          sandbox="allow-scripts allow-same-origin"
+          style={{
+            opacity: loading || error ? 0 : 1,
+            transition: "opacity 0.3s ease",
+          }}
+        />
+      </div>
+    </div>
+  );
+}

@@ -15,6 +15,21 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Flex helpers: tolerate AI-generated data where a string is sent instead
+// of an array (e.g., coutsCaches: "hidden costs" instead of ["hidden costs"])
+// ---------------------------------------------------------------------------
+
+/** Accepts string | string[] → always returns string[] */
+const flexStringArray = z.preprocess(
+  (val) => {
+    if (typeof val === "string") return val.trim() ? [val] : [];
+    if (Array.isArray(val)) return val;
+    return [];
+  },
+  z.array(z.string()),
+).default([]);
+
+// ---------------------------------------------------------------------------
 // Helper: coerce number (AI sometimes returns "45" instead of 45)
 // ---------------------------------------------------------------------------
 const num = z.coerce.number().default(0);
@@ -111,34 +126,34 @@ export const DistinctionPillarSchema = z
             }),
           )
           .default([]),
-        avantagesCompetitifs: z.array(z.string()).default([]),
+        avantagesCompetitifs: flexStringArray,
       })
       .default({}),
     promessesDeMarque: z
       .object({
         promesseMaitre: z.string().default(""),
-        sousPromesses: z.array(z.string()).default([]),
+        sousPromesses: flexStringArray,
       })
       .default({}),
     positionnement: z.string().default(""),
     tonDeVoix: z
       .object({
         personnalite: z.string().default(""),
-        onDit: z.array(z.string()).default([]),
-        onNeditPas: z.array(z.string()).default([]),
+        onDit: flexStringArray,
+        onNeditPas: flexStringArray,
       })
       .default({}),
     identiteVisuelle: z
       .object({
         directionArtistique: z.string().default(""),
-        paletteCouleurs: z.array(z.string()).default([]),
+        paletteCouleurs: flexStringArray,
         mood: z.string().default(""),
       })
       .default({}),
     assetsLinguistiques: z
       .object({
-        mantras: z.array(z.string()).default([]),
-        vocabulaireProprietaire: z.array(z.string()).default([]),
+        mantras: flexStringArray,
+        vocabulaireProprietaire: flexStringArray,
       })
       .default({}),
   })
@@ -164,22 +179,22 @@ export const ValeurPillarSchema = z
       .default([]),
     valeurMarque: z
       .object({
-        tangible: z.array(z.string()).default([]),
-        intangible: z.array(z.string()).default([]),
+        tangible: flexStringArray,
+        intangible: flexStringArray,
       })
       .default({}),
     valeurClient: z
       .object({
-        fonctionnels: z.array(z.string()).default([]),
-        emotionnels: z.array(z.string()).default([]),
-        sociaux: z.array(z.string()).default([]),
+        fonctionnels: flexStringArray,
+        emotionnels: flexStringArray,
+        sociaux: flexStringArray,
       })
       .default({}),
     coutMarque: z
       .object({
         capex: z.string().default(""),
         opex: z.string().default(""),
-        coutsCaches: z.array(z.string()).default([]),
+        coutsCaches: flexStringArray,
       })
       .default({}),
     coutClient: z
@@ -243,8 +258,8 @@ export const EngagementPillarSchema = z
       .default([]),
     principesCommunautaires: z
       .object({
-        principes: z.array(z.string()).default([]),
-        tabous: z.array(z.string()).default([]),
+        principes: flexStringArray,
+        tabous: flexStringArray,
       })
       .default({}),
     gamification: z
@@ -290,23 +305,23 @@ const RiskLevelEnum = z.enum(["low", "medium", "high"]).catch("medium");
 export const MicroSwotSchema = z.object({
   variableId: z.string().default(""),
   variableLabel: z.string().default(""),
-  strengths: z.array(z.string()).default([]),
-  weaknesses: z.array(z.string()).default([]),
-  opportunities: z.array(z.string()).default([]),
-  threats: z.array(z.string()).default([]),
+  strengths: flexStringArray,
+  weaknesses: flexStringArray,
+  opportunities: flexStringArray,
+  threats: flexStringArray,
   riskLevel: RiskLevelEnum,
   commentary: z.string().default(""),
-});
+}).strip();
 
 export const RiskAuditResultSchema = z
   .object({
     microSwots: z.array(MicroSwotSchema).default([]),
     globalSwot: z
       .object({
-        strengths: z.array(z.string()).default([]),
-        weaknesses: z.array(z.string()).default([]),
-        opportunities: z.array(z.string()).default([]),
-        threats: z.array(z.string()).default([]),
+        strengths: flexStringArray,
+        weaknesses: flexStringArray,
+        opportunities: flexStringArray,
+        threats: flexStringArray,
       })
       .default({}),
     riskScore: z.coerce.number().min(0).max(100).catch(50),
@@ -368,9 +383,9 @@ export const TrackAuditResultSchema = z
       .default([]),
     marketReality: z
       .object({
-        macroTrends: z.array(z.string()).default([]),
-        weakSignals: z.array(z.string()).default([]),
-        emergingPatterns: z.array(z.string()).default([]),
+        macroTrends: flexStringArray,
+        weakSignals: flexStringArray,
+        emergingPatterns: flexStringArray,
       })
       .default({}),
     tamSamSom: z
@@ -391,15 +406,15 @@ export const TrackAuditResultSchema = z
       .array(
         z.object({
           competitor: z.string().default(""),
-          strengths: z.array(z.string()).default([]),
-          weaknesses: z.array(z.string()).default([]),
+          strengths: flexStringArray,
+          weaknesses: flexStringArray,
           marketShare: z.string().default(""),
         }),
       )
       .default([]),
     brandMarketFitScore: z.coerce.number().min(0).max(100).catch(50),
     brandMarketFitJustification: z.string().default(""),
-    strategicRecommendations: z.array(z.string()).default([]),
+    strategicRecommendations: flexStringArray,
     summary: z.string().default(""),
   })
   .strip();
@@ -421,14 +436,14 @@ export const ImplementationDataSchema = z
         archetype: z.string().default(""),
         purpose: z.string().default(""),
         vision: z.string().default(""),
-        values: z.array(z.string()).default([]),
+        values: flexStringArray,
         narrative: z.string().default(""),
       })
       .default({}),
     positioning: z
       .object({
         statement: z.string().default(""),
-        differentiators: z.array(z.string()).default([]),
+        differentiators: flexStringArray,
         toneOfVoice: z.string().default(""),
         personas: z
           .array(
@@ -516,10 +531,10 @@ export const ImplementationDataSchema = z
         riskScore: num,
         globalSwot: z
           .object({
-            strengths: z.array(z.string()).default([]),
-            weaknesses: z.array(z.string()).default([]),
-            opportunities: z.array(z.string()).default([]),
-            threats: z.array(z.string()).default([]),
+            strengths: flexStringArray,
+            weaknesses: flexStringArray,
+            opportunities: flexStringArray,
+            threats: flexStringArray,
           })
           .default({}),
         topRisks: z
@@ -539,8 +554,8 @@ export const ImplementationDataSchema = z
         tam: z.string().default(""),
         sam: z.string().default(""),
         som: z.string().default(""),
-        trends: z.array(z.string()).default([]),
-        recommendations: z.array(z.string()).default([]),
+        trends: flexStringArray,
+        recommendations: flexStringArray,
       })
       .default({}),
     strategicRoadmap: z
@@ -554,7 +569,7 @@ export const ImplementationDataSchema = z
             }),
           )
           .default([]),
-        year1Priorities: z.array(z.string()).default([]),
+        year1Priorities: flexStringArray,
         year3Vision: z.string().default(""),
       })
       .default({}),
@@ -568,7 +583,7 @@ export const ImplementationDataSchema = z
               mois: z.string().default(""),
               campagne: z.string().default(""),
               objectif: z.string().default(""),
-              canaux: z.array(z.string()).default([]),
+              canaux: flexStringArray,
               budget: z.string().default(""),
               kpiCible: z.string().default(""),
             }),
@@ -581,8 +596,8 @@ export const ImplementationDataSchema = z
               type: CampaignTypeEnum,
               description: z.string().default(""),
               duree: z.string().default(""),
-              canauxPrincipaux: z.array(z.string()).default([]),
-              messagesCles: z.array(z.string()).default([]),
+              canauxPrincipaux: flexStringArray,
+              messagesCles: flexStringArray,
             }),
           )
           .default([]),
@@ -669,8 +684,8 @@ export const ImplementationDataSchema = z
               nom: z.string().default(""),
               debut: z.string().default(""),
               fin: z.string().default(""),
-              objectifs: z.array(z.string()).default([]),
-              livrables: z.array(z.string()).default([]),
+              objectifs: flexStringArray,
+              livrables: flexStringArray,
               goNoGo: z.string().default(""),
             }),
           )
@@ -689,9 +704,9 @@ export const ImplementationDataSchema = z
       .default({}),
     operationalPlaybook: z
       .object({
-        rythmeQuotidien: z.array(z.string()).default([]),
-        rythmeHebdomadaire: z.array(z.string()).default([]),
-        rythmeMensuel: z.array(z.string()).default([]),
+        rythmeQuotidien: flexStringArray,
+        rythmeHebdomadaire: flexStringArray,
+        rythmeMensuel: flexStringArray,
         escalation: z
           .array(
             z.object({
@@ -721,7 +736,7 @@ export const ImplementationDataSchema = z
         purpose: z.string().default(""),
         vision: z.string().default(""),
         mission: z.string().default(""),
-        values: z.array(z.string()).default([]),
+        values: flexStringArray,
         personality: z.string().default(""),
         territory: z.string().default(""),
         tagline: z.string().default(""),
@@ -732,7 +747,7 @@ export const ImplementationDataSchema = z
     copyStrategy: z
       .object({
         promise: z.string().default(""),
-        rtb: z.array(z.string()).default([]),
+        rtb: flexStringArray,
         consumerBenefit: z.string().default(""),
         tone: z.string().default(""),
         constraint: z.string().default(""),
@@ -805,21 +820,21 @@ export const ImplementationDataSchema = z
         comiteStrategique: z
           .object({
             frequence: z.string().default(""),
-            participants: z.array(z.string()).default([]),
+            participants: flexStringArray,
             objectif: z.string().default(""),
           })
           .default({}),
         comitePilotage: z
           .object({
             frequence: z.string().default(""),
-            participants: z.array(z.string()).default([]),
+            participants: flexStringArray,
             objectif: z.string().default(""),
           })
           .default({}),
         pointsOperationnels: z
           .object({
             frequence: z.string().default(""),
-            participants: z.array(z.string()).default([]),
+            participants: flexStringArray,
             objectif: z.string().default(""),
           })
           .default({}),
@@ -841,9 +856,9 @@ export const ImplementationDataSchema = z
         z.object({
           name: z.string().default(""),
           objectif: z.string().default(""),
-          livrables: z.array(z.string()).default([]),
+          livrables: flexStringArray,
           frequence: z.string().default(""),
-          kpis: z.array(z.string()).default([]),
+          kpis: flexStringArray,
         }),
       )
       .default([]),
@@ -868,10 +883,10 @@ export const ImplementationDataSchema = z
     // Principes directeurs — Do's / Don'ts / Critères
     guidingPrinciples: z
       .object({
-        dos: z.array(z.string()).default([]),
-        donts: z.array(z.string()).default([]),
-        communicationPrinciples: z.array(z.string()).default([]),
-        coherenceCriteria: z.array(z.string()).default([]),
+        dos: flexStringArray,
+        donts: flexStringArray,
+        communicationPrinciples: flexStringArray,
+        coherenceCriteria: flexStringArray,
       })
       .default({}),
 
@@ -899,7 +914,7 @@ export const SynthesePillarSchema = z
         }),
       )
       .default([]),
-    facteursClesSucces: z.array(z.string()).default([]),
+    facteursClesSucces: flexStringArray,
     recommandationsPrioritaires: z
       .array(
         z.object({
@@ -919,8 +934,8 @@ export const SynthesePillarSchema = z
         z.object({
           axe: z.string().default(""),
           description: z.string().default(""),
-          piliersLies: z.array(z.string()).default([]),
-          kpisCles: z.array(z.string()).default([]),
+          piliersLies: flexStringArray,
+          kpisCles: flexStringArray,
         }),
       )
       .default([]),
@@ -944,7 +959,7 @@ export const SynthesePillarSchema = z
     campaignsSummary: z
       .object({
         totalCampaigns: z.coerce.number().default(0),
-        highlights: z.array(z.string()).default([]),
+        highlights: flexStringArray,
         budgetTotal: z.string().default(""),
       })
       .default({}),
@@ -975,6 +990,9 @@ export type PillarData =
   | DistinctionPillarData
   | ValeurPillarData
   | EngagementPillarData
+  | RiskAuditResult
+  | TrackAuditResult
+  | ImplementationData
   | SynthesePillarData;
 
 // ---------------------------------------------------------------------------

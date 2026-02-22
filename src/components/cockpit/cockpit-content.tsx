@@ -10,21 +10,24 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
   Crown,
   FileText,
+  Loader2,
   Monitor,
   Presentation,
   Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   PILLAR_CONFIG,
   REPORT_TYPES,
   TEMPLATE_TYPES,
+  TEMPLATE_CONFIG,
   VIEW_MODES,
   VIEW_MODE_LABELS,
   VIEW_MODE_SECTIONS,
@@ -131,12 +134,15 @@ export interface CockpitData {
 export function CockpitContent({
   data,
   isPublic = false,
+  isClientView = false,
   initialViewMode,
   onRefresh,
   tabSections,
 }: {
   data: CockpitData;
   isPublic?: boolean;
+  /** Set to true when rendering inside the client shell (determines Oracle link path) */
+  isClientView?: boolean;
   initialViewMode?: ViewMode | null;
   onRefresh?: () => void;
   /** Optional: sections allowed by the active cockpit tab (from TAB_SECTION_MAP) */
@@ -212,8 +218,8 @@ export function CockpitContent({
             </p>
           )}
 
-          {/* ViewMode selector */}
-          {!isPublic && (
+          {/* ViewMode selector — hidden when tab-based filtering is active (operator cockpit) */}
+          {!isPublic && !tabSections && (
             <div className="mt-3 flex items-center justify-center gap-2">
               <Monitor className="h-3.5 w-3.5 text-muted-foreground" />
               <div className="inline-flex items-center rounded-lg border bg-muted/40 p-0.5">
@@ -483,77 +489,155 @@ export function CockpitContent({
               </CockpitSection>
             )}
 
-            {/* Livrables UPGRADERS — show section even if no templates yet */}
-            <CockpitSection
-              icon={<Presentation className="h-5 w-5" />}
-              pillarLetter="S"
-              title="Livrables UPGRADERS"
-              subtitle={
-                templateDocs.length > 0
-                  ? `${templateDocs.length} template${templateDocs.length > 1 ? "s" : ""} vendable${templateDocs.length > 1 ? "s" : ""}`
-                  : "3 templates vendables — Protocole, Reco Campagne, Mandat 360"
-              }
-              color="#c45a3c"
-            >
-              {templateDocs.length > 0 ? (
-                <div className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {templateDocs.map((doc) => (
-                      <Link
-                        key={doc.id}
-                        href={`/strategy/${data.strategyId}/document/${doc.id}`}
-                      >
-                        <Card className="border-terracotta/20 transition-all hover:shadow-md hover:border-terracotta/40 cursor-pointer">
-                          <CardContent className="pt-4">
+            {/* L'ORACLE + Livrables — visible in all modes including EXECUTIVE (client) */}
+            {show("livrables") && (
+              <CockpitSection
+                icon={<Presentation className="h-5 w-5" />}
+                pillarLetter="S"
+                title="L'ORACLE & Livrables"
+                subtitle="Présentation interactive complète + templates stratégiques"
+                color="#c45a3c"
+              >
+                <div className="space-y-5">
+                  {/* ── L'ORACLE — Hero card (hidden on public share links) ── */}
+                  {!isPublic && data.strategyId && (
+                  <Link
+                    href={
+                      isClientView
+                        ? "/oracle"
+                        : `/brand/${data.strategyId}/oracle`
+                    }
+                  >
+                    <Card className="group relative overflow-hidden border-terracotta/30 bg-gradient-to-br from-[#0A0A12] to-[#17171F] transition-all hover:shadow-xl hover:shadow-terracotta/10 hover:border-terracotta/50 cursor-pointer">
+                      {/* Gradient accent bar */}
+                      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#c45a3c] via-[#c49a3c] to-[#2d5a3d]" />
+                      <CardContent className="pt-6 pb-5">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#c45a3c] to-[#2d5a3d] shadow-lg shadow-terracotta/20">
+                            <Monitor className="h-7 w-7 text-white" />
+                          </div>
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <Presentation className="h-4 w-4 text-terracotta" />
-                              <p className="text-sm font-medium">{doc.title}</p>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between">
-                              {doc.pageCount && (
-                                <p className="text-xs text-muted-foreground">
-                                  ~{doc.pageCount} slides
-                                </p>
-                              )}
-                              <span className="text-xs font-medium text-terracotta">
-                                Voir →
+                              <h3 className="text-lg font-bold tracking-tight text-white">
+                                L&apos;ORACLE
+                              </h3>
+                              <span className="inline-flex items-center gap-1 rounded-full bg-[#c45a3c]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#c45a3c]">
+                                <Sparkles className="h-2.5 w-2.5" />
+                                Interactif
                               </span>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                  {!isPublic && (
-                    <Link
-                      href={`/strategy/${data.strategyId}/generate`}
-                      className="inline-flex items-center gap-1.5 text-xs font-medium text-terracotta hover:text-terracotta/80"
-                    >
-                      <Sparkles className="h-3 w-3" />
-                      Générer / régénérer des templates
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
+                            <p className="mt-1 text-sm text-white/50">
+                              Présentation immersive — 8 piliers, signaux, décisions, budget, concurrents
+                            </p>
+                            <div className="mt-2 flex items-center gap-4">
+                              <span className="text-xs text-white/30">
+                                Navigation interactive
+                              </span>
+                              <span className="text-xs text-white/30">
+                                Graphiques &amp; Scores
+                              </span>
+                              <span className="text-xs text-white/30">
+                                Export HTML
+                              </span>
+                            </div>
+                          </div>
+                          <div className="hidden md:flex items-center">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-semibold text-terracotta group-hover:bg-terracotta/10 transition-colors">
+                              Ouvrir L&apos;ORACLE
+                              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                            </span>
+                          </div>
+                        </div>
+                        {/* Mobile CTA */}
+                        <div className="mt-3 flex items-center justify-end md:hidden">
+                          <span className="text-xs font-semibold text-terracotta group-hover:underline">
+                            Ouvrir L&apos;ORACLE →
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                  )}
+
+                  {/* ── Templates — 3 columns ── */}
+                  {templateDocs.length > 0 ? (
+                    <div className="space-y-3">
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
+                        Templates stratégiques
+                      </p>
+                      <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
+                        {templateDocs.map((doc) => {
+                          const templateConfig = Object.values(TEMPLATE_CONFIG).find(
+                            (c) => c.title === doc.title,
+                          );
+                          const unitLabel = templateConfig?.unit === "pages" ? "pages" : "slides";
+                          return (
+                            <Link
+                              key={doc.id}
+                              href={`/brand/${data.strategyId}/document/${doc.id}`}
+                            >
+                              <Card className="group relative overflow-hidden border-terracotta/20 transition-all hover:shadow-lg hover:border-terracotta/40 cursor-pointer">
+                                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-terracotta to-terracotta/60" />
+                                <CardContent className="pt-4 pb-3">
+                                  <div className="flex items-start gap-3">
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-terracotta/10">
+                                      <Presentation className="h-4 w-4 text-terracotta" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-semibold leading-tight">{doc.title}</p>
+                                      {templateConfig && (
+                                        <p className="mt-0.5 text-xs text-muted-foreground">
+                                          {templateConfig.subtitle}
+                                        </p>
+                                      )}
+                                      <div className="mt-2 flex items-center gap-3">
+                                        {doc.pageCount != null && doc.pageCount > 0 && (
+                                          <span className="text-xs text-muted-foreground">
+                                            ~{doc.pageCount} {unitLabel}
+                                          </span>
+                                        )}
+                                        {doc.status === "complete" && (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700">
+                                            <Crown className="h-2.5 w-2.5" />
+                                            Prêt
+                                          </span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="mt-2 flex items-center justify-end">
+                                    <span className="text-xs font-medium text-terracotta group-hover:underline">
+                                      Consulter →
+                                    </span>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                      {!isPublic && data.strategyId && (
+                        <Link
+                          href={`/brand/${data.strategyId}/generate`}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-terracotta hover:text-terracotta/80"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          Générer / régénérer des livrables
+                          <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      )}
+                    </div>
+                  ) : (
+                    <TemplatePlaceholder
+                      strategyId={data.strategyId}
+                      pillarIComplete={getPillar("I")?.status === "complete"}
+                      isPublic={isPublic}
+                      onGenerated={onRefresh}
+                    />
                   )}
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <p className="text-sm text-muted-foreground">
-                    Les 3 templates vendables (Protocole Stratégique, Reco Campagne, Mandat 360)
-                    se génèrent depuis le Pipeline une fois le pilier I complété.
-                  </p>
-                  {!isPublic && (
-                    <Link
-                      href={`/strategy/${data.strategyId}/generate`}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
-                    >
-                      <Sparkles className="h-3.5 w-3.5" />
-                      Aller au Pipeline
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
-                  )}
-                </div>
-              )}
-            </CockpitSection>
+              </CockpitSection>
+            )}
           </>
         );
       })()}
@@ -563,9 +647,128 @@ export function CockpitContent({
         <p className="text-xs text-muted-foreground">
           Généré avec la méthodologie{" "}
           <span className="font-semibold text-terracotta">ADVERTIS</span>
-          {" "}&mdash; Fiche de marque en 8 piliers
+          {" "}&mdash; Intelligence strat\u00e9gique en 8 piliers
         </p>
       </footer>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Template Placeholder — with direct generation button
+// ---------------------------------------------------------------------------
+
+function TemplatePlaceholder({
+  strategyId,
+  pillarIComplete,
+  isPublic,
+  onGenerated,
+}: {
+  strategyId?: string;
+  pillarIComplete: boolean;
+  isPublic: boolean;
+  onGenerated?: () => void;
+}) {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = useCallback(async () => {
+    if (!strategyId) return;
+    setIsGenerating(true);
+    try {
+      const response = await fetch("/api/ai/templates", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ strategyId }),
+      });
+      const data = (await response.json()) as {
+        success: boolean;
+        error?: string;
+        warning?: string;
+      };
+      if (data.success) {
+        toast.success("Templates UPGRADERS g\u00e9n\u00e9r\u00e9s !");
+        onGenerated?.();
+      } else {
+        toast.error(data.error ?? "Erreur lors de la g\u00e9n\u00e9ration.");
+      }
+    } catch {
+      toast.error("Erreur r\u00e9seau lors de la g\u00e9n\u00e9ration.");
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [strategyId, onGenerated]);
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
+        Templates strat\u00e9giques disponibles
+      </p>
+      <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
+        {TEMPLATE_TYPES.map((tt) => {
+          const config = TEMPLATE_CONFIG[tt];
+          const unitLabel = config.unit === "pages" ? "pages" : "slides";
+          return (
+            <Card
+              key={tt}
+              className={
+                isGenerating
+                  ? "border-terracotta/30 bg-terracotta/5 animate-pulse"
+                  : "border-dashed border-muted-foreground/20 opacity-70"
+              }
+            >
+              <CardContent className="pt-4 pb-3">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                    {isGenerating ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-terracotta" />
+                    ) : (
+                      <Presentation className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">{config.title}</p>
+                    <p className="text-xs text-muted-foreground">{config.subtitle}</p>
+                    <p className="mt-1 text-[10px] text-muted-foreground/60">
+                      {config.estimatedSlides[0]}-{config.estimatedSlides[1]} {unitLabel}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {isGenerating ? (
+        <div className="flex items-center gap-2 text-sm text-terracotta">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          G\u00e9n\u00e9ration des templates en cours\u2026 (quelques minutes)
+        </div>
+      ) : pillarIComplete && !isPublic && strategyId ? (
+        <button
+          onClick={() => void handleGenerate()}
+          className="inline-flex items-center gap-1.5 rounded-md bg-terracotta px-4 py-2 text-xs font-semibold text-white hover:bg-terracotta/90 transition-colors shadow-sm"
+        >
+          <Sparkles className="h-3.5 w-3.5" />
+          G\u00e9n\u00e9rer les templates maintenant
+        </button>
+      ) : (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Les templates strat\u00e9giques sont g\u00e9n\u00e9r\u00e9s une fois l&apos;analyse compl\u00e8te r\u00e9alis\u00e9e.
+          </p>
+          {!isPublic && strategyId && (
+            <Link
+              href={`/brand/${strategyId}/generate`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Aller au Pipeline
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          )}
+        </>
+      )}
     </div>
   );
 }

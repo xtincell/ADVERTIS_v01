@@ -89,7 +89,7 @@ export function CockpitHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onClick={() => router.push(`/brand/${strategyId}/edit/A`)}>
+            <DropdownMenuItem onClick={() => router.push(`/brand/${strategyId}/generate`)}>
               <Edit className="mr-2 h-4 w-4" />
               Éditer la fiche
             </DropdownMenuItem>

@@ -24,12 +24,12 @@ const DEFAULT_TABS: CockpitTab[] = [
 
 /** Maps tab IDs to the cockpit section keys they should show */
 export const TAB_SECTION_MAP: Record<string, string[]> = {
-  overview: ["scores", "alerts", "synthese", "authenticite", "distinction", "valeur", "engagement"],
+  overview: ["scores", "alerts", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables"],
   strategy: ["authenticite", "distinction", "valeur", "synthese"],
   operational: ["engagement", "implementation", "budget", "widgets"],
   signals: ["signals", "decisions", "veille"],
   market: ["risk", "track", "competitors", "opportunities"],
-  briefs: ["briefs"],
+  briefs: ["briefs", "livrables"],
 };
 
 interface CockpitTabsProps {
