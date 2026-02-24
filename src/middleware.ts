@@ -30,6 +30,7 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/tree": ["ADMIN", "OPERATOR"],
   "/missions": ["ADMIN", "OPERATOR"],
   "/more": ["ADMIN", "OPERATOR"],
+  "/glory": ["ADMIN", "OPERATOR"],
   // Freelance-only
   "/my-missions": ["FREELANCE"],
   "/my-briefs": ["FREELANCE"],
@@ -79,6 +80,7 @@ export const config = {
     "/tree/:path*",
     "/missions/:path*",
     "/more/:path*",
+    "/glory/:path*",
     // Freelance routes
     "/my-missions/:path*",
     "/my-briefs/:path*",

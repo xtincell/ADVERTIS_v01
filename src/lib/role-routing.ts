@@ -35,6 +35,7 @@ export const OPERATOR_ROUTES = [
   "/tree",
   "/missions",
   "/more",
+  "/glory",
 ];
 
 /** Routes only accessible by FREELANCE. */
