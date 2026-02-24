@@ -208,6 +208,31 @@ const assignmentsRouter = createTRPCRouter({
       return updateAssignment(input);
     }),
 
+  // Freelance can update their own assignment notes (field observations)
+  updateNotes: protectedProcedure
+    .input(
+      z.object({
+        assignmentId: z.string().min(1),
+        notes: z.string().max(5000),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Verify the freelance owns this assignment
+      const assignment = await ctx.db.missionAssignment.findUnique({
+        where: { id: input.assignmentId },
+      });
+      if (!assignment || assignment.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Vous ne pouvez modifier que vos propres notes.",
+        });
+      }
+      return ctx.db.missionAssignment.update({
+        where: { id: input.assignmentId },
+        data: { notes: input.notes },
+      });
+    }),
+
   delete: opsProcedure
     .input(z.object({ id: z.string().min(1) }))
     .mutation(async ({ input }) => {

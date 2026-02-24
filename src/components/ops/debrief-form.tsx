@@ -11,8 +11,9 @@
  */
 
 import { useState } from "react";
-import { CheckCircle2, Plus, X } from "lucide-react";
+import { CheckCircle2, Plus, X, MessageSquare } from "lucide-react";
 import { api } from "~/trpc/react";
+import { ASSIGNMENT_ROLE_LABELS } from "~/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
@@ -32,6 +33,13 @@ export function DebriefForm({ missionId, onSuccess }: DebriefFormProps) {
   const [onBudget, setOnBudget] = useState(true);
   const [lessons, setLessons] = useState<string[]>([]);
   const [newLesson, setNewLesson] = useState("");
+
+  // Load freelance assignment notes for this mission
+  const { data: assignmentNotes } =
+    api.mission.assignments.getByMission.useQuery(
+      { missionId },
+      { select: (data) => data.filter((a) => a.notes && a.notes.trim()) },
+    );
 
   const createDebrief = api.mission.debrief.create.useMutation({
     onSuccess: () => {
@@ -69,6 +77,26 @@ export function DebriefForm({ missionId, onSuccess }: DebriefFormProps) {
         <CardTitle className="text-base">Debrief Mission</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Freelance Field Notes (read-only) */}
+        {assignmentNotes && assignmentNotes.length > 0 && (
+          <div className="space-y-2 rounded-md border border-blue-200 bg-blue-50/50 p-3">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-blue-700">
+              <MessageSquare className="h-4 w-4" />
+              Notes terrain freelance
+            </div>
+            {assignmentNotes.map((a) => (
+              <div key={a.id} className="rounded bg-white/80 p-2 text-sm">
+                <span className="font-medium text-blue-600">
+                  {ASSIGNMENT_ROLE_LABELS[
+                    a.role as keyof typeof ASSIGNMENT_ROLE_LABELS
+                  ] ?? a.role}
+                </span>
+                <p className="mt-0.5 text-muted-foreground">{a.notes}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Summary */}
         <div className="space-y-2">
           <Label htmlFor="summary">Résumé *</Label>

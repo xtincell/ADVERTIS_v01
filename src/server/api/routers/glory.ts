@@ -194,6 +194,38 @@ export const gloryRouter = createTRPCRouter({
     }),
 
   /**
+   * List GLORY outputs available for attaching to mission deliverables.
+   * Returns completed outputs for a given strategy, optimized for picker UI.
+   */
+  listForPicker: protectedProcedure
+    .input(
+      z.object({
+        strategyId: z.string(),
+        toolSlug: z.string().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return ctx.db.gloryOutput.findMany({
+        where: {
+          strategyId: input.strategyId,
+          createdBy: ctx.session.user.id,
+          status: "complete",
+          ...(input.toolSlug ? { toolSlug: input.toolSlug } : {}),
+        },
+        select: {
+          id: true,
+          toolSlug: true,
+          layer: true,
+          title: true,
+          isFavorite: true,
+          createdAt: true,
+        },
+        orderBy: [{ isFavorite: "desc" }, { createdAt: "desc" }],
+        take: 50,
+      });
+    }),
+
+  /**
    * Toggle favorite status on an output.
    */
   toggleFavorite: protectedProcedure

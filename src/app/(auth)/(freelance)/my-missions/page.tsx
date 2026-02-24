@@ -5,6 +5,7 @@
 
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -13,6 +14,8 @@ import {
   FileText,
   Loader2,
   AlertCircle,
+  MessageSquare,
+  Save,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -24,6 +27,57 @@ import {
 } from "~/lib/constants";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { Button } from "~/components/ui/button";
+import { Textarea } from "~/components/ui/textarea";
+
+function AssignmentNotes({
+  assignmentId,
+  initialNotes,
+}: {
+  assignmentId: string;
+  initialNotes: string | null;
+}) {
+  const [notes, setNotes] = useState(initialNotes ?? "");
+  const [saved, setSaved] = useState(false);
+
+  const updateNotes = api.mission.assignments.updateNotes.useMutation({
+    onSuccess: () => {
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  return (
+    <div className="mt-2 space-y-1.5 border-t pt-2" onClick={(e) => e.stopPropagation()}>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <MessageSquare className="h-3 w-3" />
+        Notes terrain
+      </div>
+      <Textarea
+        value={notes}
+        onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
+        placeholder="Observations terrain, retours client, difficultés rencontrées..."
+        rows={2}
+        className="text-xs"
+      />
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-xs"
+          disabled={updateNotes.isPending || notes === (initialNotes ?? "")}
+          onClick={() => updateNotes.mutate({ assignmentId, notes })}
+        >
+          <Save className="mr-1 h-3 w-3" />
+          {updateNotes.isPending ? "..." : "Sauvegarder"}
+        </Button>
+        {saved && (
+          <span className="text-xs text-emerald-600">Sauvegardé</span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function FreelanceHomePage() {
   const router = useRouter();
@@ -150,6 +204,10 @@ export default function FreelanceHomePage() {
                       )}
                     </div>
                   </div>
+                  <AssignmentNotes
+                    assignmentId={assignment.id}
+                    initialNotes={assignment.notes}
+                  />
                 </CardContent>
               </Card>
             );

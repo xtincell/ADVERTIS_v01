@@ -255,6 +255,41 @@ export async function buildStrategyContext(
     sections.push(""); // blank line separator between pillars
   }
 
+  // --- Validated creative references (favorite GLORY outputs) ---
+  const favoriteOutputs = await db.gloryOutput.findMany({
+    where: {
+      strategyId,
+      isFavorite: true,
+      status: "complete",
+    },
+    select: {
+      title: true,
+      toolSlug: true,
+      outputText: true,
+    },
+    orderBy: { createdAt: "desc" },
+    take: 5,
+  });
+
+  if (favoriteOutputs.length > 0) {
+    sections.push("## RÉFÉRENCES CRÉATIVES VALIDÉES");
+    sections.push(
+      "Les concepts suivants ont été marqués comme favoris. Ils représentent la direction créative validée pour cette marque.",
+    );
+    for (const fav of favoriteOutputs) {
+      sections.push(`### ${fav.title} (${fav.toolSlug})`);
+      if (fav.outputText) {
+        // Limit to first 500 chars to avoid bloating the context
+        const preview =
+          fav.outputText.length > 500
+            ? fav.outputText.substring(0, 500) + "…"
+            : fav.outputText;
+        sections.push(preview);
+      }
+      sections.push("");
+    }
+  }
+
   const context = sections.join("\n").trimEnd();
 
   const strategyMeta: StrategyMeta = {

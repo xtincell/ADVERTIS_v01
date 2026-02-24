@@ -60,6 +60,44 @@ import { createSignal } from "./signal-engine";
 import { markPillarStale, propagateToTranslationDocs } from "./stale-detector";
 
 // ============================================
+// GLORY tool → feedback pillar mapping
+// Maps each GLORY tool slug to the pillar that benefits from validated outputs.
+// ============================================
+
+const GLORY_TOOL_FEEDBACK_PILLAR: Record<string, string> = {
+  // CR tools → mostly feed Engagement (E) and Distinction (D)
+  "concept-generator": "E",
+  "script-writer": "E",
+  "long-copy-craftsman": "A",
+  "dialogue-writer": "E",
+  "claim-baseline-factory": "D",
+  "print-ad-architect": "D",
+  "social-copy-engine": "E",
+  "storytelling-sequencer": "E",
+  "wordplay-cultural-bank": "A",
+  "brief-creatif-interne": "E",
+  // DC tools → feed Distinction (D) and Authenticity (A)
+  "campaign-architecture-planner": "E",
+  "creative-evaluation-matrix": "D",
+  "idea-killer-saver": "D",
+  "multi-team-coherence-checker": "A",
+  "client-presentation-strategist": "D",
+  "creative-direction-memo": "D",
+  "pitch-architect": "D",
+  "award-case-builder": "A",
+  // HYBRID tools → various pillars
+  "campaign-360-simulator": "E",
+  "production-budget-optimizer": "V",
+  "vendor-brief-generator": "E",
+  "content-calendar-strategist": "E",
+  "approval-workflow-manager": "I",
+  "brand-guardian-system": "A",
+  "client-education-module": "A",
+  "benchmark-reference-finder": "T",
+  "post-campaign-reader": "T",
+};
+
+// ============================================
 // MISSION CRUD
 // ============================================
 
@@ -276,12 +314,14 @@ export async function getAssignmentsByMission(missionId: string) {
 
 /**
  * Add a deliverable to a mission.
+ * If gloryOutputId is provided, links the deliverable to a GLORY output as creative reference.
  */
 export async function addDeliverable(data: CreateDeliverableInput) {
   return db.missionDeliverable.create({
     data: {
       missionId: data.missionId,
       assignmentId: data.assignmentId,
+      gloryOutputId: data.gloryOutputId,
       title: data.title,
       fileUrl: data.fileUrl,
       fileType: data.fileType,
@@ -350,6 +390,15 @@ export async function completeMissionDebrief(
     throw new Error("Un debrief existe déjà pour cette mission.");
   }
 
+  // Collect freelance field notes from all assignments
+  const assignments = await db.missionAssignment.findMany({
+    where: { missionId: data.missionId },
+    select: { userId: true, role: true, notes: true },
+  });
+  const freelanceNotes = assignments
+    .filter((a) => a.notes && a.notes.trim().length > 0)
+    .map((a) => ({ role: a.role, userId: a.userId, notes: a.notes }));
+
   const debrief = await db.missionDebrief.create({
     data: {
       missionId: data.missionId,
@@ -366,6 +415,9 @@ export async function completeMissionDebrief(
         : undefined,
       pricingInsights: data.pricingInsights
         ? JSON.parse(JSON.stringify(data.pricingInsights))
+        : undefined,
+      freelanceNotes: freelanceNotes.length > 0
+        ? JSON.parse(JSON.stringify(freelanceNotes))
         : undefined,
       completedBy,
     },
@@ -469,6 +521,31 @@ export async function completeMissionDebrief(
             },
           });
         }
+      }
+    }
+
+    // 3. GLORY → Signal: validated GLORY outputs become intelligence signals
+    if (data.qualityScore != null && data.qualityScore >= 70) {
+      const deliverables = await db.missionDeliverable.findMany({
+        where: { missionId: data.missionId, gloryOutputId: { not: null } },
+        include: { gloryOutput: { select: { id: true, title: true, toolSlug: true } } },
+      });
+
+      for (const del of deliverables) {
+        if (!del.gloryOutput) continue;
+
+        // Map GLORY tool to feedback pillar (creative tools → E, strategic tools → D)
+        const feedbackPillar = GLORY_TOOL_FEEDBACK_PILLAR[del.gloryOutput.toolSlug] ?? "E";
+
+        await createSignal(mission.strategyId, {
+          title: `Concept validé : ${del.gloryOutput.title}`,
+          layer: "STRONG",
+          status: "ACTIVE",
+          source: "GLORY_VALIDATED",
+          pillar: feedbackPillar,
+          confidence: "HIGH",
+          description: `Output GLORY "${del.gloryOutput.toolSlug}" validé en mission (qualité: ${data.qualityScore}/100)`,
+        });
       }
     }
   } catch (err) {

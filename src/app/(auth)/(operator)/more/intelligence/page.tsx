@@ -19,6 +19,7 @@ import {
   Eye,
   Building2,
   ExternalLink,
+  Zap,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -73,7 +74,7 @@ export default function OperatorIntelligencePage() {
     );
   }
 
-  const { strategies, competitors, opportunities } = data;
+  const { strategies, competitors, opportunities, sectorSignals } = data;
 
   // Deduplicate competitors
   const competitorMap = new Map<
@@ -327,7 +328,34 @@ export default function OperatorIntelligencePage() {
 
             {activeTab === "trends" && (
               <div className="space-y-6">
-                {allTrends.length === 0 && allSignals.length === 0 ? (
+                {/* Sector signals (cross-strategy patterns) */}
+                {sectorSignals && sectorSignals.length > 0 && (
+                  <div>
+                    <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Signaux sectoriels ({sectorSignals.length})
+                    </p>
+                    <div className="space-y-2">
+                      {sectorSignals.map((ss, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50/50 p-3"
+                        >
+                          <Zap className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
+                          <div>
+                            <p className="text-sm font-medium">
+                              {ss.count} marques avec signal {ss.layer} sur pilier {ss.pillar}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Secteur : {ss.sector} — Marques : {ss.brands.join(", ")}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {allTrends.length === 0 && allSignals.length === 0 && (!sectorSignals || sectorSignals.length === 0) ? (
                   <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
                     <TrendingUp className="h-10 w-10 text-muted-foreground/30" />
                     <p className="text-sm text-muted-foreground">

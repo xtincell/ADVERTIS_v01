@@ -685,6 +685,8 @@ model MissionDeliverable {
     missionId     String
     mission       Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
     assignmentId  String? // optional link to MissionAssignment
+    gloryOutputId String? // optional link to GLORY output used as reference
+    gloryOutput   GloryOutput? @relation(fields: [gloryOutputId], references: [id], onDelete: SetNull)
     title         String
     fileUrl       String? // uploaded file path or URL
     fileType      String? // pdf, psd, ai, mp4, etc.
@@ -698,6 +700,7 @@ model MissionDeliverable {
     updatedAt DateTime @updatedAt
 
     @@index([missionId])
+    @@index([gloryOutputId])
 }
 
 model MissionDebrief {
@@ -712,6 +715,7 @@ model MissionDebrief {
     onBudget        Boolean?
     signalsSuggested Json? // Signal data to feed back into SIS
     pricingInsights Json? // pricing data to feed into MarketPricing
+    freelanceNotes  Json? // Collected field notes from freelance assignments
     completedBy     String // userId who completed the debrief
 
     createdAt DateTime @default(now())
@@ -809,6 +813,8 @@ model GloryOutput {
     isFavorite   Boolean  @default(false)
     errorMessage String?
     createdBy    String   // userId
+
+    deliverables MissionDeliverable[] // Missions that use this output as reference
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

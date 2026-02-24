@@ -11,11 +11,14 @@
  */
 
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, XCircle, Clock, Filter } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle, Clock, Filter, Radio } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
   INTERVENTION_TYPE_LABELS,
+  PILLAR_CONFIG,
+  PILLAR_TYPES,
   type InterventionType,
+  type PillarType,
 } from "~/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -29,6 +32,8 @@ export function InterventionPanel() {
   const utils = api.useUtils();
   const [resolvingId, setResolvingId] = useState<string | null>(null);
   const [resolution, setResolution] = useState("");
+  const [createSignal, setCreateSignal] = useState(false);
+  const [signalPillar, setSignalPillar] = useState<PillarType>("A");
 
   const triageMutation = api.intervention.triage.useMutation({
     onSuccess: () => void utils.intervention.getPending.invalidate(),
@@ -37,6 +42,7 @@ export function InterventionPanel() {
     onSuccess: () => {
       setResolvingId(null);
       setResolution("");
+      setCreateSignal(false);
       void utils.intervention.getPending.invalidate();
     },
   });
@@ -44,6 +50,7 @@ export function InterventionPanel() {
     onSuccess: () => {
       setResolvingId(null);
       setResolution("");
+      setCreateSignal(false);
       void utils.intervention.getPending.invalidate();
     },
   });
@@ -139,6 +146,36 @@ export function InterventionPanel() {
                   placeholder="Résolution..."
                   rows={2}
                 />
+                {/* Signal creation toggle */}
+                {intervention.strategyId && (
+                  <div className="space-y-2 rounded border bg-background/50 p-2">
+                    <label className="flex items-center gap-2 text-xs">
+                      <input
+                        type="checkbox"
+                        checked={createSignal}
+                        onChange={(e) => setCreateSignal(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <Radio className="h-3 w-3 text-blue-500" />
+                      Créer un signal dans le SIS
+                    </label>
+                    {createSignal && (
+                      <select
+                        value={signalPillar}
+                        onChange={(e) =>
+                          setSignalPillar(e.target.value as PillarType)
+                        }
+                        className="w-full rounded border border-gray-200 bg-background px-2 py-1 text-xs"
+                      >
+                        {PILLAR_TYPES.map((p) => (
+                          <option key={p} value={p}>
+                            {p} — {PILLAR_CONFIG[p].title}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <Button
                     size="sm"
@@ -147,6 +184,8 @@ export function InterventionPanel() {
                       resolveMutation.mutate({
                         id: intervention.id,
                         resolution,
+                        createSignal: createSignal || undefined,
+                        signalPillar: createSignal ? signalPillar : undefined,
                       })
                     }
                   >

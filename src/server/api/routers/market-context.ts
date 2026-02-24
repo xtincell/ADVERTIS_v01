@@ -377,7 +377,66 @@ const crossBrandRouter = createTRPCRouter({
       orderBy: { startDate: "asc" },
     });
 
-    return { strategies, competitors, opportunities };
+    // 4. Detect cross-strategy sector signals (patterns recurring across 2+ strategies in same sector)
+    const sectorSignalMap = new Map<
+      string,
+      Map<string, { count: number; brands: string[] }>
+    >();
+
+    // Load SIS signals from all user strategies
+    const allSignals = await ctx.db.signal.findMany({
+      where: { strategy: { userId } },
+      select: {
+        pillar: true,
+        layer: true,
+        title: true,
+        strategy: { select: { sector: true, brandName: true } },
+      },
+    });
+
+    for (const sig of allSignals) {
+      const sector = sig.strategy.sector ?? "other";
+      const signalKey = `${sig.pillar}::${sig.layer}`;
+
+      if (!sectorSignalMap.has(sector)) {
+        sectorSignalMap.set(sector, new Map());
+      }
+      const sectorMap = sectorSignalMap.get(sector)!;
+      if (!sectorMap.has(signalKey)) {
+        sectorMap.set(signalKey, { count: 0, brands: [] });
+      }
+      const entry = sectorMap.get(signalKey)!;
+      if (!entry.brands.includes(sig.strategy.brandName)) {
+        entry.count++;
+        entry.brands.push(sig.strategy.brandName);
+      }
+    }
+
+    // Build sector signals (2+ brands with same signal pattern)
+    const sectorSignals: Array<{
+      sector: string;
+      pillar: string;
+      layer: string;
+      count: number;
+      brands: string[];
+    }> = [];
+
+    for (const [sector, signalMap] of sectorSignalMap) {
+      for (const [key, data] of signalMap) {
+        if (data.count >= 2) {
+          const [pillar, layer] = key.split("::");
+          sectorSignals.push({
+            sector,
+            pillar: pillar!,
+            layer: layer!,
+            count: data.count,
+            brands: data.brands,
+          });
+        }
+      }
+    }
+
+    return { strategies, competitors, opportunities, sectorSignals };
   }),
 });
 

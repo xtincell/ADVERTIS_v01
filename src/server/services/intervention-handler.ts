@@ -31,6 +31,8 @@ import type {
   CreateInterventionInput,
   ResolveInterventionInput,
 } from "~/lib/types/phase3-schemas";
+import { createSignal } from "./signal-engine";
+import { markPillarStale, propagateToTranslationDocs } from "./stale-detector";
 
 /**
  * Create a new intervention request.
@@ -85,12 +87,13 @@ export async function startIntervention(id: string) {
 
 /**
  * Resolve an intervention.
+ * Optionally creates a signal in the SIS when the resolution impacts a pillar.
  */
 export async function resolveIntervention(
   data: ResolveInterventionInput,
   resolvedBy: string,
 ) {
-  return db.interventionRequest.update({
+  const intervention = await db.interventionRequest.update({
     where: { id: data.id },
     data: {
       status: "RESOLVED",
@@ -99,6 +102,40 @@ export async function resolveIntervention(
       resolvedAt: new Date(),
     },
   });
+
+  // Bridge to SIS: create a signal when operator flags the resolution as impacting a pillar
+  if (data.createSignal && data.signalPillar && intervention.strategyId) {
+    const signalTitle =
+      data.signalTitle ?? `Intervention client : ${intervention.title}`;
+
+    const signal = await createSignal(intervention.strategyId, {
+      pillar: data.signalPillar,
+      layer: "STRONG",
+      title: signalTitle,
+      description: `Résolution : ${data.resolution}`,
+      status: "ACTIVE",
+      source: "CLIENT_INTERVENTION",
+      confidence: "HIGH",
+    });
+
+    // Mark the affected pillar as stale so it gets regenerated with this new context
+    const pillar = await db.pillar.findFirst({
+      where: { strategyId: intervention.strategyId, type: data.signalPillar },
+    });
+    if (pillar) {
+      await markPillarStale(
+        pillar.id,
+        `Intervention client résolue : ${intervention.title}`,
+      );
+      await propagateToTranslationDocs(intervention.strategyId, [
+        data.signalPillar,
+      ]);
+    }
+
+    return { intervention, signal };
+  }
+
+  return { intervention, signal: null };
 }
 
 /**
