@@ -13,6 +13,7 @@ import {
   Cpu,
   Shield,
   Settings,
+  AlertTriangle,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -20,6 +21,12 @@ import {
 // ---------------------------------------------------------------------------
 
 const MENU_ITEMS = [
+  {
+    href: "/more/interventions",
+    icon: AlertTriangle,
+    label: "Interventions",
+    description: "Demandes d'intervention en attente",
+  },
   {
     href: "/more/intelligence",
     icon: Brain,

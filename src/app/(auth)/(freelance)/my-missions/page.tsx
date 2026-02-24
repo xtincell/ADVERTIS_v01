@@ -5,7 +5,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
@@ -18,6 +18,7 @@ import {
   Save,
 } from "lucide-react";
 
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import {
   ASSIGNMENT_ROLE_LABELS,
@@ -38,24 +39,42 @@ function AssignmentNotes({
   initialNotes: string | null;
 }) {
   const [notes, setNotes] = useState(initialNotes ?? "");
-  const [saved, setSaved] = useState(false);
+  const isDirty = notes !== (initialNotes ?? "");
 
   const updateNotes = api.mission.assignments.updateNotes.useMutation({
     onSuccess: () => {
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+      toast.success("Notes sauvegardées.");
     },
+    onError: () => toast.error("Impossible de sauvegarder les notes."),
   });
+
+  // Warn before leaving with unsaved changes
+  const handleBeforeUnload = useCallback(
+    (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+      }
+    },
+    [isDirty],
+  );
+
+  useEffect(() => {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [handleBeforeUnload]);
 
   return (
     <div className="mt-2 space-y-1.5 border-t pt-2" onClick={(e) => e.stopPropagation()}>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <MessageSquare className="h-3 w-3" />
         Notes terrain
+        <span className="text-[10px] text-muted-foreground/70">
+          — visibles par l&apos;opérateur lors du debrief
+        </span>
       </div>
       <Textarea
         value={notes}
-        onChange={(e) => { setNotes(e.target.value); setSaved(false); }}
+        onChange={(e) => setNotes(e.target.value)}
         placeholder="Observations terrain, retours client, difficultés rencontrées..."
         rows={2}
         className="text-xs"
@@ -65,14 +84,14 @@ function AssignmentNotes({
           size="sm"
           variant="outline"
           className="h-7 text-xs"
-          disabled={updateNotes.isPending || notes === (initialNotes ?? "")}
+          disabled={updateNotes.isPending || !isDirty}
           onClick={() => updateNotes.mutate({ assignmentId, notes })}
         >
           <Save className="mr-1 h-3 w-3" />
           {updateNotes.isPending ? "..." : "Sauvegarder"}
         </Button>
-        {saved && (
-          <span className="text-xs text-emerald-600">Sauvegardé</span>
+        {isDirty && (
+          <span className="text-xs text-amber-600">Non sauvegardé</span>
         )}
       </div>
     </div>

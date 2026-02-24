@@ -380,7 +380,7 @@ const crossBrandRouter = createTRPCRouter({
     // 4. Detect cross-strategy sector signals (patterns recurring across 2+ strategies in same sector)
     const sectorSignalMap = new Map<
       string,
-      Map<string, { count: number; brands: string[] }>
+      Map<string, { count: number; brands: string[]; brandIds: string[] }>
     >();
 
     // Load SIS signals from all user strategies
@@ -390,7 +390,7 @@ const crossBrandRouter = createTRPCRouter({
         pillar: true,
         layer: true,
         title: true,
-        strategy: { select: { sector: true, brandName: true } },
+        strategy: { select: { id: true, sector: true, brandName: true } },
       },
     });
 
@@ -403,12 +403,13 @@ const crossBrandRouter = createTRPCRouter({
       }
       const sectorMap = sectorSignalMap.get(sector)!;
       if (!sectorMap.has(signalKey)) {
-        sectorMap.set(signalKey, { count: 0, brands: [] });
+        sectorMap.set(signalKey, { count: 0, brands: [], brandIds: [] });
       }
       const entry = sectorMap.get(signalKey)!;
       if (!entry.brands.includes(sig.strategy.brandName)) {
         entry.count++;
         entry.brands.push(sig.strategy.brandName);
+        entry.brandIds.push(sig.strategy.id);
       }
     }
 
@@ -419,6 +420,7 @@ const crossBrandRouter = createTRPCRouter({
       layer: string;
       count: number;
       brands: string[];
+      brandIds: string[];
     }> = [];
 
     for (const [sector, signalMap] of sectorSignalMap) {
@@ -431,6 +433,7 @@ const crossBrandRouter = createTRPCRouter({
             layer: layer!,
             count: data.count,
             brands: data.brands,
+            brandIds: data.brandIds,
           });
         }
       }

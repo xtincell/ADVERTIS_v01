@@ -20,6 +20,7 @@ import {
   Building2,
   ExternalLink,
   Zap,
+  Briefcase,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -319,6 +320,12 @@ export default function OperatorIntelligencePage() {
                             <span>{opp.type}</span>
                           </div>
                         </div>
+                        <Button variant="outline" size="sm" className="shrink-0" asChild>
+                          <Link href={`/brand/${opp.strategy.id}`} className="text-[10px]">
+                            <Briefcase className="mr-1 h-3 w-3" />
+                            Cockpit
+                          </Link>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -346,7 +353,20 @@ export default function OperatorIntelligencePage() {
                               {ss.count} marques avec signal {ss.layer} sur pilier {ss.pillar}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Secteur : {ss.sector} — Marques : {ss.brands.join(", ")}
+                              Secteur : {ss.sector} — Marques :{" "}
+                              {ss.brandIds
+                                ? ss.brands.map((brand, bi) => (
+                                    <span key={bi}>
+                                      {bi > 0 && ", "}
+                                      <Link
+                                        href={`/brand/${ss.brandIds[bi]}`}
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {brand}
+                                      </Link>
+                                    </span>
+                                  ))
+                                : ss.brands.join(", ")}
                             </p>
                           </div>
                         </div>

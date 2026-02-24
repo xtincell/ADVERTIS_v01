@@ -11,7 +11,8 @@
  */
 
 import { useState } from "react";
-import { CheckCircle2, Plus, X, MessageSquare } from "lucide-react";
+import { CheckCircle2, Plus, X, MessageSquare, Info } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { ASSIGNMENT_ROLE_LABELS } from "~/lib/constants";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -42,9 +43,18 @@ export function DebriefForm({ missionId, onSuccess }: DebriefFormProps) {
     );
 
   const createDebrief = api.mission.debrief.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      const parts = ["Debrief enregistré."];
+      if (data.feedbackSignalsCreated && data.feedbackSignalsCreated > 0) {
+        parts.push(`${data.feedbackSignalsCreated} signal(aux) SIS créé(s).`);
+      }
+      if (data.feedbackPillarsStale && data.feedbackPillarsStale.length > 0) {
+        parts.push(`Pilier(s) ${data.feedbackPillarsStale.join(", ")} marqué(s) à recalculer.`);
+      }
+      toast.success(parts.join(" "));
       onSuccess?.();
     },
+    onError: () => toast.error("Impossible d'enregistrer le debrief."),
   });
 
   const addLesson = () => {
@@ -133,6 +143,13 @@ export function DebriefForm({ missionId, onSuccess }: DebriefFormProps) {
             step={5}
             className="w-full accent-primary"
           />
+          {qualityScore < 70 && (
+            <p className="flex items-center gap-1 text-xs text-amber-600">
+              <Info className="h-3 w-3" />
+              Score &lt; 70 : les outputs GLORY de cette mission ne seront pas
+              intégrés comme signaux valides dans le SIS.
+            </p>
+          )}
         </div>
 
         {/* On Time / On Budget */}

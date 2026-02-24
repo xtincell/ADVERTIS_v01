@@ -12,6 +12,7 @@
 
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, XCircle, Clock, Filter, Radio } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import {
   INTERVENTION_TYPE_LABELS,
@@ -36,15 +37,24 @@ export function InterventionPanel() {
   const [signalPillar, setSignalPillar] = useState<PillarType>("A");
 
   const triageMutation = api.intervention.triage.useMutation({
-    onSuccess: () => void utils.intervention.getPending.invalidate(),
+    onSuccess: () => {
+      void utils.intervention.getPending.invalidate();
+      toast.success("Intervention triée.");
+    },
+    onError: () => toast.error("Impossible de trier l'intervention."),
   });
   const resolveMutation = api.intervention.resolve.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       setResolvingId(null);
       setResolution("");
       setCreateSignal(false);
       void utils.intervention.getPending.invalidate();
+      const msg = data.signal
+        ? "Intervention résolue. Signal SIS créé."
+        : "Intervention résolue.";
+      toast.success(msg);
     },
+    onError: () => toast.error("Impossible de résoudre l'intervention."),
   });
   const rejectMutation = api.intervention.reject.useMutation({
     onSuccess: () => {
@@ -52,7 +62,9 @@ export function InterventionPanel() {
       setResolution("");
       setCreateSignal(false);
       void utils.intervention.getPending.invalidate();
+      toast.success("Intervention rejetée.");
     },
+    onError: () => toast.error("Impossible de rejeter l'intervention."),
   });
 
   if (isLoading) {

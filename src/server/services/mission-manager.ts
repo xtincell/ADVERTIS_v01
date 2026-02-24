@@ -424,6 +424,9 @@ export async function completeMissionDebrief(
   });
 
   // ── Feedback loop: debrief → signals → stale → pricing ──
+  let feedbackSignalsCreated = 0;
+  const feedbackPillarsStale: string[] = [];
+
   try {
     // 1. Create signals from debrief suggestions
     if (data.signalsSuggested && Array.isArray(data.signalsSuggested)) {
@@ -449,6 +452,7 @@ export async function completeMissionDebrief(
           source: "DEBRIEF",
           pillar: sig.pillar ?? "S",
         });
+        feedbackSignalsCreated++;
 
         // Track which pillars need stale marking
         if (sig.pillar) {
@@ -472,6 +476,7 @@ export async function completeMissionDebrief(
           mission.strategyId,
           uniquePillars,
         );
+        feedbackPillarsStale.push(...uniquePillars);
       }
     }
 
@@ -546,6 +551,11 @@ export async function completeMissionDebrief(
           confidence: "HIGH",
           description: `Output GLORY "${del.gloryOutput.toolSlug}" validé en mission (qualité: ${data.qualityScore}/100)`,
         });
+        feedbackSignalsCreated++;
+
+        if (!feedbackPillarsStale.includes(feedbackPillar)) {
+          feedbackPillarsStale.push(feedbackPillar);
+        }
       }
     }
   } catch (err) {
@@ -553,7 +563,11 @@ export async function completeMissionDebrief(
     console.error("[MissionManager] Debrief feedback loop error:", err);
   }
 
-  return debrief;
+  return {
+    ...debrief,
+    feedbackSignalsCreated,
+    feedbackPillarsStale,
+  };
 }
 
 /**

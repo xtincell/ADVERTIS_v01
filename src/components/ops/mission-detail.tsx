@@ -35,7 +35,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { toast } from "sonner";
 import { GloryPicker } from "./glory-picker";
+import { DebriefForm } from "./debrief-form";
 
 interface MissionDetailProps {
   missionId: string;
@@ -53,7 +55,9 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
     onSuccess: () => {
       setShowGloryPicker(false);
       void utils.mission.missions.getById.invalidate({ id: missionId });
+      toast.success("Output GLORY attaché comme livrable.");
     },
+    onError: () => toast.error("Impossible d'attacher l'output GLORY."),
   });
 
   if (isLoading || !mission) {
@@ -339,9 +343,16 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
                 </div>
               </CardContent>
             </Card>
+          ) : mission.status === "REVIEW" ? (
+            <DebriefForm
+              missionId={missionId}
+              onSuccess={() => {
+                void utils.mission.missions.getById.invalidate({ id: missionId });
+              }}
+            />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Pas de debrief. Le debrief est requis pour clôturer la mission.
+              Pas de debrief. Passez la mission en REVIEW pour compléter le debrief.
             </p>
           )}
         </TabsContent>
