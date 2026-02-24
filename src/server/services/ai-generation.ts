@@ -28,7 +28,8 @@
 // =============================================================================
 
 import { PILLAR_CONFIG, VERTICAL_DICTIONARY, MATURITY_CONFIG } from "~/lib/constants";
-import type { PillarType, MaturityProfile } from "~/lib/constants";
+import type { PillarType, MaturityProfile, SupportedCurrency } from "~/lib/constants";
+import { getCurrencyPromptInstruction } from "~/lib/currency";
 import { getInterviewSchema } from "~/lib/interview-schema";
 import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "./anthropic-client";
 
@@ -64,8 +65,12 @@ export async function generatePillarContent(
   sector: string,
   options?: GenerationOptions,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<unknown> {
-  const systemPrompt = getSystemPrompt(pillarType, options);
+  let systemPrompt = getSystemPrompt(pillarType, options);
+  if (currency) {
+    systemPrompt = `${getCurrencyPromptInstruction(currency)}\n\n${systemPrompt}`;
+  }
   const userPrompt = buildUserPrompt(
     pillarType,
     interviewData,
@@ -103,8 +108,12 @@ export async function generateSyntheseContent(
   sector: string,
   options?: GenerationOptions,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<SynthesePillarData> {
-  const systemPrompt = getSystemPrompt("S", options);
+  let systemPrompt = getSystemPrompt("S", options);
+  if (currency) {
+    systemPrompt = `${getCurrencyPromptInstruction(currency)}\n\n${systemPrompt}`;
+  }
   const userPrompt = buildUserPrompt(
     "S",
     interviewData,
@@ -242,7 +251,7 @@ Ton rôle est de définir la proposition de valeur, l'architecture de l'offre, e
 FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
 {
   "productLadder": [
-    { "tier": "Nom du niveau", "prix": "Fourchette de prix", "description": "Description de l'offre", "cible": "Persona visé" }
+    { "tier": "Nom du niveau", "prix": "Fourchette de prix avec devise", "description": "Description de l'offre", "cible": "Persona visé" }
   ],
   "valeurMarque": {
     "tangible": ["Actif tangible 1", "Actif tangible 2"],

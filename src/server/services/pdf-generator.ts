@@ -450,14 +450,14 @@ function getScoreBorder(score: number): string {
 function getScoreLabel(score: number): string {
   if (score >= 80) return "Excellent";
   if (score >= 60) return "Bon";
-  if (score >= 40) return "\u00C0 am\u00E9liorer";
+  if (score >= 40) return "À améliorer";
   return "Critique";
 }
 
 function getRiskLabel(score: number): string {
   if (score <= 25) return "Risque faible";
-  if (score <= 50) return "Risque mod\u00E9r\u00E9";
-  if (score <= 75) return "Risque \u00E9lev\u00E9";
+  if (score <= 50) return "Risque modéré";
+  if (score <= 75) return "Risque élevé";
   return "Risque critique";
 }
 
@@ -476,7 +476,7 @@ function PdfFooter(): React.ReactElement {
   return el(
     View,
     { style: sty.footer, fixed: true } as Record<string, unknown>,
-    el(Text, { style: sty.footerText }, "G\u00E9n\u00E9r\u00E9 par ADVERTIS"),
+    el(Text, { style: sty.footerText }, "Généré par ADVERTIS"),
     el(Text, {
       style: sty.footerText,
       render: ({ pageNumber }: { pageNumber: number }) =>
@@ -534,7 +534,7 @@ function PdfSwotGrid({
   const q = [
     { title: "Forces", items: swot.strengths, bg: C.greenLight, bd: C.greenBorder, fg: C.greenDark },
     { title: "Faiblesses", items: swot.weaknesses, bg: C.redLight, bd: C.redBorder, fg: C.redDark },
-    { title: "Opportunit\u00E9s", items: swot.opportunities, bg: C.blueLight, bd: C.blueBorder, fg: C.blueDark },
+    { title: "Opportunités", items: swot.opportunities, bg: C.blueLight, bd: C.blueBorder, fg: C.blueDark },
     { title: "Menaces", items: swot.threats, bg: C.amberLight, bd: C.amberBorder, fg: C.amberDark },
   ];
 
@@ -718,7 +718,7 @@ function renderRiskContent(content: unknown): React.ReactElement[] {
 
   // Probability / Impact Matrix
   if (d.probabilityImpactMatrix?.length) {
-    out.push(el(Text, { key: "pim-h", style: sty.sectionHeading }, "Matrice probabilit\u00E9 / impact"));
+    out.push(el(Text, { key: "pim-h", style: sty.sectionHeading }, "Matrice probabilité / impact"));
     out.push(
       el(View, { key: "pim-hd", style: sty.tableHeader },
         el(Text, { style: { ...sty.tableHeaderText, flex: 3 } }, "RISQUE"),
@@ -742,7 +742,7 @@ function renderRiskContent(content: unknown): React.ReactElement[] {
 
   // Mitigation priorities
   if (d.mitigationPriorities?.length) {
-    out.push(el(Text, { key: "mit-h", style: sty.sectionHeading }, "Priorit\u00E9s de mitigation"));
+    out.push(el(Text, { key: "mit-h", style: sty.sectionHeading }, "Priorités de mitigation"));
     for (let i = 0; i < d.mitigationPriorities.length; i++) {
       const m = d.mitigationPriorities[i]!;
       out.push(
@@ -764,7 +764,7 @@ function renderRiskContent(content: unknown): React.ReactElement[] {
       out.push(
         el(View, { key: `ms-${i}`, style: { ...sty.card, borderLeftWidth: 3, borderLeftColor: lc } },
           el(View, { style: { flexDirection: "row" as const, justifyContent: "space-between" as const, marginBottom: 4 } },
-            el(Text, { style: sty.cardTitle }, `${ms.variableId} \u2014 ${ms.variableLabel}`),
+            el(Text, { style: sty.cardTitle }, `${ms.variableId} — ${ms.variableLabel}`),
             el(Text, { style: { ...sty.badge, backgroundColor: lc } }, ms.riskLevel.toUpperCase())
           ),
           el(Text, { style: sty.cardText }, ms.commentary)
@@ -800,14 +800,14 @@ function renderTrackContent(content: unknown): React.ReactElement[] {
 
   // TAM/SAM/SOM
   if (d.tamSamSom) {
-    out.push(el(Text, { key: "tam-h", style: sty.sectionHeading }, "Dimensionnement march\u00E9"));
+    out.push(el(Text, { key: "tam-h", style: sty.sectionHeading }, "Dimensionnement marché"));
     out.push(
       el(View, { key: "tam-r", style: sty.row3 },
         ...(["tam", "sam", "som"] as const).map((k) => {
           const item = d.tamSamSom![k];
           return el(View, { key: `tam-${k}`, style: sty.tamCard },
             el(Text, { style: sty.tamLabel }, k.toUpperCase()),
-            el(Text, { style: sty.tamValue }, item?.value ?? "\u2013"),
+            el(Text, { style: sty.tamValue }, item?.value ?? "–"),
             el(Text, { style: sty.tamDesc }, item?.description ?? "")
           );
         })
@@ -815,18 +815,18 @@ function renderTrackContent(content: unknown): React.ReactElement[] {
     );
     if (d.tamSamSom.methodology) {
       out.push(el(Text, { key: "tam-m", style: { ...sty.paragraph, fontSize: 8, color: C.gray, marginTop: 4 } },
-        `M\u00E9thodologie : ${d.tamSamSom.methodology}`));
+        `Méthodologie : ${d.tamSamSom.methodology}`));
     }
   }
 
   // Triangulation
   if (d.triangulation) {
-    out.push(el(Text, { key: "tri-h", style: sty.sectionHeading }, "Triangulation des donn\u00E9es"));
+    out.push(el(Text, { key: "tri-h", style: sty.sectionHeading }, "Triangulation des données"));
     const entries: [string, string | undefined][] = [
-      ["Donn\u00E9es internes", d.triangulation.internalData],
-      ["Donn\u00E9es march\u00E9", d.triangulation.marketData],
-      ["Donn\u00E9es clients", d.triangulation.customerData],
-      ["Synth\u00E8se", d.triangulation.synthesis],
+      ["Données internes", d.triangulation.internalData],
+      ["Données marché", d.triangulation.marketData],
+      ["Données clients", d.triangulation.customerData],
+      ["Synthèse", d.triangulation.synthesis],
     ];
     for (let i = 0; i < entries.length; i++) {
       const [label, val] = entries[i]!;
@@ -873,20 +873,20 @@ function renderTrackContent(content: unknown): React.ReactElement[] {
       out.push(el(PdfBulletList, { key: "ws-l", items: d.marketReality.weakSignals, color: C.amber }));
     }
     if (d.marketReality.emergingPatterns?.length) {
-      out.push(el(Text, { key: "ep-h", style: sty.subsectionHeading }, "Patterns \u00E9mergents"));
+      out.push(el(Text, { key: "ep-h", style: sty.subsectionHeading }, "Patterns émergents"));
       out.push(el(PdfBulletList, { key: "ep-l", items: d.marketReality.emergingPatterns, color: C.teal }));
     }
   }
 
   // Hypothesis Validation
   if (d.hypothesisValidation?.length) {
-    out.push(el(Text, { key: "hyp-h", style: sty.sectionHeading }, "Validation des hypoth\u00E8ses"));
+    out.push(el(Text, { key: "hyp-h", style: sty.sectionHeading }, "Validation des hypothèses"));
     out.push(
       el(View, { key: "hyp-hd", style: sty.tableHeader },
         el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "VAR."),
-        el(Text, { style: { ...sty.tableHeaderText, flex: 3 } }, "HYPOTH\u00C8SE"),
+        el(Text, { style: { ...sty.tableHeaderText, flex: 3 } }, "HYPOTHÈSE"),
         el(Text, { style: { ...sty.tableHeaderText, flex: 1, textAlign: "center" as const } }, "STATUT"),
-        el(Text, { style: { ...sty.tableHeaderText, flex: 2 } }, "\u00C9VIDENCE")
+        el(Text, { style: { ...sty.tableHeaderText, flex: 2 } }, "ÉVIDENCE")
       )
     );
     for (let i = 0; i < d.hypothesisValidation.length; i++) {
@@ -905,7 +905,7 @@ function renderTrackContent(content: unknown): React.ReactElement[] {
 
   // Strategic Recommendations
   if (d.strategicRecommendations?.length) {
-    out.push(el(Text, { key: "rec-h", style: sty.sectionHeading }, "Recommandations strat\u00E9giques"));
+    out.push(el(Text, { key: "rec-h", style: sty.sectionHeading }, "Recommandations stratégiques"));
     out.push(el(PdfBulletList, { key: "rec-l", items: d.strategicRecommendations, color: C.purple }));
   }
 
@@ -926,7 +926,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
   if (d.executiveSummary) {
     out.push(
       el(View, { key: "exec", style: sty.summaryBox },
-        el(Text, { style: sty.summaryLabel }, "Synth\u00E8se ex\u00E9cutive"),
+        el(Text, { style: sty.summaryLabel }, "Synthèse exécutive"),
         el(Text, { style: sty.summaryText }, d.executiveSummary)
       )
     );
@@ -934,14 +934,14 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
   // Coherence Score
   if (d.coherenceScore != null) {
-    out.push(el(PdfScoreCircle, { key: "coh", score: d.coherenceScore, label: "Score de coh\u00E9rence" }));
+    out.push(el(PdfScoreCircle, { key: "coh", score: d.coherenceScore, label: "Score de cohérence" }));
   }
 
   // Brand Identity
   if (d.brandIdentity) {
-    out.push(el(Text, { key: "bi-h", style: sty.sectionHeading }, "Identit\u00E9 de marque"));
+    out.push(el(Text, { key: "bi-h", style: sty.sectionHeading }, "Identité de marque"));
     const entries: [string, string][] = [
-      ["Arch\u00E9type", d.brandIdentity.archetype],
+      ["Archétype", d.brandIdentity.archetype],
       ["Purpose", d.brandIdentity.purpose],
       ["Vision", d.brandIdentity.vision],
       ["Narrative", d.brandIdentity.narrative],
@@ -972,7 +972,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
       );
     }
     if (d.positioning.differentiators?.length) {
-      out.push(el(Text, { key: "pos-d-h", style: sty.subsectionHeading }, "Diff\u00E9renciateurs"));
+      out.push(el(Text, { key: "pos-d-h", style: sty.subsectionHeading }, "Différenciateurs"));
       out.push(el(PdfBulletList, { key: "pos-d", items: d.positioning.differentiators }));
     }
     if (d.positioning.toneOfVoice) {
@@ -1037,7 +1037,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
     // Product Ladder
     if (d.valueArchitecture.productLadder?.length) {
-      out.push(el(Text, { key: "pl-h", style: sty.subsectionHeading }, "\u00C9chelle produit"));
+      out.push(el(Text, { key: "pl-h", style: sty.subsectionHeading }, "Échelle produit"));
       out.push(
         el(View, { key: "pl-hd", style: sty.tableHeader },
           el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "PALIER"),
@@ -1085,7 +1085,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
   // Engagement Strategy
   if (d.engagementStrategy) {
-    out.push(el(Text, { key: "eng-h", style: sty.sectionHeading }, "Strat\u00E9gie d'engagement"));
+    out.push(el(Text, { key: "eng-h", style: sty.sectionHeading }, "Stratégie d'engagement"));
 
     // AARRR Funnel
     if (d.engagementStrategy.aarrr) {
@@ -1093,7 +1093,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
       const steps = [
         { label: "Acquisition", value: d.engagementStrategy.aarrr.acquisition, bg: "#dbeafe" },
         { label: "Activation", value: d.engagementStrategy.aarrr.activation, bg: "#dcfce7" },
-        { label: "R\u00E9tention", value: d.engagementStrategy.aarrr.retention, bg: "#fef3c7" },
+        { label: "Rétention", value: d.engagementStrategy.aarrr.retention, bg: "#fef3c7" },
         { label: "Revenue", value: d.engagementStrategy.aarrr.revenue, bg: "#fce7f3" },
         { label: "Referral", value: d.engagementStrategy.aarrr.referral, bg: "#f3e8ff" },
       ];
@@ -1115,7 +1115,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
         el(View, { key: "kpi-hd", style: sty.tableHeader },
           el(Text, { style: { ...sty.tableHeaderText, flex: 2 } }, "INDICATEUR"),
           el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "OBJECTIF"),
-          el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "FR\u00C9QUENCE")
+          el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "FRÉQUENCE")
         )
       );
       for (let i = 0; i < d.engagementStrategy.kpis.length; i++) {
@@ -1136,7 +1136,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
       out.push(
         el(View, { key: "tp-hd", style: sty.tableHeader },
           el(Text, { style: { ...sty.tableHeaderText, flex: 1 } }, "CANAL"),
-          el(Text, { style: { ...sty.tableHeaderText, flex: 2 } }, "R\u00D4LE"),
+          el(Text, { style: { ...sty.tableHeaderText, flex: 2 } }, "RÔLE"),
           el(Text, { style: { ...sty.tableHeaderText, flex: 1, textAlign: "center" as const } }, "PRI.")
         )
       );
@@ -1172,7 +1172,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
   // Risk Synthesis
   if (d.riskSynthesis) {
-    out.push(el(Text, { key: "rs-h", style: sty.sectionHeading }, "Synth\u00E8se des risques"));
+    out.push(el(Text, { key: "rs-h", style: sty.sectionHeading }, "Synthèse des risques"));
     if (d.riskSynthesis.riskScore != null) {
       out.push(el(PdfScoreCircle, { key: "rs-sc", score: d.riskSynthesis.riskScore, label: "Score de risque global", invertColor: true }));
     }
@@ -1196,16 +1196,16 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
   // Market Validation
   if (d.marketValidation) {
-    out.push(el(Text, { key: "mv-h", style: sty.sectionHeading }, "Validation march\u00E9"));
+    out.push(el(Text, { key: "mv-h", style: sty.sectionHeading }, "Validation marché"));
     if (d.marketValidation.brandMarketFitScore != null) {
       out.push(el(PdfScoreCircle, { key: "mv-sc", score: d.marketValidation.brandMarketFitScore, label: "Brand-Market Fit" }));
     }
     if (d.marketValidation.tam || d.marketValidation.sam || d.marketValidation.som) {
       out.push(
         el(View, { key: "mv-t", style: sty.row3 },
-          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "TAM"), el(Text, { style: sty.tamValue }, d.marketValidation.tam ?? "\u2013")),
-          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "SAM"), el(Text, { style: sty.tamValue }, d.marketValidation.sam ?? "\u2013")),
-          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "SOM"), el(Text, { style: sty.tamValue }, d.marketValidation.som ?? "\u2013"))
+          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "TAM"), el(Text, { style: sty.tamValue }, d.marketValidation.tam ?? "–")),
+          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "SAM"), el(Text, { style: sty.tamValue }, d.marketValidation.sam ?? "–")),
+          el(View, { style: sty.tamCard }, el(Text, { style: sty.tamLabel }, "SOM"), el(Text, { style: sty.tamValue }, d.marketValidation.som ?? "–"))
         )
       );
     }
@@ -1221,7 +1221,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
 
   // Strategic Roadmap
   if (d.strategicRoadmap) {
-    out.push(el(Text, { key: "rd-h", style: sty.sectionHeading }, "Roadmap strat\u00E9gique"));
+    out.push(el(Text, { key: "rd-h", style: sty.sectionHeading }, "Roadmap stratégique"));
 
     if (d.strategicRoadmap.sprint90Days?.length) {
       out.push(el(Text, { key: "sp-h", style: sty.subsectionHeading }, "Sprint 90 jours"));
@@ -1244,7 +1244,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
       }
     }
     if (d.strategicRoadmap.year1Priorities?.length) {
-      out.push(el(Text, { key: "y1-h", style: sty.subsectionHeading }, "Priorit\u00E9s ann\u00E9e 1"));
+      out.push(el(Text, { key: "y1-h", style: sty.subsectionHeading }, "Priorités année 1"));
       out.push(el(PdfBulletList, { key: "y1-l", items: d.strategicRoadmap.year1Priorities }));
     }
     if (d.strategicRoadmap.year3Vision) {
@@ -1278,7 +1278,7 @@ function CoverPage({ strategy }: { strategy: StrategyData }): React.ReactElement
         ? el(Text, { style: sty.coverMeta }, `Secteur : ${strategy.sector}`)
         : null,
       strategy.coherenceScore != null
-        ? el(Text, { style: sty.coverMeta }, `Score de coh\u00E9rence : ${strategy.coherenceScore}/100`)
+        ? el(Text, { style: sty.coverMeta }, `Score de cohérence : ${strategy.coherenceScore}/100`)
         : null,
       el(Text, { style: sty.coverMeta }, formatDate(strategy.createdAt)),
       el(Text, { style: sty.coverPowered }, "Powered by ADVERTIS")
@@ -1290,7 +1290,7 @@ function TableOfContents({ pillars }: { pillars: PillarData[] }): React.ReactEle
   return el(
     Page,
     { size: "A4", style: sty.page },
-    el(Text, { style: sty.tocTitle }, "Table des mati\u00E8res"),
+    el(Text, { style: sty.tocTitle }, "Table des matières"),
     ...pillars.map((pillar, i) => {
       const config = PILLAR_CONFIG[pillar.type as PillarType];
       const color = config?.color ?? C.terracotta;
@@ -1301,7 +1301,7 @@ function TableOfContents({ pillars }: { pillars: PillarData[] }): React.ReactEle
           el(Text, { style: sty.tocBadgeText }, pillar.type)
         ),
         el(View, { style: { flex: 1 } },
-          el(Text, { style: sty.tocItemTitle }, `${pillar.type} \u2013 ${config?.title ?? pillar.title}`),
+          el(Text, { style: sty.tocItemTitle }, `${pillar.type} – ${config?.title ?? pillar.title}`),
           el(Text, { style: sty.tocItemDesc }, config?.description ?? "")
         )
       );
@@ -1349,7 +1349,7 @@ function PillarPage({ pillar }: { pillar: PillarData }): React.ReactElement {
     // Summary
     pillar.summary
       ? el(View, { style: sty.summaryBox },
-          el(Text, { style: sty.summaryLabel }, "Synth\u00E8se"),
+          el(Text, { style: sty.summaryLabel }, "Synthèse"),
           el(Text, { style: sty.summaryText }, pillar.summary)
         )
       : null,
@@ -1411,9 +1411,9 @@ export async function generateStrategyPDF(
               ? el(Text, { style: { ...sty.coverMeta, fontSize: 9 } }, `Secteur : ${strategy.sector}`)
               : null,
             strategy.coherenceScore != null
-              ? el(Text, { style: { ...sty.coverMeta, fontSize: 9 } }, `Score de coh\u00E9rence : ${strategy.coherenceScore}/100`)
+              ? el(Text, { style: { ...sty.coverMeta, fontSize: 9 } }, `Score de cohérence : ${strategy.coherenceScore}/100`)
               : null,
-            el(Text, { style: { ...sty.coverMeta, fontSize: 8, color: C.grayMed } }, `Mode l\u00E9ger \u2014 ${formatDate(strategy.createdAt)}`)
+            el(Text, { style: { ...sty.coverMeta, fontSize: 8, color: C.grayMed } }, `Mode léger — ${formatDate(strategy.createdAt)}`)
           )
         )
       );
@@ -1439,9 +1439,9 @@ export async function generateStrategyPDF(
   const doc = el(
     Document,
     {
-      title: `ADVERTIS \u2013 ${strategy.brandName} \u2013 ${strategy.name}`,
+      title: `ADVERTIS – ${strategy.brandName} – ${strategy.name}`,
       author: "ADVERTIS",
-      subject: `Strat\u00E9gie de marque ${strategy.brandName}`,
+      subject: `Stratégie de marque ${strategy.brandName}`,
       creator: "ADVERTIS SaaS Platform",
     },
     ...pages
@@ -1524,7 +1524,7 @@ function LightweightPillarPage({
       ? el(
           View,
           { style: { backgroundColor: C.grayLight, padding: 6, borderRadius: 3, marginBottom: 8 } },
-          el(Text, { style: { fontSize: 7.5, fontWeight: 700, color: C.gray, marginBottom: 2 } }, "Synth\u00E8se"),
+          el(Text, { style: { fontSize: 7.5, fontWeight: 700, color: C.gray, marginBottom: 2 } }, "Synthèse"),
           el(Text, { style: { fontSize: 7.5, color: C.dark, lineHeight: 1.3 } }, pillar.summary),
         )
       : null,
@@ -1546,7 +1546,7 @@ function LightweightPillarPage({
           justifyContent: "space-between" as const,
         },
       },
-      el(Text, { style: { fontSize: 6, color: C.grayMed } }, "ADVERTIS \u2014 Mode l\u00E9ger"),
+      el(Text, { style: { fontSize: 6, color: C.grayMed } }, "ADVERTIS — Mode léger"),
       el(
         Text,
         {

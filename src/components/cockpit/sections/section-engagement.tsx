@@ -90,7 +90,7 @@ export function SectionEngagement({
                 {[
                   { key: "acquisition" as const, label: "Acquisition", icon: "\uD83C\uDFAF" },
                   { key: "activation" as const, label: "Activation", icon: "\u26A1" },
-                  { key: "retention" as const, label: "R\u00e9tention", icon: "\uD83D\uDD04" },
+                  { key: "retention" as const, label: "Rétention", icon: "\uD83D\uDD04" },
                   { key: "revenue" as const, label: "Revenue", icon: "\uD83D\uDCB0" },
                   { key: "referral" as const, label: "Referral", icon: "\uD83D\uDCE3" },
                 ].map((step) => {
@@ -143,7 +143,7 @@ export function SectionEngagement({
                         <p className="mt-1 text-xs text-muted-foreground">{tp.role}</p>
                       )}
                       {tp.priorite > 0 && (
-                        <p className="mt-1 text-xs text-[#3c7ac4]">{"\u2726"} Priorit\u00e9 {tp.priorite}</p>
+                        <p className="mt-1 text-xs text-[#3c7ac4]">{"\u2726"} Priorité {tp.priorite}</p>
                       )}
                     </div>
                   );
@@ -275,7 +275,7 @@ export function SectionEngagement({
                       <p className="text-xs text-foreground/80">Cible : {kpi.cible}</p>
                     )}
                     {kpi.frequence && (
-                      <p className="text-xs text-muted-foreground">Fr\u00e9quence : {kpi.frequence}</p>
+                      <p className="text-xs text-muted-foreground">Fréquence : {kpi.frequence}</p>
                     )}
                   </div>
                 ))}
@@ -298,7 +298,7 @@ export function SectionEngagement({
                 {[
                   { key: "acquisition" as const, label: "Acquisition", icon: "\uD83C\uDFAF" },
                   { key: "activation" as const, label: "Activation", icon: "\u26A1" },
-                  { key: "retention" as const, label: "R\u00e9tention", icon: "\uD83D\uDD04" },
+                  { key: "retention" as const, label: "Rétention", icon: "\uD83D\uDD04" },
                   { key: "revenue" as const, label: "Revenue", icon: "\uD83D\uDCB0" },
                   { key: "referral" as const, label: "Referral", icon: "\uD83D\uDCE3" },
                 ].map((step) => {
@@ -330,7 +330,7 @@ export function SectionEngagement({
                     key={i}
                     icon={<Users className="h-4 w-4" />}
                     label={tp.channel || `Touchpoint ${i + 1}`}
-                    value={`${tp.role}${tp.priority ? ` (priorit\u00e9 ${tp.priority})` : ""}`}
+                    value={`${tp.role}${tp.priority ? ` (priorité ${tp.priority})` : ""}`}
                   />
                 ))}
               </div>
@@ -382,7 +382,7 @@ export function SectionEngagement({
                       <p className="text-xs text-foreground/80">Cible : {kpi.target}</p>
                     )}
                     {kpi.frequency && (
-                      <p className="text-xs text-muted-foreground">Fr\u00e9quence : {kpi.frequency}</p>
+                      <p className="text-xs text-muted-foreground">Fréquence : {kpi.frequency}</p>
                     )}
                   </div>
                 ))}

@@ -55,11 +55,11 @@ function ProfileSection() {
 
   const updateProfile = api.auth.updateProfile.useMutation({
     onSuccess: () => {
-      toast.success("Profil mis \u00e0 jour avec succ\u00e8s.");
+      toast.success("Profil mis à jour avec succès.");
       setIsDirty(false);
     },
     onError: () => {
-      toast.error("Erreur lors de la mise \u00e0 jour du profil.");
+      toast.error("Erreur lors de la mise à jour du profil.");
     },
   });
 
@@ -193,7 +193,7 @@ function AccountSection() {
             Adresse email
           </Label>
           <p className="text-sm font-medium">
-            {profile?.email ?? "Non renseign\u00e9"}
+            {profile?.email ?? "Non renseigné"}
           </p>
         </div>
 

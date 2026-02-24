@@ -32,6 +32,8 @@ import {
   VIEW_MODE_LABELS,
   VIEW_MODE_SECTIONS,
 } from "~/lib/constants";
+import type { SupportedCurrency } from "~/lib/constants";
+import { VerticalProvider } from "~/components/hooks/use-label";
 import type { ViewMode } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import type {
@@ -116,6 +118,7 @@ export interface CockpitData {
   name: string;
   sector: string | null;
   vertical?: string | null;
+  currency?: string | null;
   description: string | null;
   phase: string;
   coherenceScore: number | null;
@@ -184,6 +187,7 @@ export function CockpitContent({
   const bmfScore = tContent?.brandMarketFitScore ?? 0;
 
   return (
+    <VerticalProvider vertical={data.vertical ?? null}>
     <div className="space-y-8">
       {/* ═══════════════════════════════════════════════════════════════════
           NIVEAU 1 — Executive Overview (10 secondes)
@@ -338,6 +342,7 @@ export function CockpitContent({
           implContent={implContent}
           pillar={getPillar("V")}
           vertical={data.vertical}
+          currency={(data.currency ?? "XOF") as SupportedCurrency}
         />
       )}
 
@@ -433,7 +438,7 @@ export function CockpitContent({
 
       {/* ── Pillar I — Implementation (Roadmap, Campaigns, Budget, Team, Launch, Playbook) ── */}
       {show("implementation") && (
-        <SectionImplementation implContent={implContent} />
+        <SectionImplementation implContent={implContent} currency={(data.currency ?? "XOF") as SupportedCurrency} />
       )}
 
       {/* ── Widgets Analytiques ── */}
@@ -647,10 +652,11 @@ export function CockpitContent({
         <p className="text-xs text-muted-foreground">
           Généré avec la méthodologie{" "}
           <span className="font-semibold text-terracotta">ADVERTIS</span>
-          {" "}&mdash; Intelligence strat\u00e9gique en 8 piliers
+          {" "}&mdash; Intelligence stratégique en 8 piliers
         </p>
       </footer>
     </div>
+    </VerticalProvider>
   );
 }
 
@@ -686,13 +692,13 @@ function TemplatePlaceholder({
         warning?: string;
       };
       if (data.success) {
-        toast.success("Templates UPGRADERS g\u00e9n\u00e9r\u00e9s !");
+        toast.success("Templates UPGRADERS générés !");
         onGenerated?.();
       } else {
-        toast.error(data.error ?? "Erreur lors de la g\u00e9n\u00e9ration.");
+        toast.error(data.error ?? "Erreur lors de la génération.");
       }
     } catch {
-      toast.error("Erreur r\u00e9seau lors de la g\u00e9n\u00e9ration.");
+      toast.error("Erreur réseau lors de la génération.");
     } finally {
       setIsGenerating(false);
     }
@@ -701,7 +707,7 @@ function TemplatePlaceholder({
   return (
     <div className="space-y-3">
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/60">
-        Templates strat\u00e9giques disponibles
+        Templates stratégiques disponibles
       </p>
       <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
         {TEMPLATE_TYPES.map((tt) => {
@@ -742,7 +748,7 @@ function TemplatePlaceholder({
       {isGenerating ? (
         <div className="flex items-center gap-2 text-sm text-terracotta">
           <Loader2 className="h-4 w-4 animate-spin" />
-          G\u00e9n\u00e9ration des templates en cours\u2026 (quelques minutes)
+          Génération des templates en cours\u2026 (quelques minutes)
         </div>
       ) : pillarIComplete && !isPublic && strategyId ? (
         <button
@@ -750,12 +756,12 @@ function TemplatePlaceholder({
           className="inline-flex items-center gap-1.5 rounded-md bg-terracotta px-4 py-2 text-xs font-semibold text-white hover:bg-terracotta/90 transition-colors shadow-sm"
         >
           <Sparkles className="h-3.5 w-3.5" />
-          G\u00e9n\u00e9rer les templates maintenant
+          Générer les templates maintenant
         </button>
       ) : (
         <>
           <p className="text-xs text-muted-foreground">
-            Les templates strat\u00e9giques sont g\u00e9n\u00e9r\u00e9s une fois l&apos;analyse compl\u00e8te r\u00e9alis\u00e9e.
+            Les templates stratégiques sont générés une fois l&apos;analyse complète réalisée.
           </p>
           {!isPublic && strategyId && (
             <Link

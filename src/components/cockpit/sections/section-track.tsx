@@ -134,7 +134,7 @@ export function SectionTrack({
           )}
 
           {/* ----------------------------------------------------------------- */}
-          {/* 3. Triangulation des donn\u00e9es                                 */}
+          {/* 3. Triangulation des données                                 */}
           {/* ----------------------------------------------------------------- */}
           {(tContent.triangulation?.internalData ||
             tContent.triangulation?.marketData ||
@@ -142,27 +142,27 @@ export function SectionTrack({
             tContent.triangulation?.synthesis) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Triangulation des donn\u00e9es
+                Triangulation des données
               </p>
               <div className="grid gap-3 sm:grid-cols-3">
                 {tContent.triangulation.internalData && (
                   <DataCard
                     icon={<BarChart3 className="h-4 w-4" />}
-                    label="Donn\u00e9es internes"
+                    label="Données internes"
                     value={tContent.triangulation.internalData}
                   />
                 )}
                 {tContent.triangulation.marketData && (
                   <DataCard
                     icon={<TrendingUp className="h-4 w-4" />}
-                    label="Donn\u00e9es march\u00e9"
+                    label="Données marché"
                     value={tContent.triangulation.marketData}
                   />
                 )}
                 {tContent.triangulation.customerData && (
                   <DataCard
                     icon={<Users className="h-4 w-4" />}
-                    label="Donn\u00e9es clients"
+                    label="Données clients"
                     value={tContent.triangulation.customerData}
                   />
                 )}
@@ -170,7 +170,7 @@ export function SectionTrack({
               {tContent.triangulation.synthesis && (
                 <div className="mt-3 rounded-lg border-l-4 border-[#8c3cc4]/30 bg-[#8c3cc4]/5 px-4 py-3">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Synth\u00e8se de la triangulation
+                    Synthèse de la triangulation
                   </p>
                   <p className="text-sm leading-relaxed text-foreground/80">
                     {tContent.triangulation.synthesis}
@@ -215,7 +215,7 @@ export function SectionTrack({
               </div>
               {tContent.tamSamSom.methodology && (
                 <p className="mt-2 text-xs italic text-muted-foreground">
-                  <span className="font-semibold">M\u00e9thodologie :</span>{" "}
+                  <span className="font-semibold">Méthodologie :</span>{" "}
                   {tContent.tamSamSom.methodology}
                 </p>
               )}
@@ -223,13 +223,13 @@ export function SectionTrack({
           )}
 
           {/* ----------------------------------------------------------------- */}
-          {/* 5. Validation des hypoth\u00e8ses                                 */}
+          {/* 5. Validation des hypothèses                                 */}
           {/* ----------------------------------------------------------------- */}
           {Array.isArray(tContent.hypothesisValidation) &&
             tContent.hypothesisValidation.length > 0 && (
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Validation des hypoth\u00e8ses
+                  Validation des hypothèses
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {tContent.hypothesisValidation.map((h, i) => (
@@ -261,14 +261,14 @@ export function SectionTrack({
             )}
 
           {/* ----------------------------------------------------------------- */}
-          {/* 6. R\u00e9alit\u00e9 du march\u00e9                              */}
+          {/* 6. Réalité du marché                              */}
           {/* ----------------------------------------------------------------- */}
           {(tContent.marketReality?.macroTrends?.length > 0 ||
             tContent.marketReality?.weakSignals?.length > 0 ||
             tContent.marketReality?.emergingPatterns?.length > 0) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                R\u00e9alit\u00e9 du march\u00e9
+                Réalité du marché
               </p>
               <div className="space-y-3">
                 {/* Macro Trends */}
@@ -315,7 +315,7 @@ export function SectionTrack({
                 {tContent.marketReality.emergingPatterns.length > 0 && (
                   <div>
                     <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                      Patterns \u00e9mergents
+                      Patterns émergents
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {tContent.marketReality.emergingPatterns.map(
@@ -397,7 +397,7 @@ export function SectionTrack({
             implContent.marketValidation.trends.length > 0 && (
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Tendances march\u00e9
+                  Tendances marché
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {implContent.marketValidation.trends.map((trend, i) => (
@@ -414,12 +414,12 @@ export function SectionTrack({
             )}
 
           {/* ----------------------------------------------------------------- */}
-          {/* 9. Recommandations strat\u00e9giques                              */}
+          {/* 9. Recommandations stratégiques                              */}
           {/* ----------------------------------------------------------------- */}
           {mergedRecommendations.length > 0 && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Recommandations strat\u00e9giques
+                Recommandations stratégiques
               </p>
               <div className="space-y-1.5">
                 {mergedRecommendations.map((rec, i) => (

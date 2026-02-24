@@ -6,6 +6,7 @@
 "use client";
 
 import { cn } from "~/lib/utils";
+import { useLabel } from "~/components/hooks/use-label";
 
 export interface CockpitTab {
   id: string;
@@ -43,6 +44,8 @@ export function CockpitTabs({
   onTabChange,
   tabs = DEFAULT_TABS,
 }: CockpitTabsProps) {
+  const label = useLabel();
+
   return (
     <div className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur-sm">
       <div className="flex overflow-x-auto scrollbar-none">
@@ -58,7 +61,7 @@ export function CockpitTabs({
             )}
           >
             {tab.icon && <span className="mr-1.5">{tab.icon}</span>}
-            {tab.label}
+            {label(tab.label)}
           </button>
         ))}
       </div>

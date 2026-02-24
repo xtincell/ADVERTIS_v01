@@ -200,7 +200,7 @@ function PreviewA({ data }: { data: AuthenticitePillarData }) {
       )}
 
       {/* Hierarchie communautaire */}
-      {data.hierarchieCommunautaire?.length > 0 && (
+      {Array.isArray(data.hierarchieCommunautaire) && data.hierarchieCommunautaire.length > 0 && (
         <ReadOnlySection title="Hierarchie communautaire">
           {data.hierarchieCommunautaire.map((h, i) => (
             <div key={i} className="rounded border bg-background p-2">

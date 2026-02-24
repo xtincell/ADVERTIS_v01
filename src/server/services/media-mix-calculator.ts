@@ -113,7 +113,7 @@ export async function calculateMediaMix(
       strategyId,
       startDate: { lte: new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000) }, // next 90 days
     },
-    select: { title: true, type: true, channels: true, impact: true },
+    select: { title: true, type: true, channels: true, impact: true, linkedAxes: true },
   });
 
   // 3. Determine total budget
@@ -202,19 +202,34 @@ function extractPerformanceWeights(
   return weights;
 }
 
+/** Maps ADVE axis letters to channels they have affinity with */
+const AXIS_CHANNEL_AFFINITY: Record<string, string[]> = {
+  A: ["Social Media", "RP", "Communauté"],
+  D: ["Display", "OOH", "Print"],
+  V: ["Search", "E-commerce", "PLV"],
+  E: ["Social Media", "Activation terrain", "Events"],
+};
+
 function calculateSeasonalBoosts(
   opportunities: Array<{
     title: string;
     type: string;
     channels: unknown;
     impact: string;
+    linkedAxes: unknown;
   }>,
-): Array<{ channel: string; boost: number; reason: string }> {
-  const boosts: Array<{ channel: string; boost: number; reason: string }> = [];
+): Array<{ channel: string; boost: number; reason: string; linkedAxes: string[] }> {
+  const boosts: Array<{ channel: string; boost: number; reason: string; linkedAxes: string[] }> = [];
 
   for (const opp of opportunities) {
     const impactMultiplier = opp.impact === "HIGH" ? 1.5 : opp.impact === "MEDIUM" ? 1.2 : 1.1;
     const channels = Array.isArray(opp.channels) ? opp.channels : [];
+
+    // Parse linkedAxes from JSON field
+    const rawAxes = opp.linkedAxes;
+    const axes: string[] = Array.isArray(rawAxes)
+      ? rawAxes.filter((a): a is string => typeof a === "string")
+      : [];
 
     for (const ch of channels) {
       const channelName = typeof ch === "string" ? ch : String(ch);
@@ -222,6 +237,7 @@ function calculateSeasonalBoosts(
         channel: channelName,
         boost: impactMultiplier,
         reason: `Opportunité "${opp.title}" (${opp.type})`,
+        linkedAxes: axes,
       });
     }
   }
@@ -233,9 +249,9 @@ function computeAllocation(
   channels: Array<{ name: string; baseWeight: number }>,
   totalBudget: number,
   performanceWeights: Record<string, number>,
-  seasonalBoosts: Array<{ channel: string; boost: number; reason: string }>,
+  seasonalBoosts: Array<{ channel: string; boost: number; reason: string; linkedAxes: string[] }>,
 ): ChannelAllocation[] {
-  // Apply performance weights and seasonal boosts
+  // Apply performance weights, seasonal boosts, and axis-channel affinity
   const weighted = channels.map((ch) => {
     let weight = ch.baseWeight;
 
@@ -252,6 +268,18 @@ function computeAllocation(
     );
     for (const boost of boosts) {
       weight *= boost.boost;
+
+      // Apply axis-channel affinity bonus: if this channel appears in the
+      // affinities of any linked axis, apply a x1.15 multiplier
+      for (const axis of boost.linkedAxes) {
+        const affinityChannels = AXIS_CHANNEL_AFFINITY[axis];
+        if (affinityChannels?.some((ac) =>
+          ac.toLowerCase().includes(ch.name.toLowerCase()) ||
+          ch.name.toLowerCase().includes(ac.toLowerCase()),
+        )) {
+          weight *= 1.15;
+        }
+      }
     }
 
     return { ...ch, adjustedWeight: weight };

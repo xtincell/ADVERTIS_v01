@@ -64,7 +64,7 @@ export default function PillarEditorAdaptivePage(props: {
   const updatePillar = api.pillar.update.useMutation({
     onSuccess: () => {
       setIsSaving(false);
-      toast.success("Contenu sauvegard\u00e9.");
+      toast.success("Contenu sauvegardé.");
       void refetch();
     },
     onError: () => {
@@ -147,7 +147,7 @@ export default function PillarEditorAdaptivePage(props: {
         <AlertTriangle className="size-8 text-amber-500" />
         <p className="text-sm text-muted-foreground">
           {isError
-            ? "Impossible de charger les donn\u00e9es."
+            ? "Impossible de charger les données."
             : "Pilier introuvable."}
         </p>
         <Button variant="outline" size="sm" onClick={handleBack}>
@@ -159,8 +159,8 @@ export default function PillarEditorAdaptivePage(props: {
 
   // ── Build title ──
   const title = config
-    ? `${pillarType} \u2014 ${config.title}`
-    : `\u00c9diteur ${pillarType}`;
+    ? `${pillarType} — ${config.title}`
+    : `Éditeur ${pillarType}`;
 
   // ── Editor content ──
   const editorContent = (
@@ -178,7 +178,7 @@ export default function PillarEditorAdaptivePage(props: {
             <Textarea
               value={rawContent}
               onChange={(e) => handleRawChange(e.target.value)}
-              placeholder="\u00c9ditez le JSON structur\u00e9..."
+              placeholder="Éditez le JSON structuré..."
               className="min-h-[300px] resize-y font-mono text-sm leading-relaxed"
             />
           )}

@@ -95,12 +95,12 @@ export default function BrandMarketStudyPage(props: {
         error?: string;
       };
       if (!response.ok || result.success === false) {
-        throw new Error(result.error ?? "\u00c9chec de la collecte");
+        throw new Error(result.error ?? "Échec de la collecte");
       }
       await refetchMarketStudy();
-      toast.success("Collecte termin\u00e9e !");
+      toast.success("Collecte terminée !");
     } catch (error) {
-      toast.error("Erreur lors de la collecte des donn\u00e9es march\u00e9.");
+      toast.error("Erreur lors de la collecte des données marché.");
       console.error("[MarketStudy Standalone] Collection failed:", error);
     } finally {
       setIsCollecting(false);
@@ -117,9 +117,9 @@ export default function BrandMarketStudyPage(props: {
       try {
         await addManualDataMutation.mutateAsync({ strategyId, ...data });
         await refetchMarketStudy();
-        toast.success("Donn\u00e9es ajout\u00e9es avec succ\u00e8s.");
+        toast.success("Données ajoutées avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l\u2019ajout des donn\u00e9es.");
+        toast.error("Erreur lors de l\'ajout des données.");
         console.error("[MarketStudy Standalone] Add manual data failed:", error);
       }
     },
@@ -131,7 +131,7 @@ export default function BrandMarketStudyPage(props: {
       try {
         await removeManualDataMutation.mutateAsync({ strategyId, entryId });
         await refetchMarketStudy();
-        toast.success("Entr\u00e9e supprim\u00e9e.");
+        toast.success("Entrée supprimée.");
       } catch (error) {
         toast.error("Erreur lors de la suppression.");
         console.error(
@@ -158,9 +158,9 @@ export default function BrandMarketStudyPage(props: {
           throw new Error(`Upload failed: ${response.status}`);
         }
         await refetchMarketStudy();
-        toast.success("Fichier import\u00e9 avec succ\u00e8s.");
+        toast.success("Fichier importé avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l\u2019import du fichier.");
+        toast.error("Erreur lors de l\'import du fichier.");
         console.error("[MarketStudy Standalone] Upload failed:", error);
       }
     },
@@ -172,9 +172,9 @@ export default function BrandMarketStudyPage(props: {
     try {
       await synthesizeMutation.mutateAsync({ strategyId });
       await refetchMarketStudy();
-      toast.success("Synth\u00e8se g\u00e9n\u00e9r\u00e9e avec succ\u00e8s !");
+      toast.success("Synthèse générée avec succès !");
     } catch (error) {
-      toast.error("Erreur lors de la synth\u00e8se.");
+      toast.error("Erreur lors de la synthèse.");
       console.error("[MarketStudy Standalone] Synthesis failed:", error);
     } finally {
       setIsSynthesizing(false);
@@ -185,7 +185,7 @@ export default function BrandMarketStudyPage(props: {
     try {
       await completeStandaloneMutation.mutateAsync({ strategyId });
       await refetchMarketStudy();
-      toast.success("\u00c9tude de march\u00e9 termin\u00e9e !");
+      toast.success("Étude de marché terminée !");
     } catch (error) {
       toast.error("Erreur lors de la finalisation.");
       console.error("[MarketStudy Standalone] Complete failed:", error);
@@ -252,7 +252,7 @@ export default function BrandMarketStudyPage(props: {
                 : studyStatus === "collecting"
                   ? "Collecte en cours"
                   : studyStatus === "partial"
-                    ? "Donn\u00e9es partielles"
+                    ? "Données partielles"
                     : studyStatus}
             </Badge>
           )}

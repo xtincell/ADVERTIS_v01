@@ -52,6 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { MATURITY_PROFILES, MATURITY_CONFIG, type MaturityProfile, SUPPORTED_CURRENCIES, CURRENCY_CONFIG, type SupportedCurrency } from "~/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -153,6 +154,8 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
   const [nodeType, setNodeType] = useState("BRAND");
   const [parentId, setParentId] = useState<string | null>(null);
   const [inputMethod, setInputMethod] = useState<string | null>(null);
+  const [maturityProfile, setMaturityProfile] = useState<MaturityProfile>("MATURE");
+  const [currency, setCurrency] = useState<SupportedCurrency>("XOF");
 
   // tRPC — fetch strategies for parent selector
   const { data: strategies, isLoading: strategiesLoading } =
@@ -183,6 +186,8 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
     setNodeType("BRAND");
     setParentId(null);
     setInputMethod(null);
+    setMaturityProfile("MATURE");
+    setCurrency("XOF");
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -201,6 +206,8 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
       sector,
       nodeType,
       inputMethod: inputMethod ?? undefined,
+      maturityProfile,
+      currency,
     });
   }
 
@@ -256,6 +263,59 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
                   </span>
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Maturity profile */}
+        <div className="space-y-2">
+          <Label>Profil de maturité</Label>
+          <Select value={maturityProfile} onValueChange={(v) => setMaturityProfile(v as MaturityProfile)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Profil de maturité" />
+            </SelectTrigger>
+            <SelectContent>
+              {MATURITY_PROFILES.map((mp) => {
+                const cfg = MATURITY_CONFIG[mp];
+                return (
+                  <SelectItem key={mp} value={mp}>
+                    <span className="flex items-center gap-2">
+                      {cfg.label}
+                      <span className="text-[10px] text-muted-foreground">
+                        ({cfg.ratio} fact/proj)
+                      </span>
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {MATURITY_CONFIG[maturityProfile].cockpitFocus} — Couverture attendue : {MATURITY_CONFIG[maturityProfile].expectedCoverage}%
+          </p>
+        </div>
+
+        {/* Currency */}
+        <div className="space-y-2">
+          <Label>Devise</Label>
+          <Select value={currency} onValueChange={(v) => setCurrency(v as SupportedCurrency)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir une devise" />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPORTED_CURRENCIES.map((c) => {
+                const cfg = CURRENCY_CONFIG[c];
+                return (
+                  <SelectItem key={c} value={c}>
+                    <span className="flex items-center gap-2">
+                      {cfg.label}
+                      <span className="text-[10px] text-muted-foreground">
+                        ({cfg.symbol})
+                      </span>
+                    </span>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </div>

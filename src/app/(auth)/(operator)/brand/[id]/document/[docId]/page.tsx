@@ -74,7 +74,7 @@ export default function BrandDocumentViewerPage(props: {
       <div className="flex flex-col items-center justify-center py-20">
         <AlertTriangle className="h-8 w-8 text-red-500" />
         <p className="mt-2 text-sm text-red-600">
-          {error?.message ?? "Document non trouv\u00e9"}
+          {error?.message ?? "Document non trouvé"}
         </p>
         <Button
           variant="outline"
@@ -138,7 +138,7 @@ export default function BrandDocumentViewerPage(props: {
               }
             >
               {document.status === "complete"
-                ? "Termin\u00e9"
+                ? "Terminé"
                 : document.status}
             </Badge>
           </div>

@@ -31,10 +31,11 @@
 
 import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "./anthropic-client";
 import { PILLAR_CONFIG } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
+import type { PillarType, SupportedCurrency } from "~/lib/constants";
 import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
 import { injectSpecialization, type SpecializationOptions } from "./prompt-helpers";
+import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
 
 // ---------------------------------------------------------------------------
 // Types — re-exported from Zod schemas (source of truth)
@@ -69,6 +70,7 @@ export async function generateRiskAudit(
   sector: string,
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<RiskAuditResult> {
   const schema = getFicheDeMarqueSchema();
 
@@ -281,6 +283,7 @@ export async function generateTrackAudit(
   marketStudyData?: MarketStudySynthesis | null,
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<TrackAuditResult> {
   // Build comprehensive context
   const ficheContext = ficheContent
@@ -346,7 +349,9 @@ Indique explicitement quand tu spécules ou estimes.`;
   const { text } = await resilientGenerateText({
     label: "audit-T-track",
     model: anthropic(DEFAULT_MODEL),
-    system: injectSpecialization(`Tu es un analyste marché expert utilisant la méthodologie ADVERTIS.
+    system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
+
+Tu es un analyste marché expert utilisant la méthodologie ADVERTIS.
 Tu réalises le Pilier T — Track : validation de la stratégie par confrontation aux données marché.
 
 CONTEXTE DE LA MARQUE :
@@ -397,9 +402,9 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide :
     "emergingPatterns": ["..."]
   },
   "tamSamSom": {
-    "tam": { "value": "X Mrd EUR", "description": "..." },
-    "sam": { "value": "X M EUR", "description": "..." },
-    "som": { "value": "X M EUR", "description": "..." },
+    "tam": { "value": "X Mrd ${getCurrencySymbol(currency ?? "XOF")}", "description": "..." },
+    "sam": { "value": "X M ${getCurrencySymbol(currency ?? "XOF")}", "description": "..." },
+    "som": { "value": "X M ${getCurrencySymbol(currency ?? "XOF")}", "description": "..." },
     "methodology": "..."
   },
   "competitiveBenchmark": [

@@ -196,7 +196,7 @@ export function ExportDialog({
       a.href = url;
 
       const safeBrandName = brandName
-        .replace(/[^a-zA-Z0-9\u00C0-\u024F\- _]/g, "")
+        .replace(/[^a-zA-Z0-9À-\u024F\- _]/g, "")
         .replace(/\s+/g, "-")
         .substring(0, 50);
 
@@ -238,9 +238,9 @@ export function ExportDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Exporter la strat\u00e9gie</DialogTitle>
+          <DialogTitle>Exporter la stratégie</DialogTitle>
           <DialogDescription>
-            Choisissez le format et les piliers \u00e0 inclure dans l&apos;export.
+            Choisissez le format et les piliers à inclure dans l&apos;export.
           </DialogDescription>
         </DialogHeader>
 
@@ -337,7 +337,7 @@ export function ExportDialog({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-sm font-medium">
-                Piliers \u00e0 inclure
+                Piliers à inclure
               </Label>
               {completedPillars.length > 0 && (
                 <button
@@ -346,8 +346,8 @@ export function ExportDialog({
                   className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {selectedPillars.size === completedPillars.length
-                    ? "Tout d\u00e9s\u00e9lectionner"
-                    : "Tout s\u00e9lectionner"}
+                    ? "Tout désélectionner"
+                    : "Tout sélectionner"}
                 </button>
               )}
             </div>
@@ -392,7 +392,7 @@ export function ExportDialog({
                     </Label>
                     {!isCompleted && (
                       <span className="text-xs text-muted-foreground">
-                        Non g\u00e9n\u00e9r\u00e9
+                        Non généré
                       </span>
                     )}
                   </div>
@@ -402,7 +402,7 @@ export function ExportDialog({
 
             {completedPillars.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                Aucun pilier n&apos;a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9. G\u00e9n\u00e9rez au moins un pilier
+                Aucun pilier n&apos;a été généré. Générez au moins un pilier
                 avant d&apos;exporter.
               </p>
             )}

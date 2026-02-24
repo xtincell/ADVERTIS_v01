@@ -27,7 +27,7 @@ type FilterKey = "all" | "active" | "done";
 const FILTER_TABS: { key: FilterKey; label: string }[] = [
   { key: "all", label: "Toutes" },
   { key: "active", label: "En cours" },
-  { key: "done", label: "Termin\u00E9es" },
+  { key: "done", label: "Terminées" },
 ];
 
 // ---------------------------------------------------------------------------

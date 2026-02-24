@@ -37,7 +37,7 @@ import {
   getFicheDeMarqueSchema,
 } from "~/lib/interview-schema";
 import { PILLAR_CONFIG } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
+import type { PillarType, SupportedCurrency } from "~/lib/constants";
 import {
   anthropic,
   DEFAULT_MODEL,
@@ -364,6 +364,8 @@ export async function regenerateAllPillars(
     maturityProfile: strategy.maturityProfile ?? undefined,
   };
 
+  const currency = ((strategy as Record<string, unknown>).currency ?? "XOF") as SupportedCurrency;
+
   // Track freshly regenerated pillar content in memory
   // so each subsequent pillar gets the latest context
   const freshContent: Map<string, unknown> = new Map();
@@ -412,6 +414,7 @@ export async function regenerateAllPillars(
           strategy.sector ?? "",
           specialization,
           strategy.tagline,
+          currency,
         );
       } else if (pillarType === "R") {
         // ── RISK AUDIT ──
@@ -424,6 +427,7 @@ export async function regenerateAllPillars(
           strategy.sector ?? "",
           specialization,
           strategy.tagline,
+          currency,
         );
       } else if (pillarType === "T") {
         // ── TRACK AUDIT ──
@@ -453,6 +457,7 @@ export async function regenerateAllPillars(
           marketStudyData,
           specialization,
           strategy.tagline,
+          currency,
         );
 
         // Auto-sync competitor snapshots + opportunity calendar
@@ -481,6 +486,7 @@ export async function regenerateAllPillars(
           strategy.sector ?? "",
           specialization,
           strategy.tagline,
+          currency,
         );
 
         // Recreate budget tiers from fresh Implementation data
@@ -524,6 +530,7 @@ export async function regenerateAllPillars(
           strategy.sector ?? "",
           specialization,
           strategy.tagline,
+          currency,
         );
       }
 

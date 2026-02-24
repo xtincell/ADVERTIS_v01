@@ -5,6 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
+import { getHomeByRole } from "~/lib/role-routing";
 import { FreelanceShell } from "~/components/shells/freelance-shell";
 
 export default async function FreelanceLayout({
@@ -17,9 +18,7 @@ export default async function FreelanceLayout({
 
   // Only FREELANCE can access freelance routes
   if (role !== "FREELANCE") {
-    if (role === "ADMIN" || role === "OPERATOR") redirect("/");
-    if (role === "CLIENT_RETAINER" || role === "CLIENT_STATIC") redirect("/");
-    redirect("/login");
+    redirect(getHomeByRole(role));
   }
 
   return <FreelanceShell>{children}</FreelanceShell>;

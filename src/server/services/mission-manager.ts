@@ -516,6 +516,115 @@ export async function calculateEstimatedCharge(missionId: string) {
   return totalCharge;
 }
 
+// ============================================
+// DEBRIEF SEARCH & STATS
+// ============================================
+
+/**
+ * Search across all debriefs for the given user.
+ * Uses ILIKE on summary, clientFeedback, and lessonsLearned JSON text.
+ */
+export async function searchDebriefs(
+  userId: string,
+  query: string,
+  filters?: {
+    sector?: string;
+    qualityMin?: number;
+    onTime?: boolean;
+  },
+) {
+  // Build WHERE conditions dynamically
+  const conditions: string[] = [
+    `s."userId" = '${userId}'`,
+    `(
+      d."summary" ILIKE '%${query}%'
+      OR d."clientFeedback" ILIKE '%${query}%'
+      OR d."lessonsLearned"::text ILIKE '%${query}%'
+    )`,
+  ];
+
+  if (filters?.sector) {
+    conditions.push(`s."sector" = '${filters.sector}'`);
+  }
+  if (filters?.qualityMin != null) {
+    conditions.push(`d."qualityScore" >= ${filters.qualityMin}`);
+  }
+  if (filters?.onTime != null) {
+    conditions.push(`d."onTime" = ${filters.onTime}`);
+  }
+
+  const whereClause = conditions.join(" AND ");
+
+  const results = await db.$queryRawUnsafe<
+    Array<{
+      id: string;
+      missionId: string;
+      missionTitle: string;
+      brandName: string;
+      sector: string | null;
+      summary: string | null;
+      clientFeedback: string | null;
+      qualityScore: number | null;
+      onTime: boolean | null;
+      onBudget: boolean | null;
+      createdAt: Date;
+    }>
+  >(`
+    SELECT
+      d."id",
+      d."missionId",
+      m."title" AS "missionTitle",
+      s."brandName",
+      s."sector",
+      d."summary",
+      d."clientFeedback",
+      d."qualityScore",
+      d."onTime",
+      d."onBudget",
+      d."createdAt"
+    FROM "MissionDebrief" d
+    JOIN "Mission" m ON m."id" = d."missionId"
+    JOIN "Strategy" s ON s."id" = m."strategyId"
+    WHERE ${whereClause}
+    ORDER BY d."createdAt" DESC
+    LIMIT 50
+  `);
+
+  return results;
+}
+
+/**
+ * Aggregate debrief statistics for a user.
+ */
+export async function getDebriefStats(userId: string) {
+  const stats = await db.$queryRawUnsafe<
+    Array<{
+      totalDebriefs: bigint;
+      avgQuality: number | null;
+      onTimePercent: number | null;
+      onBudgetPercent: number | null;
+    }>
+  >(`
+    SELECT
+      COUNT(d."id") AS "totalDebriefs",
+      AVG(d."qualityScore") AS "avgQuality",
+      AVG(CASE WHEN d."onTime" = true THEN 100.0 ELSE 0.0 END) AS "onTimePercent",
+      AVG(CASE WHEN d."onBudget" = true THEN 100.0 ELSE 0.0 END) AS "onBudgetPercent"
+    FROM "MissionDebrief" d
+    JOIN "Mission" m ON m."id" = d."missionId"
+    JOIN "Strategy" s ON s."id" = m."strategyId"
+    WHERE s."userId" = '${userId}'
+  `);
+
+  const row = stats[0];
+  return {
+    totalDebriefs: Number(row?.totalDebriefs ?? 0),
+    avgQuality: row?.avgQuality ? Math.round(row.avgQuality * 10) / 10 : null,
+    onTimePercent: row?.onTimePercent ? Math.round(row.onTimePercent) : null,
+    onBudgetPercent: row?.onBudgetPercent ? Math.round(row.onBudgetPercent) : null,
+  };
+}
+
 /**
  * Delete (archive) a mission.
  */

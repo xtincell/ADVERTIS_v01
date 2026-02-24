@@ -19,8 +19,10 @@ import {
 } from "lucide-react";
 
 import { PILLAR_CONFIG } from "~/lib/constants";
+import type { SupportedCurrency } from "~/lib/constants";
 import type { ValeurPillarData } from "~/lib/types/pillar-data";
 import type { ImplementationData } from "~/lib/types/implementation-data";
+import { getCurrencySymbol } from "~/lib/currency";
 import {
   CockpitSection,
   DataCard,
@@ -37,18 +39,31 @@ interface PillarData {
   updatedAt?: Date | string | null;
 }
 
+// Helper: check if a price string already contains a known currency symbol
+const CURRENCY_SYMBOLS_RE = /FCFA|XOF|XAF|EUR|USD|GHS|NGN|GH₵|₦|€|\$/i;
+
 export function SectionValeur({
   vContent,
   implContent,
   pillar,
   vertical,
+  currency,
 }: {
   vContent: ValeurPillarData;
   implContent: ImplementationData;
   pillar?: PillarData | null;
   vertical?: string | null;
+  currency?: SupportedCurrency;
 }) {
   const color = PILLAR_CONFIG.V.color;
+  const currencySymbol = getCurrencySymbol(currency ?? "XOF");
+
+  // Annotate a price string with currency if not already present
+  const annotatePrice = (prix: string | undefined | null): string => {
+    if (!prix) return "";
+    if (CURRENCY_SYMBOLS_RE.test(prix)) return prix;
+    return `${prix} ${currencySymbol}`;
+  };
 
   return (
     <CockpitSection
@@ -91,7 +106,7 @@ export function SectionValeur({
                           className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
                           style={{ backgroundColor: `${color}20`, color }}
                         >
-                          {item.prix}
+                          {annotatePrice(item.prix)}
                         </span>
                       )}
                     </div>
@@ -311,7 +326,7 @@ export function SectionValeur({
                       <MetricCard
                         label="CAC"
                         value={vContent.unitEconomics.cac}
-                        description={"Co\u00fbt d\u2019acquisition client"}
+                        description={"Coût d\'acquisition client"}
                       />
                     )}
                     {vContent.unitEconomics.ltv && (
@@ -325,7 +340,7 @@ export function SectionValeur({
                       <MetricCard
                         label="Ratio LTV/CAC"
                         value={vContent.unitEconomics.ratio}
-                        description={"Rentabilit\u00e9 client"}
+                        description={"Rentabilité client"}
                       />
                     )}
                   </div>
@@ -338,7 +353,7 @@ export function SectionValeur({
                       <MetricCard
                         label="Point mort"
                         value={vContent.unitEconomics.pointMort}
-                        description={"Seuil de rentabilit\u00e9"}
+                        description={"Seuil de rentabilité"}
                       />
                     )}
                     {vContent.unitEconomics.marges && (
@@ -423,7 +438,7 @@ export function SectionValeur({
                   <MetricCard
                     label="CAC"
                     value={implContent.valueArchitecture.unitEconomics.cac}
-                    description={"Co\u00fbt d\u2019acquisition client"}
+                    description={"Coût d\'acquisition client"}
                   />
                 )}
                 {implContent.valueArchitecture.unitEconomics.ltv && (
@@ -437,7 +452,7 @@ export function SectionValeur({
                   <MetricCard
                     label="Ratio LTV/CAC"
                     value={implContent.valueArchitecture.unitEconomics.ratio}
-                    description={"Rentabilit\u00e9 client"}
+                    description={"Rentabilité client"}
                   />
                 )}
               </div>

@@ -6,6 +6,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
+import { getHomeByRole } from "~/lib/role-routing";
 
 export default async function AuthRootPage() {
   const session = await auth();
@@ -14,18 +15,5 @@ export default async function AuthRootPage() {
     redirect("/login");
   }
 
-  const role = session.user?.role ?? "";
-
-  switch (role) {
-    case "ADMIN":
-    case "OPERATOR":
-      redirect("/dashboard");
-    case "FREELANCE":
-      redirect("/my-missions");
-    case "CLIENT_RETAINER":
-    case "CLIENT_STATIC":
-      redirect("/cockpit");
-    default:
-      redirect("/login");
-  }
+  redirect(getHomeByRole(session.user?.role ?? ""));
 }

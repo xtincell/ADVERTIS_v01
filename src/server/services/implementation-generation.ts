@@ -32,8 +32,9 @@ import type { RiskAuditResult, TrackAuditResult } from "./audit-generation";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
 import { PILLAR_CONFIG } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
+import type { PillarType, SupportedCurrency } from "~/lib/constants";
 import { injectSpecialization, type SpecializationOptions } from "./prompt-helpers";
+import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
 
 // ---------------------------------------------------------------------------
 // JSON Rules (shared between passes)
@@ -65,6 +66,7 @@ export async function generateImplementationData(
   sector: string,
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<ImplementationData> {
   // Build shared context
   const sharedContext = buildSharedContext(
@@ -86,6 +88,7 @@ export async function generateImplementationData(
     trackAudit,
     specialization,
     tagline,
+    currency,
   );
 
   // ── Pass 2: Enriched sections (with Pass 1 as context) ──
@@ -96,6 +99,7 @@ export async function generateImplementationData(
     sector,
     specialization,
     tagline,
+    currency,
   );
 
   // Merge both passes into a single object
@@ -198,11 +202,14 @@ async function generatePass1(
   trackAudit: TrackAuditResult,
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<Record<string, unknown>> {
   const { text } = await resilientGenerateText({
     label: "pillar-I-pass1",
     model: anthropic(DEFAULT_MODEL),
-    system: injectSpecialization(`Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
+    system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
+
+Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
 Tu synthétises les données collectées (Fiche A-D-V-E + audits R+T) en données structurées pour le cockpit stratégique.
 
 CONTEXTE :
@@ -310,6 +317,7 @@ async function generatePass2(
   sector: string,
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
+  currency?: SupportedCurrency,
 ): Promise<Record<string, unknown>> {
   // Summarize Pass 1 for context continuity
   const pass1Summary = JSON.stringify(pass1Data).substring(0, 6000);
@@ -317,7 +325,9 @@ async function generatePass2(
   const { text } = await resilientGenerateText({
     label: "pillar-I-pass2",
     model: anthropic(DEFAULT_MODEL),
-    system: injectSpecialization(`Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
+    system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
+
+Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
 Tu complètes les données d'implémentation avec les sections opérationnelles enrichies.
 
 CONTEXTE :
@@ -337,10 +347,42 @@ FORMAT JSON OBLIGATOIRE :
 {
   "campaigns": {
     "annualCalendar": [
-      { "mois": "Janvier", "campagne": "Nom", "objectif": "Objectif", "canaux": ["Instagram"], "budget": "500€", "kpiCible": "KPI" }
+      {
+        "mois": "Janvier",
+        "campagne": "Nom de la campagne",
+        "objectif": "Objectif stratégique clair",
+        "canaux": ["Instagram", "Facebook", "TikTok"],
+        "budget": "500 000 ${getCurrencySymbol(currency ?? "XOF")}",
+        "kpiCible": "KPI principal chiffré",
+        "actionsDetaillees": [
+          "Action 1 : description concrète avec support et canal",
+          "Action 2 : description concrète avec support et canal",
+          "Action 3 : description concrète avec support et canal",
+          "Action 4 : description concrète avec support et canal",
+          "Action 5 : description concrète avec support et canal"
+        ],
+        "messagesCles": [
+          "Message clé 1 adapté à la cible",
+          "Message clé 2 adapté à la cible"
+        ],
+        "budgetDetail": {
+          "production": "200 000 ${getCurrencySymbol(currency ?? "XOF")}",
+          "media": "250 000 ${getCurrencySymbol(currency ?? "XOF")}",
+          "talent": "50 000 ${getCurrencySymbol(currency ?? "XOF")}"
+        },
+        "timeline": {
+          "debut": "1er Janvier",
+          "fin": "31 Janvier"
+        },
+        "metriquesSucces": [
+          "Reach : +50 000 personnes",
+          "Engagement rate : >5%",
+          "Conversions : 200 leads"
+        ]
+      }
     ],
     "templates": [
-      { "nom": "Template", "type": "lancement", "description": "Desc", "duree": "3 semaines", "canauxPrincipaux": ["Instagram"], "messagesCles": ["Message"] }
+      { "nom": "Template", "type": "lancement", "description": "Desc détaillée", "duree": "3 semaines", "canauxPrincipaux": ["Instagram"], "messagesCles": ["Message clé"], "budgetEstime": "1 500 000 ${getCurrencySymbol(currency ?? "XOF")}", "kpisAttendus": ["KPI 1 chiffré", "KPI 2 chiffré"] }
     ],
     "activationPlan": {
       "phase1Teasing": "Stratégie de teasing",
@@ -351,14 +393,14 @@ FORMAT JSON OBLIGATOIRE :
   },
   "budgetAllocation": {
     "enveloppeGlobale": "Budget total annuel",
-    "parPoste": [{ "poste": "Poste", "montant": "€", "pourcentage": 25, "justification": "Justif" }],
-    "parPhase": [{ "phase": "Phase", "montant": "€", "focus": "Focus" }],
+    "parPoste": [{ "poste": "Poste", "montant": "${getCurrencySymbol(currency ?? "XOF")}", "pourcentage": 25, "justification": "Justif" }],
+    "parPhase": [{ "phase": "Phase", "montant": "${getCurrencySymbol(currency ?? "XOF")}", "focus": "Focus" }],
     "roiProjections": { "mois6": "ROI 6m", "mois12": "ROI 12m", "mois24": "ROI 24m", "hypotheses": "Hyp" }
   },
   "teamStructure": {
     "equipeActuelle": [{ "role": "Rôle", "profil": "Profil", "allocation": "Temps" }],
     "recrutements": [{ "role": "Rôle", "profil": "Profil", "echeance": "Échéance", "priorite": 1 }],
-    "partenairesExternes": [{ "type": "Type", "mission": "Mission", "budget": "€", "duree": "Durée" }]
+    "partenairesExternes": [{ "type": "Type", "mission": "Mission", "budget": "${getCurrencySymbol(currency ?? "XOF")}", "duree": "Durée" }]
   },
   "launchPlan": {
     "phases": [{ "nom": "Phase 1", "debut": "M1", "fin": "M2", "objectifs": ["Obj"], "livrables": ["Livr"], "goNoGo": "Critère" }],
@@ -369,7 +411,7 @@ FORMAT JSON OBLIGATOIRE :
     "rythmeHebdomadaire": ["Action 1"],
     "rythmeMensuel": ["Action 1"],
     "escalation": [{ "scenario": "Crise", "action": "Action", "responsable": "Resp" }],
-    "outilsStack": [{ "outil": "Outil", "usage": "Usage", "cout": "€/mois" }]
+    "outilsStack": [{ "outil": "Outil", "usage": "Usage", "cout": "${getCurrencySymbol(currency ?? "XOF")}/mois" }]
   },
   "brandPlatform": {
     "purpose": "Raison d'être (WHY)",
@@ -400,10 +442,10 @@ FORMAT JSON OBLIGATOIRE :
     ]
   },
   "activationDispositif": {
-    "owned": [{ "canal": "Canal", "role": "Rôle", "budget": "€" }],
-    "earned": [{ "canal": "Canal", "role": "Rôle", "budget": "€" }],
-    "paid": [{ "canal": "Canal", "role": "Rôle", "budget": "€" }],
-    "shared": [{ "canal": "Canal", "role": "Rôle", "budget": "€" }],
+    "owned": [{ "canal": "Canal", "role": "Rôle", "budget": "${getCurrencySymbol(currency ?? "XOF")}" }],
+    "earned": [{ "canal": "Canal", "role": "Rôle", "budget": "${getCurrencySymbol(currency ?? "XOF")}" }],
+    "paid": [{ "canal": "Canal", "role": "Rôle", "budget": "${getCurrencySymbol(currency ?? "XOF")}" }],
+    "shared": [{ "canal": "Canal", "role": "Rôle", "budget": "${getCurrencySymbol(currency ?? "XOF")}" }],
     "parcoursConso": "Parcours cross-canal"
   },
   "governance": {
@@ -430,8 +472,17 @@ FORMAT JSON OBLIGATOIRE :
 }
 
 RÈGLES :
-- annualCalendar : OBLIGATOIRE 12 mois (un par mois)
-- campaigns.templates : 3-4 types différents (lancement, récurrence, événement, activation)
+- annualCalendar : OBLIGATOIRE 12 mois (un objet par mois, de Janvier à Décembre). Chaque mois DOIT contenir :
+  * campagne : nom unique et évocateur
+  * objectif : objectif stratégique précis
+  * canaux : 2-4 canaux pertinents
+  * budget : montant réaliste en ${getCurrencySymbol(currency ?? "XOF")}
+  * actionsDetaillees : 5-8 actions concrètes et opérationnelles (format "Action : description avec canal et support")
+  * messagesCles : 2-3 messages clés adaptés à la cible
+  * budgetDetail : ventilation obligatoire en production, media, talent (en ${getCurrencySymbol(currency ?? "XOF")})
+  * timeline : dates de début et fin du mois
+  * metriquesSucces : 3-5 KPIs mesurables et chiffrés
+- campaigns.templates : 3-4 types différents (lancement, récurrence, événement, activation), chaque template avec budgetEstime et kpisAttendus
 - budgetAllocation : ventilé par poste ET par phase
 - launchPlan : 3-5 phases avec critères go/no-go
 - operationalPlaybook : rythmes quotidien, hebdo et mensuel

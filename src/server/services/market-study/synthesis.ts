@@ -31,7 +31,8 @@ import { anthropic, resilientGenerateText } from "../anthropic-client";
 import { db } from "~/server/db";
 import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import { PILLAR_CONFIG } from "~/lib/constants";
-import type { PillarType } from "~/lib/constants";
+import type { PillarType, SupportedCurrency } from "~/lib/constants";
+import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
 import type {
   MarketStudySynthesis,
   BraveSearchData,
@@ -74,6 +75,7 @@ export async function synthesizeMarketStudy(
       brandName: true,
       tagline: true,
       sector: true,
+      currency: true,
       interviewData: true,
       pillars: {
         where: { status: "complete", type: { in: ["A", "D", "V", "E"] } },
@@ -103,12 +105,17 @@ export async function synthesizeMarketStudy(
   );
 
   // 3. Call Claude for synthesis
+  const strategyCurrency = ((strategy as Record<string, unknown>).currency ?? "XOF") as SupportedCurrency;
+  const currencySymbol = getCurrencySymbol(strategyCurrency);
+
   let text: string;
   try {
     const result = await resilientGenerateText({
       label: "market-study-synthesis",
       model: anthropic("claude-sonnet-4-20250514"),
-      system: `Tu es un analyste marché senior spécialisé dans la synthèse de données multi-sources.
+      system: `${getCurrencyPromptInstruction(strategyCurrency)}
+
+Tu es un analyste marché senior spécialisé dans la synthèse de données multi-sources.
 Tu travailles pour le module d'étude de marché ADVERTIS.
 
 CONTEXTE :
@@ -170,9 +177,9 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide conforme au type MarketSt
     "confidence": "medium"
   },
   "tamSamSom": {
-    "tam": { "value": "X Mrd EUR", "description": "...", "source": "...", "confidence": "medium", "methodology": "..." },
-    "sam": { "value": "X M EUR", "description": "...", "source": "...", "confidence": "medium" },
-    "som": { "value": "X M EUR", "description": "...", "source": "...", "confidence": "low" },
+    "tam": { "value": "X Mrd ${currencySymbol}", "description": "...", "source": "...", "confidence": "medium", "methodology": "..." },
+    "sam": { "value": "X M ${currencySymbol}", "description": "...", "source": "...", "confidence": "medium" },
+    "som": { "value": "X M ${currencySymbol}", "description": "...", "source": "...", "confidence": "low" },
     "methodology": "Description de la méthodologie..."
   },
   "gaps": ["Liste des données manquantes critiques..."],

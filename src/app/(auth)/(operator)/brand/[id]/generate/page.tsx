@@ -284,7 +284,7 @@ export default function BrandGeneratePage(props: {
           interviewData: editedData,
         });
         await refetchStrategy();
-        toast.success("Fiche validée — Lancement de l’audit Risk…");
+        toast.success("Fiche validée — Lancement de l'audit Risk…");
 
         setIsGenerating(true);
         setCurrentAction("audit-r");
@@ -350,13 +350,13 @@ export default function BrandGeneratePage(props: {
         await refetchStrategy();
         setIngestionComplete(true);
         toast.success(
-          `${Object.keys(result.mappedVariables).length} variables import\u00e9es avec succ\u00e8s !`,
+          `${Object.keys(result.mappedVariables).length} variables importées avec succès !`,
         );
 
         // Auto-launch ADVE generation
         await handleLaunchFiche();
       } catch (error) {
-        toast.error("Erreur lors de la sauvegarde des donn\u00e9es import\u00e9es.");
+        toast.error("Erreur lors de la sauvegarde des données importées.");
         console.error("[Ingestion] Import save failed:", error);
       }
     },
@@ -377,9 +377,9 @@ export default function BrandGeneratePage(props: {
         targetPhase: "fiche-review",
       });
       await refetchStrategy();
-      toast.success("Fiche validée — Passez à l’audit Risk.");
+      toast.success("Fiche validée — Passez à l'audit Risk.");
     } catch (error) {
-      toast.error("Erreur lors de l’avancement de phase.");
+      toast.error("Erreur lors de l'avancement de phase.");
       console.error("[Pipeline] Advance to fiche-review failed:", error);
     }
   }, [strategyId, advancePhaseMutation, refetchStrategy]);
@@ -444,7 +444,7 @@ export default function BrandGeneratePage(props: {
         await refetchMarketStudy();
         toast.success("Données ajoutées avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l’ajout des données.");
+        toast.error("Erreur lors de l'ajout des données.");
         console.error("[MarketStudy] Add manual data failed:", error);
       }
     },
@@ -482,7 +482,7 @@ export default function BrandGeneratePage(props: {
         await refetchMarketStudy();
         toast.success("Fichier importé avec succès.");
       } catch (error) {
-        toast.error("Erreur lors de l’import du fichier.");
+        toast.error("Erreur lors de l'import du fichier.");
         console.error("[MarketStudy] Upload failed:", error);
       }
     },
@@ -509,7 +509,7 @@ export default function BrandGeneratePage(props: {
       await refetchStrategy();
       toast.success("Étude de marché passée.");
     } catch (error) {
-      toast.error("Erreur lors du passage de l’étude.");
+      toast.error("Erreur lors du passage de l'étude.");
       console.error("[MarketStudy] Skip failed:", error);
     }
   }, [strategyId, skipMarketStudyMutation, refetchStrategy]);
@@ -538,7 +538,7 @@ export default function BrandGeneratePage(props: {
         await refetchStrategy();
         toast.success("Audit validé avec succès !");
       } catch (error) {
-        toast.error("Erreur lors de la validation de l’audit.");
+        toast.error("Erreur lors de la validation de l'audit.");
         console.error("[Audit Review] Validation failed:", error);
       } finally {
         setIsValidatingAudit(false);
@@ -828,8 +828,8 @@ export default function BrandGeneratePage(props: {
             </CardTitle>
             <CardDescription>
               {inputMethod === "import"
-                ? "Importez un document existant (PDF, DOCX, Excel) pour extraire les donn\u00e9es"
-                : "D\u00e9crivez votre marque librement, l\u0027IA analysera le texte"}
+                ? "Importez un document existant (PDF, DOCX, Excel) pour extraire les données"
+                : "Décrivez votre marque librement, l\'IA analysera le texte"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -859,7 +859,7 @@ export default function BrandGeneratePage(props: {
         phase="fiche"
         currentPhase={currentPhase}
         title="Phase 1 : Fiche de Marque"
-        description="Donn\u00e9es collect\u00e9es via le formulaire ou l\u0027import de fichier"
+        description="Données collectées via le formulaire ou l\'import de fichier"
         onRevert={() => handleRevertPhase("fiche")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -927,7 +927,7 @@ export default function BrandGeneratePage(props: {
         phase="fiche-review"
         currentPhase={currentPhase}
         title="Phase 2 : Validation de la Fiche"
-        description="Vérifiez et corrigez les données A-D-V-E avant l’audit"
+        description="Vérifiez et corrigez les données A-D-V-E avant l'audit"
         onRevert={() => handleRevertPhase("fiche-review")}
         isReverting={revertPhaseMutation.isPending}
       >
@@ -1033,7 +1033,7 @@ export default function BrandGeneratePage(props: {
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("market-study")
               ? "Étude de marché terminée."
-              : "L’audit Risk doit être complété avant."}
+              : "L'audit Risk doit être complété avant."}
           </p>
         )}
       </PhaseSection>
@@ -1078,7 +1078,7 @@ export default function BrandGeneratePage(props: {
       <PhaseSection
         phase="audit-review"
         currentPhase={currentPhase}
-        title="Phase 6 : Validation de l’audit"
+        title="Phase 6 : Validation de l'audit"
         description="Revue et correction manuelle des résultats R+T"
         onRevert={() => handleRevertPhase("audit-review")}
         isReverting={revertPhaseMutation.isPending}
@@ -1105,7 +1105,7 @@ export default function BrandGeneratePage(props: {
           <p className="text-sm text-muted-foreground">
             {PHASES.indexOf(currentPhase) > PHASES.indexOf("audit-review")
               ? "Audit validé."
-              : "L’audit doit être complété avant la validation."}
+              : "L'audit doit être complété avant la validation."}
           </p>
         )}
       </PhaseSection>

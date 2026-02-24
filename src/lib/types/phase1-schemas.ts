@@ -163,6 +163,7 @@ export const CreateChildStrategySchema = z.object({
   deliveryMode: z.enum(["ONE_SHOT", "PLACEMENT", "RETAINER"]).optional(),
   vertical: z.enum(["FMCG", "TECH", "HEALTH_PUBLIC", "INSTITUTIONAL", "CULTURE", "LUXURY", "NGO"]).optional(),
   maturityProfile: z.enum(["MATURE", "GROWTH", "STARTUP", "LAUNCH"]).optional(),
+  currency: z.string().optional(),
 });
 export type CreateChildStrategyInput = z.infer<typeof CreateChildStrategySchema>;
 

@@ -128,7 +128,7 @@ async function compute(input: WidgetInput): Promise<WidgetResult> {
     }
 
     // Extract data from pillars
-    const hierarchy = (aContent.hierarchieCommunautaire ?? []) as HierarchyLevel[];
+    const hierarchy = (Array.isArray(aContent.hierarchieCommunautaire) ? aContent.hierarchieCommunautaire : []) as HierarchyLevel[];
     const gamification = (eContent.gamification ?? []) as GamificationLevel[];
     const touchpoints = (eContent.touchpoints ?? eContent.touchpointEcosystem ?? []) as Touchpoint[];
     const kpis = (eContent.kpis ?? eContent.kpiDashboard ?? []) as Kpi[];

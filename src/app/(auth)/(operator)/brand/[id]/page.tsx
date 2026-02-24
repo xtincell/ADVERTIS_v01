@@ -120,6 +120,7 @@ export default function BrandCockpitPage(props: {
     phase: strategy.phase,
     coherenceScore: strategy.coherenceScore,
     vertical: strategy.vertical,
+    currency: (strategy as Record<string, unknown>).currency as string ?? "XOF",
     pillars: strategy.pillars.map((p) => ({
       id: p.id,
       type: p.type,

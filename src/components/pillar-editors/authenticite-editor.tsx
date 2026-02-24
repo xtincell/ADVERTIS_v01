@@ -70,7 +70,7 @@ export function AuthenticiteEditor({ data, onChange }: Props) {
         <SectionHeader title="Hiérarchie communautaire" description="Niveaux de la communauté de marque" />
         <ObjectArrayField
           label="Niveaux"
-          items={data.hierarchieCommunautaire}
+          items={Array.isArray(data.hierarchieCommunautaire) ? data.hierarchieCommunautaire : []}
           onChange={(v) => update({ hierarchieCommunautaire: v })}
           fields={[
             { key: "niveau", label: "Niveau", type: "number", placeholder: "1" },
@@ -78,7 +78,7 @@ export function AuthenticiteEditor({ data, onChange }: Props) {
             { key: "description", label: "Description", placeholder: "Description" },
             { key: "privileges", label: "Privilèges", placeholder: "Avantages spécifiques" },
           ]}
-          defaultItem={{ niveau: data.hierarchieCommunautaire.length + 1, nom: "", description: "", privileges: "" }}
+          defaultItem={{ niveau: (Array.isArray(data.hierarchieCommunautaire) ? data.hierarchieCommunautaire.length : 0) + 1, nom: "", description: "", privileges: "" }}
         />
       </section>
 

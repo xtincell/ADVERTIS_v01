@@ -35,7 +35,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
-import { PILLAR_TYPES, PILLAR_CONFIG } from "~/lib/constants";
+import { PILLAR_TYPES, PILLAR_CONFIG, SUPPORTED_CURRENCIES } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
 import { recalculateAllScores } from "~/server/services/score-engine";
 import {
@@ -60,6 +60,7 @@ export const strategyRouter = createTRPCRouter({
         maturityProfile: z.string().optional(),
         deliveryMode: z.string().optional(),
         inputMethod: z.string().optional(),
+        currency: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -74,6 +75,7 @@ export const strategyRouter = createTRPCRouter({
           maturityProfile: input.maturityProfile ?? null,
           deliveryMode: input.deliveryMode ?? null,
           inputMethod: input.inputMethod ?? null,
+          currency: input.currency ?? "XOF",
           status: "draft",
           userId: ctx.session.user.id,
           pillars: {
@@ -177,6 +179,7 @@ export const strategyRouter = createTRPCRouter({
         sector: z.string().optional(),
         description: z.string().optional(),
         interviewData: z.any().optional(),
+        currency: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -263,6 +266,7 @@ export const strategyRouter = createTRPCRouter({
           status: "draft",
           interviewData: source.interviewData ?? undefined,
           generationMode: source.generationMode,
+          currency: source.currency ?? "XOF",
           userId: ctx.session.user.id,
           pillars: {
             create: source.pillars.map((pillar) => ({
@@ -664,7 +668,7 @@ export const strategyRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const parent = await ctx.db.strategy.findUnique({
         where: { id: input.parentId },
-        select: { id: true, userId: true, depth: true, vertical: true },
+        select: { id: true, userId: true, depth: true, vertical: true, currency: true },
       });
 
       if (!parent || parent.userId !== ctx.session.user.id) {
@@ -688,6 +692,7 @@ export const strategyRouter = createTRPCRouter({
           deliveryMode: input.deliveryMode ?? null,
           vertical: input.vertical ?? parent.vertical ?? null,
           maturityProfile: input.maturityProfile ?? null,
+          currency: input.currency ?? parent.currency ?? "XOF",
           pillars: {
             create: PILLAR_TYPES.map((type) => ({
               type,

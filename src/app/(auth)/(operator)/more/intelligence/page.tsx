@@ -118,9 +118,9 @@ export default function OperatorIntelligencePage() {
   }
 
   const tabs = [
-    { id: "overview" as const, label: "Vue d\u2019ensemble", icon: BarChart3, count: `${strategies.length}` },
+    { id: "overview" as const, label: "Vue d\'ensemble", icon: BarChart3, count: `${strategies.length}` },
     { id: "competitors" as const, label: "Concurrents", icon: Users, count: `${competitorMap.size}` },
-    { id: "opportunities" as const, label: "Opportunit\u00e9s", icon: Calendar, count: `${opportunities.length}` },
+    { id: "opportunities" as const, label: "Opportunités", icon: Calendar, count: `${opportunities.length}` },
     { id: "trends" as const, label: "Tendances", icon: TrendingUp, count: `${allTrends.length + allSignals.length}` },
   ];
 
@@ -197,7 +197,7 @@ export default function OperatorIntelligencePage() {
                           <div>
                             <h3 className="font-semibold">{s.brandName}</h3>
                             <p className="mt-0.5 text-xs text-muted-foreground">
-                              {s.sector ?? "Secteur non sp\u00e9cifi\u00e9"}
+                              {s.sector ?? "Secteur non spécifié"}
                             </p>
                           </div>
                           {bmfScore !== null && (

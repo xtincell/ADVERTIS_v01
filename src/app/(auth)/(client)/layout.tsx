@@ -5,6 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
+import { getHomeByRole } from "~/lib/role-routing";
 import { ClientShell } from "~/components/shells/client-shell";
 
 export default async function ClientLayout({
@@ -17,9 +18,7 @@ export default async function ClientLayout({
 
   // Only CLIENT_RETAINER and CLIENT_STATIC can access client routes
   if (role !== "CLIENT_RETAINER" && role !== "CLIENT_STATIC") {
-    if (role === "ADMIN" || role === "OPERATOR") redirect("/");
-    if (role === "FREELANCE") redirect("/");
-    redirect("/login");
+    redirect(getHomeByRole(role));
   }
 
   return <ClientShell>{children}</ClientShell>;

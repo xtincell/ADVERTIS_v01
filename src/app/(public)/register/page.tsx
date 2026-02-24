@@ -41,7 +41,8 @@ export default function RegisterPage() {
         // Registration succeeded but auto-login failed, redirect to login
         router.push("/login");
       } else {
-        router.push("/dashboard");
+        // Redirect to root — server will route to role-specific home
+        router.push("/");
       }
     },
     onError: (err) => {

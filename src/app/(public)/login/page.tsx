@@ -39,7 +39,8 @@ export default function LoginPage() {
       if (result?.error) {
         setError("Email ou mot de passe incorrect.");
       } else {
-        router.push("/dashboard");
+        // Redirect to root — server will route to role-specific home
+        router.push("/");
       }
     } catch {
       setError("Une erreur est survenue. Veuillez reessayer.");

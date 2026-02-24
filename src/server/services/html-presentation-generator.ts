@@ -22,7 +22,8 @@
 
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import { PILLAR_CONFIG, FRESHNESS_THRESHOLDS, WHITE_LABEL_MAP, TEMPLATE_CONFIG } from "~/lib/constants";
-import type { TemplateType } from "~/lib/constants";
+import type { TemplateType, SupportedCurrency } from "~/lib/constants";
+import { getCurrencySymbol } from "~/lib/currency";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
@@ -553,7 +554,7 @@ function resolveOracleData(
 
   // Budget derived
   const rawEnveloppe = impl.budgetAllocation?.enveloppeGlobale?.trim() ?? "";
-  const hasRealBudget = rawEnveloppe.length > 0 && rawEnveloppe !== "\u2014" && /\d/.test(rawEnveloppe);
+  const hasRealBudget = rawEnveloppe.length > 0 && rawEnveloppe !== "—" && /\d/.test(rawEnveloppe);
   const budgetParPosteFiltered = impl.budgetAllocation?.parPoste?.filter(
     (p) => p.poste && /\d/.test(p.montant),
   ) ?? [];
@@ -567,7 +568,7 @@ function resolveOracleData(
     bmfScore: t.brandMarketFitScore || 0,
     ltvCac: firstOf<string>([
       [impl.valueArchitecture?.unitEconomics?.ratio, "I"], [v.unitEconomics?.ratio, "V"],
-    ], "\u2014", _sources, "ltvCac"),
+    ], "—", _sources, "ltvCac"),
     advertisScores: computeADVERTISScores(a, d, v, e, r, t, impl, s),
 
     // Narrative
@@ -640,7 +641,10 @@ export function generateStrategyHTML(
 ): string {
   const accent1 = sanitizeColor(options.brandAccent, "#c45a3c");
   const accent2 = sanitizeColor(options.brandAccent2, "#2d5a3d");
-  const currency = options.currency ?? "FCFA";
+  // Resolve currency: accept either a currency code ("XOF") or display symbol ("FCFA")
+  const currency = options.currency
+    ? getCurrencySymbol(options.currency as SupportedCurrency)
+    : getCurrencySymbol("XOF");
   const locale = options.locale ?? "fr-FR";
 
   // Filter pillars — include any pillar that has content (not just status=complete)
@@ -689,19 +693,19 @@ export function generateStrategyHTML(
     { id: "dashboard", letter: "\u25C9", label: "Dashboard" },
   ];
   const hasCampaignData = (ctx.campaigns?.annualCalendar?.length ?? 0) > 0 || (ctx.campaigns?.templates?.length ?? 0) > 0;
-  if (selected.has("S") || hasCampaignData) sections.push({ id: "strategie", letter: "S", label: wl("Strat\u00e9gie", role) });
-  if (selected.has("A")) sections.push({ id: "authenticite", letter: "A", label: wl("Authenticit\u00e9", role) });
+  if (selected.has("S") || hasCampaignData) sections.push({ id: "strategie", letter: "S", label: wl("Stratégie", role) });
+  if (selected.has("A")) sections.push({ id: "authenticite", letter: "A", label: wl("Authenticité", role) });
   if (selected.has("D")) sections.push({ id: "distinction", letter: "D", label: wl("Distinction", role) });
   if (selected.has("V")) sections.push({ id: "valeur", letter: "V", label: wl("Valeur", role) });
   if (selected.has("E")) sections.push({ id: "engagement", letter: "E", label: wl("Engagement", role) });
   if (selected.has("R")) sections.push({ id: "risk", letter: "R", label: wl("Risk", role), score: ctx.riskScore });
   if (selected.has("T")) sections.push({ id: "track", letter: "T", label: wl("Track", role), score: ctx.bmfScore });
-  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: wl("Impl\u00e9mentation", role), score: ctx.coherenceScore });
+  if (selected.has("I")) sections.push({ id: "implementation", letter: "I", label: wl("Implémentation", role), score: ctx.coherenceScore });
   // Phase 4: new sections
-  if (options.decisions && options.decisions.length > 0) sections.push({ id: "decisions", letter: "\u26A1", label: wl("D\u00e9cisions", role) });
+  if (options.decisions && options.decisions.length > 0) sections.push({ id: "decisions", letter: "\u26A1", label: wl("Décisions", role) });
   if (options.competitors && options.competitors.length > 0) sections.push({ id: "competitors", letter: "\uD83C\uDFAF", label: wl("Concurrents", role) });
   if (options.briefs && options.briefs.length > 0) sections.push({ id: "briefs", letter: "\uD83D\uDCC4", label: wl("Briefs", role) });
-  if (options.opportunities && options.opportunities.length > 0) sections.push({ id: "opportunities", letter: "\u2191", label: wl("Opportunit\u00e9s", role) });
+  if (options.opportunities && options.opportunities.length > 0) sections.push({ id: "opportunities", letter: "\u2191", label: wl("Opportunités", role) });
   if (options.documents && options.documents.length > 0) sections.push({ id: "templates", letter: "\uD83D\uDCCB", label: wl("Templates", role) });
   sections.push({ id: "budget-sim", letter: "\u00A4", label: wl("Simulateur", role) });
 
@@ -1276,7 +1280,7 @@ function buildSidebar(
     )
     .join("\n");
 
-  const totalBudget = "\u2014";
+  const totalBudget = "—";
   const brandTreeHtml = buildBrandTree(parentBrand, meta.brandName, childBrands);
 
   return `<aside class="sidebar" id="sidebar">
@@ -1285,7 +1289,7 @@ function buildSidebar(
       <div class="brand-icon">${esc(brandInitials(meta.brandName))}</div>
       <div>
         <h2>${esc(meta.brandName)}</h2>
-        <div class="brand-meta">${esc(meta.sector ?? "Marque")} \u00B7 ${meta.createdAt.getFullYear()}</div>
+        <div class="brand-meta">${esc(meta.sector ?? "Marque")} · ${meta.createdAt.getFullYear()}</div>
       </div>
     </div>
   </div>
@@ -1469,7 +1473,7 @@ function buildDashboard(
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.7), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">\u26A1 L'ORACLE — Intelligence Strat\u00e9gique ${inlineFreshnessBadge(meta.createdAt)}</div>
+      <div class="section-tag">\u26A1 L'ORACLE — Intelligence Stratégique ${inlineFreshnessBadge(meta.createdAt)}</div>
       <h1>${esc(meta.brandName)}</h1>
       ${meta.tagline ? `<p style="font-style:italic;color:var(--accent-1);font-size:1.1rem;margin-bottom:8px;">\u201C${esc(meta.tagline)}\u201D</p>` : ""}
       <p class="section-summary">${esc(ctx.narrative)}</p>
@@ -1484,9 +1488,9 @@ function buildDashboard(
         </div>
         <div class="hero-score-badge">
           <div class="hsb-val" style="color:${scoreColor(ctx.coherenceScore)}">${ctx.coherenceScore}<span style="font-size:0.7rem;color:var(--text-tertiary)">/100</span></div>
-          <div class="hsb-label">Coh\u00e9rence</div>
+          <div class="hsb-label">Cohérence</div>
         </div>
-        ${ctx.ltvCac !== "\u2014" ? `<div class="hero-score-badge"><div class="hsb-val" style="color:var(--accent-1)">${esc(ctx.ltvCac)}</div><div class="hsb-label">LTV/CAC</div></div>` : ""}
+        ${ctx.ltvCac !== "—" ? `<div class="hero-score-badge"><div class="hsb-val" style="color:var(--accent-1)">${esc(ctx.ltvCac)}</div><div class="hsb-label">LTV/CAC</div></div>` : ""}
       </div>
     </div>
   </div>
@@ -1511,7 +1515,7 @@ function buildDashboard(
     <div class="card">
       <div class="card-header">
         <span class="card-title">Sprint 90 jours</span>
-        ${ctx.sprint90IsDefault ? '<span class="card-badge" style="background:rgba(255,165,2,0.15);color:var(--risk-medium);font-size:0.65rem;">\u00c0 D\u00c9FINIR</span>' : ""}
+        ${ctx.sprint90IsDefault ? '<span class="card-badge" style="background:rgba(255,165,2,0.15);color:var(--risk-medium);font-size:0.65rem;">À DÉFINIR</span>' : ""}
       </div>
       <div style="display:flex;flex-direction:column;gap:12px;">
         ${sprintHtml}
@@ -1522,7 +1526,7 @@ function buildDashboard(
   <div class="grid-4 mb-4">
     <div class="card" style="text-align:center;padding:16px;">
       <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-1);">${options?.decisions?.length ?? 0}</div>
-      <div class="micro-text" style="margin-top:4px;">D\u00e9cisions</div>
+      <div class="micro-text" style="margin-top:4px;">Décisions</div>
     </div>
     <div class="card" style="text-align:center;padding:16px;">
       <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-2);">${options?.competitors?.length ?? 0}</div>
@@ -1530,7 +1534,7 @@ function buildDashboard(
     </div>
     <div class="card" style="text-align:center;padding:16px;">
       <div class="mono" style="font-size:1.4rem;font-weight:800;color:#818cf8;">${options?.opportunities?.length ?? 0}</div>
-      <div class="micro-text" style="margin-top:4px;">Opportunit\u00e9s</div>
+      <div class="micro-text" style="margin-top:4px;">Opportunités</div>
     </div>
     <div class="card" style="text-align:center;padding:16px;">
       <div class="mono" style="font-size:1.4rem;font-weight:800;color:var(--accent-3);">${options?.signals?.length ?? 0}</div>
@@ -1541,7 +1545,7 @@ function buildDashboard(
   ${
     ctx.executiveSummary
       ? `<div class="card mb-4" style="background:linear-gradient(135deg, var(--accent-1-dim), var(--bg-card));border:1px solid var(--accent-1);padding:32px;">
-    <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synth\u00e8se ex\u00e9cutive</div>
+    <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synthèse exécutive</div>
     <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(ctx.executiveSummary)}</p>
   </div>`
       : ""
@@ -1561,7 +1565,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Synthèse Executive ──
   const syntheseHtml = ctx.syntheseExecutive
     ? `<div class="sub-section">
-    <h3 class="sub-title">Synth\u00e8se ex\u00e9cutive</h3>
+    <h3 class="sub-title">Synthèse exécutive</h3>
     <div class="card" style="border-left:4px solid var(--accent-1);padding:1.5rem;">
       <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.syntheseExecutive)}</p>
     </div>
@@ -1571,7 +1575,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Vision Stratégique ──
   const visionHtml = ctx.syntheseVision
     ? `<div class="sub-section">
-    <h3 class="sub-title">Vision strat\u00e9gique</h3>
+    <h3 class="sub-title">Vision stratégique</h3>
     <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
       <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.syntheseVision)}</p>
     </div>
@@ -1581,7 +1585,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Cohérence inter-piliers ──
   const coherenceHtml = ctx.coherencePiliers.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Coh\u00e9rence inter-piliers</h3>
+    <h3 class="sub-title">Cohérence inter-piliers</h3>
     <div class="grid-3">
       ${ctx.coherencePiliers
         .map(
@@ -1600,7 +1604,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   const fcIcons = ["\uD83C\uDFAF", "\u26A1", "\uD83D\uDEE1\uFE0F", "\uD83D\uDE80", "\uD83D\uDC8E", "\uD83D\uDD11", "\u2728", "\uD83C\uDFC6"];
   const facteursHtml = ctx.facteursClesSucces.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Facteurs cl\u00e9s de succ\u00e8s</h3>
+    <h3 class="sub-title">Facteurs clés de succès</h3>
     <div class="grid-2">
       ${ctx.facteursClesSucces
         .map(
@@ -1619,7 +1623,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
     ? `<div class="sub-section">
     <h3 class="sub-title">Recommandations prioritaires</h3>
     <table class="budget-table">
-      <thead><tr><th>Action</th><th>Priorit\u00e9</th><th>Impact</th><th>D\u00e9lai</th></tr></thead>
+      <thead><tr><th>Action</th><th>Priorité</th><th>Impact</th><th>Délai</th></tr></thead>
       <tbody>
         ${[...ctx.recommandationsPrioritaires]
           .sort((a, b) => a.priorite - b.priorite)
@@ -1651,7 +1655,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
         <h3>${esc(tpl.nom)}</h3>
         <div class="pillar-objective">${esc(tpl.description)}</div>
         <div class="pillar-channels">${tpl.canauxPrincipaux.map((c) => `<span class="pillar-channel-tag">${esc(c)}</span>`).join("")}</div>
-        <div class="pillar-kpis">${tpl.messagesCles.map((m) => esc(m)).join(" \u00b7 ")}</div>
+        <div class="pillar-kpis">${tpl.messagesCles.map((m) => esc(m)).join(" · ")}</div>
       </div>`,
         )
         .join("\n")}
@@ -1682,7 +1686,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   const budgetHasData = ctx.budgetParPosteFiltered.length > 0;
   const budgetHtml = budgetHasData
     ? `<div class="sub-section">
-    <h3 class="sub-title">Budget op\u00e9rationnel</h3>
+    <h3 class="sub-title">Budget opérationnel</h3>
     <table class="budget-table">
       <thead><tr><th>Poste</th><th>Montant</th><th>%</th><th>Justification</th></tr></thead>
       <tbody>
@@ -1737,7 +1741,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Axes Stratégiques — properly typed from ctx ──
   const axesHtml = ctx.axesStrategiques.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Axes strat\u00e9giques</h3>
+    <h3 class="sub-title">Axes stratégiques</h3>
     <div class="grid-2">
       ${ctx.axesStrategiques.map((ax) => `<div class="card" style="border-left:4px solid var(--accent-1);">
         <div style="font-weight:700;margin-bottom:4px;">${esc(ax.axe)}</div>
@@ -1753,7 +1757,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   const sprint90 = ctx.sprint90Recap;
   const sprint90Html = sprint90.actions.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Sprint 90 jours \u2014 R\u00e9cap</h3>
+    <h3 class="sub-title">Sprint 90 jours — Récap</h3>
     ${sprint90.summary ? `<p style="margin-bottom:12px;font-size:var(--fs-small);color:var(--text-secondary);">${esc(sprint90.summary)}</p>` : ""}
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr style="border-bottom:1px solid var(--border-subtle);">
@@ -1767,7 +1771,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
           <td style="padding:8px;font-weight:600;">${esc(act.action)}</td>
           <td style="padding:8px;color:var(--text-secondary);">${esc(act.owner)}</td>
           <td style="padding:8px;color:var(--text-secondary);">${esc(act.kpi)}</td>
-          <td style="padding:8px;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${act.status.toLowerCase().includes("done") || act.status.toLowerCase().includes("termin\u00e9") ? "rgba(34,197,94,0.15);color:#22C55E" : act.status.toLowerCase().includes("progress") || act.status.toLowerCase().includes("cours") ? "rgba(245,158,11,0.15);color:#F59E0B" : "rgba(156,163,175,0.15);color:#9CA3AF"}">${esc(act.status)}</span></td>
+          <td style="padding:8px;"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:${act.status.toLowerCase().includes("done") || act.status.toLowerCase().includes("terminé") ? "rgba(34,197,94,0.15);color:#22C55E" : act.status.toLowerCase().includes("progress") || act.status.toLowerCase().includes("cours") ? "rgba(245,158,11,0.15);color:#F59E0B" : "rgba(156,163,175,0.15);color:#9CA3AF"}">${esc(act.status)}</span></td>
         </tr>`).join("\n")}
       </tbody>
     </table>
@@ -1777,7 +1781,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── KPI Dashboard consolidé — properly typed from ctx ──
   const kpiHtml = ctx.kpiDashboard.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">KPI Dashboard consolid\u00e9</h3>
+    <h3 class="sub-title">KPI Dashboard consolidé</h3>
     <table style="width:100%;border-collapse:collapse;">
       <thead><tr style="border-bottom:1px solid var(--border-subtle);">
         <th style="text-align:left;padding:8px;font-size:12px;">Pilier</th>
@@ -1800,7 +1804,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Activation Summary ──
   const activationHtml = ctx.activationSummary
     ? `<div class="sub-section">
-    <h3 class="sub-title">R\u00e9sum\u00e9 activation</h3>
+    <h3 class="sub-title">Résumé activation</h3>
     <div class="card" style="border-left:4px solid var(--accent-2);padding:1.5rem;">
       <p style="line-height:1.8;color:var(--text-secondary);font-size:var(--fs-small);">${esc(ctx.activationSummary)}</p>
     </div>
@@ -1811,7 +1815,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   const campSum = ctx.campaignsSummary;
   const campSumHtml = campSum.totalCampaigns > 0 || campSum.highlights.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">R\u00e9sum\u00e9 campagnes</h3>
+    <h3 class="sub-title">Résumé campagnes</h3>
     <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;">
       ${campSum.totalCampaigns ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Campagnes</div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-1);">${campSum.totalCampaigns}</div></div>` : ""}
       ${campSum.budgetTotal ? `<div class="card" style="min-width:120px;text-align:center;"><div class="micro-text">Budget total</div><div style="font-size:1.1rem;font-weight:700;color:var(--accent-2);">${esc(campSum.budgetTotal)}</div></div>` : ""}
@@ -1827,9 +1831,9 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(6,6,11,0.8), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">S \u2014 Synth\u00e8se Strat\u00e9gique</div>
-      <h1>Synth\u00e8se &amp; Plan d'attaque</h1>
-      <p class="section-summary">Vision strat\u00e9gique, coh\u00e9rence inter-piliers, recommandations prioritaires, campagnes et budget.</p>
+      <div class="section-tag">S — Synthèse Stratégique</div>
+      <h1>Synthèse &amp; Plan d'attaque</h1>
+      <p class="section-summary">Vision stratégique, cohérence inter-piliers, recommandations prioritaires, campagnes et budget.</p>
     </div>
   </div>
   ${syntheseHtml}
@@ -1848,9 +1852,9 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   ${funnelHtml}
   ${allParts.every(p => !p)
     ? emptyPillarFallback("S", [
-        { icon: "\uD83C\uDFAF", label: "Vision strat\u00e9gique", desc: "Vision \u00e0 long terme \u00e0 formuler" },
-        { icon: "\uD83D\uDD17", label: "Coh\u00e9rence", desc: "Liens inter-piliers \u00e0 \u00e9tablir" },
-        { icon: "\u26A1", label: "Recommandations", desc: "Actions prioritaires \u00e0 d\u00e9finir" },
+        { icon: "\uD83C\uDFAF", label: "Vision stratégique", desc: "Vision à long terme à formuler" },
+        { icon: "\uD83D\uDD17", label: "Cohérence", desc: "Liens inter-piliers à établir" },
+        { icon: "\u26A1", label: "Recommandations", desc: "Actions prioritaires à définir" },
       ])
     : ""}
 </section>`;
@@ -1910,7 +1914,7 @@ function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
   const valuesHtml =
     (a.valeurs?.length ?? 0) > 0
       ? `<div class="sub-section">
-    <h3 class="sub-title">Valeurs fondatrices <span style="font-size:0.7em;font-weight:400;color:var(--text-tertiary);">(Mod\u00e8le de Schwartz)</span></h3>
+    <h3 class="sub-title">Valeurs fondatrices <span style="font-size:0.7em;font-weight:400;color:var(--text-tertiary);">(Modèle de Schwartz)</span></h3>
     <div class="grid-3">
       ${(a.valeurs ?? [])
         .map(
@@ -1924,11 +1928,11 @@ function buildSectionA(a: AuthenticitePillarData, imageUrl?: string): string {
 
   // Community Hierarchy
   const hierarchyHtml =
-    (a.hierarchieCommunautaire?.length ?? 0) > 0
+    Array.isArray(a.hierarchieCommunautaire) && a.hierarchieCommunautaire.length > 0
       ? `<div class="sub-section">
     <h3 class="sub-title">Hiérarchie communautaire</h3>
     <div class="hierarchy-levels">
-      ${(a.hierarchieCommunautaire ?? [])
+      ${a.hierarchieCommunautaire
         .map(
           (h) =>
             `<div class="hierarchy-level"><span class="hl-rank">${h.niveau}</span><span class="hl-name">${esc(h.nom)}</span><span class="hl-desc">${esc(h.description)}</span><span class="hl-priv">${esc(h.privileges)}</span></div>`,
@@ -1985,7 +1989,7 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
             <div style="width:48px;height:48px;border-radius:50%;background:${personaGradients[idx % personaGradients.length]};display:flex;align-items:center;justify-content:center;font-family:'Outfit';font-weight:700;font-size:1.1rem;color:white;flex-shrink:0;">${getInitials(p.nom)}</div>
             <div>
-              <div class="persona-priority" style="color:var(--accent-1);margin-bottom:2px;">Priorit\u00e9 ${p.priorite}</div>
+              <div class="persona-priority" style="color:var(--accent-1);margin-bottom:2px;">Priorité ${p.priorite}</div>
               <h3 style="margin:0;">${esc(p.nom)}</h3>
             </div>
           </div>
@@ -2435,7 +2439,7 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
       ${ctx.sprint90Actions
         .map(
           (act) =>
-            `<div class="card" style="display:flex;align-items:flex-start;gap:14px;"><span class="card-badge badge-p0" style="flex-shrink:0;">Action</span><div><p style="font-weight:600;font-size:var(--fs-small);">${esc(act.action)}</p><div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:4px;">Owner: ${esc(act.owner)} \u00b7 KPI: ${esc(act.kpi)}</div></div></div>`,
+            `<div class="card" style="display:flex;align-items:flex-start;gap:14px;"><span class="card-badge badge-p0" style="flex-shrink:0;">Action</span><div><p style="font-weight:600;font-size:var(--fs-small);">${esc(act.action)}</p><div style="font-size:var(--fs-micro);color:var(--text-tertiary);margin-top:4px;">Owner: ${esc(act.owner)} · KPI: ${esc(act.kpi)}</div></div></div>`,
         )
         .join("\n")}
     </div>
@@ -2446,12 +2450,12 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
   const hasYear1 = ctx.year1Priorities.length > 0;
   const hasYear3 = !!ctx.visionStrategique;
   const visionHtml = (hasYear1 || hasYear3) ? `<div class="sub-section">
-    <h3 class="sub-title">Vision strat\u00e9gique</h3>
+    <h3 class="sub-title">Vision stratégique</h3>
     <div class="grid-2">
       ${
         hasYear1
           ? `<div class="card" style="border-top:3px solid var(--accent-1);">
-        <div class="micro-text mb-2">Ann\u00e9e 1 \u2014 Priorit\u00e9s</div>
+        <div class="micro-text mb-2">Année 1 — Priorités</div>
         <ul style="list-style:none;">${ctx.year1Priorities.map((p) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">\u2022 ${esc(p)}</li>`).join("")}</ul>
       </div>`
           : ""
@@ -2471,7 +2475,7 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
   const summaryHtml = ctx.executiveSummary
     ? `<div class="sub-section">
     <div class="card" style="background:linear-gradient(135deg, var(--accent-1-dim), var(--bg-card));border:1px solid var(--accent-1);padding:32px;">
-      <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synth\u00e8se ex\u00e9cutive</div>
+      <div class="micro-text" style="color:var(--accent-1);margin-bottom:12px;">Synthèse exécutive</div>
       <p style="font-size:1.05rem;line-height:1.8;color:var(--text-primary);max-width:900px;">${esc(ctx.executiveSummary)}</p>
     </div>
   </div>`
@@ -2490,9 +2494,9 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
             <td class="cal-mois">${esc(c.mois)}</td>
             <td style="font-weight:600;">${esc(c.campagne)}</td>
             <td style="color:var(--text-secondary);">${esc(c.objectif)}</td>
-            <td>${c.canaux.length > 0 ? `<div class="cal-canaux">${c.canaux.map((ch) => `<span class="cal-canal">${esc(ch)}</span>`).join("")}</div>` : "\u2014"}</td>
-            <td class="mono" style="color:var(--accent-1);">${esc(c.budget) || "\u2014"}</td>
-            <td style="color:var(--text-secondary);">${esc(c.kpiCible) || "\u2014"}</td>
+            <td>${c.canaux.length > 0 ? `<div class="cal-canaux">${c.canaux.map((ch) => `<span class="cal-canal">${esc(ch)}</span>`).join("")}</div>` : "—"}</td>
+            <td class="mono" style="color:var(--accent-1);">${esc(c.budget) || "—"}</td>
+            <td style="color:var(--text-secondary);">${esc(c.kpiCible) || "—"}</td>
           </tr>`).join("\n")}
         </tbody>
       </table>
@@ -2512,9 +2516,9 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
           <span style="font-weight:700;font-size:var(--fs-small);">${esc(tpl.nom)}</span>
         </div>
         <p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;margin-bottom:8px;">${esc(tpl.description)}</p>
-        ${tpl.duree ? `<div style="font-size:var(--fs-micro);color:var(--text-tertiary);">Dur\u00e9e: ${esc(tpl.duree)}</div>` : ""}
+        ${tpl.duree ? `<div style="font-size:var(--fs-micro);color:var(--text-tertiary);">Durée: ${esc(tpl.duree)}</div>` : ""}
         ${tpl.canauxPrincipaux.length > 0 ? `<div class="cal-canaux" style="margin-top:8px;">${tpl.canauxPrincipaux.map((ch) => `<span class="cal-canal">${esc(ch)}</span>`).join("")}</div>` : ""}
-        ${tpl.messagesCles.length > 0 ? `<div style="margin-top:8px;"><div class="micro-text" style="margin-bottom:4px;">Messages cl\u00e9s</div><ul style="list-style:none;">${tpl.messagesCles.map((m) => `<li style="font-size:var(--fs-small);padding:2px 0;color:var(--text-secondary);">\u2022 ${esc(m)}</li>`).join("")}</ul></div>` : ""}
+        ${tpl.messagesCles.length > 0 ? `<div style="margin-top:8px;"><div class="micro-text" style="margin-bottom:4px;">Messages clés</div><ul style="list-style:none;">${tpl.messagesCles.map((m) => `<li style="font-size:var(--fs-small);padding:2px 0;color:var(--text-secondary);">\u2022 ${esc(m)}</li>`).join("")}</ul></div>` : ""}
       </div>`).join("\n")}
     </div>
   </div>`
@@ -2523,14 +2527,14 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
   // Campaigns — Activation Plan (4 phases)
   const ap = ctx.campaigns?.activationPlan;
   const activationPhases = [
-    { label: "Phase 1 \u2014 Teasing", desc: ap?.phase1Teasing ?? "" },
-    { label: "Phase 2 \u2014 Lancement", desc: ap?.phase2Lancement ?? "" },
-    { label: "Phase 3 \u2014 Amplification", desc: ap?.phase3Amplification ?? "" },
-    { label: "Phase 4 \u2014 Fid\u00e9lisation", desc: ap?.phase4Fidelisation ?? "" },
+    { label: "Phase 1 — Teasing", desc: ap?.phase1Teasing ?? "" },
+    { label: "Phase 2 — Lancement", desc: ap?.phase2Lancement ?? "" },
+    { label: "Phase 3 — Amplification", desc: ap?.phase3Amplification ?? "" },
+    { label: "Phase 4 — Fidélisation", desc: ap?.phase4Fidelisation ?? "" },
   ].filter((p) => p.desc.trim().length > 0);
   const activationHtml = activationPhases.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">Plan d\u2019activation</h3>
+    <h3 class="sub-title">Plan d\'activation</h3>
     <div class="activation-grid">
       ${activationPhases.map((p) => `<div class="activation-card">
         <div class="ac-phase">${esc(p.label)}</div>
@@ -2571,7 +2575,7 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
         <div class="roi-val">${esc(entry.val)}</div>
       </div>`).join("\n")}
     </div>
-    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypoth\u00e8ses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
+    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypothèses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
   </div>`
     : "";
 
@@ -2579,14 +2583,14 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
   const allParts = [sprintHtml, visionHtml, calendarHtml, templatesHtml, activationHtml, phasesHtml, roiHtml, summaryHtml];
   const subSectionCount = allParts.filter(Boolean).length;
   const summaryText = subSectionCount > 3
-    ? "Roadmap compl\u00e8te : sprint 90 jours, calendrier campagnes, plan d\u2019activation, projections ROI."
-    : "Sprint 90 jours, vision strat\u00e9gique et synth\u00e8se ex\u00e9cutive.";
+    ? "Roadmap complète : sprint 90 jours, calendrier campagnes, plan d\'activation, projections ROI."
+    : "Sprint 90 jours, vision stratégique et synthèse exécutive.";
 
   // Fallback when all sub-sections are empty
   const fallbackHtml = subSectionCount === 0 ? emptyPillarFallback("I", [
-    { icon: "\uD83D\uDCC5\uFE0F", label: "Sprint 90 jours", desc: "Actions prioritaires \u00e0 d\u00e9finir" },
-    { icon: "\uD83D\uDCCA", label: "Calendrier campagnes", desc: "Campagnes annuelles \u00e0 planifier" },
-    { icon: "\uD83D\uDCB0", label: "Budget & ROI", desc: "Projections budg\u00e9taires \u00e0 compl\u00e9ter" },
+    { icon: "\uD83D\uDCC5\uFE0F", label: "Sprint 90 jours", desc: "Actions prioritaires à définir" },
+    { icon: "\uD83D\uDCCA", label: "Calendrier campagnes", desc: "Campagnes annuelles à planifier" },
+    { icon: "\uD83D\uDCB0", label: "Budget & ROI", desc: "Projections budgétaires à compléter" },
   ]) : "";
 
   return `<section id="implementation">
@@ -2594,8 +2598,8 @@ function buildSectionImpl(ctx: OracleResolved, currency: string, imageUrl?: stri
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, ${PILLAR_CONFIG.I.color}22, rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag">I \u2014 Impl\u00e9mentation</div>
-      <h1>Roadmap &amp; Ex\u00e9cution</h1>
+      <div class="section-tag">I — Implémentation</div>
+      <h1>Roadmap &amp; Exécution</h1>
       <p class="section-summary">${summaryText}</p>
     </div>
   </div>
@@ -2956,9 +2960,9 @@ function buildSectionTemplates(
           </div>
         </div>
         <div class="tpl-card-meta">
-          <span class="tpl-badge">${esc(doc.status === "complete" ? "Pr\u00eat" : doc.status)}</span>
+          <span class="tpl-badge">${esc(doc.status === "complete" ? "Prêt" : doc.status)}</span>
           <span class="tpl-pages">~${pageEstimate} ${esc(unit)}</span>
-          ${totalWords > 0 ? `<span class="tpl-pages">\u00B7 ${totalWords.toLocaleString("fr-FR")} mots</span>` : ""}
+          ${totalWords > 0 ? `<span class="tpl-pages">· ${totalWords.toLocaleString("fr-FR")} mots</span>` : ""}
         </div>
       </div>
       ${sections.length > 0 ? `<div class="tpl-sections">
@@ -2973,14 +2977,14 @@ function buildSectionTemplates(
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay" style="background:linear-gradient(135deg, rgba(196,90,60,0.12), rgba(6,6,11,0.95));"></div>
     <div class="section-hero-content">
-      <div class="section-tag" style="background:rgba(196,90,60,0.15);color:var(--accent-1);">&#x1F4CB; Templates Strat\u00e9giques</div>
+      <div class="section-tag" style="background:rgba(196,90,60,0.15);color:var(--accent-1);">&#x1F4CB; Templates Stratégiques</div>
       <h1>Livrables pour ${esc(brandName)}</h1>
-      <p class="section-summary">${documents.length} template(s) g\u00e9n\u00e9r\u00e9(s) — Documents op\u00e9rationnels pr\u00eats \u00e0 l\u2019emploi.</p>
+      <p class="section-summary">${documents.length} template(s) généré(s) — Documents opérationnels prêts à l\'emploi.</p>
     </div>
   </div>
 
   <div class="sub-section">
-    <h3 class="sub-title">Documents strat\u00e9giques</h3>
+    <h3 class="sub-title">Documents stratégiques</h3>
     <div style="display:flex;flex-direction:column;gap:20px;">
       ${templateCards}
     </div>
@@ -2995,27 +2999,27 @@ function buildSectionTemplates(
 const DEFAULT_BUDGET_TIERS = [
   {
     tier: "MICRO", range: "< 2M FCFA",
-    desc: "Organique pur : 15 posts/mois + community management WhatsApp + 1\u20132 micro-influenceurs + 1 challenge UGC avec lots produits. On existe.",
+    desc: "Organique pur : 15 posts/mois + community management WhatsApp + 1–2 micro-influenceurs + 1 challenge UGC avec lots produits. On existe.",
     kpis: ["+500 membres", "200 UGC", "50K reach organique", "1 mois"],
   },
   {
-    tier: "STARTER", range: "2\u20135M FCFA",
-    desc: "+ Paid social (Meta + TikTok Ads) + 3\u20135 vid\u00e9os qualit\u00e9 + 1 influenceur mid-tier. On acc\u00e9l\u00e8re.",
-    kpis: ["200K reach", "+2K membres", "500 UGC", "50 conversions", "4\u20136 sem."],
+    tier: "STARTER", range: "2–5M FCFA",
+    desc: "+ Paid social (Meta + TikTok Ads) + 3–5 vidéos qualité + 1 influenceur mid-tier. On accélère.",
+    kpis: ["200K reach", "+2K membres", "500 UGC", "50 conversions", "4–6 sem."],
   },
   {
-    tier: "IMPACT", range: "5\u201315M FCFA",
-    desc: "+ Vid\u00e9o hero (spot 30\u201360s) + paid scaling + 1\u20132 events terrain + radio r\u00e9gionale + PLV 200 supports. On frappe.",
-    kpis: ["1M reach", "+5K membres", "+8% ventes", "200 leads B2B", "6\u20138 sem."],
+    tier: "IMPACT", range: "5–15M FCFA",
+    desc: "+ Vidéo hero (spot 30–60s) + paid scaling + 1–2 events terrain + radio régionale + PLV 200 supports. On frappe.",
+    kpis: ["1M reach", "+5K membres", "+8% ventes", "200 leads B2B", "6–8 sem."],
   },
   {
-    tier: "CAMPAGNE", range: "15\u201335M FCFA",
-    desc: "+ TV nationale 3 semaines + influenceurs top-tier + event flagship + RP + \u00e9tudes d\u2019impact pr\u00e9/post. On domine le moment.",
-    kpis: ["5M reach", "+15K membres", "+12% ventes", "+5pts notori\u00e9t\u00e9", "2\u20133 mois"],
+    tier: "CAMPAGNE", range: "15–35M FCFA",
+    desc: "+ TV nationale 3 semaines + influenceurs top-tier + event flagship + RP + études d\'impact pré/post. On domine le moment.",
+    kpis: ["5M reach", "+15K membres", "+12% ventes", "+5pts notoriété", "2–3 mois"],
   },
   {
-    tier: "DOMINATION", range: "35\u201370M FCFA",
-    desc: "Always-on 12 mois + 2\u20133 campagnes peak + paid annual + \u00e9tudes continues + \u00e9v\u00e9nementiel (4\u20136/an) + innovation produit. On est le march\u00e9.",
+    tier: "DOMINATION", range: "35–70M FCFA",
+    desc: "Always-on 12 mois + 2–3 campagnes peak + paid annual + études continues + événementiel (4–6/an) + innovation produit. On est le marché.",
     kpis: ["Objectifs annuels complets", "12 mois"],
   },
 ];
@@ -3050,9 +3054,9 @@ function buildSectionBudgetSim(
   const fmtBudget = (min: number, max: number): string => {
     if (min >= 1_000_000 || max >= 1_000_000) {
       const fmtM = (n: number) => n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M` : n.toLocaleString("fr-FR");
-      return `${fmtM(min)}\u2013${fmtM(max)} ${currency}`;
+      return `${fmtM(min)}–${fmtM(max)} ${currency}`;
     }
-    return `${min.toLocaleString("fr-FR")}\u2013${max.toLocaleString("fr-FR")} ${currency}`;
+    return `${min.toLocaleString("fr-FR")}–${max.toLocaleString("fr-FR")} ${currency}`;
   };
 
   // Match DB tiers to enriched defaults by normalized name
@@ -3093,14 +3097,14 @@ function buildSectionBudgetSim(
   const parPoste = ctx?.budgetParPosteFiltered ?? [];
   const budgetAllocHtml = parPoste.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">R\u00e9partition budg\u00e9taire d\u00e9taill\u00e9e</h3>
+    <h3 class="sub-title">Répartition budgétaire détaillée</h3>
     <table class="mva-table">
       <thead><tr><th>Poste</th><th>Montant</th><th>%</th><th>Justification</th></tr></thead>
       <tbody>
         ${parPoste.map((p) => `<tr>
           <td style="font-weight:600;">${esc(p.poste)}</td>
           <td class="mono" style="color:var(--accent-1);">${esc(p.montant)}</td>
-          <td class="mono">${p.pourcentage > 0 ? `${p.pourcentage}%` : "\u2014"}</td>
+          <td class="mono">${p.pourcentage > 0 ? `${p.pourcentage}%` : "—"}</td>
           <td style="color:var(--text-secondary);font-size:var(--fs-small);">${esc(p.justification)}</td>
         </tr>`).join("\n")}
       </tbody>
@@ -3112,14 +3116,14 @@ function buildSectionBudgetSim(
   const mvaHtml = `<div class="sub-section">
     <h3 class="sub-title">Minimum Viable Action par objectif</h3>
     <table class="mva-table">
-      <thead><tr><th>Objectif</th><th>MVA (action minimale)</th><th>Budget min.</th><th>D\u00e9lai</th></tr></thead>
+      <thead><tr><th>Objectif</th><th>MVA (action minimale)</th><th>Budget min.</th><th>Délai</th></tr></thead>
       <tbody>
-        <tr><td style="font-weight:600;">Awareness</td><td>1 vid\u00e9o TikTok boost\u00e9e + 5 posts organiques</td><td class="mono" style="color:var(--accent-1);">500K ${esc(currency)}</td><td class="mono">2 sem.</td></tr>
+        <tr><td style="font-weight:600;">Awareness</td><td>1 vidéo TikTok boostée + 5 posts organiques</td><td class="mono" style="color:var(--accent-1);">500K ${esc(currency)}</td><td class="mono">2 sem.</td></tr>
         <tr><td style="font-weight:600;">Engagement</td><td>1 challenge communautaire WhatsApp + 1 jeu-concours</td><td class="mono" style="color:var(--accent-1);">200K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
         <tr><td style="font-weight:600;">Conversion</td><td>1 promo flash in-store + relais social + code promo</td><td class="mono" style="color:var(--accent-1);">800K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
-        <tr><td style="font-weight:600;">R\u00e9tention</td><td>1 newsletter recettes + 1 avantage fid\u00e9lit\u00e9</td><td class="mono" style="color:var(--accent-1);">150K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
-        <tr><td style="font-weight:600;">Lancement</td><td>Teaser social + 1 event d\u00e9gustation local</td><td class="mono" style="color:var(--accent-1);">2M ${esc(currency)}</td><td class="mono">3 sem.</td></tr>
-        <tr><td style="font-weight:600;">Crise</td><td>Statement officiel + Q&amp;A communaut\u00e9</td><td class="mono" style="color:var(--score-excellent);">0 (temps)</td><td class="mono">4h</td></tr>
+        <tr><td style="font-weight:600;">Rétention</td><td>1 newsletter recettes + 1 avantage fidélité</td><td class="mono" style="color:var(--accent-1);">150K ${esc(currency)}</td><td class="mono">1 sem.</td></tr>
+        <tr><td style="font-weight:600;">Lancement</td><td>Teaser social + 1 event dégustation local</td><td class="mono" style="color:var(--accent-1);">2M ${esc(currency)}</td><td class="mono">3 sem.</td></tr>
+        <tr><td style="font-weight:600;">Crise</td><td>Statement officiel + Q&amp;A communauté</td><td class="mono" style="color:var(--score-excellent);">0 (temps)</td><td class="mono">4h</td></tr>
       </tbody>
     </table>
   </div>`;
@@ -3130,10 +3134,10 @@ function buildSectionBudgetSim(
     ? `<div class="sub-section">
     <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
       <div class="card" style="flex:1;min-width:200px;text-align:center;padding:28px 24px;">
-        <div class="micro-text" style="margin-bottom:8px;">Enveloppe globale recommand\u00e9e</div>
+        <div class="micro-text" style="margin-bottom:8px;">Enveloppe globale recommandée</div>
         <div class="mono" style="font-size:2rem;font-weight:800;color:var(--accent-1);">${esc(enveloppe)} <span style="font-size:0.9rem;color:var(--text-secondary);">${esc(currency)}</span></div>
       </div>
-      ${ctx?.ltvCac && ctx.ltvCac !== "\u2014" ? `<div class="card" style="flex:0 0 auto;text-align:center;padding:28px 24px;">
+      ${ctx?.ltvCac && ctx.ltvCac !== "—" ? `<div class="card" style="flex:0 0 auto;text-align:center;padding:28px 24px;">
         <div class="micro-text" style="margin-bottom:8px;">Ratio LTV / CAC</div>
         <div class="mono" style="font-size:1.5rem;font-weight:800;color:var(--score-excellent);">${esc(ctx.ltvCac)}</div>
       </div>` : ""}
@@ -3145,7 +3149,7 @@ function buildSectionBudgetSim(
   const phases = ctx?.budgetAllocation?.parPhase?.filter((p) => p.phase || p.montant) ?? [];
   const phasesHtml = phases.length > 0
     ? `<div class="sub-section">
-    <h3 class="sub-title">\u00C9chelonnement budg\u00e9taire par phase</h3>
+    <h3 class="sub-title">Échelonnement budgétaire par phase</h3>
     <div class="phase-timeline">
       ${phases.map((p, i) => {
         const phaseColors = ["var(--accent-1)", "var(--accent-2)", "var(--accent-3)", "#6366f1"];
@@ -3175,22 +3179,22 @@ function buildSectionBudgetSim(
         <div class="roi-val">${esc(entry.val)}</div>
       </div>`).join("\n")}
     </div>
-    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypoth\u00e8ses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
+    ${roi?.hypotheses ? `<div class="card" style="margin-top:16px;padding:16px 20px;"><div class="micro-text" style="margin-bottom:6px;">Hypothèses</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.6;">${esc(roi.hypotheses)}</p></div>` : ""}
   </div>`
     : "";
 
   // Count how many enriched sub-sections we have
   const hasEnrichedContent = enveloppe || parPoste.length > 0 || phases.length > 0 || roiEntries.length > 0;
   const summaryLine = hasEnrichedContent
-    ? `Enveloppe, r\u00e9partition, paliers d\u2019action, projections ROI \u2014 tout en un.`
-    : `Budget \u2192 actions possibles \u2192 KPIs attendus. Du Minimum Viable Action \u00e0 la strat\u00e9gie annuelle.`;
+    ? `Enveloppe, répartition, paliers d\'action, projections ROI — tout en un.`
+    : `Budget \u2192 actions possibles \u2192 KPIs attendus. Du Minimum Viable Action à la stratégie annuelle.`;
 
   return `<section id="budget-sim">
   <div class="section-hero" style="background:var(--bg-surface);">
     ${heroImgTag(imageUrl)}
     <div class="section-hero-overlay"></div>
     <div class="section-hero-content">
-      <div class="section-tag" style="background:rgba(46,213,115,0.15);color:var(--score-excellent);">&#x00A4; Simulateur Budg\u00e9taire</div>
+      <div class="section-tag" style="background:rgba(46,213,115,0.15);color:var(--score-excellent);">&#x00A4; Simulateur Budgétaire</div>
       <h1>Que faire avec X ?</h1>
       <p class="section-summary">${summaryLine}</p>
     </div>
@@ -3199,7 +3203,7 @@ function buildSectionBudgetSim(
   ${enveloppeHtml}
 
   <div class="sub-section">
-    <h3 class="sub-title">Paliers budget \u2192 capacit\u00e9 d\u2019action</h3>
+    <h3 class="sub-title">Paliers budget \u2192 capacité d\'action</h3>
     ${tierCards}
   </div>
 
@@ -3330,7 +3334,7 @@ function buildScripts(
   new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: ['A — Authenticit\u00e9', 'D — Distinction', 'V — Valeur', 'E — Engagement', 'R — Risk', 'T — Track', 'I — Impl\u00e9mentation', 'S — Synth\u00e8se'],
+      labels: ['A — Authenticité', 'D — Distinction', 'V — Valeur', 'E — Engagement', 'R — Risk', 'T — Track', 'I — Implémentation', 'S — Synthèse'],
       datasets: [{
         label: 'Score ADVERTIS',
         data: scores,

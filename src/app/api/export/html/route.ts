@@ -17,6 +17,9 @@ import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { generateStrategyHTML } from "~/server/services/html-presentation-generator";
 
+// HTML generation includes full strategy data assembly
+export const maxDuration = 120;
+
 export async function POST(req: NextRequest) {
   // ---------------------------------------------------------------------------
   // 1. Auth check
@@ -145,7 +148,7 @@ export async function POST(req: NextRequest) {
 
     // Sanitize brand name for filename
     const safeBrandName = strategy.brandName
-      .replace(/[^a-zA-Z0-9\u00C0-\u024F\- _]/g, "")
+      .replace(/[^a-zA-Z0-9À-\u024F\- _]/g, "")
       .replace(/\s+/g, "-")
       .substring(0, 50);
 

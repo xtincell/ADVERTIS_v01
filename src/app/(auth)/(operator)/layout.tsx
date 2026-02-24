@@ -5,6 +5,7 @@
 
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
+import { getHomeByRole } from "~/lib/role-routing";
 import { OperatorShell } from "~/components/shells/operator-shell";
 
 export default async function OperatorLayout({
@@ -17,9 +18,7 @@ export default async function OperatorLayout({
 
   // Only ADMIN and OPERATOR can access operator routes
   if (role !== "ADMIN" && role !== "OPERATOR") {
-    if (role === "FREELANCE") redirect("/");
-    if (role === "CLIENT_RETAINER" || role === "CLIENT_STATIC") redirect("/");
-    redirect("/login");
+    redirect(getHomeByRole(role));
   }
 
   return <OperatorShell>{children}</OperatorShell>;

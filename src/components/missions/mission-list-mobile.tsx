@@ -174,7 +174,7 @@ export function MissionListMobile({
                     <span className="text-xs text-muted-foreground">
                       {mission._count.assignments} freelance
                       {mission._count.assignments !== 1 ? "s" : ""}
-                      {" \u00B7 "}
+                      {" · "}
                       {mission._count.deliverables} livrable
                       {mission._count.deliverables !== 1 ? "s" : ""}
                     </span>

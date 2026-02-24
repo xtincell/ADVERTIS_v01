@@ -586,6 +586,23 @@ export const ImplementationDataSchema = z
               canaux: flexStringArray,
               budget: z.string().default(""),
               kpiCible: z.string().default(""),
+              // Enriched campaign fields (Phase 4)
+              actionsDetaillees: flexStringArray,
+              messagesCles: flexStringArray,
+              budgetDetail: z
+                .object({
+                  production: z.string().default(""),
+                  media: z.string().default(""),
+                  talent: z.string().default(""),
+                })
+                .optional(),
+              timeline: z
+                .object({
+                  debut: z.string().default(""),
+                  fin: z.string().default(""),
+                })
+                .optional(),
+              metriquesSucces: flexStringArray,
             }),
           )
           .default([]),
@@ -598,6 +615,9 @@ export const ImplementationDataSchema = z
               duree: z.string().default(""),
               canauxPrincipaux: flexStringArray,
               messagesCles: flexStringArray,
+              // Enriched template fields (Phase 4)
+              budgetEstime: z.string().default(""),
+              kpisAttendus: flexStringArray,
             }),
           )
           .default([]),

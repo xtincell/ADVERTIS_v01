@@ -994,8 +994,36 @@ export const PRICING_CATEGORY_LABELS: Record<PricingCategory, string> = {
   DIGITAL: "Digital",
 };
 
-// ── USD to XAF exchange rate (approximate, updatable) ──
-export const USD_TO_XAF_RATE = 600;
+// ── Currency Configuration ──
+export const SUPPORTED_CURRENCIES = ["XOF", "XAF", "EUR", "USD", "GHS", "NGN"] as const;
+export type SupportedCurrency = (typeof SUPPORTED_CURRENCIES)[number];
+
+export const CURRENCY_CONFIG: Record<SupportedCurrency, {
+  label: string;
+  symbol: string;
+  locale: string;
+  position: "before" | "after";
+}> = {
+  XOF: { label: "Franc CFA (BCEAO)", symbol: "FCFA", locale: "fr-FR", position: "after" },
+  XAF: { label: "Franc CFA (BEAC)", symbol: "FCFA", locale: "fr-FR", position: "after" },
+  EUR: { label: "Euro", symbol: "€", locale: "fr-FR", position: "after" },
+  USD: { label: "Dollar US", symbol: "$", locale: "en-US", position: "before" },
+  GHS: { label: "Cedi ghanéen", symbol: "GH₵", locale: "en-GH", position: "before" },
+  NGN: { label: "Naira nigérian", symbol: "₦", locale: "en-NG", position: "before" },
+};
+
+// Exchange rates to XOF (approximate, updatable)
+export const EXCHANGE_RATES_TO_XOF: Record<SupportedCurrency, number> = {
+  XOF: 1,
+  XAF: 1,          // 1:1 parity between BCEAO and BEAC
+  EUR: 655.957,    // Fixed CFA/EUR peg
+  USD: 600,        // Approximate
+  GHS: 40,         // Approximate
+  NGN: 0.4,        // Approximate
+};
+
+export const EUR_TO_XOF_RATE = 655.957;
+export const USD_TO_XAF_RATE = 600; // Kept for backward compat
 
 // ── Assignment Statuses ──
 export const ASSIGNMENT_STATUSES = [

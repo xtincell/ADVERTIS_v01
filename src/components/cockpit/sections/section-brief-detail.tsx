@@ -26,6 +26,7 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { BRIEF_TYPE_LABELS, PILLAR_CONFIG, type PillarType } from "~/lib/constants";
+import { renderInlineMarkdown } from "~/lib/markdown-inline";
 import { FreshnessBadge } from "~/components/ui/freshness-badge";
 import { SourceRefTooltip, type SourceRefData } from "~/components/ui/source-ref-tooltip";
 
@@ -254,10 +255,10 @@ export function SectionBriefDetail({
                     sourceRef={block.sourceRef}
                     vertical={vertical}
                   >
-                    <p className="text-sm leading-relaxed">{block.assertion}</p>
+                    <div className="text-sm leading-relaxed">{renderInlineMarkdown(block.assertion)}</div>
                   </SourceRefTooltip>
                 ) : (
-                  <p className="text-sm leading-relaxed">{block.assertion}</p>
+                  <div className="text-sm leading-relaxed">{renderInlineMarkdown(block.assertion)}</div>
                 )}
               </div>
             ))}

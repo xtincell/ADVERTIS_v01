@@ -1,47 +1,66 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-/**
- * Role-based route guard middleware.
- *
- * Reads the JWT token (no DB call needed — runs on Edge) and checks the
- * user's role against the allowed roles for each protected route prefix.
- *
- * Protects:
- *   /admin      → ADMIN, OPERATOR only
- *   /freelance  → FREELANCE only
- *   /client     → CLIENT_RETAINER, CLIENT_STATIC only
- *   /costs      → ADMIN, OPERATOR only
- *   /pricing    → ADMIN, OPERATOR only
- *
- * All other routes pass through (authentication is handled by the (auth) layout).
- */
+// -----------------------------------------------------------------------
+// Role → route mapping
+// Built from the centralised role-routing module (duplicated here because
+// middleware runs on the Edge runtime and cannot import from ~/lib).
+// -----------------------------------------------------------------------
+
+function getHomeByRole(role: string): string {
+  switch (role) {
+    case "ADMIN":
+    case "OPERATOR":
+      return "/dashboard";
+    case "FREELANCE":
+      return "/my-missions";
+    case "CLIENT_RETAINER":
+    case "CLIENT_STATIC":
+      return "/cockpit";
+    default:
+      return "/login";
+  }
+}
 
 const ROLE_ROUTES: Record<string, string[]> = {
-  "/admin": ["ADMIN", "OPERATOR"],
-  "/freelance": ["FREELANCE"],
-  "/client": ["CLIENT_RETAINER", "CLIENT_STATIC"],
-  "/costs": ["ADMIN", "OPERATOR"],
-  "/pricing": ["ADMIN", "OPERATOR"],
+  // Operator-only
+  "/dashboard": ["ADMIN", "OPERATOR"],
+  "/brand": ["ADMIN", "OPERATOR"],
+  "/new": ["ADMIN", "OPERATOR"],
+  "/tree": ["ADMIN", "OPERATOR"],
+  "/missions": ["ADMIN", "OPERATOR"],
+  "/more": ["ADMIN", "OPERATOR"],
+  // Freelance-only
+  "/my-missions": ["FREELANCE"],
+  "/my-briefs": ["FREELANCE"],
+  "/upload": ["FREELANCE"],
+  "/profile": ["FREELANCE"],
+  // Client-only
+  "/cockpit": ["CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/oracle": ["CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/my-documents": ["CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/requests": ["CLIENT_RETAINER", "CLIENT_STATIC"],
 };
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Decode JWT without hitting the database
-  const token = await getToken({ req });
+  const token = await getToken({ req, secret: process.env.AUTH_SECRET });
 
   // Not logged in → redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Check role-protected routes
   const userRole = (token.role as string) ?? "";
+
+  // Check role-protected routes
   for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
     if (pathname === route || pathname.startsWith(route + "/")) {
       if (!allowedRoles.includes(userRole)) {
-        return NextResponse.redirect(new URL("/dashboard", req.url));
+        // Redirect to the user's actual home, not /dashboard
+        return NextResponse.redirect(new URL(getHomeByRole(userRole), req.url));
       }
       break;
     }
@@ -51,12 +70,24 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Only run middleware on these paths (skip API, static, etc.)
+  // Run middleware on all protected route prefixes
   matcher: [
-    "/admin/:path*",
-    "/freelance/:path*",
-    "/client/:path*",
-    "/costs/:path*",
-    "/pricing/:path*",
+    // Operator routes
+    "/dashboard/:path*",
+    "/brand/:path*",
+    "/new/:path*",
+    "/tree/:path*",
+    "/missions/:path*",
+    "/more/:path*",
+    // Freelance routes
+    "/my-missions/:path*",
+    "/my-briefs/:path*",
+    "/upload/:path*",
+    "/profile/:path*",
+    // Client routes
+    "/cockpit/:path*",
+    "/oracle/:path*",
+    "/my-documents/:path*",
+    "/requests/:path*",
   ],
 };

@@ -15,6 +15,8 @@
 // Section Implementation (Pillar I) — Strategic Roadmap, Campaigns, Budget,
 // Team Structure, Launch Plan, Operational Playbook.
 
+import { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   Rocket,
   Megaphone,
@@ -38,11 +40,20 @@ import {
   Compass,
   CheckCircle,
   XCircle,
+  ChevronDown,
+  ChevronUp,
+  Sliders,
 } from "lucide-react";
 
 import { PILLAR_CONFIG } from "~/lib/constants";
+import type { SupportedCurrency } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { CockpitSection, MetricCard } from "../cockpit-shared";
+
+const BudgetSimulator = dynamic(
+  () => import("../budget-simulator").then((m) => ({ default: m.BudgetSimulator })),
+  { ssr: false },
+);
 
 const COLOR = PILLAR_CONFIG.I.color; // #3cc4c4
 
@@ -52,9 +63,22 @@ const COLOR = PILLAR_CONFIG.I.color; // #3cc4c4
 
 export function SectionImplementation({
   implContent,
+  currency = "XOF",
 }: {
   implContent: ImplementationData;
+  currency?: SupportedCurrency;
 }) {
+  const [expandedCampaigns, setExpandedCampaigns] = useState<Set<number>>(new Set());
+  const [showSimulator, setShowSimulator] = useState(false);
+
+  const toggleCampaign = (index: number) => {
+    setExpandedCampaigns((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
   return (
     <div className="space-y-6">
       {/* ================================================================= */}
@@ -64,8 +88,8 @@ export function SectionImplementation({
         <CockpitSection
           icon={<Rocket className="h-5 w-5" />}
           pillarLetter="I"
-          title="Roadmap Strat\u00e9gique"
-          subtitle="Sprint 90 jours, Priorit\u00e9s annuelles, Vision 3 ans"
+          title="Roadmap Stratégique"
+          subtitle="Sprint 90 jours, Priorités annuelles, Vision 3 ans"
           color={COLOR}
         >
           <div className="space-y-5">
@@ -112,7 +136,7 @@ export function SectionImplementation({
               implContent.strategicRoadmap.year1Priorities.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Priorit\u00e9s Ann\u00e9e 1
+                    Priorités Année 1
                   </p>
                   <div className="space-y-1.5">
                     {implContent.strategicRoadmap.year1Priorities.map((prio, i) => (
@@ -163,44 +187,169 @@ export function SectionImplementation({
                     Calendrier annuel
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {implContent.campaigns.annualCalendar.map((cal, i) => (
-                      <div key={i} className="rounded-lg border p-3">
-                        <p
-                          className="text-xs font-bold uppercase tracking-wider"
-                          style={{ color: COLOR }}
+                    {implContent.campaigns.annualCalendar.map((cal, i) => {
+                      const isExpanded = expandedCampaigns.has(i);
+                      const hasDetails =
+                        (Array.isArray(cal.actionsDetaillees) && cal.actionsDetaillees.length > 0) ||
+                        (Array.isArray(cal.messagesCles) && cal.messagesCles.length > 0) ||
+                        cal.budgetDetail ||
+                        cal.timeline ||
+                        (Array.isArray(cal.metriquesSucces) && cal.metriquesSucces.length > 0);
+
+                      return (
+                        <div
+                          key={i}
+                          className="rounded-lg border p-3 transition-shadow hover:shadow-sm cursor-pointer"
+                          onClick={() => hasDetails && toggleCampaign(i)}
                         >
-                          {cal.mois}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">{cal.campagne}</p>
-                        {cal.objectif && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {cal.objectif}
-                          </p>
-                        )}
-                        {Array.isArray(cal.canaux) && cal.canaux.length > 0 && (
-                          <div className="mt-1.5 flex flex-wrap gap-1">
-                            {cal.canaux.map((canal, j) => (
-                              <span
-                                key={j}
-                                className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
-                              >
-                                {canal}
-                              </span>
-                            ))}
+                          <div className="flex items-start justify-between gap-2">
+                            <p
+                              className="text-xs font-bold uppercase tracking-wider"
+                              style={{ color: COLOR }}
+                            >
+                              {cal.mois}
+                            </p>
+                            {hasDetails && (
+                              <button className="shrink-0 text-muted-foreground hover:text-foreground">
+                                {isExpanded ? (
+                                  <ChevronUp className="h-3.5 w-3.5" />
+                                ) : (
+                                  <ChevronDown className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            )}
                           </div>
-                        )}
-                        {cal.budget && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Budget : {cal.budget}
-                          </p>
-                        )}
-                        {cal.kpiCible && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            KPI : {cal.kpiCible}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                          <p className="mt-1 text-sm font-semibold">{cal.campagne}</p>
+                          {cal.objectif && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              {cal.objectif}
+                            </p>
+                          )}
+                          {Array.isArray(cal.canaux) && cal.canaux.length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1">
+                              {cal.canaux.map((canal, j) => (
+                                <span
+                                  key={j}
+                                  className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
+                                >
+                                  {canal}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {cal.budget && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Budget : {cal.budget}
+                            </p>
+                          )}
+                          {cal.kpiCible && (
+                            <p className="mt-0.5 text-xs text-muted-foreground">
+                              KPI : {cal.kpiCible}
+                            </p>
+                          )}
+
+                          {/* ── Expanded Details ── */}
+                          {isExpanded && hasDetails && (
+                            <div
+                              className="mt-3 space-y-2 border-t pt-3"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {/* Timeline */}
+                              {cal.timeline && (cal.timeline.debut || cal.timeline.fin) && (
+                                <div className="flex items-center gap-2 text-xs text-foreground/70">
+                                  <Calendar className="h-3 w-3 shrink-0" />
+                                  <span>
+                                    {cal.timeline.debut}
+                                    {cal.timeline.fin && ` — ${cal.timeline.fin}`}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Actions d\u00e9taill\u00e9es */}
+                              {Array.isArray(cal.actionsDetaillees) && cal.actionsDetaillees.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                                    Actions
+                                  </p>
+                                  <ol className="space-y-0.5 list-decimal list-inside">
+                                    {cal.actionsDetaillees.map((action, j) => (
+                                      <li key={j} className="text-xs text-foreground/80">
+                                        {action}
+                                      </li>
+                                    ))}
+                                  </ol>
+                                </div>
+                              )}
+
+                              {/* Messages cl\u00e9s */}
+                              {Array.isArray(cal.messagesCles) && cal.messagesCles.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                                    Messages cl\u00e9s
+                                  </p>
+                                  <div className="space-y-0.5">
+                                    {cal.messagesCles.map((msg, j) => (
+                                      <p key={j} className="text-xs italic text-foreground/70">
+                                        &ldquo;{msg}&rdquo;
+                                      </p>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Budget d\u00e9taill\u00e9 */}
+                              {cal.budgetDetail && (
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                                    Ventilation budget
+                                  </p>
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    {cal.budgetDetail.production && (
+                                      <div className="rounded bg-muted/30 px-2 py-1 text-center">
+                                        <p className="text-[9px] text-muted-foreground">Production</p>
+                                        <p className="text-xs font-semibold">{cal.budgetDetail.production}</p>
+                                      </div>
+                                    )}
+                                    {cal.budgetDetail.media && (
+                                      <div className="rounded bg-muted/30 px-2 py-1 text-center">
+                                        <p className="text-[9px] text-muted-foreground">M\u00e9dia</p>
+                                        <p className="text-xs font-semibold">{cal.budgetDetail.media}</p>
+                                      </div>
+                                    )}
+                                    {cal.budgetDetail.talent && (
+                                      <div className="rounded bg-muted/30 px-2 py-1 text-center">
+                                        <p className="text-[9px] text-muted-foreground">Talent</p>
+                                        <p className="text-xs font-semibold">{cal.budgetDetail.talent}</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* M\u00e9triques de succ\u00e8s */}
+                              {Array.isArray(cal.metriquesSucces) && cal.metriquesSucces.length > 0 && (
+                                <div>
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                                    M\u00e9triques de succ\u00e8s
+                                  </p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {cal.metriquesSucces.map((kpi, j) => (
+                                      <span
+                                        key={j}
+                                        className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-2 py-0.5 text-[10px] font-medium text-green-700"
+                                      >
+                                        <Target className="mr-1 h-2.5 w-2.5" />
+                                        {kpi}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -231,7 +380,7 @@ export function SectionImplementation({
                         )}
                         {tpl.duree && (
                           <p className="mt-0.5 text-xs text-foreground/80">
-                            Dur\u00e9e : {tpl.duree}
+                            Durée : {tpl.duree}
                           </p>
                         )}
                         {Array.isArray(tpl.canauxPrincipaux) &&
@@ -295,7 +444,7 @@ export function SectionImplementation({
                       },
                       {
                         key: "phase4Fidelisation" as const,
-                        label: "Phase 4 — Fid\u00e9lisation",
+                        label: "Phase 4 — Fidélisation",
                         icon: "\u2764\uFE0F",
                       },
                     ].map((phase) => {
@@ -333,8 +482,8 @@ export function SectionImplementation({
         <CockpitSection
           icon={<DollarSign className="h-5 w-5" />}
           pillarLetter="I"
-          title="Allocation Budg\u00e9taire"
-          subtitle="R\u00e9partition par poste, par phase, projections ROI"
+          title="Allocation Budgétaire"
+          subtitle="Répartition par poste, par phase, projections ROI"
           color={COLOR}
         >
           <div className="space-y-5">
@@ -358,7 +507,7 @@ export function SectionImplementation({
               implContent.budgetAllocation.parPoste.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    R\u00e9partition par poste
+                    Répartition par poste
                   </p>
                   <div className="space-y-2">
                     {implContent.budgetAllocation.parPoste.map((poste, i) => (
@@ -408,7 +557,7 @@ export function SectionImplementation({
               implContent.budgetAllocation.parPhase.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    R\u00e9partition par phase
+                    Répartition par phase
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {implContent.budgetAllocation.parPhase.map((phase, i) => (
@@ -469,6 +618,25 @@ export function SectionImplementation({
                   )}
                 </div>
               )}
+
+            {/* Budget Simulator Toggle */}
+            <div className="pt-2 border-t">
+              <button
+                onClick={() => setShowSimulator(!showSimulator)}
+                className="flex items-center gap-2 rounded-lg border border-[#3cc4c4]/30 bg-[#3cc4c4]/5 px-4 py-2 text-sm font-medium text-[#3cc4c4] transition-colors hover:bg-[#3cc4c4]/10 w-full justify-center"
+              >
+                <Sliders className="h-4 w-4" />
+                {showSimulator ? "Masquer le simulateur" : "Ouvrir le simulateur budget"}
+              </button>
+            </div>
+
+            {showSimulator && (
+              <BudgetSimulator
+                campaigns={implContent.campaigns?.annualCalendar ?? []}
+                budgetAllocation={implContent.budgetAllocation}
+                currency={currency}
+              />
+            )}
           </div>
         </CockpitSection>
       )}
@@ -480,8 +648,8 @@ export function SectionImplementation({
         <CockpitSection
           icon={<UserPlus className="h-5 w-5" />}
           pillarLetter="I"
-          title="Structure d&apos;\u00c9quipe"
-          subtitle="\u00c9quipe actuelle, Recrutements, Partenaires"
+          title="Structure d&apos;Équipe"
+          subtitle="Équipe actuelle, Recrutements, Partenaires"
           color={COLOR}
         >
           <div className="space-y-5">
@@ -490,7 +658,7 @@ export function SectionImplementation({
               implContent.teamStructure.equipeActuelle.length > 0 && (
                 <div>
                   <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    \u00c9quipe actuelle
+                    Équipe actuelle
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {implContent.teamStructure.equipeActuelle.map((member, i) => (
@@ -720,7 +888,7 @@ export function SectionImplementation({
         <CockpitSection
           icon={<BookOpen className="h-5 w-5" />}
           pillarLetter="I"
-          title="Playbook Op\u00e9rationnel"
+          title="Playbook Opérationnel"
           subtitle="Rythmes, Escalation, Stack outils"
           color={COLOR}
         >
@@ -734,7 +902,7 @@ export function SectionImplementation({
                 implContent.operationalPlaybook.rythmeMensuel.length > 0)) && (
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Rythmes op\u00e9rationnels
+                  Rythmes opérationnels
                 </p>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {/* Quotidien */}

@@ -105,6 +105,7 @@ model Strategy {
     deliveryMode    String? // DELIVERY_MODES: ONE_SHOT, PLACEMENT, RETAINER
     vertical        String? // VERTICALS: FMCG, TECH, HEALTH_PUBLIC, etc.
     maturityProfile String? // MATURITY_PROFILES: MATURE, GROWTH, STARTUP, LAUNCH
+    currency        String  @default("XOF") // ISO 4217: XOF, XAF, EUR, USD, GHS, NGN
 
     // Relations
     userId        String

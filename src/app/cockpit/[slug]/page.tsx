@@ -113,6 +113,7 @@ export default function PublicCockpitPage(props: {
     description: cockpitData.description,
     phase: cockpitData.phase,
     coherenceScore: cockpitData.coherenceScore,
+    currency: (cockpitData as Record<string, unknown>).currency as string ?? "XOF",
     pillars: cockpitData.pillars.map((p) => ({
       type: p.type,
       title: p.title,

@@ -27,6 +27,7 @@ import { generateImplementationData } from "~/server/services/implementation-gen
 import { syncTrackToMarketContext } from "~/server/services/track-sync";
 import { onPillarGenerated } from "~/server/services/pipeline-orchestrator";
 import { PILLAR_TYPES } from "~/lib/constants";
+import type { SupportedCurrency } from "~/lib/constants";
 import type { RiskAuditResult, TrackAuditResult } from "~/server/services/audit-generation";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
@@ -90,6 +91,9 @@ export async function POST(req: NextRequest) {
       { status: 404 },
     );
   }
+
+  // Extract currency from strategy (default XOF for West African market)
+  const currency = ((strategy as Record<string, unknown>).currency ?? "XOF") as SupportedCurrency;
 
   // ---------------------------------------------------------------------------
   // 4. Find the target pillar
@@ -159,6 +163,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
         { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
         strategy.tagline,
+        currency,
       );
 
       generatedContent = riskResult;
@@ -204,6 +209,7 @@ export async function POST(req: NextRequest) {
         marketStudyData,
         { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
         strategy.tagline,
+        currency,
       );
 
       generatedContent = trackResult;
@@ -247,6 +253,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
         { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
         strategy.tagline,
+        currency,
       );
 
       generatedContent = implResult;
@@ -271,6 +278,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
         { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
         strategy.tagline,
+        currency,
       );
 
       generatedContent = syntheseResult;
@@ -285,6 +293,7 @@ export async function POST(req: NextRequest) {
         strategy.sector ?? "",
         { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
         strategy.tagline,
+        currency,
       );
 
       generatedContent = jsonContent;

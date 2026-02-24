@@ -62,6 +62,8 @@ import {
   getDeliverablesByMission,
   completeMissionDebrief,
   getDebriefByMission,
+  searchDebriefs,
+  getDebriefStats,
   calculateEstimatedCharge,
   deleteMission,
 } from "~/server/services/mission-manager";
@@ -257,6 +259,27 @@ const debriefRouter = createTRPCRouter({
       await verifyMissionAccess(ctx.db, input.missionId, ctx.session.user.id);
       return completeMissionDebrief(input, ctx.session.user.id);
     }),
+
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string().min(1),
+        sector: z.string().optional(),
+        qualityMin: z.number().optional(),
+        onTime: z.boolean().optional(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      return searchDebriefs(ctx.session.user.id, input.query, {
+        sector: input.sector,
+        qualityMin: input.qualityMin,
+        onTime: input.onTime,
+      });
+    }),
+
+  stats: protectedProcedure.query(async ({ ctx }) => {
+    return getDebriefStats(ctx.session.user.id);
+  }),
 });
 
 // ---------------------------------------------------------------------------

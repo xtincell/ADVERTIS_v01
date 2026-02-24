@@ -240,9 +240,9 @@ export async function generateStrategyExcel(
   workbook.modified = new Date();
 
   // =========================================================================
-  // Sheet 1: Synth\u00e8se
+  // Sheet 1: Synthèse
   // =========================================================================
-  const synthSheet = workbook.addWorksheet("Synth\u00e8se", {
+  const synthSheet = workbook.addWorksheet("Synthèse", {
     properties: { tabColor: { argb: COLORS.terracotta } },
   });
 
@@ -256,7 +256,7 @@ export async function generateStrategyExcel(
 
   // Strategy metadata
   const metaData: Array<[string, string]> = [
-    ["Strat\u00e9gie", strategy.name],
+    ["Stratégie", strategy.name],
     ["Marque", strategy.brandName],
   ];
   if (strategy.tagline) {
@@ -266,7 +266,7 @@ export async function generateStrategyExcel(
     metaData.push(["Secteur", strategy.sector]);
   }
   if (strategy.coherenceScore !== undefined && strategy.coherenceScore !== null) {
-    metaData.push(["Score de coh\u00e9rence", `${strategy.coherenceScore}/100`]);
+    metaData.push(["Score de cohérence", `${strategy.coherenceScore}/100`]);
   }
 
   let currentRow = 3;
@@ -282,7 +282,7 @@ export async function generateStrategyExcel(
   // Pillar completion status table
   currentRow += 2;
   const statusTitleRow = synthSheet.getRow(currentRow);
-  statusTitleRow.getCell(1).value = "\u00c9tat des piliers";
+  statusTitleRow.getCell(1).value = "État des piliers";
   applySectionTitleStyle(statusTitleRow);
   currentRow++;
 
@@ -373,7 +373,7 @@ export async function generateStrategyExcel(
     if (pillar.summary) {
       sheet.mergeCells(`A${rowIdx}:B${rowIdx}`);
       const summaryLabelCell = sheet.getCell(`A${rowIdx}`);
-      summaryLabelCell.value = "Synth\u00e8se";
+      summaryLabelCell.value = "Synthèse";
       summaryLabelCell.font = {
         bold: true,
         size: 11,
@@ -394,7 +394,7 @@ export async function generateStrategyExcel(
 
     if (contentPairs.length > 0) {
       const contentHeaderRow = sheet.getRow(rowIdx);
-      contentHeaderRow.values = ["Cl\u00e9", "Valeur"];
+      contentHeaderRow.values = ["Clé", "Valeur"];
       applyHeaderStyle(contentHeaderRow);
       rowIdx++;
 
@@ -423,7 +423,7 @@ export async function generateStrategyExcel(
   // Title
   variablesSheet.mergeCells("A1:C1");
   const varTitleCell = variablesSheet.getCell("A1");
-  varTitleCell.value = "R\u00e9capitulatif des variables";
+  varTitleCell.value = "Récapitulatif des variables";
   varTitleCell.font = {
     bold: true,
     size: 16,

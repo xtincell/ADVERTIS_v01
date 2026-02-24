@@ -33,7 +33,7 @@ import {
   ToggleLeft,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
-import { PILLAR_CONFIG, FICHE_PILLARS } from "~/lib/constants";
+import { PILLAR_CONFIG, FICHE_PILLARS, MATURITY_CONFIG } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
 import {
   getFicheDeMarqueSchema,
@@ -71,6 +71,8 @@ interface FicheReviewFormProps {
   riskData?: unknown | null;
   /** Optional: Track audit data (enables R+T recommendations when present) */
   trackData?: unknown | null;
+  /** Optional: Strategy maturity profile for contextual guidance */
+  maturityProfile?: string | null;
 }
 
 type EditMode = "variables" | "content";
@@ -90,6 +92,7 @@ export function FicheReviewForm({
   pillarContents,
   riskData,
   trackData,
+  maturityProfile,
 }: FicheReviewFormProps) {
   const schema = getFicheDeMarqueSchema();
 
@@ -236,11 +239,11 @@ export function FicheReviewForm({
       });
 
       toast.success(
-        `${result.autoFilledIds.length} variable${result.autoFilledIds.length > 1 ? "s" : ""} compl\u00e9t\u00e9e${result.autoFilledIds.length > 1 ? "s" : ""} par l'IA`,
+        `${result.autoFilledIds.length} variable${result.autoFilledIds.length > 1 ? "s" : ""} complétée${result.autoFilledIds.length > 1 ? "s" : ""} par l'IA`,
       );
     } catch (error) {
       console.error("[FicheReview] AI fill failed:", error);
-      toast.error("Erreur lors de la compl\u00e9tion IA. R\u00e9essayez.");
+      toast.error("Erreur lors de la complétion IA. Réessayez.");
     } finally {
       setIsAiFilling(false);
     }
@@ -258,7 +261,7 @@ export function FicheReviewForm({
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de la r\u00e9cup\u00e9ration des recommandations");
+        throw new Error("Erreur lors de la récupération des recommandations");
       }
 
       const data = (await response.json()) as {
@@ -274,15 +277,15 @@ export function FicheReviewForm({
       setShowRecos(true);
 
       if (adveSuggestions.length === 0) {
-        toast.info("Aucune recommandation ADVE trouv\u00e9e dans les audits R+T.");
+        toast.info("Aucune recommandation ADVE trouvée dans les audits R+T.");
       } else {
         toast.success(
-          `${adveSuggestions.length} recommandation${adveSuggestions.length > 1 ? "s" : ""} ADVE trouv\u00e9e${adveSuggestions.length > 1 ? "s" : ""}`,
+          `${adveSuggestions.length} recommandation${adveSuggestions.length > 1 ? "s" : ""} ADVE trouvée${adveSuggestions.length > 1 ? "s" : ""}`,
         );
       }
     } catch (error) {
       console.error("[FicheReview] Fetch recos failed:", error);
-      toast.error("Erreur lors de la r\u00e9cup\u00e9ration des recommandations.");
+      toast.error("Erreur lors de la récupération des recommandations.");
     } finally {
       setIsFetchingRecos(false);
     }
@@ -311,7 +314,7 @@ export function FicheReviewForm({
           next.add(bestMatch);
           return next;
         });
-        toast.success(`Suggestion appliqu\u00e9e \u00e0 ${bestMatch}`);
+        toast.success(`Suggestion appliquée à ${bestMatch}`);
       }
 
       // Remove from list
@@ -367,7 +370,7 @@ export function FicheReviewForm({
           {modifiedPillarContent.size > 0 && (
             <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
               {modifiedPillarContent.size} pilier
-              {modifiedPillarContent.size > 1 ? "s" : ""} modifi\u00e9
+              {modifiedPillarContent.size > 1 ? "s" : ""} modifié
               {modifiedPillarContent.size > 1 ? "s" : ""}
             </span>
           )}
@@ -380,8 +383,8 @@ export function FicheReviewForm({
       </div>
 
       <p className="text-sm text-muted-foreground">
-        V\u00e9rifiez et corrigez les donn\u00e9es collect\u00e9es avant de lancer l&apos;audit.
-        Les champs marqu\u00e9s d&apos;une \u00e9toile (\u2605) sont prioritaires.
+        Vérifiez et corrigez les données collectées avant de lancer l&apos;audit.
+        Les champs marqués d&apos;une étoile (\u2605) sont prioritaires.
       </p>
 
       {/* Mode Toggle: Variables vs Content */}
@@ -409,7 +412,7 @@ export function FicheReviewForm({
             )}
           >
             <FileEdit className="h-3.5 w-3.5" />
-            Contenu ADVE g\u00e9n\u00e9r\u00e9
+            Contenu ADVE généré
           </button>
         </div>
       )}
@@ -517,7 +520,7 @@ export function FicheReviewForm({
 
           {showRecos && recosFetched && suggestions.length === 0 && (
             <p className="mt-2 text-xs text-emerald-600">
-              Toutes les recommandations ont \u00e9t\u00e9 trait\u00e9es.
+              Toutes les recommandations ont été traitées.
             </p>
           )}
         </div>
@@ -540,13 +543,13 @@ export function FicheReviewForm({
               {isAiFilling ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Compl\u00e9tion IA en cours\u2026 ({totalVars - totalFilled} variable
+                  Complétion IA en cours\u2026 ({totalVars - totalFilled} variable
                   {totalVars - totalFilled > 1 ? "s" : ""})
                 </>
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" />
-                  Compl\u00e9ter les {totalVars - totalFilled} champ
+                  Compléter les {totalVars - totalFilled} champ
                   {totalVars - totalFilled > 1 ? "s" : ""} vide
                   {totalVars - totalFilled > 1 ? "s" : ""} avec l&apos;IA
                 </>
@@ -602,7 +605,7 @@ export function FicheReviewForm({
                   }}
                 />
                 <h4 className="text-sm font-semibold">
-                  Pilier {activeSection.pillarType} \u2014{" "}
+                  Pilier {activeSection.pillarType} —{" "}
                   {activeSection.title}
                 </h4>
               </div>
@@ -669,19 +672,19 @@ export function FicheReviewForm({
                   }}
                 />
                 <h4 className="text-sm font-semibold">
-                  Contenu du Pilier {activeTab} \u2014{" "}
+                  Contenu du Pilier {activeTab} —{" "}
                   {PILLAR_CONFIG[activeTab]?.title}
                 </h4>
               </div>
               {modifiedPillarContent.has(activeTab) && (
                 <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                  modifi\u00e9
+                  modifié
                 </span>
               )}
             </div>
 
             <p className="text-xs text-muted-foreground px-1">
-              \u00c9ditez le contenu g\u00e9n\u00e9r\u00e9 du pilier. Format JSON structur\u00e9.
+              Éditez le contenu généré du pilier. Format JSON structuré.
             </p>
 
             {editedPillarContent[activeTab] ? (
@@ -704,10 +707,10 @@ export function FicheReviewForm({
               <div className="rounded-lg border-2 border-dashed border-muted p-8 text-center">
                 <FileEdit className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  Aucun contenu g\u00e9n\u00e9r\u00e9 pour ce pilier.
+                  Aucun contenu généré pour ce pilier.
                 </p>
                 <p className="text-xs text-muted-foreground/60 mt-1">
-                  G\u00e9n\u00e9rez d&apos;abord la fiche de marque (A-D-V-E) dans le
+                  Générez d&apos;abord la fiche de marque (A-D-V-E) dans le
                   pipeline.
                 </p>
               </div>
@@ -716,10 +719,46 @@ export function FicheReviewForm({
         </div>
       )}
 
+      {/* Maturity guidance banner */}
+      {(() => {
+        const mConfig = maturityProfile ? MATURITY_CONFIG[maturityProfile as keyof typeof MATURITY_CONFIG] : null;
+        if (!mConfig) return null;
+        const coveragePercent = totalVars > 0 ? Math.round((totalFilled / totalVars) * 100) : 0;
+        const expected = mConfig.expectedCoverage;
+        if (expected <= 40) {
+          return (
+            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              <p className="text-xs text-emerald-700">
+                Profil <strong>{mConfig.label}</strong> ({mConfig.ratio} fact/proj) &mdash; Il est normal d&apos;avoir des champs vides. L&apos;IA g&eacute;n&eacute;rera des projections pour compl&eacute;ter.
+              </p>
+            </div>
+          );
+        }
+        if (coveragePercent < expected) {
+          return (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <Lightbulb className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <p className="text-xs text-amber-700">
+                Couverture actuelle : <strong>{coveragePercent}%</strong>. Couverture recommand&eacute;e pour le profil <strong>{mConfig.label}</strong> : {expected}%. Compl&eacute;tez les champs prioritaires.
+              </p>
+            </div>
+          );
+        }
+        return (
+          <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+            <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+            <p className="text-xs text-emerald-700">
+              Couverture {coveragePercent}% &mdash; Excellent pour le profil <strong>{mConfig.label}</strong>.
+            </p>
+          </div>
+        );
+      })()}
+
       {/* Validate button */}
       <div className="flex items-center justify-between pt-4 border-t">
         <p className="text-xs text-muted-foreground">
-          {totalFilled} / {totalVars} variables renseign\u00e9es
+          {totalFilled} / {totalVars} variables renseignées
         </p>
 
         <button
@@ -807,7 +846,7 @@ function VariableField({
           )}
           {isModified && (
             <span className="text-xs text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">
-              modifi\u00e9
+              modifié
             </span>
           )}
           {isEmpty && (
