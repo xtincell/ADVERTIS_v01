@@ -157,6 +157,8 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
 
   const items = outputs?.outputs ?? [];
 
+  type GloryItem = (typeof items)[number];
+
   // -----------------------------------------------------------------------
   // Render
   // -----------------------------------------------------------------------
@@ -188,7 +190,7 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
 
       {/* History list */}
       <div className="space-y-3">
-        {items.map((item) => {
+        {items.map((item: GloryItem) => {
           const isExpanded = expandedIds.has(item.id);
 
           return (

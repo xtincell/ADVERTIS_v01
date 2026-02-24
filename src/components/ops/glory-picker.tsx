@@ -28,7 +28,9 @@ export function GloryPicker({
     strategyId,
   });
 
-  const selected = outputs?.find((o) => o.id === selectedId);
+  type PickerOutput = NonNullable<typeof outputs>[number];
+
+  const selected = outputs?.find((o: PickerOutput) => o.id === selectedId);
 
   return (
     <div className="space-y-3 rounded-md border bg-background p-4">
@@ -51,7 +53,7 @@ export function GloryPicker({
 
       {outputs && outputs.length > 0 && (
         <div className="max-h-60 space-y-1 overflow-y-auto">
-          {outputs.map((output) => (
+          {outputs.map((output: PickerOutput) => (
             <button
               key={output.id}
               onClick={() => setSelectedId(output.id)}
