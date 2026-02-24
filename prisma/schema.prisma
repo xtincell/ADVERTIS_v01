@@ -134,6 +134,9 @@ model Strategy {
     missions             Mission[]
     interventionRequests InterventionRequest[]
 
+    // === Phase 4: GLORY Operational Tools ===
+    gloryOutputs         GloryOutput[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -784,4 +787,34 @@ model MarketPricing {
     @@unique([market, category, subcategory])
     @@index([market])
     @@index([category])
+}
+
+// ============================================
+// GLORY OPERATIONAL TOOLS (Phase 4)
+// Output storage for persistable GLORY tools
+// ============================================
+
+model GloryOutput {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    toolSlug     String   // "concept-generator", "script-writer", etc.
+    layer        String   // "CR", "DC", "HYBRID"
+    title        String   // User-given or auto-generated title
+    inputData    Json     // Snapshot of user inputs at generation time
+    outputData   Json     // Structured AI output
+    outputText   String?  @db.Text // Plain text version for search
+    status       String   @default("complete") // generating, complete, error
+    version      Int      @default(1)
+    isFavorite   Boolean  @default(false)
+    errorMessage String?
+    createdBy    String   // userId
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([toolSlug])
+    @@index([createdBy])
+    @@index([strategyId, toolSlug])
 }
