@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   Clock,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { api } from "~/trpc/react";
 import {
@@ -34,6 +35,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
+import { toast } from "sonner";
+import { GloryPicker } from "./glory-picker";
+import { DebriefForm } from "./debrief-form";
 
 interface MissionDetailProps {
   missionId: string;
@@ -41,8 +45,20 @@ interface MissionDetailProps {
 }
 
 export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
+  const [showGloryPicker, setShowGloryPicker] = useState(false);
+  const utils = api.useUtils();
+
   const { data: mission, isLoading } =
     api.mission.missions.getById.useQuery({ id: missionId });
+
+  const addGloryDeliverable = api.mission.deliverables.create.useMutation({
+    onSuccess: () => {
+      setShowGloryPicker(false);
+      void utils.mission.missions.getById.invalidate({ id: missionId });
+      toast.success("Output GLORY attaché comme livrable.");
+    },
+    onError: () => toast.error("Impossible d'attacher l'output GLORY."),
+  });
 
   if (isLoading || !mission) {
     return (
@@ -203,6 +219,33 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
 
         {/* Deliverables Tab */}
         <TabsContent value="deliverables" className="space-y-3">
+          {/* Attach from GLORY */}
+          {showGloryPicker ? (
+            <GloryPicker
+              strategyId={mission.strategy.id}
+              onSelect={(output) => {
+                addGloryDeliverable.mutate({
+                  missionId: mission.id,
+                  gloryOutputId: output.id,
+                  title: `[GLORY] ${output.title}`,
+                  fileType: output.toolSlug,
+                });
+              }}
+              onCancel={() => setShowGloryPicker(false)}
+            />
+          ) : (
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowGloryPicker(true)}
+              >
+                <Sparkles className="mr-1 h-3 w-3" />
+                Attacher depuis GLORY
+              </Button>
+            </div>
+          )}
+
           {mission.deliverables.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Aucun livrable soumis.
@@ -224,18 +267,29 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
                       </div>
                     </div>
                   </div>
-                  <Badge
-                    variant="outline"
-                    className={`text-xs ${
-                      deliverable.status === "APPROVED"
-                        ? "border-emerald-300 text-emerald-600"
-                        : deliverable.status === "REJECTED"
-                          ? "border-red-300 text-red-600"
-                          : ""
-                    }`}
-                  >
-                    {deliverable.status}
-                  </Badge>
+                  <div className="flex items-center gap-1.5">
+                    {deliverable.gloryOutputId && (
+                      <Badge
+                        variant="outline"
+                        className="border-purple-200 text-xs text-purple-600"
+                      >
+                        <Sparkles className="mr-0.5 h-2.5 w-2.5" />
+                        GLORY
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${
+                        deliverable.status === "APPROVED"
+                          ? "border-emerald-300 text-emerald-600"
+                          : deliverable.status === "REJECTED"
+                            ? "border-red-300 text-red-600"
+                            : ""
+                      }`}
+                    >
+                      {deliverable.status}
+                    </Badge>
+                  </div>
                 </CardContent>
               </Card>
             ))
@@ -289,9 +343,16 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
                 </div>
               </CardContent>
             </Card>
+          ) : mission.status === "REVIEW" ? (
+            <DebriefForm
+              missionId={missionId}
+              onSuccess={() => {
+                void utils.mission.missions.getById.invalidate({ id: missionId });
+              }}
+            />
           ) : (
             <p className="py-8 text-center text-sm text-muted-foreground">
-              Pas de debrief. Le debrief est requis pour clôturer la mission.
+              Pas de debrief. Passez la mission en REVIEW pour compléter le debrief.
             </p>
           )}
         </TabsContent>

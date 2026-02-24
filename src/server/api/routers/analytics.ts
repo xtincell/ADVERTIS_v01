@@ -524,6 +524,165 @@ export const analyticsRouter = createTRPCRouter({
   }),
 
   /**
+   * Sector-level benchmarks: for each sector, compute avg/median/p25/p75 for coherence, risk, BMF.
+   * Optionally, for a given strategy, compute its percentile within its sector.
+   */
+  getSectorBenchmarks: protectedProcedure
+    .input(
+      z
+        .object({
+          strategyId: z.string().optional(), // optional: compute percentile for this strategy
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const strategies = await ctx.db.strategy.findMany({
+        where: { userId: ctx.session.user.id },
+        select: {
+          id: true,
+          brandName: true,
+          sector: true,
+          coherenceScore: true,
+          pillars: {
+            where: { type: { in: ["R", "T"] }, status: "complete" },
+            select: { type: true, content: true },
+          },
+        },
+      });
+
+      // Build per-sector score arrays
+      type SectorScores = {
+        coherence: number[];
+        risk: number[];
+        bmf: number[];
+      };
+      const sectorMap = new Map<string, SectorScores>();
+
+      // Per-strategy scores for percentile lookups
+      const strategyScores = new Map<
+        string,
+        { sector: string; coherence: number | null; risk: number | null; bmf: number | null }
+      >();
+
+      for (const s of strategies) {
+        const sector = s.sector ?? "other";
+        if (!sectorMap.has(sector)) {
+          sectorMap.set(sector, { coherence: [], risk: [], bmf: [] });
+        }
+        const acc = sectorMap.get(sector)!;
+
+        const coherence = s.coherenceScore;
+        let risk: number | null = null;
+        let bmf: number | null = null;
+
+        const rPillar = s.pillars.find((p) => p.type === "R");
+        if (rPillar?.content) {
+          const parsed = parsePillarContent<RiskAuditResult>("R", rPillar.content);
+          if (parsed.success) risk = parsed.data.riskScore;
+        }
+
+        const tPillar = s.pillars.find((p) => p.type === "T");
+        if (tPillar?.content) {
+          const parsed = parsePillarContent<TrackAuditResult>("T", tPillar.content);
+          if (parsed.success) bmf = parsed.data.brandMarketFitScore;
+        }
+
+        if (coherence != null) acc.coherence.push(coherence);
+        if (risk != null) acc.risk.push(risk);
+        if (bmf != null) acc.bmf.push(bmf);
+
+        strategyScores.set(s.id, { sector, coherence, risk, bmf });
+      }
+
+      // Helper functions
+      const median = (arr: number[]) => {
+        if (arr.length === 0) return 0;
+        const sorted = [...arr].sort((a, b) => a - b);
+        const mid = Math.floor(sorted.length / 2);
+        return sorted.length % 2 !== 0
+          ? sorted[mid]!
+          : Math.round(((sorted[mid - 1]! + sorted[mid]!) / 2));
+      };
+      const percentile = (arr: number[], p: number) => {
+        if (arr.length === 0) return 0;
+        const sorted = [...arr].sort((a, b) => a - b);
+        const idx = Math.ceil((p / 100) * sorted.length) - 1;
+        return sorted[Math.max(0, idx)]!;
+      };
+      const avg = (arr: number[]) =>
+        arr.length > 0
+          ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length)
+          : 0;
+      const computePercentileRank = (arr: number[], value: number) => {
+        if (arr.length === 0) return 0;
+        const below = arr.filter((v) => v < value).length;
+        return Math.round((below / arr.length) * 100);
+      };
+
+      const sectorLabelMap = new Map<string, string>(
+        SECTORS.map((s) => [s.value, s.label]),
+      );
+
+      // Build sector benchmarks
+      const sectors = Array.from(sectorMap.entries()).map(([sector, scores]) => ({
+        sector,
+        label: sectorLabelMap.get(sector) ?? sector,
+        count: strategies.filter((s) => (s.sector ?? "other") === sector).length,
+        coherence: {
+          avg: avg(scores.coherence),
+          median: median(scores.coherence),
+          p25: percentile(scores.coherence, 25),
+          p75: percentile(scores.coherence, 75),
+        },
+        risk: {
+          avg: avg(scores.risk),
+          median: median(scores.risk),
+          p25: percentile(scores.risk, 25),
+          p75: percentile(scores.risk, 75),
+        },
+        bmf: {
+          avg: avg(scores.bmf),
+          median: median(scores.bmf),
+          p25: percentile(scores.bmf, 25),
+          p75: percentile(scores.bmf, 75),
+        },
+      }));
+
+      // If a specific strategy is requested, compute its percentile within sector
+      let strategyPercentile: {
+        strategyId: string;
+        sector: string;
+        coherencePercentile: number;
+        riskPercentile: number;
+        bmfPercentile: number;
+      } | null = null;
+
+      if (input?.strategyId) {
+        const entry = strategyScores.get(input.strategyId);
+        if (entry) {
+          const sectorScores = sectorMap.get(entry.sector);
+          if (sectorScores) {
+            strategyPercentile = {
+              strategyId: input.strategyId,
+              sector: entry.sector,
+              coherencePercentile: entry.coherence != null
+                ? computePercentileRank(sectorScores.coherence, entry.coherence)
+                : 0,
+              riskPercentile: entry.risk != null
+                ? computePercentileRank(sectorScores.risk, entry.risk)
+                : 0,
+              bmfPercentile: entry.bmf != null
+                ? computePercentileRank(sectorScores.bmf, entry.bmf)
+                : 0,
+            };
+          }
+        }
+      }
+
+      return { sectors, strategyPercentile };
+    }),
+
+  /**
    * Get score breakdowns for a strategy (read-only, no persistence).
    * Computes coherence, risk, and BMF breakdowns on-the-fly for display in cockpit tooltips.
    */

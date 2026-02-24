@@ -16,6 +16,7 @@ import { AlertPanel } from "~/components/dashboard/alert-panel";
 import { BrandSearchBar } from "~/components/brand/brand-search-bar";
 import { AgencyKpiBar } from "~/components/dashboard/agency-kpi-bar";
 import { CompactBrandCard } from "~/components/brand/compact-brand-card";
+import { SectorBenchmark } from "~/components/analytics/sector-benchmark";
 
 export default function OperatorDashboardPage() {
   const { data: session } = useSession();
@@ -125,7 +126,10 @@ export default function OperatorDashboardPage() {
         completionRate={overview.completionRate}
       />
 
-      {/* 5. Brand list */}
+      {/* 5. Sector benchmarks */}
+      {overview.totalBrands >= 2 && <SectorBenchmark />}
+
+      {/* 6. Brand list */}
       <div className="space-y-3">
         {filteredBrands.length === 0 ? (
           <p className="py-8 text-center text-sm text-muted-foreground">

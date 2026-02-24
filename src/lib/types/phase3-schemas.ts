@@ -80,6 +80,7 @@ export const UpdateAssignmentSchema = z.object({
 export const CreateDeliverableSchema = z.object({
   missionId: z.string().min(1),
   assignmentId: z.string().optional(),
+  gloryOutputId: z.string().optional(),
   title: z.string().min(1),
   fileUrl: z.string().optional(),
   fileType: z.string().optional(),
@@ -124,6 +125,10 @@ export const CreateInterventionSchema = z.object({
 export const ResolveInterventionSchema = z.object({
   id: z.string().min(1),
   resolution: z.string().min(1),
+  // Optional: create a signal in SIS when resolving
+  createSignal: z.boolean().optional(),
+  signalPillar: z.enum(["A", "D", "V", "E", "R", "T", "I", "S"]).optional(),
+  signalTitle: z.string().min(1).optional(),
 });
 
 // ============================================

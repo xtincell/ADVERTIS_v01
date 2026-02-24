@@ -11,6 +11,7 @@ import {
   GitBranch,
   Plus,
   Briefcase,
+  Sparkles,
   MoreHorizontal,
 } from "lucide-react";
 import { BottomNav, type BottomNavItem } from "./bottom-nav";
@@ -21,6 +22,7 @@ const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
   { href: "/tree", label: "Arbre", icon: GitBranch },
   { href: "/new", label: "Nouveau", icon: Plus },
   { href: "/missions", label: "Missions", icon: Briefcase },
+  { href: "/glory", label: "Glory", icon: Sparkles },
   { href: "/more", label: "Plus", icon: MoreHorizontal },
 ];
 

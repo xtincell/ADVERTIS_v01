@@ -21,6 +21,7 @@
 //   integration   — T.14 Third-party integrations
 //   analytics     — T.15 Dashboard analytics + scores
 //   marketStudy   — T.16 Market study lifecycle
+//   glory         — T.17 GLORY operational tools
 //
 // Exports:
 //   appRouter    — Combined tRPC router
@@ -49,6 +50,7 @@ import { translationRouter } from "~/server/api/routers/translation";
 import { missionRouter } from "~/server/api/routers/mission";
 import { marketPricingRouter } from "~/server/api/routers/market-pricing-router";
 import { interventionRouter } from "~/server/api/routers/intervention";
+import { gloryRouter } from "~/server/api/routers/glory";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -74,6 +76,7 @@ export const appRouter = createTRPCRouter({
   mission: missionRouter,
   marketPricing: marketPricingRouter,
   intervention: interventionRouter,
+  glory: gloryRouter,
 });
 
 // export type definition of API
