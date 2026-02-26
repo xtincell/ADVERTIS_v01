@@ -16,8 +16,8 @@ export default async function FreelanceLayout({
   const session = await auth();
   const role = session?.user?.role ?? "";
 
-  // Only FREELANCE can access freelance routes
-  if (role !== "FREELANCE") {
+  // FREELANCE and ADMIN can access freelance routes
+  if (role !== "ADMIN" && role !== "FREELANCE") {
     redirect(getHomeByRole(role));
   }
 

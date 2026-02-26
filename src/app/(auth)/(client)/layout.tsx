@@ -16,8 +16,8 @@ export default async function ClientLayout({
   const session = await auth();
   const role = session?.user?.role ?? "";
 
-  // Only CLIENT_RETAINER and CLIENT_STATIC can access client routes
-  if (role !== "CLIENT_RETAINER" && role !== "CLIENT_STATIC") {
+  // CLIENT_RETAINER, CLIENT_STATIC, and ADMIN can access client routes
+  if (role !== "ADMIN" && role !== "CLIENT_RETAINER" && role !== "CLIENT_STATIC") {
     redirect(getHomeByRole(role));
   }
 

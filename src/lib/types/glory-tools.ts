@@ -7,6 +7,37 @@
 
 export type GloryLayer = "CR" | "DC" | "HYBRID";
 
+// ---------------------------------------------------------------------------
+// Context categories that tools can request from strategy data
+// ---------------------------------------------------------------------------
+
+export type GloryContextCategory =
+  | "budgets"
+  | "competitors"
+  | "opportunities"
+  | "market"
+  | "missions"
+  | "signals";
+
+// ---------------------------------------------------------------------------
+// Field enrichment — returned by the field-enricher for smart forms
+// ---------------------------------------------------------------------------
+
+export interface FieldEnrichment {
+  /** Clickable suggestion chips (e.g., campaign objectives from pillar S) */
+  suggestions?: string[];
+  /** Dynamic options replacing static ones (for select/multiselect fields) */
+  dynamicOptions?: { value: string; label: string }[];
+  /** Auto-filled default value from strategy data */
+  defaultValue?: string | number | boolean;
+  /** Contextual hint shown below the field (e.g., "Tier IMPACT: 150-300M FCFA") */
+  contextHint?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Tool input field definition
+// ---------------------------------------------------------------------------
+
 export interface GloryToolInput {
   key: string;
   label: string;
@@ -16,7 +47,15 @@ export interface GloryToolInput {
   options?: { value: string; label: string }[];
   defaultValue?: string | number | boolean;
   helpText?: string;
+  /** Whether this field can be enriched by strategy data */
+  enrichable?: boolean;
+  /** Key mapping to the enrichment data source (used by field-enricher) */
+  enrichKey?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Tool descriptor — full definition of a GLORY tool
+// ---------------------------------------------------------------------------
 
 export interface GloryToolDescriptor {
   slug: string;
@@ -31,7 +70,15 @@ export interface GloryToolDescriptor {
   requiredPhase?: string;
   outputFormat: "markdown" | "structured" | "mixed";
   tags?: string[];
+  /** Which context categories to load for AI generation (beyond pillars) */
+  requiredContext?: GloryContextCategory[];
+  /** Number of output variations to generate (default: 1) */
+  variations?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Layer metadata
+// ---------------------------------------------------------------------------
 
 export const GLORY_LAYER_META: Record<
   GloryLayer,

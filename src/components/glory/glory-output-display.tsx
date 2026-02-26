@@ -5,10 +5,11 @@
 // =============================================================================
 // Renders AI-generated output from a GLORY tool.
 // Supports markdown (formatted text), structured (JSON cards), and mixed.
+// Detects multi-variant output ({ variants: [...] }) and renders tabs.
 // Provides Copy, Export JSON, and Save actions.
 // =============================================================================
 
-import { useCallback } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { cn } from "~/lib/utils";
 import { Button } from "~/components/ui/button";
 import {
@@ -27,6 +28,14 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
+
+// ---------------------------------------------------------------------------
+// Variant type helper
+// ---------------------------------------------------------------------------
+interface VariantItem {
+  label?: string;
+  [key: string]: unknown;
+}
 
 // ---------------------------------------------------------------------------
 // Props
@@ -51,21 +60,40 @@ export function GloryOutputDisplay({
   onSave,
   isSaving = false,
 }: GloryOutputDisplayProps) {
-  // Copy to clipboard
+  // Detect multi-variant output
+  const variants = useMemo<VariantItem[] | null>(() => {
+    if (outputData && typeof outputData === "object" && !Array.isArray(outputData)) {
+      const d = outputData as Record<string, unknown>;
+      if ("variants" in d && Array.isArray(d.variants) && d.variants.length > 1) {
+        return d.variants as VariantItem[];
+      }
+    }
+    return null;
+  }, [outputData]);
+
+  const [activeVariant, setActiveVariant] = useState(0);
+
+  // Data for the currently displayed variant (or full outputData if no variants)
+  const displayData = variants ? variants[activeVariant] : outputData;
+  const displayText = variants
+    ? buildVariantText(variants[activeVariant])
+    : outputText;
+
+  // Copy to clipboard — copies active variant only
   const handleCopy = useCallback(async () => {
     try {
       const textToCopy =
         outputFormat === "structured" || outputFormat === "mixed"
-          ? JSON.stringify(outputData, null, 2)
-          : outputText;
+          ? JSON.stringify(displayData, null, 2)
+          : displayText;
       await navigator.clipboard.writeText(textToCopy);
       toast.success("Copié dans le presse-papier");
     } catch {
       toast.error("Impossible de copier");
     }
-  }, [outputData, outputText, outputFormat]);
+  }, [displayData, displayText, outputFormat]);
 
-  // Export as JSON file
+  // Export as JSON file — exports ALL data (including all variants)
   const handleExportJson = useCallback(() => {
     try {
       const jsonStr = JSON.stringify(outputData ?? outputText, null, 2);
@@ -87,6 +115,34 @@ export function GloryOutputDisplay({
   return (
     <div className="space-y-4">
       {/* ----------------------------------------------------------------- */}
+      {/* Variant tabs */}
+      {/* ----------------------------------------------------------------- */}
+      {variants && (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {variants.map((v, idx) => {
+            const label = v.label ?? `Variante ${String.fromCharCode(65 + idx)}`;
+            const isActive = idx === activeVariant;
+            return (
+              <Button
+                key={idx}
+                variant={isActive ? "default" : "ghost"}
+                size="sm"
+                className={cn(
+                  "text-xs h-8 px-3 rounded-full transition-colors",
+                  isActive
+                    ? "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white"
+                    : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+                )}
+                onClick={() => setActiveVariant(idx)}
+              >
+                {label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ----------------------------------------------------------------- */}
       {/* Actions bar */}
       {/* ----------------------------------------------------------------- */}
       <div className="flex items-center gap-2 flex-wrap">
@@ -97,7 +153,7 @@ export function GloryOutputDisplay({
           className="gap-1.5 text-xs"
         >
           <Copy className="h-3.5 w-3.5" />
-          Copier
+          Copier{variants ? " (variante active)" : ""}
         </Button>
         <Button
           variant="outline"
@@ -106,7 +162,7 @@ export function GloryOutputDisplay({
           className="gap-1.5 text-xs"
         >
           <Download className="h-3.5 w-3.5" />
-          Export JSON
+          Export JSON{variants ? " (tout)" : ""}
         </Button>
         {persistable && onSave && (
           <Button
@@ -132,18 +188,18 @@ export function GloryOutputDisplay({
       {/* ----------------------------------------------------------------- */}
       <div className="min-h-[200px]">
         {outputFormat === "markdown" && (
-          <MarkdownOutput text={outputText} />
+          <MarkdownOutput text={displayText} />
         )}
         {outputFormat === "structured" && (
-          <StructuredOutput data={outputData} />
+          <StructuredOutput data={displayData} />
         )}
         {outputFormat === "mixed" && (
           <div className="space-y-6">
-            {outputText && <MarkdownOutput text={outputText} />}
-            {outputData != null && typeof outputData === "object" && (
+            {displayText && <MarkdownOutput text={displayText} />}
+            {displayData != null && typeof displayData === "object" && (
               <>
                 <Separator />
-                <StructuredOutput data={outputData} />
+                <StructuredOutput data={displayData} />
               </>
             )}
           </div>
@@ -151,6 +207,28 @@ export function GloryOutputDisplay({
       </div>
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Build text from a single variant for display/copy
+// ---------------------------------------------------------------------------
+function buildVariantText(variant: VariantItem | undefined): string {
+  if (!variant) return "";
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(variant)) {
+    if (key === "label") continue;
+    if (typeof value === "string") {
+      lines.push(`## ${key}\n${value}`);
+    } else if (Array.isArray(value)) {
+      lines.push(`## ${key}`);
+      for (const item of value) {
+        lines.push(typeof item === "string" ? `- ${item}` : `- ${JSON.stringify(item)}`);
+      }
+    } else if (value !== null && value !== undefined) {
+      lines.push(`## ${key}\n${JSON.stringify(value, null, 2)}`);
+    }
+  }
+  return lines.join("\n\n");
 }
 
 // ---------------------------------------------------------------------------
@@ -209,7 +287,9 @@ function StructuredOutput({ data }: { data: unknown }) {
   }
 
   if (typeof data === "object") {
-    const entries = Object.entries(data as Record<string, unknown>);
+    const entries = Object.entries(data as Record<string, unknown>).filter(
+      ([key]) => key !== "label",
+    );
     return (
       <div className="space-y-3">
         {entries.map(([key, val]) => (

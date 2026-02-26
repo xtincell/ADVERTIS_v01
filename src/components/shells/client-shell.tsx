@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { BottomNav, type BottomNavItem } from "./bottom-nav";
 import { RailNav, type RailNavItem } from "./rail-nav";
+import { PortalSwitcher, PortalSwitcherMobile } from "./portal-switcher";
 
 const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
   { href: "/cockpit", label: "Cockpit", icon: BarChart3 },
@@ -29,11 +30,12 @@ interface ClientShellProps {
 export function ClientShell({ children }: ClientShellProps) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <RailNav items={NAV_ITEMS} />
+      <RailNav items={NAV_ITEMS} logoSlot={<PortalSwitcher />} />
       <main className="flex-1 overflow-auto bg-dotgrid pb-20 md:pb-0">
         {children}
       </main>
       <BottomNav items={NAV_ITEMS} />
+      <PortalSwitcherMobile />
     </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
+import { PortalSwitcherMobile } from "~/components/shells/portal-switcher";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -60,6 +61,8 @@ export function GloryShell({ children }: GloryShellProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#fafafa]">
+      {/* Mobile portal switcher */}
+      <PortalSwitcherMobile />
       {/* ----------------------------------------------------------------- */}
       {/* Desktop Sidebar */}
       {/* ----------------------------------------------------------------- */}

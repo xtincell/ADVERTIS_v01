@@ -21,6 +21,7 @@ const conceptGenerator: GloryToolDescriptor = {
     "Génère des concepts créatifs à partir d'un insight et de contraintes média. Produit plusieurs pistes exploitables avec axe, promesse et territoire visuel.",
   icon: "Lightbulb",
   persistable: true,
+  requiredContext: ["competitors", "market"],
   inputs: [
     {
       key: "insight",
@@ -29,6 +30,7 @@ const conceptGenerator: GloryToolDescriptor = {
       placeholder: "Ex : Les mères camerounaises veulent protéger leur famille mais manquent de temps…",
       required: true,
       helpText: "L'insight humain qui servira de tremplin créatif.",
+      enrichable: true,
     },
     {
       key: "mediaConstraint",
@@ -45,6 +47,8 @@ const conceptGenerator: GloryToolDescriptor = {
         { value: "multi", label: "Multi-média" },
       ],
       helpText: "Le canal principal pour lequel le concept sera développé.",
+      enrichable: true,
+      enrichKey: "channels",
     },
     {
       key: "tonality",
@@ -59,6 +63,7 @@ const conceptGenerator: GloryToolDescriptor = {
         { value: "emotionnel", label: "Émotionnel" },
       ],
       helpText: "Le ton souhaité pour les concepts générés.",
+      enrichable: true,
     },
     {
       key: "numConcepts",
@@ -89,6 +94,7 @@ const scriptWriter: GloryToolDescriptor = {
     "Rédige des scripts publicitaires complets avec indications de réalisation, dialogues et directions artistiques pour TV, radio et digital.",
   icon: "Film",
   persistable: true,
+  requiredContext: ["missions"],
   inputs: [
     {
       key: "format",
@@ -114,6 +120,7 @@ const scriptWriter: GloryToolDescriptor = {
       placeholder: "Décrivez le concept créatif, l'axe et la promesse…",
       required: true,
       helpText: "Le concept créatif qui servira de base au script.",
+      enrichable: true,
     },
     {
       key: "language",
@@ -158,6 +165,7 @@ const longCopyCraftsman: GloryToolDescriptor = {
     "Rédige des textes longs — manifestes, publirédactionnels, brand stories — avec une plume soignée et un storytelling maîtrisé.",
   icon: "FileText",
   persistable: true,
+  requiredContext: [],
   inputs: [
     {
       key: "format",
@@ -215,6 +223,7 @@ const dialogueWriter: GloryToolDescriptor = {
     "Écrit des dialogues authentiques et culturellement ancrés pour spots publicitaires, avec gestion des registres linguistiques africains.",
   icon: "MessageSquare",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "scenario",
@@ -281,6 +290,7 @@ const claimBaselineFactory: GloryToolDescriptor = {
     "Génère des baselines, claims et slogans de campagne percutants. Propose des variations courtes, mémorisables et différenciantes.",
   icon: "Award",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "type",
@@ -331,6 +341,7 @@ const printAdArchitect: GloryToolDescriptor = {
     "Conçoit l'architecture d'annonces presse et affiches : headline, body copy, mise en page, hiérarchie visuelle et appel à l'action.",
   icon: "Newspaper",
   persistable: true,
+  requiredContext: ["missions"],
   inputs: [
     {
       key: "format",
@@ -353,6 +364,8 @@ const printAdArchitect: GloryToolDescriptor = {
       placeholder: "Ex : Lancer le nouveau pack familial, mettre en avant le prix…",
       required: true,
       helpText: "Ce que l'annonce doit accomplir.",
+      enrichable: true,
+      enrichKey: "campaignObjective",
     },
     {
       key: "mandatories",
@@ -383,12 +396,14 @@ const socialCopyEngine: GloryToolDescriptor = {
     "Produit des copies social media adaptées à chaque plateforme, avec hashtags, emojis et formats natifs optimisés pour l'engagement.",
   icon: "Share2",
   persistable: false,
+  requiredContext: ["opportunities"],
   inputs: [
     {
       key: "platforms",
       label: "Plateformes",
       type: "multiselect",
       required: true,
+      enrichable: true,
       options: [
         { value: "facebook", label: "Facebook" },
         { value: "instagram", label: "Instagram" },
@@ -446,6 +461,8 @@ const storytellingSequencer: GloryToolDescriptor = {
     "Construit des séquences narratives multi-touchpoints avec arcs dramatiques cohérents, du teasing au call-to-action final.",
   icon: "BookOpen",
   persistable: true,
+  requiredContext: ["opportunities"],
+  variations: 2,
   inputs: [
     {
       key: "objective",
@@ -454,6 +471,8 @@ const storytellingSequencer: GloryToolDescriptor = {
       placeholder: "Ex : Raconter l'histoire de la marque à travers 4 épisodes…",
       required: true,
       helpText: "L'objectif global de la séquence storytelling.",
+      enrichable: true,
+      enrichKey: "campaignObjective",
     },
     {
       key: "numTouchpoints",
@@ -477,6 +496,8 @@ const storytellingSequencer: GloryToolDescriptor = {
         { value: "influencer", label: "Influenceur" },
       ],
       helpText: "Les canaux de diffusion pour chaque touchpoint.",
+      enrichable: true,
+      enrichKey: "channels",
     },
     {
       key: "duration",
@@ -505,12 +526,14 @@ const wordplayCulturalBank: GloryToolDescriptor = {
     "Banque de jeux de mots, proverbes, expressions culturelles et références populaires par marché africain pour enrichir la création.",
   icon: "Languages",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "market",
       label: "Marché",
       type: "select",
       required: true,
+      enrichable: true,
       options: [
         { value: "CM", label: "Cameroun" },
         { value: "CI", label: "Côte d'Ivoire" },
@@ -567,6 +590,7 @@ const briefCreatifInterne: GloryToolDescriptor = {
     "Transforme un brief client en brief créatif interne structuré avec insights, territoire, contraintes et orientations pour l'équipe créative.",
   icon: "ClipboardList",
   persistable: true,
+  requiredContext: ["budgets", "missions"],
   inputs: [
     {
       key: "clientBrief",
@@ -582,6 +606,7 @@ const briefCreatifInterne: GloryToolDescriptor = {
       type: "text",
       placeholder: "Ex : 50M FCFA, 100K EUR…",
       helpText: "L'enveloppe budgétaire globale du projet.",
+      enrichable: true,
     },
     {
       key: "deadline",
@@ -616,6 +641,8 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
     "Planifie l'architecture complète d'une campagne : phases, canaux, messages clés, touchpoints et allocation budgétaire par canal.",
   icon: "Network",
   persistable: true,
+  requiredContext: ["budgets", "competitors", "opportunities", "missions"],
+  variations: 3,
   inputs: [
     {
       key: "campaignObjective",
@@ -624,6 +651,7 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
       placeholder: "Ex : Lancer le nouveau produit X auprès des 18-35 ans en zone urbaine…",
       required: true,
       helpText: "L'objectif stratégique principal de la campagne.",
+      enrichable: true,
     },
     {
       key: "bigIdea",
@@ -631,6 +659,7 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
       type: "textarea",
       placeholder: "Le concept créatif central, si déjà défini…",
       helpText: "La grande idée créative de la campagne.",
+      enrichable: true,
     },
     {
       key: "budget",
@@ -639,6 +668,7 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
       placeholder: "Ex : 200M FCFA, 500K EUR…",
       required: true,
       helpText: "Le budget total alloué à la campagne.",
+      enrichable: true,
     },
     {
       key: "duration",
@@ -653,6 +683,7 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
         { value: "1_year", label: "1 an" },
       ],
       helpText: "La durée totale prévue pour la campagne.",
+      enrichable: true,
     },
     {
       key: "channels",
@@ -669,6 +700,7 @@ const campaignArchitecturePlanner: GloryToolDescriptor = {
         { value: "influencer", label: "Influenceur" },
       ],
       helpText: "Les canaux de communication envisagés.",
+      enrichable: true,
     },
   ],
   requiredPillars: ["A", "D", "V", "E"],
@@ -685,6 +717,7 @@ const creativeEvaluationMatrix: GloryToolDescriptor = {
     "Évalue des concepts créatifs selon une grille multicritère : pertinence stratégique, originalité, faisabilité, impact culturel et potentiel viral.",
   icon: "Grid3X3",
   persistable: false,
+  requiredContext: ["competitors"],
   inputs: [
     {
       key: "concepts",
@@ -693,6 +726,8 @@ const creativeEvaluationMatrix: GloryToolDescriptor = {
       placeholder: "Listez les concepts créatifs à évaluer…",
       required: true,
       helpText: "Les concepts créatifs soumis à l'évaluation.",
+      enrichable: true,
+      enrichKey: "concept",
     },
     {
       key: "criteria",
@@ -723,6 +758,7 @@ const ideaKillerSaver: GloryToolDescriptor = {
     "Analyse critique d'un concept : identifie les forces, faiblesses, risques et propose des pistes d'amélioration ou de sauvetage créatif.",
   icon: "Scale",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "concept",
@@ -731,6 +767,7 @@ const ideaKillerSaver: GloryToolDescriptor = {
       placeholder: "Décrivez le concept créatif en détail…",
       required: true,
       helpText: "Le concept créatif à soumettre à l'audit.",
+      enrichable: true,
     },
     {
       key: "execution",
@@ -761,6 +798,7 @@ const multiTeamCoherenceChecker: GloryToolDescriptor = {
     "Vérifie la cohérence entre les productions de différentes équipes ou canaux : ton, message, identité visuelle et territoire de marque.",
   icon: "GitCompare",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "outputs",
@@ -792,6 +830,7 @@ const clientPresentationStrategist: GloryToolDescriptor = {
     "Stratégie de présentation client : structure le storytelling du deck, anticipe les objections et prépare les arguments de vente créatifs.",
   icon: "Presentation",
   persistable: false,
+  requiredContext: ["competitors"],
   inputs: [
     {
       key: "concepts",
@@ -800,6 +839,8 @@ const clientPresentationStrategist: GloryToolDescriptor = {
       placeholder: "Les concepts créatifs à défendre devant le client…",
       required: true,
       helpText: "Les concepts qui seront présentés au client.",
+      enrichable: true,
+      enrichKey: "concept",
     },
     {
       key: "clientProfile",
@@ -842,6 +883,7 @@ const creativeDirectionMemo: GloryToolDescriptor = {
     "Rédige des notes de direction créative pour les prestataires : photographes, réalisateurs, illustrateurs, musiciens et autres.",
   icon: "FileEdit",
   persistable: true,
+  requiredContext: ["missions"],
   inputs: [
     {
       key: "target",
@@ -895,6 +937,8 @@ const pitchArchitect: GloryToolDescriptor = {
     "Construit la structure complète d'un pitch compétitif : stratégie, création, média, budget et différenciateurs clés pour remporter l'appel d'offres.",
   icon: "Target",
   persistable: true,
+  requiredContext: ["budgets", "missions", "competitors"],
+  variations: 2,
   inputs: [
     {
       key: "pitchContext",
@@ -910,6 +954,7 @@ const pitchArchitect: GloryToolDescriptor = {
       type: "text",
       placeholder: "Ex : 300M FCFA…",
       helpText: "Le budget estimé ou communiqué par l'annonceur.",
+      enrichable: true,
     },
     {
       key: "deliverables",
@@ -917,6 +962,7 @@ const pitchArchitect: GloryToolDescriptor = {
       type: "textarea",
       placeholder: "Ex : Stratégie, 3 concepts, plan média, budget production…",
       helpText: "Les livrables demandés dans le cahier des charges.",
+      enrichable: true,
     },
     {
       key: "differentiator",
@@ -947,6 +993,7 @@ const awardCaseBuilder: GloryToolDescriptor = {
     "Construit des case studies pour festivals créatifs : narrative, résultats, insights stratégiques et mise en forme selon les standards internationaux.",
   icon: "Trophy",
   persistable: true,
+  requiredContext: ["missions"],
   inputs: [
     {
       key: "festival",
@@ -1013,6 +1060,8 @@ const campaign360Simulator: GloryToolDescriptor = {
     "Simule la déclinaison d'une campagne sur tous les points de contact : adapte le key visual et le headline à chaque format et canal.",
   icon: "Globe",
   persistable: true,
+  requiredContext: ["budgets", "missions"],
+  variations: 2,
   inputs: [
     {
       key: "keyVisual",
@@ -1035,6 +1084,7 @@ const campaign360Simulator: GloryToolDescriptor = {
       label: "Points de contact",
       type: "multiselect",
       required: true,
+      enrichable: true,
       options: [
         { value: "affichage_4x3", label: "Affichage 4x3" },
         { value: "affichage_sucette", label: "Affichage sucette" },
@@ -1071,6 +1121,8 @@ const productionBudgetOptimizer: GloryToolDescriptor = {
     "Optimise le budget de production en proposant des alternatives créatives, des mutualisations et des arbitrages qualité/coût par marché.",
   icon: "Calculator",
   persistable: false,
+  requiredContext: ["budgets", "missions"],
+  variations: 3,
   inputs: [
     {
       key: "totalBudget",
@@ -1079,6 +1131,7 @@ const productionBudgetOptimizer: GloryToolDescriptor = {
       placeholder: "Ex : 80M FCFA…",
       required: true,
       helpText: "Le budget total alloué à la production.",
+      enrichable: true,
     },
     {
       key: "deliverables",
@@ -1087,11 +1140,13 @@ const productionBudgetOptimizer: GloryToolDescriptor = {
       placeholder: "Ex : 1 spot TV 30s, 5 posts social, 2 affiches 4x3…",
       required: true,
       helpText: "La liste complète des livrables à produire.",
+      enrichable: true,
     },
     {
       key: "market",
       label: "Marché",
       type: "select",
+      enrichable: true,
       options: [
         { value: "CM", label: "Cameroun" },
         { value: "CI", label: "Côte d'Ivoire" },
@@ -1127,6 +1182,7 @@ const vendorBriefGenerator: GloryToolDescriptor = {
     "Génère des briefs prestataires structurés et professionnels pour imprimeurs, réalisateurs, photographes, développeurs et autres fournisseurs.",
   icon: "Users",
   persistable: true,
+  requiredContext: ["budgets", "missions"],
   inputs: [
     {
       key: "vendorType",
@@ -1173,6 +1229,7 @@ const vendorBriefGenerator: GloryToolDescriptor = {
       type: "text",
       placeholder: "Ex : 5M FCFA…",
       helpText: "Le budget alloué pour cette prestation.",
+      enrichable: true,
     },
   ],
   requiredPillars: ["A", "D"],
@@ -1189,6 +1246,7 @@ const contentCalendarStrategist: GloryToolDescriptor = {
     "Planifie un calendrier éditorial social media avec thématiques, formats, fréquences et moments clés adaptés au marché africain.",
   icon: "CalendarDays",
   persistable: true,
+  requiredContext: ["opportunities", "missions"],
   inputs: [
     {
       key: "period",
@@ -1217,6 +1275,7 @@ const contentCalendarStrategist: GloryToolDescriptor = {
         { value: "whatsapp", label: "WhatsApp" },
       ],
       helpText: "Les plateformes à couvrir dans le calendrier.",
+      enrichable: true,
     },
     {
       key: "frequency",
@@ -1236,6 +1295,7 @@ const contentCalendarStrategist: GloryToolDescriptor = {
       type: "textarea",
       placeholder: "Ex : Lancement produit en cours, campagne institutionnelle…",
       helpText: "Le contexte de campagne à intégrer au calendrier.",
+      enrichable: true,
     },
     {
       key: "events",
@@ -1243,6 +1303,7 @@ const contentCalendarStrategist: GloryToolDescriptor = {
       type: "textarea",
       placeholder: "Ex : Fête des mères, Ramadan, CAN, Black Friday…",
       helpText: "Les événements et temps forts à intégrer.",
+      enrichable: true,
     },
   ],
   requiredPillars: ["A", "D", "E"],
@@ -1259,6 +1320,7 @@ const approvalWorkflowManager: GloryToolDescriptor = {
     "Gère le workflow de validation : définit les étapes, les intervenants, les délais et génère les check-lists d'approbation par type de projet.",
   icon: "CheckSquare",
   persistable: false,
+  requiredContext: ["missions"],
   inputs: [
     {
       key: "projectType",
@@ -1311,6 +1373,7 @@ const brandGuardianSystem: GloryToolDescriptor = {
     "Vérifie la conformité des productions avec la charte de marque : logo, couleurs, ton, territoire et cohérence globale.",
   icon: "Shield",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "outputToCheck",
@@ -1359,6 +1422,7 @@ const clientEducationModule: GloryToolDescriptor = {
     "Génère des contenus pédagogiques pour éduquer les clients sur les bonnes pratiques créatives, les processus et les standards du métier.",
   icon: "GraduationCap",
   persistable: false,
+  requiredContext: [],
   inputs: [
     {
       key: "topic",
@@ -1422,6 +1486,7 @@ const benchmarkReferenceFinder: GloryToolDescriptor = {
     "Trouve des benchmarks et références créatives par secteur, marché et mécanisme : campagnes inspirantes, case studies et tendances.",
   icon: "Search",
   persistable: false,
+  requiredContext: ["competitors"],
   inputs: [
     {
       key: "sector",
@@ -1430,11 +1495,13 @@ const benchmarkReferenceFinder: GloryToolDescriptor = {
       placeholder: "Ex : Télécom, FMCG, Banque, Brasserie…",
       required: true,
       helpText: "Le secteur pour lequel chercher des références.",
+      enrichable: true,
     },
     {
       key: "market",
       label: "Marché",
       type: "select",
+      enrichable: true,
       options: [
         { value: "CM", label: "Cameroun" },
         { value: "CI", label: "Côte d'Ivoire" },
@@ -1483,6 +1550,7 @@ const postCampaignReader: GloryToolDescriptor = {
     "Analyse les performances post-campagne : interprète les métriques, identifie les apprentissages et formule des recommandations pour les prochaines campagnes.",
   icon: "BarChart3",
   persistable: true,
+  requiredContext: ["budgets", "missions"],
   inputs: [
     {
       key: "metrics",
@@ -1513,6 +1581,7 @@ const postCampaignReader: GloryToolDescriptor = {
       type: "text",
       placeholder: "Ex : 100M FCFA…",
       helpText: "Le budget total investi dans la campagne.",
+      enrichable: true,
     },
     {
       key: "period",

@@ -23,6 +23,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { getAllTools, getToolsByLayer } from "~/server/services/glory/registry";
 import { generateGloryOutput } from "~/server/services/glory/generation";
+import { enrichFields } from "~/server/services/glory/field-enricher";
 
 export const gloryRouter = createTRPCRouter({
   /**
@@ -223,6 +224,34 @@ export const gloryRouter = createTRPCRouter({
         orderBy: [{ isFavorite: "desc" }, { createdAt: "desc" }],
         take: 50,
       });
+    }),
+
+  /**
+   * Get field enrichment data for a GLORY tool form.
+   * Returns suggestions, default values, dynamic options per field.
+   */
+  getFieldEnrichment: protectedProcedure
+    .input(
+      z.object({
+        toolSlug: z.string(),
+        strategyId: z.string(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      // Verify strategy ownership
+      const strategy = await ctx.db.strategy.findUnique({
+        where: { id: input.strategyId },
+        select: { userId: true },
+      });
+
+      if (!strategy || strategy.userId !== ctx.session.user.id) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Stratégie non trouvée",
+        });
+      }
+
+      return enrichFields(input.toolSlug, input.strategyId, ctx.db);
     }),
 
   /**

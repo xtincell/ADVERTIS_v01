@@ -14,7 +14,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   ChevronDown,
   ChevronRight,
-  ArrowLeft,
   Sparkles,
   History,
   Home,
@@ -33,6 +32,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "~/components/ui/collapsible";
+import { PortalSwitcherCompact } from "~/components/shells/portal-switcher";
 
 // ---------------------------------------------------------------------------
 // Dynamic icon resolver — maps a string name to a lucide-react component
@@ -89,15 +89,9 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
       </div>
 
       {/* ----------------------------------------------------------------- */}
-      {/* Back to ADVERTIS */}
+      {/* Portal switcher (multi-portal users) or back link (single portal) */}
       {/* ----------------------------------------------------------------- */}
-      <Link
-        href="/dashboard"
-        className="flex items-center gap-2 px-5 py-2 text-sm text-white/60 hover:text-white transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        <span>ADVERTIS</span>
-      </Link>
+      <PortalSwitcherCompact />
 
       {/* ----------------------------------------------------------------- */}
       {/* Quick nav links */}

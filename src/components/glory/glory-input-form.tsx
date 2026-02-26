@@ -6,10 +6,11 @@
 // Dynamic form renderer for GLORY tool inputs.
 // Renders appropriate controls based on GloryToolInput.type definitions.
 // Supports: text, textarea, select, multiselect, number, toggle.
+// Enhanced with field enrichment: suggestion chips, pre-fill, dynamic options.
 // =============================================================================
 
 import { cn } from "~/lib/utils";
-import { type GloryToolInput } from "~/lib/types/glory-tools";
+import { type GloryToolInput, type FieldEnrichment } from "~/lib/types/glory-tools";
 import { Input } from "~/components/ui/input";
 import { Textarea } from "~/components/ui/textarea";
 import { Label } from "~/components/ui/label";
@@ -22,6 +23,8 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { HelpCircle } from "lucide-react";
+import { SuggestionChips } from "./suggestion-chips";
+import { Skeleton } from "~/components/ui/skeleton";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -31,6 +34,10 @@ interface GloryInputFormProps {
   values: Record<string, unknown>;
   onChange: (key: string, value: unknown) => void;
   disabled?: boolean;
+  /** Field enrichment data from strategy (suggestions, defaults, dynamic options) */
+  enrichments?: Record<string, FieldEnrichment>;
+  /** Whether enrichment data is still loading */
+  enrichmentsLoading?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +48,8 @@ export function GloryInputForm({
   values,
   onChange,
   disabled = false,
+  enrichments = {},
+  enrichmentsLoading = false,
 }: GloryInputFormProps) {
   return (
     <div className="space-y-5">
@@ -51,6 +60,8 @@ export function GloryInputForm({
           value={values[input.key]}
           onChange={(val) => onChange(input.key, val)}
           disabled={disabled}
+          enrichment={enrichments[input.key]}
+          enrichmentLoading={enrichmentsLoading}
         />
       ))}
     </div>
@@ -65,10 +76,36 @@ interface FormFieldProps {
   value: unknown;
   onChange: (value: unknown) => void;
   disabled: boolean;
+  enrichment?: FieldEnrichment;
+  enrichmentLoading?: boolean;
 }
 
-function FormField({ input, value, onChange, disabled }: FormFieldProps) {
+function FormField({
+  input,
+  value,
+  onChange,
+  disabled,
+  enrichment,
+  enrichmentLoading,
+}: FormFieldProps) {
   const fieldId = `glory-input-${input.key}`;
+
+  // Resolve options: use dynamicOptions from enrichment if available, else static
+  const options = enrichment?.dynamicOptions?.length
+    ? enrichment.dynamicOptions
+    : (input.options ?? []);
+
+  // Handle suggestion click
+  const handleSuggestionSelect = (suggestion: string) => {
+    if (input.type === "textarea") {
+      // For textarea, append (or replace if empty)
+      const current = (value as string) ?? "";
+      onChange(current ? `${current}\n${suggestion}` : suggestion);
+    } else {
+      // For text/number, replace
+      onChange(suggestion);
+    }
+  };
 
   return (
     <div className="space-y-1.5">
@@ -91,6 +128,29 @@ function FormField({ input, value, onChange, disabled }: FormFieldProps) {
       {/* Help text (displayed under label) */}
       {input.helpText && (
         <p className="text-xs text-muted-foreground">{input.helpText}</p>
+      )}
+
+      {/* Context hint from enrichment */}
+      {enrichment?.contextHint && (
+        <p className="text-xs text-[#6C5CE7]/80 italic">
+          {enrichment.contextHint}
+        </p>
+      )}
+
+      {/* Suggestion chips (loading skeleton or actual chips) */}
+      {enrichmentLoading && (input.type === "text" || input.type === "textarea") && (
+        <div className="flex gap-1.5 mb-2">
+          <Skeleton className="h-6 w-24 rounded-full bg-[#6C5CE7]/10" />
+          <Skeleton className="h-6 w-32 rounded-full bg-[#6C5CE7]/10" />
+          <Skeleton className="h-6 w-20 rounded-full bg-[#6C5CE7]/10" />
+        </div>
+      )}
+      {!enrichmentLoading && enrichment?.suggestions && enrichment.suggestions.length > 0 && (
+        <SuggestionChips
+          suggestions={enrichment.suggestions}
+          mode={input.type === "textarea" ? "append" : "replace"}
+          onSelect={handleSuggestionSelect}
+        />
       )}
 
       {/* Control */}
@@ -143,7 +203,7 @@ function FormField({ input, value, onChange, disabled }: FormFieldProps) {
             <SelectValue placeholder={input.placeholder ?? "Choisir..."} />
           </SelectTrigger>
           <SelectContent>
-            {(input.options ?? []).map((opt) => (
+            {options.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
               </SelectItem>
@@ -158,6 +218,7 @@ function FormField({ input, value, onChange, disabled }: FormFieldProps) {
           value={value}
           onChange={onChange}
           disabled={disabled}
+          options={options}
         />
       )}
 
@@ -192,6 +253,7 @@ interface MultiSelectFieldProps {
   value: unknown;
   onChange: (value: unknown) => void;
   disabled: boolean;
+  options: { value: string; label: string }[];
 }
 
 function MultiSelectField({
@@ -199,6 +261,7 @@ function MultiSelectField({
   value,
   onChange,
   disabled,
+  options,
 }: MultiSelectFieldProps) {
   const selected = Array.isArray(value) ? (value as string[]) : [];
 
@@ -212,7 +275,7 @@ function MultiSelectField({
 
   return (
     <div className="flex flex-col gap-2 pt-1">
-      {(input.options ?? []).map((opt) => {
+      {options.map((opt) => {
         const checkId = `glory-multi-${input.key}-${opt.value}`;
         return (
           <div key={opt.value} className="flex items-center gap-2">

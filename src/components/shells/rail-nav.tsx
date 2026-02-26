@@ -23,21 +23,27 @@ export interface RailNavItem {
 
 interface RailNavProps {
   items: RailNavItem[];
+  /** Optional slot replacing the default logo link. Used by PortalSwitcher. */
+  logoSlot?: React.ReactNode;
 }
 
 /**
  * Desktop vertical rail navigation (hidden on mobile).
  * 56px wide, icon-only with tooltip on hover.
  */
-export function RailNav({ items }: RailNavProps) {
+export function RailNav({ items, logoSlot }: RailNavProps) {
   const pathname = usePathname();
 
   return (
     <nav className="hidden md:flex h-screen w-14 flex-col items-center border-r bg-background py-3 gap-1">
-      {/* Logo */}
-      <Link href="/" className="mb-4 flex h-10 w-10 items-center justify-center">
-        <AdvertisMonogram className="h-7 w-7" />
-      </Link>
+      {/* Logo / Portal Switcher */}
+      <div className="mb-4 flex h-10 w-10 items-center justify-center">
+        {logoSlot ?? (
+          <Link href="/">
+            <AdvertisMonogram className="h-7 w-7" />
+          </Link>
+        )}
+      </div>
 
       {/* Nav items */}
       <div className="flex flex-1 flex-col items-center gap-1">

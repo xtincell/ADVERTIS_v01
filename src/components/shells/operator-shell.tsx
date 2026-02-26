@@ -11,18 +11,17 @@ import {
   GitBranch,
   Plus,
   Briefcase,
-  Sparkles,
   MoreHorizontal,
 } from "lucide-react";
 import { BottomNav, type BottomNavItem } from "./bottom-nav";
 import { RailNav, type RailNavItem } from "./rail-nav";
+import { PortalSwitcher, PortalSwitcherMobile } from "./portal-switcher";
 
 const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
   { href: "/dashboard", label: "Marques", icon: LayoutDashboard },
   { href: "/tree", label: "Arbre", icon: GitBranch },
   { href: "/new", label: "Nouveau", icon: Plus },
   { href: "/missions", label: "Missions", icon: Briefcase },
-  { href: "/glory", label: "Glory", icon: Sparkles },
   { href: "/more", label: "Plus", icon: MoreHorizontal },
 ];
 
@@ -33,16 +32,17 @@ interface OperatorShellProps {
 export function OperatorShell({ children }: OperatorShellProps) {
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop: Rail nav */}
-      <RailNav items={NAV_ITEMS} />
+      {/* Desktop: Rail nav with portal switcher on logo */}
+      <RailNav items={NAV_ITEMS} logoSlot={<PortalSwitcher />} />
 
       {/* Main content */}
       <main className="flex-1 overflow-auto bg-dotgrid pb-20 md:pb-0">
         {children}
       </main>
 
-      {/* Mobile: Bottom nav */}
+      {/* Mobile: Bottom nav + portal switcher */}
       <BottomNav items={NAV_ITEMS} />
+      <PortalSwitcherMobile />
     </div>
   );
 }

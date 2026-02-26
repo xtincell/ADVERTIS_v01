@@ -31,16 +31,16 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/missions": ["ADMIN", "OPERATOR"],
   "/more": ["ADMIN", "OPERATOR"],
   "/glory": ["ADMIN", "OPERATOR"],
-  // Freelance-only
-  "/my-missions": ["FREELANCE"],
-  "/my-briefs": ["FREELANCE"],
-  "/upload": ["FREELANCE"],
-  "/profile": ["FREELANCE"],
-  // Client-only
-  "/cockpit": ["CLIENT_RETAINER", "CLIENT_STATIC"],
-  "/oracle": ["CLIENT_RETAINER", "CLIENT_STATIC"],
-  "/my-documents": ["CLIENT_RETAINER", "CLIENT_STATIC"],
-  "/requests": ["CLIENT_RETAINER", "CLIENT_STATIC"],
+  // Freelance (+ ADMIN preview)
+  "/my-missions": ["ADMIN", "FREELANCE"],
+  "/my-briefs": ["ADMIN", "FREELANCE"],
+  "/upload": ["ADMIN", "FREELANCE"],
+  "/profile": ["ADMIN", "FREELANCE"],
+  // Client (+ ADMIN preview)
+  "/cockpit": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/oracle": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/my-documents": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
+  "/requests": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
 };
 
 export async function middleware(req: NextRequest) {

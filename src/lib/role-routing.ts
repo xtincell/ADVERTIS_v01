@@ -60,12 +60,12 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
   ...Object.fromEntries(
     OPERATOR_ROUTES.map((r) => [r, ["ADMIN", "OPERATOR"]])
   ),
-  // Freelance-only paths
+  // Freelance paths (+ ADMIN preview)
   ...Object.fromEntries(
-    FREELANCE_ROUTES.map((r) => [r, ["FREELANCE"]])
+    FREELANCE_ROUTES.map((r) => [r, ["ADMIN", "FREELANCE"]])
   ),
-  // Client-only paths
+  // Client paths (+ ADMIN preview)
   ...Object.fromEntries(
-    CLIENT_ROUTES.map((r) => [r, ["CLIENT_RETAINER", "CLIENT_STATIC"]])
+    CLIENT_ROUTES.map((r) => [r, ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"]])
   ),
 };

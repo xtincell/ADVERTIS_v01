@@ -98,11 +98,38 @@ function extractJsonFromText(text: string): unknown | null {
 /**
  * Build a plain-text summary from parsed output data.
  * Walks top-level keys and produces a readable text version.
+ * Handles multi-variant output: { variants: [...] }
  */
 function buildOutputText(data: unknown): string {
   if (typeof data === "string") return data;
   if (data === null || data === undefined) return "";
 
+  if (typeof data !== "object") return String(data);
+
+  // Handle multi-variant output
+  if (
+    !Array.isArray(data) &&
+    "variants" in (data as Record<string, unknown>) &&
+    Array.isArray((data as Record<string, unknown>).variants)
+  ) {
+    const variants = (data as Record<string, unknown>).variants as Record<string, unknown>[];
+    const sections: string[] = [];
+    for (const variant of variants) {
+      const label = (variant.label as string) ?? "Variante";
+      sections.push(`### Variante : ${label}\n\n${buildSingleOutputText(variant)}`);
+    }
+    return sections.join("\n\n---\n\n");
+  }
+
+  return buildSingleOutputText(data);
+}
+
+/**
+ * Build text for a single output object (no variant wrapping).
+ */
+function buildSingleOutputText(data: unknown): string {
+  if (typeof data === "string") return data;
+  if (data === null || data === undefined) return "";
   if (typeof data !== "object") return String(data);
 
   const lines: string[] = [];
@@ -114,8 +141,9 @@ function buildOutputText(data: unknown): string {
     return lines.join("\n");
   }
 
-  // Object — enumerate top-level keys
+  // Object — enumerate top-level keys (skip "label" which is the variant label)
   for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    if (key === "label") continue;
     if (typeof value === "string") {
       lines.push(`## ${key}\n${value}`);
     } else if (Array.isArray(value)) {
@@ -162,10 +190,11 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     );
   }
 
-  // 2. Build strategy context
+  // 2. Build strategy context (pillars + operational data)
   const { context, strategy } = await buildStrategyContext(
     opts.strategyId,
     tool.requiredPillars,
+    tool.requiredContext ?? [],
   );
 
   // 3. Get system prompt
@@ -184,6 +213,17 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
 
   // 5. Build user prompt
   const formattedInputs = formatUserInputs(opts.userInputs);
+  const variantCount = tool.variations ?? 1;
+  const variantInstruction =
+    variantCount > 1
+      ? [
+          "",
+          `IMPORTANT : Génère exactement ${variantCount} VARIANTES distinctes.`,
+          `Retourne un JSON avec cette structure : { "variants": [ { "label": "Nom variante", ...contenu... }, ... ] }`,
+          `Chaque variante doit avoir un "label" descriptif et proposer une approche différente (ex: conservatrice vs. équilibrée vs. offensive).`,
+        ].join("\n")
+      : "";
+
   const userPrompt = [
     "# DONNÉES STRATÉGIQUES DE LA MARQUE",
     context,
@@ -192,6 +232,7 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     formattedInputs,
     "",
     "Génère maintenant le résultat demandé en respectant le format JSON spécifié.",
+    variantInstruction,
   ].join("\n");
 
   // 6. Call AI

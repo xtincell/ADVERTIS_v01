@@ -8,7 +8,7 @@
 // Manages full lifecycle: idle → generating → complete → error.
 // =============================================================================
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import * as LucideIcons from "lucide-react";
 import {
   Loader2,
@@ -25,6 +25,7 @@ import {
 } from "~/lib/types/glory-tools";
 import { GloryInputForm } from "./glory-input-form";
 import { GloryOutputDisplay } from "./glory-output-display";
+import { useFieldEnrichment } from "~/components/hooks/use-field-enrichment";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -74,6 +75,40 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
 
   // Form values state
   const [formValues, setFormValues] = useState<Record<string, unknown>>({});
+
+  // Field enrichment (smart form data from strategy)
+  const { enrichments, isLoading: enrichmentsLoading } = useFieldEnrichment(
+    toolSlug,
+    strategyId,
+  );
+
+  // Auto-apply default values from enrichments on first load
+  const defaultsAppliedRef = useRef(false);
+  useEffect(() => {
+    if (defaultsAppliedRef.current || enrichmentsLoading || !enrichments) return;
+    const keys = Object.keys(enrichments);
+    if (keys.length === 0) return;
+
+    const defaults: Record<string, unknown> = {};
+    let hasDefaults = false;
+    for (const key of keys) {
+      const e = enrichments[key];
+      if (e?.defaultValue !== undefined && formValues[key] === undefined) {
+        defaults[key] = e.defaultValue;
+        hasDefaults = true;
+      }
+    }
+    if (hasDefaults) {
+      setFormValues((prev) => ({ ...defaults, ...prev }));
+    }
+    defaultsAppliedRef.current = true;
+  }, [enrichments, enrichmentsLoading, formValues]);
+
+  // Reset defaults flag when strategy or tool changes
+  useEffect(() => {
+    defaultsAppliedRef.current = false;
+    setFormValues({});
+  }, [toolSlug, strategyId]);
 
   // Generation state
   const [genState, setGenState] = useState<GenerationState>("idle");
@@ -225,6 +260,8 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
             values={formValues}
             onChange={handleInputChange}
             disabled={genState === "generating"}
+            enrichments={enrichments}
+            enrichmentsLoading={enrichmentsLoading}
           />
 
           <div className="mt-6">
