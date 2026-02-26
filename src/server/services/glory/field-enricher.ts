@@ -257,29 +257,53 @@ function enrichChannels(ctx: EnrichmentContext): FieldEnrichment {
   return { dynamicOptions };
 }
 
-/** Extract insight suggestions from pillar D personas */
+/** Extract insight suggestions from pillar D personas, T market reality, R SWOT */
 function enrichInsight(ctx: EnrichmentContext): FieldEnrichment {
   const suggestions: string[] = [];
 
+  // 1. Pilier D — personas : motivations + freins
   const pillarD = safePillar(ctx.strategy.pillars, "D");
   const personas = safeGet(pillarD, "personas");
   if (Array.isArray(personas)) {
     for (const p of personas.slice(0, 4)) {
-      const insight = (p as Record<string, unknown>)?.insight
-        ?? (p as Record<string, unknown>)?.frustration
-        ?? (p as Record<string, unknown>)?.besoin;
-      if (typeof insight === "string" && insight.length > 5) suggestions.push(insight);
+      const rec = p as Record<string, unknown>;
+      const motivations = rec?.motivations;
+      const freins = rec?.freins;
+      if (typeof motivations === "string" && motivations.length > 5)
+        suggestions.push(motivations);
+      if (typeof freins === "string" && freins.length > 5)
+        suggestions.push(freins);
     }
   }
 
-  // From pillar T market reality
+  // 2. Pilier T — marketReality : macroTrends + weakSignals (objet, pas string)
   const pillarT = safePillar(ctx.strategy.pillars, "T");
   const marketReality = safeGet(pillarT, "marketReality");
-  if (typeof marketReality === "string" && marketReality.length > 10) {
-    suggestions.push(marketReality.substring(0, 150));
+  if (marketReality && typeof marketReality === "object") {
+    const mr = marketReality as Record<string, unknown>;
+    for (const trend of safeArray(mr.macroTrends).slice(0, 2)) {
+      if (trend.length > 5) suggestions.push(trend);
+    }
+    for (const signal of safeArray(mr.weakSignals).slice(0, 2)) {
+      if (signal.length > 5) suggestions.push(signal);
+    }
   }
 
-  return { suggestions: suggestions.slice(0, 5) };
+  // 3. Pilier R — SWOT opportunities + summary
+  const pillarR = safePillar(ctx.strategy.pillars, "R");
+  const globalSwot = safeGet(pillarR, "globalSwot");
+  if (globalSwot && typeof globalSwot === "object") {
+    const swot = globalSwot as Record<string, unknown>;
+    for (const opp of safeArray(swot.opportunities).slice(0, 2)) {
+      if (opp.length > 5) suggestions.push(opp);
+    }
+  }
+  const rSummary = safeGet(pillarR, "summary");
+  if (typeof rSummary === "string" && rSummary.length > 10) {
+    suggestions.push(rSummary.substring(0, 150));
+  }
+
+  return { suggestions: suggestions.slice(0, 6) };
 }
 
 /** Extract tonality default from pillar A archetype */
