@@ -135,15 +135,19 @@ function enrichCampaignObjective(ctx: EnrichmentContext): FieldEnrichment {
     }
   }
 
-  // From pillar I — roadmap objectives
+  // From pillar I — strategicRoadmap (year1Priorities + sprint90Days)
   const pillarI = safePillar(ctx.strategy.pillars, "I");
-  const roadmap = safeGet(pillarI, "roadmap");
-  if (roadmap && typeof roadmap === "object" && !Array.isArray(roadmap)) {
-    const items = safeGet(roadmap, "items") ?? safeGet(roadmap, "phases");
-    if (Array.isArray(items)) {
-      for (const item of items.slice(0, 3)) {
-        const name = typeof item === "string" ? item : (item as Record<string, unknown>)?.name ?? (item as Record<string, unknown>)?.objectif;
-        if (typeof name === "string" && name.length > 5) suggestions.push(name);
+  const roadmap = safeGet(pillarI, "strategicRoadmap");
+  if (roadmap && typeof roadmap === "object") {
+    const rm = roadmap as Record<string, unknown>;
+    for (const p of safeArray(rm.year1Priorities).slice(0, 3)) {
+      if (p.length > 5) suggestions.push(p);
+    }
+    const sprints = rm.sprint90Days;
+    if (Array.isArray(sprints)) {
+      for (const s of sprints.slice(0, 3)) {
+        const action = (s as Record<string, unknown>)?.action;
+        if (typeof action === "string" && action.length > 5) suggestions.push(action);
       }
     }
   }
@@ -196,12 +200,12 @@ function enrichBudget(ctx: EnrichmentContext): FieldEnrichment {
     }
   }
 
-  // Fallback from pillar I budget
+  // Fallback from pillar I budgetAllocation.enveloppeGlobale
   const pillarI = safePillar(ctx.strategy.pillars, "I");
-  const budget = safeGet(pillarI, "budget");
-  if (budget) {
-    const enveloppe = safeGet(budget, "enveloppeGlobale") ?? safeGet(budget, "total");
-    if (enveloppe && typeof enveloppe === "string") {
+  const budgetAlloc = safeGet(pillarI, "budgetAllocation");
+  if (budgetAlloc && typeof budgetAlloc === "object") {
+    const enveloppe = safeGet(budgetAlloc, "enveloppeGlobale");
+    if (enveloppe && typeof enveloppe === "string" && enveloppe.length > 0) {
       return { defaultValue: enveloppe, contextHint: `Budget global (Pilier I) : ${enveloppe}` };
     }
   }

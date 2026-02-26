@@ -27,7 +27,7 @@ const DEFAULT_TABS: CockpitTab[] = [
 export const TAB_SECTION_MAP: Record<string, string[]> = {
   overview: ["scores", "alerts", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables"],
   strategy: ["authenticite", "distinction", "valeur", "synthese"],
-  operational: ["engagement", "implementation", "budget", "widgets"],
+  operational: ["engagement", "implementation", "budget", "widgets", "glory"],
   signals: ["signals", "decisions", "veille"],
   market: ["risk", "track", "competitors", "opportunities"],
   briefs: ["briefs", "livrables"],

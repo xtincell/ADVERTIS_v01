@@ -432,12 +432,12 @@ export const VIEW_MODE_SECTIONS: Record<ViewMode, string[]> = {
   EXECUTIVE: [
     "synthese", "coherence", "risk", "bmf", "decisions",
     "kpi-dashboard", "budget-sim", "axes-strategiques", "audit-suggestions",
-    "livrables",
+    "livrables", "glory",
   ],
   MARKETING: [
     "synthese", "authenticite", "distinction", "valeur", "engagement",
     "implementation", "campaigns", "briefs", "competitors",
-    "opportunities", "widgets", "signals", "budget-sim", "audit-suggestions",
+    "opportunities", "widgets", "glory", "signals", "budget-sim", "audit-suggestions",
   ],
   FOUNDER: [
     "synthese", "coherence", "risk", "bmf", "authenticite",

@@ -279,4 +279,29 @@ export const gloryRouter = createTRPCRouter({
 
       return { isFavorite: updated.isFavorite };
     }),
+
+  /**
+   * Get aggregate stats for Glory outputs (for cockpit section).
+   */
+  getOutputStats: protectedProcedure
+    .input(z.object({ strategyId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const where = {
+        strategyId: input.strategyId,
+        createdBy: ctx.session.user.id,
+        status: "complete",
+      };
+
+      const [total, favorites, tools] = await Promise.all([
+        ctx.db.gloryOutput.count({ where }),
+        ctx.db.gloryOutput.count({ where: { ...where, isFavorite: true } }),
+        ctx.db.gloryOutput.findMany({
+          where,
+          select: { toolSlug: true },
+          distinct: ["toolSlug"],
+        }),
+      ]);
+
+      return { total, favorites, toolsUsed: tools.length };
+    }),
 });

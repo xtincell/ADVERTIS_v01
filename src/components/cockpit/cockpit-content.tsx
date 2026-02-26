@@ -78,6 +78,7 @@ import { SectionCompetitors } from "./sections/section-competitors";
 import { SectionOpportunities } from "./sections/section-opportunities";
 import { SectionBudget } from "./sections/section-budget";
 import { SectionWidgets } from "./sections/section-widgets";
+import { SectionGlory } from "./sections/section-glory";
 import { SectionBriefs } from "./sections/section-briefs";
 import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
 
@@ -444,6 +445,11 @@ export function CockpitContent({
       {/* ── Widgets Analytiques ── */}
       {show("widgets") && data.strategyId && !isPublic && (
         <SectionWidgets strategyId={data.strategyId} />
+      )}
+
+      {/* ── Résultats GLORY ── */}
+      {show("glory") && data.strategyId && !isPublic && (
+        <SectionGlory strategyId={data.strategyId} />
       )}
 
       {/* ── Pillar S — Synthèse Stratégique ── */}
