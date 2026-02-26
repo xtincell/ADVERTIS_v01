@@ -113,6 +113,8 @@ export const gloryRouter = createTRPCRouter({
       z.object({
         strategyId: z.string().optional(),
         toolSlug: z.string().optional(),
+        layer: z.enum(["CR", "DC", "HYBRID"]).optional(),
+        favoritesOnly: z.boolean().optional(),
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
       }),
@@ -123,6 +125,8 @@ export const gloryRouter = createTRPCRouter({
       };
       if (input.strategyId) where.strategyId = input.strategyId;
       if (input.toolSlug) where.toolSlug = input.toolSlug;
+      if (input.layer) where.layer = input.layer;
+      if (input.favoritesOnly) where.isFavorite = true;
       if (input.cursor) {
         where.id = { lt: input.cursor };
       }
@@ -289,19 +293,40 @@ export const gloryRouter = createTRPCRouter({
       const where = {
         strategyId: input.strategyId,
         createdBy: ctx.session.user.id,
-        status: "complete",
+        status: "complete" as const,
       };
 
-      const [total, favorites, tools] = await Promise.all([
-        ctx.db.gloryOutput.count({ where }),
-        ctx.db.gloryOutput.count({ where: { ...where, isFavorite: true } }),
-        ctx.db.gloryOutput.findMany({
-          where,
-          select: { toolSlug: true },
-          distinct: ["toolSlug"],
-        }),
-      ]);
+      const [total, favorites, tools, byCR, byDC, byHYBRID, toolBreakdown] =
+        await Promise.all([
+          ctx.db.gloryOutput.count({ where }),
+          ctx.db.gloryOutput.count({
+            where: { ...where, isFavorite: true },
+          }),
+          ctx.db.gloryOutput.findMany({
+            where,
+            select: { toolSlug: true },
+            distinct: ["toolSlug"],
+          }),
+          ctx.db.gloryOutput.count({ where: { ...where, layer: "CR" } }),
+          ctx.db.gloryOutput.count({ where: { ...where, layer: "DC" } }),
+          ctx.db.gloryOutput.count({ where: { ...where, layer: "HYBRID" } }),
+          ctx.db.gloryOutput.groupBy({
+            by: ["toolSlug"],
+            where,
+            _count: { id: true },
+            orderBy: { _count: { id: "desc" } },
+          }),
+        ]);
 
-      return { total, favorites, toolsUsed: tools.length };
+      return {
+        total,
+        favorites,
+        toolsUsed: tools.length,
+        byLayer: { CR: byCR, DC: byDC, HYBRID: byHYBRID },
+        toolBreakdown: toolBreakdown.map((t) => ({
+          toolSlug: t.toolSlug,
+          count: t._count.id,
+        })),
+      };
     }),
 });

@@ -811,6 +811,7 @@ model GloryOutput {
     status       String   @default("complete") // generating, complete, error
     version      Int      @default(1)
     isFavorite   Boolean  @default(false)
+    refNumber    String?  // "GLORY-CR-001" — auto-generated at save time
     errorMessage String?
     createdBy    String   // userId
 

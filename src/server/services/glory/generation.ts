@@ -275,6 +275,12 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     const autoTitle =
       opts.title ?? `${tool.shortName} — ${strategy.brandName}`;
 
+    // Compute next refNumber for this strategy (GLORY-CR-001 format)
+    const existingCount = await db.gloryOutput.count({
+      where: { strategyId: opts.strategyId },
+    });
+    const refNumber = `GLORY-${tool.layer}-${String(existingCount + 1).padStart(3, "0")}`;
+
     const record = await db.gloryOutput.create({
       data: {
         strategyId: opts.strategyId,
@@ -286,6 +292,7 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
         outputText,
         status: "complete",
         version: 1,
+        refNumber,
         createdBy: opts.userId,
       },
     });

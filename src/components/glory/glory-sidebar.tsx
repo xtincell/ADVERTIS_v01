@@ -17,6 +17,7 @@ import {
   Sparkles,
   History,
   Home,
+  LayoutDashboard,
   type LucideIcon,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -108,6 +109,18 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
         >
           <Home className="h-4 w-4" />
           <span>Hub</span>
+        </Link>
+        <Link
+          href={`/glory/dashboard${strategyQuery}`}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            pathname === "/glory/dashboard"
+              ? "bg-[#6C5CE7]/20 text-white"
+              : "text-white/70 hover:bg-white/5 hover:text-white",
+          )}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          <span>Dashboard</span>
         </Link>
         <Link
           href={`/glory/history${strategyQuery}`}
