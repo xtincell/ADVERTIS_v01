@@ -23,6 +23,7 @@ import {
   getScoreColor,
   getRiskColor,
 } from "./shared";
+import { BrandActionsMenu } from "~/components/brand/brand-actions-menu";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -46,6 +47,7 @@ interface BrandRow {
 interface BrandTableProps {
   brands: BrandRow[];
   onBrandClick: (id: string) => void;
+  onMutationSuccess?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -116,7 +118,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   );
 }
 
-export function BrandTable({ brands, onBrandClick }: BrandTableProps) {
+export function BrandTable({ brands, onBrandClick, onMutationSuccess }: BrandTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -153,6 +155,8 @@ export function BrandTable({ brands, onBrandClick }: BrandTableProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
+              {/* Actions column */}
+              <th className="w-10 px-2 py-2.5" />
               {/* Pillar dots column */}
               <th className="px-3 py-2.5 text-left text-xs font-medium text-muted-foreground hidden md:table-cell">
                 Piliers
@@ -178,6 +182,16 @@ export function BrandTable({ brands, onBrandClick }: BrandTableProps) {
                 className="cursor-pointer border-b transition-colors hover:bg-muted/30 last:border-b-0"
                 onClick={() => onBrandClick(brand.id)}
               >
+                {/* Actions */}
+                <td className="px-2 py-2.5">
+                  <BrandActionsMenu
+                    strategyId={brand.id}
+                    brandName={brand.brandName}
+                    status={brand.status}
+                    compact
+                    onMutationSuccess={onMutationSuccess}
+                  />
+                </td>
                 {/* Pillar dots */}
                 <td className="px-3 py-2.5 hidden md:table-cell">
                   <div className="flex items-center gap-1">

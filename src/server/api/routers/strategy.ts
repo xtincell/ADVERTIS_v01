@@ -194,7 +194,23 @@ export const strategyRouter = createTRPCRouter({
         });
       }
 
-      const { id, ...data } = input;
+      const { id, ...rawData } = input;
+
+      // Filter out undefined fields to prevent Prisma from overwriting
+      // existing values with null when only some fields are updated.
+      const data: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(rawData)) {
+        if (value !== undefined) {
+          data[key] = value;
+        }
+      }
+
+      if (Object.keys(data).length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Aucun champ à mettre à jour",
+        });
+      }
 
       const strategy = await ctx.db.strategy.update({
         where: { id },

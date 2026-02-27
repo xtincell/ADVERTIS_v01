@@ -21,6 +21,7 @@ import {
   getScoreColor,
   getRiskColor,
 } from "./shared";
+import { BrandActionsMenu } from "~/components/brand/brand-actions-menu";
 
 // ---------------------------------------------------------------------------
 // Types (same as BrandTable for interchangeability)
@@ -44,6 +45,7 @@ interface BrandRow {
 interface BrandCardGridProps {
   brands: BrandRow[];
   onBrandClick: (id: string) => void;
+  onMutationSuccess?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +103,7 @@ function pillarDotColor(status: string | undefined, pillarColor: string): string
 // Component
 // ---------------------------------------------------------------------------
 
-export function BrandCardGrid({ brands, onBrandClick }: BrandCardGridProps) {
+export function BrandCardGrid({ brands, onBrandClick, onMutationSuccess }: BrandCardGridProps) {
   if (brands.length === 0) return null;
 
   return (
@@ -114,7 +116,7 @@ export function BrandCardGrid({ brands, onBrandClick }: BrandCardGridProps) {
             onClick={() => onBrandClick(brand.id)}
           >
             <CardContent className="pt-5 pb-4">
-              {/* Header: initials + name + badges */}
+              {/* Header: initials + name + badges + actions */}
               <div className="mb-4 flex items-start gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-terracotta/10 text-sm font-bold text-terracotta">
                   {brandInitials(brand.brandName)}
@@ -131,6 +133,13 @@ export function BrandCardGrid({ brands, onBrandClick }: BrandCardGridProps) {
                     {getStatusBadge(brand.status)}
                   </div>
                 </div>
+                <BrandActionsMenu
+                  strategyId={brand.id}
+                  brandName={brand.brandName}
+                  status={brand.status}
+                  compact
+                  onMutationSuccess={onMutationSuccess}
+                />
               </div>
 
               {/* Scores row */}

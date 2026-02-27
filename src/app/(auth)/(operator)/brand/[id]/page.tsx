@@ -171,6 +171,7 @@ export default function BrandCockpitPage(props: {
         maturityProfile={strategy.maturityProfile}
         coherenceScore={strategy.coherenceScore}
         strategyId={strategyId}
+        status={strategy.status}
         onShare={() => setShowShareDialog(true)}
         onExport={() => setShowExportDialog(true)}
         onRefresh={() => recalcMutation.mutate({ strategyId })}

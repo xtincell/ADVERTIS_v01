@@ -12,6 +12,8 @@ import {
   Palette,
   Cpu,
   Shield,
+  ShieldAlert,
+  BarChart3,
   Settings,
   AlertTriangle,
 } from "lucide-react";
@@ -21,6 +23,18 @@ import {
 // ---------------------------------------------------------------------------
 
 const MENU_ITEMS = [
+  {
+    href: "/more/risk",
+    icon: ShieldAlert,
+    label: "Portrait Risques",
+    description: "Visualisation des risques par marque",
+  },
+  {
+    href: "/more/market",
+    icon: BarChart3,
+    label: "Portrait Marché",
+    description: "Étude de marché et Brand-Market Fit",
+  },
   {
     href: "/more/interventions",
     icon: AlertTriangle,
@@ -88,7 +102,7 @@ export default function MoreMenuPage() {
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-start gap-4 rounded-xl border bg-white p-4 shadow-sm transition-all hover:border-terracotta/30 hover:shadow-md active:scale-[0.98]"
+              className="flex items-start gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:border-terracotta/30 hover:shadow-md active:scale-[0.98]"
             >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-terracotta/10">
                 <Icon className="h-5 w-5 text-terracotta" />

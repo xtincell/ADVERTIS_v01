@@ -6,8 +6,9 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Loader2, AlertTriangle, RotateCcw } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -20,6 +21,7 @@ import { SectorBenchmark } from "~/components/analytics/sector-benchmark";
 
 export default function OperatorDashboardPage() {
   const { data: session } = useSession();
+  const router = useRouter();
   const firstName = session?.user?.name?.split(" ")[0] ?? "";
 
   // ── Single data call ──
@@ -103,7 +105,7 @@ export default function OperatorDashboardPage() {
       {overview.alerts.length > 0 && (
         <AlertPanel
           alerts={overview.alerts}
-          onBrandClick={(id) => window.location.href = `/brand/${id}`}
+          onBrandClick={(id) => router.push(`/brand/${id}`)}
         />
       )}
 
@@ -141,6 +143,7 @@ export default function OperatorDashboardPage() {
               key={brand.id}
               id={brand.id}
               brandName={brand.brandName}
+              status={brand.status}
               sector={brand.sector}
               sectorLabel={brand.sectorLabel}
               phase={brand.phase}
@@ -149,6 +152,7 @@ export default function OperatorDashboardPage() {
               riskScore={brand.riskScore}
               bmfScore={brand.brandMarketFitScore}
               updatedAt={brand.updatedAt}
+              onMutationSuccess={() => void refetch()}
             />
           ))
         )}
