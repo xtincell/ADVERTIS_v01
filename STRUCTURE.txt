@@ -1,0 +1,19 @@
+.
+  docs
+    architecture
+    guide
+      annexes
+      {annexes}
+    planning
+    research
+    specifications
+  interface
+    assets
+      css
+      js
+    templates
+  reference
+    amara-demo
+      documents
+    historical
+    interactive-demos

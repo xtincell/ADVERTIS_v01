@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADVERTIS - PDF Export Tool</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 3rem;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      color: #666;
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    .section {
+      margin: 2rem 0;
+      padding: 1.5rem;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    .section h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #333;
+    }
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .doc-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      border: 2px solid #e0e0e0;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .doc-card:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      transform: translateY(-2px);
+    }
+    .doc-badge {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 1rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .doc-name {
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 0.5rem;
+    }
+    .doc-desc {
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    .btn-secondary {
+      background: white;
+      color: #667eea;
+      border: 2px solid #667eea;
+    }
+    .instructions {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 2rem 0;
+    }
+    .instructions h3 {
+      color: #856404;
+      margin-bottom: 0.5rem;
+    }
+    .instructions ol {
+      margin-left: 1.5rem;
+      color: #856404;
+    }
+    .instructions li {
+      margin: 0.5rem 0;
+    }
+    .status {
+      padding: 0.5rem 1rem;
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      border-radius: 4px;
+      margin: 1rem 0;
+      display: none;
+    }
+    code {
+      background: #f4f4f4;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📄 ADVERTIS PDF Export Tool</h1>
+    <p class="subtitle">Export your strategic documents to PDF format</p>
+
+    <div class="instructions">
+      <h3>🚀 Quick Start - Export to PDF</h3>
+      <ol>
+        <li><strong>Click any document below</strong> to open it</li>
+        <li><strong>Use browser print:</strong> Press <code>Ctrl+P</code> (Windows/Linux) or <code>Cmd+P</code> (Mac)</li>
+        <li><strong>Choose "Save as PDF"</strong> as the printer destination</li>
+        <li><strong>Click "Save"</strong> - Done! Professional PDF ready</li>
+      </ol>
+      <p style="margin-top: 1rem;"><strong>💡 Tip:</strong> Enable "Background graphics" in print settings for full design fidelity</p>
+    </div>
+
+    <div class="section">
+      <h2>📚 Select Document to Export</h2>
+      <div class="doc-grid">
+        <div class="doc-card" onclick="openDoc('document-s.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #667eea, #764ba2);">S</div>
+          <div class="doc-name">Strategy Bible</div>
+          <div class="doc-desc">Complete strategic overview</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-a.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #f093fb, #f5576c);">A</div>
+          <div class="doc-name">Authenticité</div>
+          <div class="doc-desc">Purpose, Vision, Values</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-d.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #4facfe, #00f2fe);">D</div>
+          <div class="doc-name">Distinction</div>
+          <div class="doc-desc">Visual identity system</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-v.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #43e97b, #38f9d7);">V</div>
+          <div class="doc-name">Valeur</div>
+          <div class="doc-desc">Positioning & personas</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-e.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #fa709a, #fee140);">E</div>
+          <div class="doc-name">Engagement</div>
+          <div class="doc-desc">Customer journey & channels</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-r.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #ff6b6b, #feca57);">R</div>
+          <div class="doc-name">Risk</div>
+          <div class="doc-desc">Risk framework & scenarios</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-t.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #a8edea, #fed6e3);">T</div>
+          <div class="doc-name">Track</div>
+          <div class="doc-desc">Metrics & KPIs</div>
+        </div>
+
+        <div class="doc-card" onclick="openDoc('document-i.html')">
+          <div class="doc-badge" style="background: linear-gradient(135deg, #ffecd2, #fcb69f);">I</div>
+          <div class="doc-name">Implementation</div>
+          <div class="doc-desc">36-month roadmap</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>⚡ Bulk Export Options</h2>
+      <button class="btn" onclick="exportAllSequentially()">📥 Export All (Sequential)</button>
+      <button class="btn btn-secondary" onclick="showBatchInstructions()">📖 Batch Export Guide</button>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="section">
+      <h2>🛠️ Advanced Options</h2>
+      <p style="margin-bottom: 1rem;"><strong>Recommended PDF Settings:</strong></p>
+      <ul style="margin-left: 2rem; color: #666;">
+        <li>Paper size: <strong>A4</strong></li>
+        <li>Margins: <strong>Default</strong> (or Custom: 15mm sides, 20mm top/bottom)</li>
+        <li>Scale: <strong>100%</strong></li>
+        <li>Background graphics: <strong>Enabled</strong></li>
+        <li>Headers and footers: <strong>Enabled</strong> (for page numbers)</li>
+      </ul>
+    </div>
+
+    <div style="margin-top: 2rem; text-align: center;">
+      <a href="index.html" class="btn btn-secondary">← Back to Home</a>
+      <a href="../ADVERTIS-Strategic-Package-v1.0.zip" class="btn" download>📦 Download ZIP Package</a>
+    </div>
+  </div>
+
+  <script>
+    function openDoc(filename) {
+      window.open('documents/' + filename, '_blank');
+    }
+
+    function exportAllSequentially() {
+      const docs = [
+        'document-s.html',
+        'document-a.html',
+        'document-d.html',
+        'document-v.html',
+        'document-e.html',
+        'document-r.html',
+        'document-t.html',
+        'document-i.html'
+      ];
+
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.innerHTML = '✅ Opening all 8 documents in new tabs. Use Ctrl+P on each to save as PDF.';
+
+      docs.forEach((doc, index) => {
+        setTimeout(() => {
+          window.open('documents/' + doc, '_blank');
+        }, index * 500);
+      });
+    }
+
+    function showBatchInstructions() {
+      alert(
+        '📖 BATCH EXPORT GUIDE\n\n' +
+        '1. Click "Export All (Sequential)"\n' +
+        '2. All 8 documents will open in separate tabs\n' +
+        '3. Go to each tab and press Ctrl+P (or Cmd+P)\n' +
+        '4. Select "Save as PDF"\n' +
+        '5. Use these filenames:\n' +
+        '   • ADVERTIS-Document-S-Strategy.pdf\n' +
+        '   • ADVERTIS-Document-A-Authenticite.pdf\n' +
+        '   • ADVERTIS-Document-D-Distinction.pdf\n' +
+        '   • ADVERTIS-Document-V-Valeur.pdf\n' +
+        '   • ADVERTIS-Document-E-Engagement.pdf\n' +
+        '   • ADVERTIS-Document-R-Risk.pdf\n' +
+        '   • ADVERTIS-Document-T-Track.pdf\n' +
+        '   • ADVERTIS-Document-I-Implementation.pdf\n\n' +
+        '💡 Tip: Save all to the same folder for easy organization!'
+      );
+    }
+  </script>
+</body>
+</html>

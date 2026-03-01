@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "next-dev",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js", "run", "dev", "--prefix", "advertis-app"],
+      "port": 3000
+    },
+    {
+      "name": "prisma-studio",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js", "--prefix", "advertis-app", "prisma", "studio", "--schema", "advertis-app/prisma/schema.prisma"],
+      "port": 5555
+    }
+  ]
+}

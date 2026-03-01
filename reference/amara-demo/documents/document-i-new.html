@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document I - Implementation | AMARA Strategic Package</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div class="app-container">
+    <header class="app-header">
+      <a href="../index.html" class="header-logo">
+        <div class="logo-icon">A</div>
+        <div>
+          <div style="font-size: 1.25rem; line-height: 1;">AMARA</div>
+          <div style="font-size: 0.75rem; font-weight: 400; color: var(--text-tertiary);">Strategic Package</div>
+        </div>
+      </a>
+      <nav class="header-nav">
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" placeholder="Search document..." id="globalSearch" aria-label="Search document">
+        </div>
+        <div class="document-switcher">
+          <select class="doc-select" aria-label="Switch document" onchange="if(this.value) window.location.href=this.value">
+            <option value="">Switch Document</option>
+            <option value="document-s-new.html">S - Strategy Bible</option>
+            <option value="document-a-new.html">A - Authenticité</option>
+            <option value="document-d-new.html">D - Distinction</option>
+            <option value="document-v-new.html">V - Valeur</option>
+            <option value="document-e-new.html">E - Engagement</option>
+            <option value="document-r-new.html">R - Risk</option>
+            <option value="document-t-new.html">T - Track</option>
+            <option value="document-i-new.html" selected>I - Implementation</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+          📄 Export PDF
+        </button>
+      </nav>
+    </header>
+
+    
+    <!-- Progress Indicator -->
+    <div class="progress-indicator" id="progressIndicator" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+
+    <div class="document-layout">
+      <aside class="document-sidebar" role="navigation" aria-label="Document navigation">
+        <div class="sidebar-header">
+          <div class="doc-badge" style="background: oklch(58% 0.16 200);">I</div>
+          <div>
+            <h3 style="font-size: var(--text-lg); margin: 0;">Implementation</h3>
+            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: 0;">36-Month Roadmap</p>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#executive-summary" class="sidebar-link active"><span class="sidebar-number">1</span><span>Executive Summary</span></a>
+          <a href="#roadmap-overview" class="sidebar-link"><span class="sidebar-number">2</span><span>Roadmap Overview</span></a>
+          <a href="#phase-breakdown" class="sidebar-link"><span class="sidebar-number">3</span><span>Phase Breakdown</span></a>
+          <a href="#budget-investment" class="sidebar-link"><span class="sidebar-number">4</span><span>Budget & Investment</span></a>
+          <a href="#team-structure" class="sidebar-link"><span class="sidebar-number">5</span><span>Team Structure</span></a>
+          <a href="#milestones" class="sidebar-link"><span class="sidebar-number">6</span><span>Key Milestones</span></a>
+          <a href="#change-management" class="sidebar-link"><span class="sidebar-number">7</span><span>Change Management</span></a>
+        </nav>
+        <div class="sidebar-stats">
+          <div class="stat-item"><div class="stat-label">Timeline</div><div class="stat-value">36 Mo</div></div>
+          <div class="stat-item"><div class="stat-label">Budget</div><div class="stat-value">$8.75M</div></div>
+        </div>
+      </aside>
+
+      <main class="document-main" id="main-content">
+        <div class="document-content">
+          <div class="document-header">
+            <div class="breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Document I - Implementation</span></div>
+            <h1 class="document-title">Implementation<span class="title-subtitle">Document I - 36-Month Roadmap & Execution Plan</span></h1>
+          </div>
+
+          <div class="content-divider"></div>
+
+          <section id="executive-summary" class="content-section">
+            <div class="section-header">
+              <span class="section-number">01</span>
+              <h2 class="section-title">Executive Summary</h2>
+            </div>
+            <div class="card card-highlight">
+              <h3>Implementation at a Glance</h3>
+              <div class="grid grid-3">
+                <div>
+                  <strong>Timeline:</strong> 36 months (4 phases)<br>
+                  <strong>Investment:</strong> $8.75M total<br>
+                  <strong>Team:</strong> 8 → 42 people
+                </div>
+                <div>
+                  <strong>Revenue Target:</strong> $1.2M → $24M<br>
+                  <strong>Customers:</strong> 850 → 18,000<br>
+                  <strong>Superfans:</strong> 150 → 5,000
+                </div>
+                <div>
+                  <strong>Markets:</strong> 1 → 4 countries<br>
+                  <strong>Artisans:</strong> 85 → 2,000<br>
+                  <strong>ROI:</strong> 3.8× by Year 3
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Implementation Philosophy</h3>
+              <p><strong>Build → Measure → Learn → Scale:</strong> Every phase validates assumptions before scaling</p>
+              <ul class="list-styled">
+                <li><strong>Phase 0 (Foundation):</strong> Build core capabilities, validate product-market fit</li>
+                <li><strong>Phase 1 (Launch):</strong> Execute go-to-market, establish brand presence</li>
+                <li><strong>Phase 2 (Growth):</strong> Scale proven channels, expand team and operations</li>
+                <li><strong>Phase 3 (Scale):</strong> Multi-market expansion, platform maturity</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="roadmap-overview" class="content-section">
+            <div class="section-header">
+              <span class="section-number">02</span>
+              <h2 class="section-title">Roadmap Overview</h2>
+            </div>
+
+            <div class="card">
+              <h3>36-Month Journey</h3>
+              <table>
+                <thead>
+                  <tr><th>Phase</th><th>Timeline</th><th>Focus</th><th>Revenue</th><th>Investment</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Phase 0: Foundation</strong></td>
+                    <td>Months 1-3</td>
+                    <td>Core capabilities, brand foundation</td>
+                    <td>$1.2M</td>
+                    <td>$450K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phase 1: Launch</strong></td>
+                    <td>Months 4-12</td>
+                    <td>Go-to-market, customer acquisition</td>
+                    <td>$2.1M</td>
+                    <td>$1.8M</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phase 2: Growth</strong></td>
+                    <td>Months 13-24</td>
+                    <td>Scale operations, team expansion</td>
+                    <td>$8.5M</td>
+                    <td>$3.2M</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phase 3: Scale</strong></td>
+                    <td>Months 25-36</td>
+                    <td>Multi-market, platform maturity</td>
+                    <td>$24M</td>
+                    <td>$3.3M</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Critical Success Factors</h3>
+              <div class="grid grid-2">
+                <div>
+                  <h4>Strategic Priorities</h4>
+                  <ol class="list-styled">
+                    <li><strong>Superfan focus:</strong> Build loyalty before scaling acquisition</li>
+                    <li><strong>Unit economics:</strong> Validate LTV:CAC > 3:1 before growth phase</li>
+                    <li><strong>Artisan partnerships:</strong> Quality over quantity, deep relationships</li>
+                    <li><strong>Brand consistency:</strong> Every touchpoint reinforces ADVERT pillars</li>
+                  </ol>
+                </div>
+                <div>
+                  <h4>Gate Criteria (Phase → Phase)</h4>
+                  <ol class="list-styled">
+                    <li><strong>0→1:</strong> 250 superfans, $2.1M revenue target visibility</li>
+                    <li><strong>1→2:</strong> CAC < $85, NPS > 72, 3 proven channels</li>
+                    <li><strong>2→3:</strong> $8.5M revenue, 1,500 superfans, operations scaled</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="phase-breakdown" class="content-section">
+            <div class="section-header">
+              <span class="section-number">03</span>
+              <h2 class="section-title">Phase Breakdown</h2>
+            </div>
+
+            <div class="card">
+              <h3>Phase 0: Foundation (Months 1-3)</h3>
+              <p><strong>Goal:</strong> Build core capabilities, validate readiness for launch</p>
+
+              <h4>Key Initiatives</h4>
+              <table>
+                <thead><tr><th>Workstream</th><th>Deliverables</th><th>Owner</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Brand Foundation</strong></td>
+                    <td>Finalize visual identity, brand guidelines, photoshoot (500+ assets)</td>
+                    <td>CMO</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Product Development</strong></td>
+                    <td>Curate 120-SKU launch collection, artisan onboarding (18 collectives)</td>
+                    <td>COO</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Digital Platform</strong></td>
+                    <td>E-commerce site (Shopify Plus), CRM setup, analytics infrastructure</td>
+                    <td>CTO</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Operations</strong></td>
+                    <td>Logistics partnerships, inventory system, customer service setup</td>
+                    <td>COO</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Content Creation</strong></td>
+                    <td>Launch content library (60 pieces), storytelling framework</td>
+                    <td>CMO</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Metrics (End of Phase 0)</h4>
+              <ul class="list-styled">
+                <li><strong>Superfans:</strong> 150 (baseline)</li>
+                <li><strong>Revenue:</strong> $1.2M (run rate)</li>
+                <li><strong>AOV:</strong> $158</li>
+                <li><strong>NPS:</strong> 65</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Phase 1: Launch (Months 4-12)</h3>
+              <p><strong>Goal:</strong> Execute go-to-market, establish brand presence, reach 250 superfans</p>
+
+              <h4>Key Initiatives</h4>
+              <table>
+                <thead><tr><th>Workstream</th><th>Deliverables</th><th>Budget</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Marketing Launch</strong></td>
+                    <td>Influencer partnerships (15 tier-1), PR campaign, brand storytelling</td>
+                    <td>$420K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Community Building</strong></td>
+                    <td>Superfan program launch, referral system, loyalty rewards</td>
+                    <td>$180K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Paid Acquisition</strong></td>
+                    <td>Meta/Google ads (test & learn), retargeting, lookalike audiences</td>
+                    <td>$350K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Content Engine</strong></td>
+                    <td>Weekly blog, 3×/week social, email nurture sequences</td>
+                    <td>$220K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Retail Partnerships</strong></td>
+                    <td>3 flagship pop-ups (Paris, London, NYC), wholesale pilot (5 stores)</td>
+                    <td>$380K</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Metrics (End of Phase 1)</h4>
+              <ul class="list-styled">
+                <li><strong>Superfans:</strong> 250 (67% growth)</li>
+                <li><strong>Revenue:</strong> $2.1M (75% growth)</li>
+                <li><strong>CAC:</strong> <$85</li>
+                <li><strong>Brand Awareness:</strong> 28% (target market)</li>
+                <li><strong>Repeat Rate:</strong> 28%</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Phase 2: Growth (Months 13-24)</h3>
+              <p><strong>Goal:</strong> Scale proven channels, expand operations, reach 1,500 superfans</p>
+
+              <h4>Key Initiatives</h4>
+              <table>
+                <thead><tr><th>Workstream</th><th>Deliverables</th><th>Budget</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Channel Scaling</strong></td>
+                    <td>10× paid spend (best ROAS channels), influencer expansion (40 partners)</td>
+                    <td>$1.2M</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Product Expansion</strong></td>
+                    <td>+180 SKUs (accessories, home), 2 seasonal collections/year</td>
+                    <td>$580K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Team Scaling</strong></td>
+                    <td>Hire 18 people (marketing, ops, CS), build middle management</td>
+                    <td>$950K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Technology</strong></td>
+                    <td>Mobile app (iOS/Android), personalization engine, AI chat</td>
+                    <td>$420K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>International Prep</strong></td>
+                    <td>Market research (Germany, Canada), regulatory compliance</td>
+                    <td>$50K</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Metrics (End of Phase 2)</h4>
+              <ul class="list-styled">
+                <li><strong>Superfans:</strong> 1,500 (500% growth from Phase 1)</li>
+                <li><strong>Revenue:</strong> $8.5M (305% growth)</li>
+                <li><strong>Customers:</strong> 6,800</li>
+                <li><strong>LTV:</strong> $480</li>
+                <li><strong>Artisan Collectives:</strong> 28</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Phase 3: Scale (Months 25-36)</h3>
+              <p><strong>Goal:</strong> Multi-market expansion, platform maturity, reach 5,000 superfans</p>
+
+              <h4>Key Initiatives</h4>
+              <table>
+                <thead><tr><th>Workstream</th><th>Deliverables</th><th>Budget</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Market Expansion</strong></td>
+                    <td>Launch Germany, Canada, expand UK (localized sites, logistics)</td>
+                    <td>$980K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Omnichannel</strong></td>
+                    <td>3 owned retail stores, 50 wholesale partners</td>
+                    <td>$1.1M</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Brand Campaigns</strong></td>
+                    <td>4 integrated campaigns/year, OOH advertising, PR blitz</td>
+                    <td>$720K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Platform Innovation</strong></td>
+                    <td>AR try-on, subscription model, marketplace (third-party artisans)</td>
+                    <td>$380K</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Impact Reporting</strong></td>
+                    <td>Annual impact report, B Corp certification, sustainability audit</td>
+                    <td>$120K</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h4>Metrics (End of Phase 3)</h4>
+              <ul class="list-styled">
+                <li><strong>Superfans:</strong> 5,000 (233% growth from Phase 2)</li>
+                <li><strong>Revenue:</strong> $24M (182% growth)</li>
+                <li><strong>Customers:</strong> 18,000</li>
+                <li><strong>Brand Awareness:</strong> 65%</li>
+                <li><strong>Individual Artisans:</strong> 2,000 (24× baseline)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="budget-investment" class="content-section">
+            <div class="section-header">
+              <span class="section-number">04</span>
+              <h2 class="section-title">Budget & Investment</h2>
+            </div>
+
+            <div class="card">
+              <h3>36-Month Investment Summary</h3>
+              <table>
+                <thead><tr><th>Category</th><th>Phase 0</th><th>Phase 1</th><th>Phase 2</th><th>Phase 3</th><th>Total</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Marketing & Growth</strong></td><td>$85K</td><td>$970K</td><td>$1.5M</td><td>$1.7M</td><td>$4.26M</td></tr>
+                  <tr><td><strong>Product & Inventory</strong></td><td>$180K</td><td>$320K</td><td>$580K</td><td>$420K</td><td>$1.5M</td></tr>
+                  <tr><td><strong>Team & Operations</strong></td><td>$120K</td><td>$350K</td><td>$950K</td><td>$980K</td><td>$2.4M</td></tr>
+                  <tr><td><strong>Technology</strong></td><td>$55K</td><td>$120K</td><td>$420K</td><td>$380K</td><td>$975K</td></tr>
+                  <tr><td><strong>Retail & Expansion</strong></td><td>—</td><td>$40K</td><td>$50K</td><td>$1.1M</td><td>$1.19M</td></tr>
+                  <tr><td><strong>Contingency (10%)</strong></td><td>$10K</td><td>—</td><td>$200K</td><td>$230K</td><td>$440K</td></tr>
+                  <tr class="table-total"><td><strong>TOTAL</strong></td><td><strong>$450K</strong></td><td><strong>$1.8M</strong></td><td><strong>$3.7M</strong></td><td><strong>$4.81M</strong></td><td><strong>$10.76M</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>ROI Projections</h3>
+              <table>
+                <thead><tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Revenue</strong></td><td>$2.1M</td><td>$8.5M</td><td>$24M</td></tr>
+                  <tr><td><strong>Gross Profit (45%)</strong></td><td>$945K</td><td>$3.83M</td><td>$10.8M</td></tr>
+                  <tr><td><strong>Investment</strong></td><td>$2.25M</td><td>$3.7M</td><td>$4.81M</td></tr>
+                  <tr><td><strong>EBITDA</strong></td><td>-$1.3M</td><td>$130K</td><td>$6.0M</td></tr>
+                  <tr><td><strong>Cumulative ROI</strong></td><td>-58%</td><td>-20%</td><td>+56%</td></tr>
+                </tbody>
+              </table>
+              <p class="text-sm"><strong>Note:</strong> Breakeven expected Month 20. 3-year cumulative ROI: +56% ($6M profit on $10.76M investment)</p>
+            </div>
+
+            <div class="card">
+              <h3>Funding Strategy</h3>
+              <ul class="list-styled">
+                <li><strong>Seed Round ($2.5M):</strong> Close by Month 2 to fund Phase 0-1</li>
+                <li><strong>Series A ($5M):</strong> Month 10-12, fund Phase 2-3 growth</li>
+                <li><strong>Revenue Financing ($3M):</strong> Month 18+, supplement growth (non-dilutive)</li>
+                <li><strong>Strategic Partners:</strong> Co-investment from impact funds, fashion accelerators</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="team-structure" class="content-section">
+            <div class="section-header">
+              <span class="section-number">05</span>
+              <h2 class="section-title">Team Structure</h2>
+            </div>
+
+            <div class="card">
+              <h3>Team Evolution (8 → 42 people)</h3>
+              <table>
+                <thead><tr><th>Function</th><th>Phase 0</th><th>Phase 1</th><th>Phase 2</th><th>Phase 3</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Leadership</strong></td><td>3 (CEO, CMO, COO)</td><td>+1 (CFO)</td><td>+1 (CTO)</td><td>—</td></tr>
+                  <tr><td><strong>Marketing</strong></td><td>2</td><td>+3</td><td>+5</td><td>+4</td></tr>
+                  <tr><td><strong>Operations</strong></td><td>2</td><td>+2</td><td>+4</td><td>+5</td></tr>
+                  <tr><td><strong>Product/Buying</strong></td><td>1</td><td>+1</td><td>+2</td><td>+2</td></tr>
+                  <tr><td><strong>Technology</strong></td><td>—</td><td>+1</td><td>+3</td><td>+2</td></tr>
+                  <tr><td><strong>Customer Success</strong></td><td>—</td><td>+2</td><td>+3</td><td>+3</td></tr>
+                  <tr class="table-total"><td><strong>TOTAL</strong></td><td><strong>8</strong></td><td><strong>18</strong></td><td><strong>31</strong></td><td><strong>42</strong></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Key Hires by Phase</h3>
+              <div class="grid grid-2">
+                <div>
+                  <h4>Phase 1 (Months 4-12)</h4>
+                  <ol class="list-styled">
+                    <li><strong>CFO:</strong> Month 6 (fundraising, financial controls)</li>
+                    <li><strong>Performance Marketing Lead:</strong> Month 4</li>
+                    <li><strong>Content Creator:</strong> Month 5</li>
+                    <li><strong>Customer Success Manager:</strong> Month 7</li>
+                    <li><strong>Operations Coordinator:</strong> Month 8</li>
+                  </ol>
+                </div>
+                <div>
+                  <h4>Phase 2 (Months 13-24)</h4>
+                  <ol class="list-styled">
+                    <li><strong>CTO:</strong> Month 14 (platform scale, mobile app)</li>
+                    <li><strong>Brand Manager:</strong> Month 15</li>
+                    <li><strong>Head of Partnerships:</strong> Month 16</li>
+                    <li><strong>Senior Data Analyst:</strong> Month 18</li>
+                    <li><strong>Logistics Manager:</strong> Month 20</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Organizational Principles</h3>
+              <ul class="list-styled">
+                <li><strong>Lean & Agile:</strong> Small, autonomous teams with clear OKRs</li>
+                <li><strong>Mission-Driven Hiring:</strong> Cultural fit = alignment with ADVERT values</li>
+                <li><strong>Diversity & Inclusion:</strong> 60% BIPOC, 70% women, multi-generational</li>
+                <li><strong>Remote-First:</strong> HQ in Paris, distributed team (EU/US timezones)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="milestones" class="content-section">
+            <div class="section-header">
+              <span class="section-number">06</span>
+              <h2 class="section-title">Key Milestones</h2>
+            </div>
+
+            <div class="card">
+              <h3>36-Month Milestones</h3>
+              <table>
+                <thead><tr><th>Month</th><th>Milestone</th><th>Impact</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>M3</strong></td><td>Foundation Complete</td><td>Brand ready to launch, 120 SKUs live, 18 artisan collectives</td></tr>
+                  <tr><td><strong>M6</strong></td><td>$2.1M Revenue Run Rate</td><td>Validate product-market fit, gate to Series A fundraising</td></tr>
+                  <tr><td><strong>M9</strong></td><td>250 Superfans</td><td>Community flywheel active, referral program validated</td></tr>
+                  <tr><td><strong>M12</strong></td><td>28% Brand Awareness</td><td>Top-of-mind in target market, ready for growth phase</td></tr>
+                  <tr><td><strong>M18</strong></td><td>1,000 Superfans</td><td>300% superfan growth, loyalty program proven at scale</td></tr>
+                  <tr><td><strong>M20</strong></td><td>Breakeven</td><td>Cash flow positive, sustainable growth trajectory</td></tr>
+                  <tr><td><strong>M24</strong></td><td>$8.5M Revenue</td><td>4× revenue growth, operations scaled, ready for multi-market</td></tr>
+                  <tr><td><strong>M30</strong></td><td>3 International Markets</td><td>Germany + Canada live, 40% revenue from outside France</td></tr>
+                  <tr><td><strong>M36</strong></td><td>5,000 Superfans, $24M Revenue</td><td>Vision realized, category leader in ethical African fashion</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Decision Gates</h3>
+              <p><strong>Each phase requires Board approval to proceed based on gate criteria:</strong></p>
+              <ul class="list-styled">
+                <li><strong>Phase 0 → 1:</strong> Brand foundation complete, 120 SKUs ready, $2.5M seed funding secured</li>
+                <li><strong>Phase 1 → 2:</strong> 250 superfans, CAC < $85, 3 proven acquisition channels with ROAS > 3:1</li>
+                <li><strong>Phase 2 → 3:</strong> $8.5M revenue, 1,500 superfans, operations scaled (can handle 3× volume)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="change-management" class="content-section">
+            <div class="section-header">
+              <span class="section-number">07</span>
+              <h2 class="section-title">Change Management</h2>
+            </div>
+
+            <div class="card">
+              <h3>Implementation Governance</h3>
+              <table>
+                <thead><tr><th>Meeting</th><th>Frequency</th><th>Attendees</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Daily Standup</strong></td><td>Daily (15 min)</td><td>Full team</td><td>Progress, blockers, alignment</td></tr>
+                  <tr><td><strong>Weekly Sprint Review</strong></td><td>Weekly (60 min)</td><td>Leadership + leads</td><td>OKR progress, priorities, resource allocation</td></tr>
+                  <tr><td><strong>Monthly Business Review</strong></td><td>Monthly (90 min)</td><td>Leadership + Board</td><td>KPI review, budget, strategic decisions</td></tr>
+                  <tr><td><strong>Quarterly Strategy</strong></td><td>Quarterly (Half-day)</td><td>Full team</td><td>Vision alignment, celebrate wins, course corrections</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Risk Mitigation During Implementation</h3>
+              <ul class="list-styled">
+                <li><strong>Parallel Path:</strong> Build new platform while maintaining current operations (no downtime)</li>
+                <li><strong>Pilot Before Scale:</strong> Test all new channels/products with 10% budget before full rollout</li>
+                <li><strong>Customer Communication:</strong> Transparent updates on changes, early access for superfans</li>
+                <li><strong>Team Onboarding:</strong> 30-60-90 day plans for all new hires, buddy system</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Success Tracking</h3>
+              <p><strong>Weekly Dashboard for Leadership:</strong></p>
+              <ol class="list-styled">
+                <li><strong>North Star:</strong> Superfan count (vs. target)</li>
+                <li><strong>Revenue:</strong> Weekly revenue, run rate (vs. monthly target)</li>
+                <li><strong>Unit Economics:</strong> CAC, LTV, LTV:CAC ratio</li>
+                <li><strong>Team Health:</strong> Hiring pipeline, retention, engagement score</li>
+                <li><strong>Operational:</strong> Inventory days, fulfillment time, returns %</li>
+                <li><strong>Risk Indicators:</strong> Churn rate, NPS, cash runway</li>
+              </ol>
+            </div>
+
+            <div class="card">
+              <h3>Communication Playbook</h3>
+              <div class="grid grid-2">
+                <div>
+                  <h4>Internal</h4>
+                  <ul class="list-styled">
+                    <li><strong>All-Hands:</strong> Monthly (celebrate wins, share learnings)</li>
+                    <li><strong>Slack Updates:</strong> Daily wins channel, weekly CEO message</li>
+                    <li><strong>OKR Transparency:</strong> Public dashboard, everyone can see progress</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4>External</h4>
+                  <ul class="list-styled">
+                    <li><strong>Investors:</strong> Monthly report, quarterly Board meeting</li>
+                    <li><strong>Customers:</strong> Quarterly impact report, behind-the-scenes content</li>
+                    <li><strong>Artisans:</strong> Bi-weekly updates, annual summit</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="document-footer">
+            <div class="footer-nav">
+              <a href="document-t-new.html" class="btn btn-outline">← Back: Document T (Track)</a>
+              <a href="../index.html" class="btn btn-primary">Return to Home →</a>
+            </div>
+            <div class="footer-meta" style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border); text-align: center; color: var(--text-tertiary); font-size: var(--text-sm);">
+              <p><strong>AMARA Strategic Package</strong> — Complete ADVERT Framework (8 Documents)</p>
+              <p>Strategy · Authenticité · Distinction · Valeur · Engagement · Risk · Track · Implementation</p>
+              <p style="margin-top: 1rem;">Wear Your Story | Crafted with purpose, worn with pride</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+      ↑
+    </button>
+
+    <!-- Search Results Modal -->
+    <div class="search-results" id="searchResults" style="display: none;">
+      <div class="search-results-header">
+        <h3>Search Results</h3>
+        <button class="search-close" id="searchClose" aria-label="Close search">×</button>
+      </div>
+      <div class="search-results-content" id="searchResultsContent">
+        <p class="search-empty">No results found</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/navigation-advanced.js"></script>
+  <script src="../assets/js/visualizations.js"></script>
+</body>
+</html>

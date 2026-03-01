@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMARA - Strategic Interface | ADVERT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .heading-font { font-family: 'Playfair Display', serif; }
+
+        :root {
+            --amara-terracotta: #D4845B;
+            --amara-indigo: #2C3E7A;
+            --amara-sand: #E6D5B8;
+            --amara-green: #3A5A40;
+            --amara-cream: #FFF8F0;
+        }
+
+        body { background: linear-gradient(135deg, #FFF8F0 0%, #E6D5B8 100%); min-height: 100vh; }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .brand-gradient { background: linear-gradient(135deg, #D4845B 0%, #2C3E7A 100%); }
+        .terracotta-gradient { background: linear-gradient(135deg, #D4845B 0%, #E6845B 100%); }
+        .indigo-gradient { background: linear-gradient(135deg, #2C3E7A 0%, #4C5E9A 100%); }
+        .green-gradient { background: linear-gradient(135deg, #3A5A40 0%, #5A7A60 100%); }
+
+        .metric-card { transition: all 0.3s ease; cursor: pointer; }
+        .metric-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12); }
+
+        .tab-button { position: relative; transition: all 0.3s ease; }
+        .tab-button.active { color: #D4845B; font-weight: 600; }
+        .tab-button.active::after {
+            content: ''; position: absolute; bottom: -2px; left: 0; right: 0;
+            height: 3px; background: #D4845B; border-radius: 3px 3px 0 0;
+        }
+
+        .campaign-card {
+            transition: all 0.3s ease; cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+        .campaign-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-left-color: #D4845B;
+        }
+
+        .value-card {
+            position: relative; overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        .value-card::before {
+            content: ''; position: absolute; top: 0; left: 0;
+            width: 100%; height: 4px;
+            background: linear-gradient(90deg, #D4845B 0%, #2C3E7A 100%);
+        }
+        .value-card:hover { transform: translateY(-4px); }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+
+        /* Print Styles for PDF Export */
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .glass-card { background: white; border: 1px solid #e5e7eb; box-shadow: none; }
+            .page-break { page-break-after: always; }
+            header { position: relative; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+
+        /* African Pattern Background */
+        .african-pattern {
+            background-image:
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(212, 132, 91, 0.03) 10px, rgba(212, 132, 91, 0.03) 20px),
+                repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(44, 62, 122, 0.03) 10px, rgba(44, 62, 122, 0.03) 20px);
+        }
+
+        .superfan-avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .asset-thumbnail {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .asset-thumbnail:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="antialiased african-pattern">
+
+    <!-- Header -->
+    <header class="glass-card sticky top-0 z-50 border-b no-print">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl brand-gradient flex items-center justify-center text-white font-bold text-xl">
+                            A
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900 heading-font">AMARA</h1>
+                            <p class="text-sm text-gray-500 italic">Wear Your Story</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-sm text-gray-600 hidden md:flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>Strategy 2026-2028</span>
+                    </div>
+
+                    <button onclick="window.print()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export PDF
+                    </button>
+
+                    <button class="px-4 py-2 brand-gradient text-white rounded-lg text-sm font-medium hover:shadow-lg flex items-center gap-2">
+                        <i data-lucide="presentation" class="w-4 h-4"></i>
+                        Present
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="glass-card max-w-7xl mx-auto mt-6 px-6 py-3 rounded-2xl no-print" style="margin-left: auto; margin-right: auto; width: calc(100% - 3rem);">
+        <div class="flex items-center gap-1 overflow-x-auto" id="tabs">
+            <button class="tab-button active px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="overview">
+                <i data-lucide="home" class="w-4 h-4 inline mr-1"></i> Overview
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="brand">
+                <i data-lucide="sparkles" class="w-4 h-4 inline mr-1"></i> Brand Story
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="strategy">
+                <i data-lucide="target" class="w-4 h-4 inline mr-1"></i> Strategy
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="campaigns">
+                <i data-lucide="zap" class="w-4 h-4 inline mr-1"></i> Campaigns
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="superfans">
+                <i data-lucide="users" class="w-4 h-4 inline mr-1"></i> Superfans
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="performance">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-1"></i> Performance
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="risk">
+                <i data-lucide="shield-alert" class="w-4 h-4 inline mr-1"></i> Risk
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm text-gray-600 whitespace-nowrap" data-tab="roadmap">
+                <i data-lucide="calendar-range" class="w-4 h-4 inline mr-1"></i> Roadmap
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+        <!-- OVERVIEW TAB -->
+        <section id="content-overview" class="tab-content animate-fade-in">
+            <!-- Hero Section -->
+            <div class="glass-card rounded-2xl p-8 mb-6 brand-gradient text-white relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="max-w-3xl">
+                        <div class="text-sm font-medium mb-3 opacity-90">Strategic Overview</div>
+                        <h2 class="text-4xl font-bold mb-4 heading-font">Celebrating African Heritage Through Sustainable Fashion</h2>
+                        <p class="text-lg opacity-90 mb-6">
+                            AMARA connects modern Africans with their roots through beautiful, sustainable fashion
+                            that empowers local artisans and builds a community of conscious consumers.
+                        </p>
+                        <div class="flex items-center gap-4">
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">1,247</div>
+                                <div class="text-sm opacity-90">Superfans</div>
+                            </div>
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">4</div>
+                                <div class="text-sm opacity-90">Active Campaigns</div>
+                            </div>
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">68%</div>
+                                <div class="text-sm opacity-90">Progress</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10">
+                    <svg viewBox="0 0 200 200" class="w-full h-full">
+                        <pattern id="pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+                            <path d="M0 20 L20 0 L40 20 L20 40 Z" fill="white"/>
+                        </pattern>
+                        <rect width="200" height="200" fill="url(#pattern)"/>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-4 gap-4 mb-6">
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg terracotta-gradient flex items-center justify-center">
+                            <i data-lucide="heart" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+24%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">1,247</div>
+                    <div class="text-sm text-gray-600 mt-1">Superfans</div>
+                    <div class="text-xs text-gray-400 mt-2">Target: 3,000 by 2028</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg indigo-gradient flex items-center justify-center">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+42%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">32%</div>
+                    <div class="text-sm text-gray-600 mt-1">Brand Awareness</div>
+                    <div class="text-xs text-gray-400 mt-2">Lagos, Nairobi, Accra</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg green-gradient flex items-center justify-center">
+                            <i data-lucide="users-2" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+128</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">456</div>
+                    <div class="text-sm text-gray-600 mt-1">Artisans Empowered</div>
+                    <div class="text-xs text-gray-400 mt-2">Target: 10,000 by 2030</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg" style="background: linear-gradient(135deg, #E6845B 0%, #3A5A40 100%);">
+                            <i data-lucide="leaf" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">100%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">Zero</div>
+                    <div class="text-sm text-gray-600 mt-1">Waste Production</div>
+                    <div class="text-xs text-gray-400 mt-2">Fully sustainable</div>
+                </div>
+            </div>
+
+            <!-- Featured Campaigns -->
+            <div class="glass-card rounded-2xl p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font flex items-center gap-2">
+                    <i data-lucide="zap" class="w-5 h-5" style="color: var(--amara-terracotta)"></i>
+                    Featured Campaigns
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass-card rounded-xl p-5 border-l-4" style="border-left-color: var(--amara-terracotta);">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Heritage Reimagined</h4>
+                                <p class="text-sm text-gray-600">Launch campaign celebrating African craftsmanship</p>
+                            </div>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">Active</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500">
+                            <span>Q1 2026</span>
+                            <span>•</span>
+                            <span>$450k Budget</span>
+                            <span>•</span>
+                            <span>8 Activations</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-xl p-5 border-l-4" style="border-left-color: var(--amara-indigo);">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Artisan Stories</h4>
+                                <p class="text-sm text-gray-600">Content series highlighting maker journeys</p>
+                            </div>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Planned</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500">
+                            <span>Q2 2026</span>
+                            <span>•</span>
+                            <span>$180k Budget</span>
+                            <span>•</span>
+                            <span>12 Stories</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BRAND STORY TAB -->
+        <section id="content-brand" class="tab-content hidden">
+            <div class="space-y-6">
+                <!-- Brand Essence -->
+                <div class="glass-card rounded-2xl p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Who We Are</h2>
+
+                    <div class="grid grid-cols-3 gap-6 mb-8">
+                        <div class="text-center p-6 rounded-xl" style="background: linear-gradient(135deg, rgba(212, 132, 91, 0.1) 0%, rgba(212, 132, 91, 0.05) 100%);">
+                            <div class="text-sm font-medium mb-2" style="color: var(--amara-terracotta)">PURPOSE</div>
+                            <p class="text-sm text-gray-700">Celebrate African heritage through contemporary sustainable fashion</p>
+                        </div>
+                        <div class="text-center p-6 rounded-xl" style="background: linear-gradient(135deg, rgba(44, 62, 122, 0.1) 0%, rgba(44, 62, 122, 0.05) 100%);">
+                            <div class="text-sm font-medium mb-2" style="color: var(--amara-indigo)">MISSION</div>
+                            <p class="text-sm text-gray-700">Create beautiful fashion that connects Africans with their roots while building community</p>
+                        </div>
+                        <div class="text-center p-6 rounded-xl" style="background: linear-gradient(135deg, rgba(58, 90, 64, 0.1) 0%, rgba(58, 90, 64, 0.05) 100%);">
+                            <div class="text-sm font-medium mb-2" style="color: var(--amara-green)">VISION</div>
+                            <p class="text-sm text-gray-700">Africa's leading sustainable brand, empowering 10,000+ artisans by 2030</p>
+                        </div>
+                    </div>
+
+                    <!-- Brand Story -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font">Our Story</h3>
+                        <div class="prose max-w-none text-gray-700 leading-relaxed">
+                            <p class="mb-4">
+                                AMARA was born from a simple observation: young Africans were losing connection with their rich cultural heritage.
+                                Traditional craftsmanship was disappearing as fast fashion dominated, and local artisans struggled to compete.
+                            </p>
+                            <p class="mb-4">
+                                We saw an opportunity to bridge this gap—to create contemporary fashion that celebrated African techniques,
+                                patterns, and stories. Each AMARA piece tells a story: of the artisan who made it, the tradition it honors,
+                                and the wearer who chooses to carry that legacy forward.
+                            </p>
+                            <p>
+                                Today, AMARA is more than a fashion brand. We're a movement of conscious consumers who believe that what
+                                we wear matters—to our identity, our communities, and our planet.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Core Values -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font">Core Values</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="value-card glass-card rounded-xl p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-12 h-12 rounded-lg terracotta-gradient flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="check-circle" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Authenticity</h4>
+                                        <p class="text-sm text-gray-600">We stay true to African roots, honoring traditions while creating contemporary designs that resonate with modern life.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="value-card glass-card rounded-xl p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-12 h-12 rounded-lg indigo-gradient flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="scissors" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Craftsmanship</h4>
+                                        <p class="text-sm text-gray-600">Every piece is made with care, using traditional techniques passed down through generations of skilled artisans.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="value-card glass-card rounded-xl p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-12 h-12 rounded-lg green-gradient flex items-center justify-center flex-shrink-0">
+                                        <i data-lucide="users" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Community</h4>
+                                        <p class="text-sm text-gray-600">We build superfans and empower artisans, creating a network of people united by shared values and stories.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="value-card glass-card rounded-xl p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #3A5A40 0%, #5A7A60 100%);">
+                                        <i data-lucide="leaf" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Sustainability</h4>
+                                        <p class="text-sm text-gray-600">Zero-waste production, natural materials, and fair trade practices protect our planet for future generations.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="value-card glass-card rounded-xl p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style="background: linear-gradient(135deg, #E6845B 0%, #D4845B 100%);">
+                                        <i data-lucide="sparkles" class="w-6 h-6 text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900 mb-2">Innovation</h4>
+                                        <p class="text-sm text-gray-600">We blend traditional techniques with contemporary design, creating fashion that's both timeless and modern.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Identity -->
+                <div class="glass-card rounded-2xl p-8 page-break">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Visual Identity</h2>
+
+                    <!-- Logo -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Logo</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="glass-card rounded-xl p-8 text-center" style="background: white;">
+                                <div class="text-6xl font-bold mb-2 heading-font brand-gradient bg-clip-text text-transparent">A</div>
+                                <div class="text-2xl font-semibold heading-font">AMARA</div>
+                                <div class="text-sm text-gray-500 mt-1 italic">Wear Your Story</div>
+                            </div>
+                            <div class="glass-card rounded-xl p-8 text-center brand-gradient text-white">
+                                <div class="text-6xl font-bold mb-2 heading-font">A</div>
+                                <div class="text-2xl font-semibold heading-font">AMARA</div>
+                                <div class="text-sm mt-1 italic opacity-90">Wear Your Story</div>
+                            </div>
+                            <div class="glass-card rounded-xl p-8 text-center" style="background: #2C3E7A; color: white;">
+                                <div class="text-6xl font-bold mb-2 heading-font">A</div>
+                                <div class="text-2xl font-semibold heading-font">AMARA</div>
+                                <div class="text-sm mt-1 italic opacity-90">Wear Your Story</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Color Palette -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Color Palette</h3>
+                        <div class="grid grid-cols-5 gap-4">
+                            <div>
+                                <div class="w-full h-24 rounded-xl shadow-lg" style="background: #D4845B;"></div>
+                                <div class="mt-2 text-sm font-medium text-gray-900">Terracotta</div>
+                                <div class="text-xs text-gray-500">#D4845B</div>
+                            </div>
+                            <div>
+                                <div class="w-full h-24 rounded-xl shadow-lg" style="background: #2C3E7A;"></div>
+                                <div class="mt-2 text-sm font-medium text-gray-900">Deep Indigo</div>
+                                <div class="text-xs text-gray-500">#2C3E7A</div>
+                            </div>
+                            <div>
+                                <div class="w-full h-24 rounded-xl shadow-lg" style="background: #E6D5B8;"></div>
+                                <div class="mt-2 text-sm font-medium text-gray-900">Warm Sand</div>
+                                <div class="text-xs text-gray-500">#E6D5B8</div>
+                            </div>
+                            <div>
+                                <div class="w-full h-24 rounded-xl shadow-lg" style="background: #3A5A40;"></div>
+                                <div class="mt-2 text-sm font-medium text-gray-900">Forest Green</div>
+                                <div class="text-xs text-gray-500">#3A5A40</div>
+                            </div>
+                            <div>
+                                <div class="w-full h-24 rounded-xl shadow-lg" style="background: #FFF8F0;"></div>
+                                <div class="mt-2 text-sm font-medium text-gray-900">Cream</div>
+                                <div class="text-xs text-gray-500">#FFF8F0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typography -->
+                    <div class="mb-8">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Typography</h3>
+                        <div class="grid grid-cols-2 gap-6">
+                            <div class="glass-card rounded-xl p-6">
+                                <div class="text-sm text-gray-500 mb-2">Headings</div>
+                                <div class="text-4xl font-bold heading-font mb-2">Playfair Display</div>
+                                <div class="text-gray-600">Elegant, timeless, sophisticated</div>
+                            </div>
+                            <div class="glass-card rounded-xl p-6">
+                                <div class="text-sm text-gray-500 mb-2">Body Text</div>
+                                <div class="text-4xl font-semibold mb-2">Inter</div>
+                                <div class="text-gray-600">Clean, modern, highly readable</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Brand Personality -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Brand Personality</h3>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="text-center p-4 glass-card rounded-xl">
+                                <div class="text-3xl mb-2">🌍</div>
+                                <div class="font-medium text-gray-900">Authentic</div>
+                                <div class="text-xs text-gray-500 mt-1">Genuine & Real</div>
+                            </div>
+                            <div class="text-center p-4 glass-card rounded-xl">
+                                <div class="text-3xl mb-2">✨</div>
+                                <div class="font-medium text-gray-900">Inspiring</div>
+                                <div class="text-xs text-gray-500 mt-1">Uplifting & Empowering</div>
+                            </div>
+                            <div class="text-center p-4 glass-card rounded-xl">
+                                <div class="text-3xl mb-2">🎨</div>
+                                <div class="font-medium text-gray-900">Creative</div>
+                                <div class="text-xs text-gray-500 mt-1">Artistic & Innovative</div>
+                            </div>
+                            <div class="text-center p-4 glass-card rounded-xl">
+                                <div class="text-3xl mb-2">🤝</div>
+                                <div class="font-medium text-gray-900">Community-Driven</div>
+                                <div class="text-xs text-gray-500 mt-1">Collaborative & Inclusive</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STRATEGY TAB -->
+        <section id="content-strategy" class="tab-content hidden">
+            <div class="space-y-6">
+                <!-- Positioning -->
+                <div class="glass-card rounded-2xl p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Strategic Positioning</h2>
+
+                    <div class="mb-8 p-6 rounded-xl" style="background: linear-gradient(135deg, rgba(212, 132, 91, 0.1) 0%, rgba(44, 62, 122, 0.1) 100%);">
+                        <div class="text-sm font-medium mb-3" style="color: var(--amara-terracotta)">POSITIONING STATEMENT</div>
+                        <p class="text-xl text-gray-900 leading-relaxed">
+                            For <strong>conscious African millennials</strong> who value authenticity and sustainability,
+                            AMARA is the <strong>sustainable fashion brand</strong> that celebrates African heritage through
+                            contemporary design. Unlike fast fashion brands, AMARA <strong>connects you with your roots</strong>
+                            while empowering local artisans and protecting the planet.
+                        </p>
+                    </div>
+
+                    <!-- Target Audience -->
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font">Target Audience</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="glass-card rounded-xl p-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-12 h-12 rounded-full terracotta-gradient flex items-center justify-center text-white font-bold">1</div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Primary: Urban Millennials</h4>
+                                        <div class="text-sm text-gray-500">25-35 years old</div>
+                                    </div>
+                                </div>
+                                <ul class="space-y-2 text-sm text-gray-700">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-terracotta)"></i>
+                                        <span>Urban professionals in Lagos, Nairobi, Accra</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-terracotta)"></i>
+                                        <span>Values authenticity & cultural connection</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-terracotta)"></i>
+                                        <span>Environmentally conscious, willing to pay premium</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-terracotta)"></i>
+                                        <span>Active on social media, community-oriented</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div class="glass-card rounded-xl p-6">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="w-12 h-12 rounded-full indigo-gradient flex items-center justify-center text-white font-bold">2</div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">Secondary: Gen Z Adopters</h4>
+                                        <div class="text-sm text-gray-500">18-24 years old</div>
+                                    </div>
+                                </div>
+                                <ul class="space-y-2 text-sm text-gray-700">
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-indigo)"></i>
+                                        <span>University students & young creatives</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-indigo)"></i>
+                                        <span>Digital natives, trend-setters</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-indigo)"></i>
+                                        <span>Values social impact & brand story</span>
+                                    </li>
+                                    <li class="flex items-start gap-2">
+                                        <i data-lucide="check" class="w-4 h-4 mt-0.5 flex-shrink-0" style="color: var(--amara-indigo)"></i>
+                                        <span>Influences older demographics through content</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Value Proposition -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font">Value Proposition</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="glass-card rounded-xl p-5 text-center">
+                                <div class="text-3xl mb-3">🎨</div>
+                                <h4 class="font-semibold text-gray-900 mb-2">Functional Value</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>High-quality, durable fashion</li>
+                                    <li>Contemporary African designs</li>
+                                    <li>Zero-waste production</li>
+                                </ul>
+                            </div>
+                            <div class="glass-card rounded-xl p-5 text-center">
+                                <div class="text-3xl mb-3">❤️</div>
+                                <h4 class="font-semibold text-gray-900 mb-2">Emotional Value</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>Cultural pride & connection</li>
+                                    <li>Feel good about purchases</li>
+                                    <li>Part of a movement</li>
+                                </ul>
+                            </div>
+                            <div class="glass-card rounded-xl p-5 text-center">
+                                <div class="text-3xl mb-3">🌟</div>
+                                <h4 class="font-semibold text-gray-900 mb-2">Social Value</h4>
+                                <ul class="text-sm text-gray-600 space-y-1">
+                                    <li>Express identity & values</li>
+                                    <li>Support artisan communities</li>
+                                    <li>Join conscious community</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Competitive Differentiation -->
+                <div class="glass-card rounded-2xl p-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-6 heading-font">Competitive Differentiation</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm">
+                            <thead>
+                                <tr class="border-b-2 border-gray-200">
+                                    <th class="text-left py-3 px-4 font-semibold text-gray-900">Aspect</th>
+                                    <th class="text-left py-3 px-4 font-semibold" style="color: var(--amara-terracotta)">AMARA</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">Fast Fashion</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">Luxury Brands</th>
+                                    <th class="text-left py-3 px-4 font-medium text-gray-600">Local Tailors</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-gray-700">
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 font-medium">Price Point</td>
+                                    <td class="py-3 px-4" style="color: var(--amara-terracotta)">$$-$$$</td>
+                                    <td class="py-3 px-4">$</td>
+                                    <td class="py-3 px-4">$$$$</td>
+                                    <td class="py-3 px-4">$$</td>
+                                </tr>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 font-medium">Sustainability</td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--amara-green)">100%</td>
+                                    <td class="py-3 px-4">Low</td>
+                                    <td class="py-3 px-4">Medium</td>
+                                    <td class="py-3 px-4">High</td>
+                                </tr>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 font-medium">African Heritage</td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--amara-terracotta)">Core DNA</td>
+                                    <td class="py-3 px-4">None</td>
+                                    <td class="py-3 px-4">Minimal</td>
+                                    <td class="py-3 px-4">Traditional</td>
+                                </tr>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 font-medium">Design</td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--amara-terracotta)">Contemporary</td>
+                                    <td class="py-3 px-4">Trendy</td>
+                                    <td class="py-3 px-4">High Fashion</td>
+                                    <td class="py-3 px-4">Traditional</td>
+                                </tr>
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-3 px-4 font-medium">Community</td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--amara-terracotta)">Superfans</td>
+                                    <td class="py-3 px-4">Transactional</td>
+                                    <td class="py-3 px-4">Exclusive</td>
+                                    <td class="py-3 px-4">Personal</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-3 px-4 font-medium">Story</td>
+                                    <td class="py-3 px-4 font-semibold" style="color: var(--amara-terracotta)">Rich & Authentic</td>
+                                    <td class="py-3 px-4">Generic</td>
+                                    <td class="py-3 px-4">Brand Legacy</td>
+                                    <td class="py-3 px-4">Artisan Story</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CAMPAIGNS TAB -->
+        <section id="content-campaigns" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-2xl font-bold text-gray-900 heading-font">Campaign Portfolio</h2>
+                        <div class="flex items-center gap-2 text-sm text-gray-600">
+                            <span class="font-medium">4 Active Campaigns</span>
+                            <span>•</span>
+                            <span>$1.2M Total Budget</span>
+                        </div>
+                    </div>
+
+                    <!-- Campaign Cards -->
+                    <div class="space-y-4">
+                        <!-- Campaign 1: Heritage Reimagined -->
+                        <div class="campaign-card glass-card rounded-xl p-6" onclick="toggleCampaignDetails('campaign1')">
+                            <div class="flex items-start justify-between mb-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-xl font-bold text-gray-900 heading-font">Heritage Reimagined</h3>
+                                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Active</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Launch campaign celebrating African craftsmanship through contemporary lens</p>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3 h-3"></i> Q1 2026</span>
+                                        <span>•</span>
+                                        <span class="flex items-center gap-1"><i data-lucide="dollar-sign" class="w-3 h-3"></i> $450,000</span>
+                                        <span>•</span>
+                                        <span class="flex items-center gap-1"><i data-lucide="target" class="w-3 h-3"></i> Fashion</span>
+                                        <span>•</span>
+                                        <span class="flex items-center gap-1"><i data-lucide="zap" class="w-3 h-3"></i> 8 Activations</span>
+                                    </div>
+                                </div>
+                                <button class="p-2 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <i data-lucide="chevron-down" class="w-5 h-5 text-gray-400"></i>
+                                </button>
+                            </div>
+
+                            <!-- Expandable Details -->
+                            <div id="campaign1" class="hidden mt-6 pt-6 border-t border-gray-200 space-y-6">
+                                <!-- Objectif -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="target" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        OBJECTIF
+                                    </h4>
+                                    <ul class="text-sm text-gray-700 space-y-1 ml-6">
+                                        <li>• Generate 25% brand awareness in Lagos, Nairobi, Accra</li>
+                                        <li>• Acquire 500 superfans in first 3 months</li>
+                                        <li>• Establish AMARA as premium sustainable fashion brand</li>
+                                        <li>• Drive $280k in revenue (target)</li>
+                                    </ul>
+                                </div>
+
+                                <!-- Big Idea -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="lightbulb" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        BIG IDEA
+                                    </h4>
+                                    <div class="ml-6 p-4 rounded-lg" style="background: linear-gradient(135deg, rgba(212, 132, 91, 0.1) 0%, rgba(212, 132, 91, 0.05) 100%);">
+                                        <p class="text-lg font-medium text-gray-900 mb-2">"The Revolution Starts With What You Wear"</p>
+                                        <p class="text-sm text-gray-700">
+                                            We're not just selling clothes—we're igniting a movement. Every AMARA piece is an act of cultural
+                                            reclamation, a statement of pride, and a vote for sustainable fashion. When you wear AMARA,
+                                            you're not following trends; you're creating a revolution.
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <!-- Axe Créatif -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="palette" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        AXE CRÉATIF
+                                    </h4>
+                                    <div class="ml-6 text-sm text-gray-700 space-y-2">
+                                        <p><strong>Visual:</strong> Bold, vibrant colors inspired by African textiles. Strong geometric patterns. Natural light photography showcasing real people in real environments.</p>
+                                        <p><strong>Tone:</strong> Confident, empowering, unapologetic. We celebrate African identity without being preachy. Inspiring without being aspirational.</p>
+                                        <p><strong>Message:</strong> "Your heritage is your superpower. Wear it boldly."</p>
+                                    </div>
+                                </div>
+
+                                <!-- Pistes Créatives -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="compass" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        PISTES CRÉATIVES
+                                    </h4>
+                                    <div class="ml-6 grid grid-cols-3 gap-3">
+                                        <div class="p-3 rounded-lg border-2" style="border-color: var(--amara-terracotta);">
+                                            <div class="font-medium text-gray-900 mb-1">Piste 1: Artisan Portraits</div>
+                                            <p class="text-xs text-gray-600">Hero content: artisans crafting pieces, telling their stories, showing technique</p>
+                                        </div>
+                                        <div class="p-3 rounded-lg border-2 border-gray-200">
+                                            <div class="font-medium text-gray-900 mb-1">Piste 2: Urban Heritage</div>
+                                            <p class="text-xs text-gray-600">Street fashion meets tradition: modern Africans rocking AMARA in contemporary settings</p>
+                                        </div>
+                                        <div class="p-3 rounded-lg border-2 border-gray-200">
+                                            <div class="font-medium text-gray-900 mb-1">Piste 3: Pattern Stories</div>
+                                            <p class="text-xs text-gray-600">Close-ups of patterns with captions explaining cultural significance and meaning</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SKU -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="package" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        SKU CONCERNÉS
+                                    </h4>
+                                    <div class="ml-6 flex items-center gap-2">
+                                        <span class="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">Heritage Collection (12 pieces)</span>
+                                        <span class="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">Launch Edition Bags</span>
+                                        <span class="px-3 py-1 bg-gray-100 rounded-full text-xs font-medium">Accessories Bundle</span>
+                                    </div>
+                                </div>
+
+                                <!-- Budget Breakdown -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                        <i data-lucide="dollar-sign" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        BUDGET: $450,000
+                                    </h4>
+                                    <div class="ml-6 space-y-2">
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-700">Media (Paid Social, Influencer)</span>
+                                            <span class="font-semibold text-gray-900">$200k (44%)</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full terracotta-gradient" style="width: 44%"></div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-700">Production (Photo, Video, Assets)</span>
+                                            <span class="font-semibold text-gray-900">$120k (27%)</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full indigo-gradient" style="width: 27%"></div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-700">Events & Activations</span>
+                                            <span class="font-semibold text-gray-900">$80k (18%)</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full green-gradient" style="width: 18%"></div>
+                                        </div>
+
+                                        <div class="flex items-center justify-between text-sm">
+                                            <span class="text-gray-700">PR & Communications</span>
+                                            <span class="font-semibold text-gray-900">$50k (11%)</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full" style="background: linear-gradient(135deg, #E6845B 0%, #D4845B 100%); width: 11%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <i data-lucide="list-checks" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        ACTIONS (12 Actions Clés)
+                                    </h4>
+                                    <div class="ml-6 space-y-2">
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                                            <span class="text-gray-700">Brand photoshoot (60+ images)</span>
+                                            <span class="ml-auto text-xs text-gray-500">Completed</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                                            <span class="text-gray-700">Hero video production (90 sec manifesto)</span>
+                                            <span class="ml-auto text-xs text-gray-500">Completed</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="loader" class="w-4 h-4 text-blue-500"></i>
+                                            <span class="text-gray-700">Social media content calendar (3 months)</span>
+                                            <span class="ml-auto text-xs text-blue-600">In Progress</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="loader" class="w-4 h-4 text-blue-500"></i>
+                                            <span class="text-gray-700">Influencer partnerships (10 micro + 3 macro)</span>
+                                            <span class="ml-auto text-xs text-blue-600">In Progress</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="circle" class="w-4 h-4 text-gray-300"></i>
+                                            <span class="text-gray-400">Launch event Lagos (200 guests)</span>
+                                            <span class="ml-auto text-xs text-gray-400">Planned</span>
+                                        </div>
+                                        <div class="flex items-center gap-3 text-sm">
+                                            <i data-lucide="circle" class="w-4 h-4 text-gray-300"></i>
+                                            <span class="text-gray-400">PR campaign (15 media placements)</span>
+                                            <span class="ml-auto text-xs text-gray-400">Planned</span>
+                                        </div>
+                                        <details class="text-sm text-gray-600 cursor-pointer">
+                                            <summary class="hover:text-gray-900">+ View 6 more actions</summary>
+                                        </details>
+                                    </div>
+                                </div>
+
+                                <!-- Activations -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <i data-lucide="sparkles" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        ACTIVATIONS (8 Touchpoints)
+                                    </h4>
+                                    <div class="ml-6 grid grid-cols-2 gap-3">
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">🌐 Website Launch</div>
+                                            <p class="text-xs text-gray-600">Full e-commerce with storytelling, artisan profiles, sustainability impact tracker</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">📱 Social Media Blitz</div>
+                                            <p class="text-xs text-gray-600">Instagram, TikTok, Twitter - daily content for 90 days, hashtag #WearYourStory</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">🎉 Launch Events</div>
+                                            <p class="text-xs text-gray-600">Lagos flagship, Nairobi popup, Accra trunk show - meet artisans, try pieces</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">✨ Influencer Partnerships</div>
+                                            <p class="text-xs text-gray-600">13 influencers across fashion, sustainability, culture - authentic storytelling</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">📰 PR Campaign</div>
+                                            <p class="text-xs text-gray-600">15 media placements - Vogue, Elle, local press, sustainability podcasts</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">💌 Email Series</div>
+                                            <p class="text-xs text-gray-600">7-part welcome series telling AMARA story, artisan spotlights, exclusive previews</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">🤝 Partnerships</div>
+                                            <p class="text-xs text-gray-600">Collaborate with 3 cultural institutions, 2 sustainability NGOs for credibility</p>
+                                        </div>
+                                        <div class="p-3 glass-card rounded-lg">
+                                            <div class="font-medium text-gray-900 mb-1 text-sm">👥 Community Launch</div>
+                                            <p class="text-xs text-gray-600">AMARA Insiders program - first 100 superfans get exclusive perks, early access</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Success Metrics -->
+                                <div>
+                                    <h4 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                                        <i data-lucide="bar-chart" class="w-4 h-4" style="color: var(--amara-terracotta)"></i>
+                                        SUCCESS METRICS
+                                    </h4>
+                                    <div class="ml-6 grid grid-cols-4 gap-3">
+                                        <div class="text-center p-3 rounded-lg" style="background: rgba(212, 132, 91, 0.1);">
+                                            <div class="text-2xl font-bold text-gray-900">25%</div>
+                                            <div class="text-xs text-gray-600">Brand Awareness</div>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg" style="background: rgba(44, 62, 122, 0.1);">
+                                            <div class="text-2xl font-bold text-gray-900">500</div>
+                                            <div class="text-xs text-gray-600">Superfans</div>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg" style="background: rgba(58, 90, 64, 0.1);">
+                                            <div class="text-2xl font-bold text-gray-900">$280k</div>
+                                            <div class="text-xs text-gray-600">Revenue</div>
+                                        </div>
+                                        <div class="text-center p-3 rounded-lg" style="background: rgba(230, 132, 91, 0.1);">
+                                            <div class="text-2xl font-bold text-gray-900">2.5x</div>
+                                            <div class="text-xs text-gray-600">ROI Target</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Additional Campaigns (Collapsed by default) -->
+                        <div class="campaign-card glass-card rounded-xl p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-xl font-bold text-gray-900 heading-font">Artisan Stories</h3>
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Planned</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Content series highlighting the makers behind AMARA pieces</p>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>Q2 2026</span>
+                                        <span>•</span>
+                                        <span>$180,000 Budget</span>
+                                        <span>•</span>
+                                        <span>Content Marketing</span>
+                                        <span>•</span>
+                                        <span>12 Stories</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="campaign-card glass-card rounded-xl p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-xl font-bold text-gray-900 heading-font">Wear Your Story</h3>
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Planned</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Community-driven campaign encouraging customers to share their heritage stories</p>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>Q3 2026</span>
+                                        <span>•</span>
+                                        <span>$320,000 Budget</span>
+                                        <span>•</span>
+                                        <span>Community</span>
+                                        <span>•</span>
+                                        <span>UGC Focus</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="campaign-card glass-card rounded-xl p-6">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-xl font-bold text-gray-900 heading-font">Sustainable Future Holiday</h3>
+                                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Planned</span>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-3">Holiday campaign emphasizing gift-giving with meaning and impact</p>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500">
+                                        <span>Q4 2026</span>
+                                        <span>•</span>
+                                        <span>$250,000 Budget</span>
+                                        <span>•</span>
+                                        <span>Holiday/Seasonal</span>
+                                        <span>•</span>
+                                        <span>Limited Edition</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUPERFANS TAB -->
+        <section id="content-superfans" class="tab-content hidden">
+            <div class="space-y-6">
+                <!-- Superfan Metrics -->
+                <div class="grid grid-cols-3 gap-6">
+                    <div class="glass-card rounded-2xl p-6 col-span-2">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                            <i data-lucide="trending-up" class="w-5 h-5" style="color: var(--amara-terracotta)"></i>
+                            Superfan Growth
+                        </h3>
+                        <canvas id="superfanChart" height="200"></canvas>
+                    </div>
+
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-6">Community Stats</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm text-gray-600">Current Superfans</span>
+                                    <span class="text-2xl font-bold text-gray-900">1,247</span>
+                                </div>
+                                <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                    <div class="h-full terracotta-gradient" style="width: 42%"></div>
+                                </div>
+                                <div class="text-xs text-gray-500 mt-1">42% of 3,000 target</div>
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="text-sm text-gray-600 mb-2">Monthly Growth</div>
+                                <div class="text-3xl font-bold" style="color: var(--amara-green)">+24%</div>
+                            </div>
+
+                            <div class="pt-4 border-t border-gray-100">
+                                <div class="text-sm text-gray-600 mb-2">Advocacy Rate</div>
+                                <div class="text-3xl font-bold" style="color: var(--amara-indigo)">8.2x</div>
+                                <div class="text-xs text-gray-500 mt-1">Avg referrals per superfan</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Superfan Testimonials -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="quote" class="w-5 h-5" style="color: var(--amara-terracotta)"></i>
+                        Superfan Stories
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="glass-card rounded-xl p-5">
+                            <div class="flex items-start gap-3 mb-3">
+                                <img src="https://ui-avatars.com/api/?name=Amina+K&background=D4845B&color=fff&size=48" class="superfan-avatar" alt="Amina K">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Amina K.</div>
+                                    <div class="text-xs text-gray-500">Lagos, Nigeria • Superfan #42</div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 italic mb-3">
+                                "AMARA reconnected me with my Yoruba heritage. Each piece tells a story, and wearing them makes me feel proud of where I come from. Plus, knowing I'm supporting artisans directly? That's powerful."
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">4 Purchases</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">12 Referrals</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl p-5">
+                            <div class="flex items-start gap-3 mb-3">
+                                <img src="https://ui-avatars.com/api/?name=David+O&background=2C3E7A&color=fff&size=48" class="superfan-avatar" alt="David O">
+                                <div>
+                                    <div class="font-semibold text-gray-900">David O.</div>
+                                    <div class="text-xs text-gray-500">Nairobi, Kenya • Superfan #128</div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 italic mb-3">
+                                "Finally, a brand that gets it. Sustainable, beautiful, and authentically African—not some tourist version. I've converted my entire friend group to AMARA superfans!"
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">7 Purchases</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">28 Referrals</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl p-5">
+                            <div class="flex items-start gap-3 mb-3">
+                                <img src="https://ui-avatars.com/api/?name=Fatima+S&background=3A5A40&color=fff&size=48" class="superfan-avatar" alt="Fatima S">
+                                <div>
+                                    <div class="font-semibold text-gray-900">Fatima S.</div>
+                                    <div class="text-xs text-gray-500">Accra, Ghana • Superfan #87</div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 italic mb-3">
+                                "AMARA pieces are investment pieces. The quality is incredible, and I love that each purchase supports artisans. I wear my story proudly, and people always ask where I got my outfit!"
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">5 Purchases</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">18 Referrals</span>
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl p-5">
+                            <div class="flex items-start gap-3 mb-3">
+                                <img src="https://ui-avatars.com/api/?name=James+M&background=E6845B&color=fff&size=48" class="superfan-avatar" alt="James M">
+                                <div>
+                                    <div class="font-semibold text-gray-900">James M.</div>
+                                    <div class="text-xs text-gray-500">Kigali, Rwanda • Superfan #203</div>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-700 italic mb-3">
+                                "As someone who cares about sustainability, AMARA is a no-brainer. Zero waste, fair trade, beautiful designs. It's everything I look for in a brand. The community is amazing too!"
+                            </p>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">3 Purchases</span>
+                                <span class="px-2 py-1 bg-gray-100 rounded text-xs">9 Referrals</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Community Engagement -->
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="users-2" class="w-5 h-5" style="color: var(--amara-terracotta)"></i>
+                        Engagement Rituals
+                    </h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="p-4 rounded-xl text-center" style="background: linear-gradient(135deg, rgba(212, 132, 91, 0.1) 0%, rgba(212, 132, 91, 0.05) 100%);">
+                            <div class="text-3xl mb-2">📅</div>
+                            <div class="font-semibold text-gray-900 mb-1">Monthly Artisan Calls</div>
+                            <p class="text-xs text-gray-600">Virtual meetups with makers, Q&A, behind-the-scenes</p>
+                        </div>
+                        <div class="p-4 rounded-xl text-center" style="background: linear-gradient(135deg, rgba(44, 62, 122, 0.1) 0%, rgba(44, 62, 122, 0.05) 100%);">
+                            <div class="text-3xl mb-2">✨</div>
+                            <div class="font-semibold text-gray-900 mb-1">Insider Previews</div>
+                            <p class="text-xs text-gray-600">First access to new collections, exclusive colorways</p>
+                        </div>
+                        <div class="p-4 rounded-xl text-center" style="background: linear-gradient(135deg, rgba(58, 90, 64, 0.1) 0%, rgba(58, 90, 64, 0.05) 100%);">
+                            <div class="text-3xl mb-2">🎁</div>
+                            <div class="font-semibold text-gray-900 mb-1">Referral Rewards</div>
+                            <p class="text-xs text-gray-600">Exclusive perks for bringing friends to the movement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PERFORMANCE TAB -->
+        <section id="content-performance" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Brand Health</h3>
+                        <canvas id="brandHealthChart" height="250"></canvas>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Campaign Performance</h3>
+                        <canvas id="campaignPerformanceChart" height="250"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Performance Indicators</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="p-4 text-center rounded-xl" style="background: rgba(212, 132, 91, 0.1);">
+                            <div class="text-3xl font-bold text-gray-900">32%</div>
+                            <div class="text-sm text-gray-600 mt-1">Brand Awareness</div>
+                            <div class="text-xs" style="color: var(--amara-green)">+18% vs Q0</div>
+                        </div>
+                        <div class="p-4 text-center rounded-xl" style="background: rgba(44, 62, 122, 0.1);">
+                            <div class="text-3xl font-bold text-gray-900">8.4%</div>
+                            <div class="text-sm text-gray-600 mt-1">Engagement Rate</div>
+                            <div class="text-xs" style="color: var(--amara-green)">+3.2% vs target</div>
+                        </div>
+                        <div class="p-4 text-center rounded-xl" style="background: rgba(58, 90, 64, 0.1);">
+                            <div class="text-3xl font-bold text-gray-900">$680k</div>
+                            <div class="text-sm text-gray-600 mt-1">Revenue YTD</div>
+                            <div class="text-xs" style="color: var(--amara-green)">128% of target</div>
+                        </div>
+                        <div class="p-4 text-center rounded-xl" style="background: rgba(230, 132, 91, 0.1);">
+                            <div class="text-3xl font-bold text-gray-900">2.8x</div>
+                            <div class="text-sm text-gray-600 mt-1">Current ROI</div>
+                            <div class="text-xs" style="color: var(--amara-green)">Above 2.5x target</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RISK TAB -->
+        <section id="content-risk" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="glass-card rounded-xl p-5 text-center">
+                        <div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="alert-circle" class="w-6 h-6 text-red-600"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900">1</div>
+                        <div class="text-sm text-gray-600 mt-1">High Priority</div>
+                    </div>
+                    <div class="glass-card rounded-xl p-5 text-center">
+                        <div class="w-12 h-12 rounded-lg bg-orange-100 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900">3</div>
+                        <div class="text-sm text-gray-600 mt-1">Medium Priority</div>
+                    </div>
+                    <div class="glass-card rounded-xl p-5 text-center">
+                        <div class="w-12 h-12 rounded-lg bg-green-100 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                        </div>
+                        <div class="text-3xl font-bold text-gray-900">4</div>
+                        <div class="text-sm text-gray-600 mt-1">Mitigated</div>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Active Risks</h3>
+                    <div class="space-y-4">
+                        <div class="glass-card rounded-xl p-5 border-l-4 border-red-500">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">High</span>
+                                        <h4 class="font-semibold text-gray-900">Supply Chain Disruption</h4>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">Artisan capacity constraints may impact fulfillment during scale-up</p>
+                                    <div class="text-xs text-gray-500">Impact: High • Probability: 45%</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                <strong>Mitigation:</strong> Onboard 20+ additional artisans Q2, build 4-week inventory buffer, implement capacity planning system
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl p-5 border-l-4 border-orange-500">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">Medium</span>
+                                        <h4 class="font-semibold text-gray-900">Market Education Required</h4>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">Price premium positioning requires educating market on value beyond fast fashion</p>
+                                    <div class="text-xs text-gray-500">Impact: Medium • Probability: 60%</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                <strong>Mitigation:</strong> Content marketing emphasizing craftsmanship, artisan stories, sustainability impact. Comparison campaigns.
+                            </div>
+                        </div>
+
+                        <div class="glass-card rounded-xl p-5 border-l-4 border-orange-500">
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <span class="px-2 py-1 bg-orange-100 text-orange-700 rounded text-xs font-medium">Medium</span>
+                                        <h4 class="font-semibold text-gray-900">Competitor Response</h4>
+                                    </div>
+                                    <p class="text-sm text-gray-600 mb-2">Fast fashion brands may launch "African-inspired" lines at lower price points</p>
+                                    <div class="text-xs text-gray-500">Impact: Medium • Probability: 70%</div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                                <strong>Mitigation:</strong> Emphasize authenticity, direct artisan relationships, zero-waste production. Build brand moat through superfan community.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ROADMAP TAB -->
+        <section id="content-roadmap" class="tab-content hidden">
+            <div class="space-y-6">
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">36-Month Timeline</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-32 text-sm font-medium text-gray-700">2026 Q1-Q2</div>
+                            <div class="flex-1 h-8 rounded-lg terracotta-gradient flex items-center px-4 text-white text-sm font-medium">
+                                Foundation Phase
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-32 text-sm font-medium text-gray-700">2026 Q3-Q4</div>
+                            <div class="flex-1 h-8 rounded-lg indigo-gradient flex items-center px-4 text-white text-sm font-medium">
+                                Launch Phase
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-32 text-sm font-medium text-gray-700">2027 Full Year</div>
+                            <div class="flex-1 h-8 rounded-lg green-gradient flex items-center px-4 text-white text-sm font-medium">
+                                Amplification Phase
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="w-32 text-sm font-medium text-gray-700">2028 Full Year</div>
+                            <div class="flex-1 h-8 rounded-lg flex items-center px-4 text-white text-sm font-medium" style="background: linear-gradient(135deg, #3A5A40 0%, #5A7A60 100%);">
+                                Optimization Phase
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-6">
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Budget Overview</h3>
+                        <canvas id="budgetOverviewChart" height="200"></canvas>
+                    </div>
+                    <div class="glass-card rounded-2xl p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">ROI Projection</h3>
+                        <canvas id="roiProjectionChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card rounded-2xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Milestones</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-green-50">
+                            <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">Launch Campaign Complete</div>
+                                <div class="text-xs text-gray-500">Q1 2026 - Achieved 25% awareness</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-blue-50">
+                            <i data-lucide="loader" class="w-5 h-5 text-blue-600"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">500 Superfans Milestone</div>
+                                <div class="text-xs text-gray-500">Q2 2026 - On track (Current: 1,247)</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50">
+                            <i data-lucide="circle" class="w-5 h-5 text-gray-400"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">Regional Expansion</div>
+                                <div class="text-xs text-gray-500">Q3 2026 - Planned</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 p-3 rounded-lg bg-gray-50">
+                            <i data-lucide="circle" class="w-5 h-5 text-gray-400"></i>
+                            <div class="flex-1">
+                                <div class="font-medium text-gray-900">3,000 Superfans Target</div>
+                                <div class="text-xs text-gray-500">Q4 2028 - Target</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-6 py-8 no-print">
+        <div class="glass-card rounded-2xl p-6">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    Generated by <strong>ADVERT</strong> Strategic Engine
+                    <span class="mx-2">•</span>
+                    Last updated: <span class="font-medium text-gray-900">June 15, 2026</span>
+                </div>
+                <div class="text-sm text-gray-500">
+                    Document v1.0 • Confidential
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+
+        // Tab Navigation
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    if (!t.classList.contains('active')) {
+                        t.classList.add('text-gray-600');
+                    }
+                });
+                tab.classList.add('active');
+                tab.classList.remove('text-gray-600');
+                contents.forEach(c => c.classList.add('hidden'));
+                const targetContent = document.getElementById(`content-${targetTab}`);
+                if (targetContent) {
+                    targetContent.classList.remove('hidden');
+                    lucide.createIcons(); // Refresh icons after tab switch
+                }
+            });
+        });
+
+        // Campaign Detail Toggle
+        window.toggleCampaignDetails = function(campaignId) {
+            const details = document.getElementById(campaignId);
+            if (details) {
+                details.classList.toggle('hidden');
+            }
+        };
+
+        // Initialize Charts
+        const chartColors = {
+            terracotta: '#D4845B',
+            indigo: '#2C3E7A',
+            sand: '#E6D5B8',
+            green: '#3A5A40',
+            cream: '#FFF8F0'
+        };
+
+        // Superfan Growth Chart
+        const superfanCtx = document.getElementById('superfanChart');
+        if (superfanCtx) {
+            new Chart(superfanCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Superfans',
+                        data: [0, 120, 285, 456, 678, 892, 1024, 1247, 1450, 1680, 1950, 2200],
+                        borderColor: chartColors.terracotta,
+                        backgroundColor: 'rgba(212, 132, 91, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }, {
+                        label: 'Target',
+                        data: [0, 100, 250, 450, 650, 850, 1050, 1250, 1500, 1750, 2000, 2250],
+                        borderColor: chartColors.indigo,
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 15, font: { size: 11 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: value => value.toLocaleString() }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Brand Health Chart
+        const brandHealthCtx = document.getElementById('brandHealthChart');
+        if (brandHealthCtx) {
+            new Chart(brandHealthCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Awareness', 'Consideration', 'Preference', 'Loyalty', 'Advocacy'],
+                    datasets: [{
+                        label: 'Current',
+                        data: [32, 28, 24, 45, 38],
+                        borderColor: chartColors.terracotta,
+                        backgroundColor: 'rgba(212, 132, 91, 0.2)',
+                        pointBackgroundColor: chartColors.terracotta
+                    }, {
+                        label: 'Target',
+                        data: [40, 35, 30, 50, 45],
+                        borderColor: chartColors.indigo,
+                        backgroundColor: 'rgba(44, 62, 122, 0.1)',
+                        pointBackgroundColor: chartColors.indigo,
+                        borderDash: [5, 5]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 15 } }
+                    },
+                    scales: {
+                        r: { beginAtZero: true, max: 50 }
+                    }
+                }
+            });
+        }
+
+        // Campaign Performance Chart
+        const campaignPerformanceCtx = document.getElementById('campaignPerformanceChart');
+        if (campaignPerformanceCtx) {
+            new Chart(campaignPerformanceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Heritage\nReimagined', 'Artisan\nStories', 'Wear Your\nStory', 'Holiday\nCampaign'],
+                    datasets: [{
+                        label: 'Performance Score',
+                        data: [85, 0, 0, 0],
+                        backgroundColor: [
+                            chartColors.terracotta,
+                            chartColors.indigo,
+                            chartColors.green,
+                            '#E6845B'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    }
+                }
+            });
+        }
+
+        // Budget Overview Chart
+        const budgetOverviewCtx = document.getElementById('budgetOverviewChart');
+        if (budgetOverviewCtx) {
+            new Chart(budgetOverviewCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Marketing', 'Production', 'Operations', 'Technology', 'Other'],
+                    datasets: [{
+                        data: [450, 180, 220, 180, 170],
+                        backgroundColor: [
+                            chartColors.terracotta,
+                            chartColors.indigo,
+                            chartColors.green,
+                            '#E6845B',
+                            chartColors.sand
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { padding: 10, font: { size: 11 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.label}: $${context.parsed}k`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ROI Projection Chart
+        const roiProjectionCtx = document.getElementById('roiProjectionChart');
+        if (roiProjectionCtx) {
+            new Chart(roiProjectionCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Q1', 'Q2', 'Q3', 'Q4', 'Q1 27', 'Q2 27', 'Q3 27', 'Q4 27', 'Q1 28', 'Q2 28', 'Q3 28', 'Q4 28'],
+                    datasets: [{
+                        label: 'Investment',
+                        data: [200, 250, 300, 350, 280, 260, 240, 220, 180, 160, 140, 120],
+                        borderColor: 'rgb(239, 68, 68)',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Returns',
+                        data: [50, 120, 280, 450, 680, 920, 1180, 1450, 1750, 2080, 2430, 2800],
+                        borderColor: chartColors.green,
+                        backgroundColor: 'rgba(58, 90, 64, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 10 } },
+                        tooltip: {
+                            callbacks: {
+                                label: context => `${context.dataset.label}: $${context.parsed.y}k`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: value => '$' + value + 'k'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Smooth scroll for internal links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+
+        // Add fade-in animation to cards on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.glass-card').forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.6s ease-out';
+            observer.observe(card);
+        });
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            lucide.createIcons();
+        });
+
+        // Tab Navigation
+        const tabs = document.querySelectorAll('.tab-button');
+        const contents = document.querySelectorAll('.tab-content');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.classList.add('text-gray-600');
+                });
+                tab.classList.add('active');
+                tab.classList.remove('text-gray-600');
+                contents.forEach(c => c.classList.add('hidden'));
+                const targetContent = document.getElementById(`content-${targetTab}`);
+                if (targetContent) targetContent.classList.remove('hidden');
+            });
+        });
+    </script>
+</body>
+</html>

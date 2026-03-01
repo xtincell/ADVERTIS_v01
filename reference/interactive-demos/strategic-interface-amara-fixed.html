@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMARA - Strategic Interface | ADVERT</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .heading-font { font-family: 'Playfair Display', serif; }
+
+        :root {
+            --amara-terracotta: #D4845B;
+            --amara-indigo: #2C3E7A;
+            --amara-sand: #E6D5B8;
+            --amara-green: #3A5A40;
+            --amara-cream: #FFF8F0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #FFF8F0 0%, #E6D5B8 100%);
+            min-height: 100vh;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        .brand-gradient { background: linear-gradient(135deg, #D4845B 0%, #2C3E7A 100%); }
+        .terracotta-gradient { background: linear-gradient(135deg, #D4845B 0%, #E6845B 100%); }
+        .indigo-gradient { background: linear-gradient(135deg, #2C3E7A 0%, #4C5E9A 100%); }
+        .green-gradient { background: linear-gradient(135deg, #3A5A40 0%, #5A7A60 100%); }
+
+        .metric-card { transition: all 0.3s ease; cursor: pointer; }
+        .metric-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12); }
+
+        .tab-button {
+            position: relative;
+            transition: all 0.3s ease;
+            color: #6B7280;
+        }
+        .tab-button.active {
+            color: #D4845B !important;
+            font-weight: 600;
+        }
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #D4845B;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .campaign-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border-left: 4px solid transparent;
+        }
+        .campaign-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            border-left-color: #D4845B;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in { animation: fadeIn 0.6s ease-out; }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .glass-card { background: white; border: 1px solid #e5e7eb; box-shadow: none; }
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="glass-card sticky top-0 z-50 border-b no-print">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl brand-gradient flex items-center justify-center text-white font-bold text-xl">
+                            A
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900 heading-font">AMARA</h1>
+                            <p class="text-sm text-gray-500 italic">Wear Your Story</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="text-sm text-gray-600 hidden md:flex items-center gap-2">
+                        <i data-lucide="calendar" class="w-4 h-4"></i>
+                        <span>Strategy 2026-2028</span>
+                    </div>
+
+                    <button onclick="window.print()" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export PDF
+                    </button>
+
+                    <button class="px-4 py-2 brand-gradient text-white rounded-lg text-sm font-medium hover:shadow-lg flex items-center gap-2">
+                        <i data-lucide="presentation" class="w-4 h-4"></i>
+                        Present
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="glass-card max-w-7xl mx-auto mt-6 px-6 py-3 rounded-2xl no-print" style="margin-left: auto; margin-right: auto; width: calc(100% - 3rem);">
+        <div class="flex items-center gap-1 overflow-x-auto" id="tabs">
+            <button class="tab-button active px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="overview">
+                <i data-lucide="home" class="w-4 h-4 inline mr-1"></i> Overview
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="brand">
+                <i data-lucide="sparkles" class="w-4 h-4 inline mr-1"></i> Brand Story
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="strategy">
+                <i data-lucide="target" class="w-4 h-4 inline mr-1"></i> Strategy
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="campaigns">
+                <i data-lucide="zap" class="w-4 h-4 inline mr-1"></i> Campaigns
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="superfans">
+                <i data-lucide="users" class="w-4 h-4 inline mr-1"></i> Superfans
+            </button>
+            <button class="tab-button px-4 py-2 rounded-lg text-sm whitespace-nowrap" data-tab="performance">
+                <i data-lucide="bar-chart-3" class="w-4 h-4 inline mr-1"></i> Performance
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
+
+        <!-- OVERVIEW TAB -->
+        <section id="content-overview" class="tab-content active animate-fade-in">
+            <!-- Hero Section -->
+            <div class="glass-card rounded-2xl p-8 mb-6 brand-gradient text-white relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="max-w-3xl">
+                        <div class="text-sm font-medium mb-3 opacity-90">Strategic Overview</div>
+                        <h2 class="text-4xl font-bold mb-4 heading-font">Celebrating African Heritage Through Sustainable Fashion</h2>
+                        <p class="text-lg opacity-90 mb-6">
+                            AMARA connects modern Africans with their roots through beautiful, sustainable fashion
+                            that empowers local artisans and builds a community of conscious consumers.
+                        </p>
+                        <div class="flex items-center gap-4 flex-wrap">
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">1,247</div>
+                                <div class="text-sm opacity-90">Superfans</div>
+                            </div>
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">4</div>
+                                <div class="text-sm opacity-90">Active Campaigns</div>
+                            </div>
+                            <div class="px-4 py-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                                <div class="text-2xl font-bold">68%</div>
+                                <div class="text-sm opacity-90">Progress</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg terracotta-gradient flex items-center justify-center">
+                            <i data-lucide="heart" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+24%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">1,247</div>
+                    <div class="text-sm text-gray-600 mt-1">Superfans</div>
+                    <div class="text-xs text-gray-400 mt-2">Target: 3,000 by 2028</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg indigo-gradient flex items-center justify-center">
+                            <i data-lucide="trending-up" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+42%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">32%</div>
+                    <div class="text-sm text-gray-600 mt-1">Brand Awareness</div>
+                    <div class="text-xs text-gray-400 mt-2">Lagos, Nairobi, Accra</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg green-gradient flex items-center justify-center">
+                            <i data-lucide="users-2" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">+128</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">456</div>
+                    <div class="text-sm text-gray-600 mt-1">Artisans Empowered</div>
+                    <div class="text-xs text-gray-400 mt-2">Target: 10,000 by 2030</div>
+                </div>
+
+                <div class="metric-card glass-card rounded-xl p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <div class="w-10 h-10 rounded-lg flex items-center justify-center" style="background: linear-gradient(135deg, #E6845B 0%, #3A5A40 100%);">
+                            <i data-lucide="leaf" class="w-5 h-5 text-white"></i>
+                        </div>
+                        <span class="text-xs font-medium" style="color: var(--amara-green)">100%</span>
+                    </div>
+                    <div class="text-3xl font-bold text-gray-900">Zero</div>
+                    <div class="text-sm text-gray-600 mt-1">Waste Production</div>
+                    <div class="text-xs text-gray-400 mt-2">Fully sustainable</div>
+                </div>
+            </div>
+
+            <!-- Featured Campaigns -->
+            <div class="glass-card rounded-2xl p-6">
+                <h3 class="text-xl font-semibold text-gray-900 mb-4 heading-font flex items-center gap-2">
+                    <i data-lucide="zap" class="w-5 h-5" style="color: var(--amara-terracotta)"></i>
+                    Featured Campaigns
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="glass-card rounded-xl p-5 border-l-4" style="border-left-color: var(--amara-terracotta);">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Heritage Reimagined</h4>
+                                <p class="text-sm text-gray-600">Launch campaign celebrating African craftsmanship</p>
+                            </div>
+                            <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">Active</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500">
+                            <span>Q1 2026</span>
+                            <span>•</span>
+                            <span>$450k Budget</span>
+                            <span>•</span>
+                            <span>8 Activations</span>
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-xl p-5 border-l-4" style="border-left-color: var(--amara-indigo);">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex-1">
+                                <h4 class="font-semibold text-gray-900 mb-1">Artisan Stories</h4>
+                                <p class="text-sm text-gray-600">Content series highlighting maker journeys</p>
+                            </div>
+                            <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">Planned</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500">
+                            <span>Q2 2026</span>
+                            <span>•</span>
+                            <span>$180k Budget</span>
+                            <span>•</span>
+                            <span>12 Stories</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BRAND TAB -->
+        <section id="content-brand" class="tab-content">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Brand Story - AMARA</h2>
+                <p class="text-lg text-gray-700 mb-6">
+                    "Wear Your Story" - AMARA is a sustainable African fashion brand that celebrates heritage
+                    through contemporary design, empowering artisans and building conscious community.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="p-4 rounded-xl" style="background: rgba(212, 132, 91, 0.1);">
+                        <h4 class="font-semibold mb-2" style="color: var(--amara-terracotta)">Purpose</h4>
+                        <p class="text-sm text-gray-700">Celebrate African heritage through sustainable fashion</p>
+                    </div>
+                    <div class="p-4 rounded-xl" style="background: rgba(44, 62, 122, 0.1);">
+                        <h4 class="font-semibold mb-2" style="color: var(--amara-indigo)">Mission</h4>
+                        <p class="text-sm text-gray-700">Connect Africans with roots while building community</p>
+                    </div>
+                    <div class="p-4 rounded-xl" style="background: rgba(58, 90, 64, 0.1);">
+                        <h4 class="font-semibold mb-2" style="color: var(--amara-green)">Vision</h4>
+                        <p class="text-sm text-gray-700">10,000+ artisans empowered by 2030</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STRATEGY TAB -->
+        <section id="content-strategy" class="tab-content">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Strategic Positioning</h2>
+                <div class="p-6 rounded-xl mb-6" style="background: linear-gradient(135deg, rgba(212, 132, 91, 0.1) 0%, rgba(44, 62, 122, 0.1) 100%);">
+                    <p class="text-xl text-gray-900">
+                        For <strong>conscious African millennials</strong> who value authenticity,
+                        AMARA is the <strong>sustainable fashion brand</strong> that celebrates heritage.
+                        Unlike fast fashion, we <strong>connect you with your roots</strong> while empowering artisans.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CAMPAIGNS TAB -->
+        <section id="content-campaigns" class="tab-content">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Campaign Portfolio</h2>
+                <div class="space-y-4">
+                    <div class="campaign-card glass-card rounded-xl p-6 border-l-4" style="border-left-color: var(--amara-terracotta);">
+                        <h3 class="text-xl font-bold mb-2">Heritage Reimagined</h3>
+                        <p class="text-gray-600 mb-4">Launch campaign - Q1 2026 - $450k</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <strong>Big Idea:</strong> "The Revolution Starts With What You Wear"
+                            </div>
+                            <div>
+                                <strong>Target:</strong> Urban millennials 25-35, Lagos/Nairobi/Accra
+                            </div>
+                            <div>
+                                <strong>Activations:</strong> Website, Social, Events, Influencer, PR, Email
+                            </div>
+                            <div>
+                                <strong>Success Metrics:</strong> 25% awareness, 500 superfans, 2.5x ROI
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SUPERFANS TAB -->
+        <section id="content-superfans" class="tab-content">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Superfan Community</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center p-6 rounded-xl" style="background: rgba(212, 132, 91, 0.1);">
+                        <div class="text-4xl font-bold text-gray-900 mb-2">1,247</div>
+                        <div class="text-sm text-gray-600">Current Superfans</div>
+                    </div>
+                    <div class="text-center p-6 rounded-xl" style="background: rgba(44, 62, 122, 0.1);">
+                        <div class="text-4xl font-bold text-gray-900 mb-2">+24%</div>
+                        <div class="text-sm text-gray-600">Monthly Growth</div>
+                    </div>
+                    <div class="text-center p-6 rounded-xl" style="background: rgba(58, 90, 64, 0.1);">
+                        <div class="text-4xl font-bold text-gray-900 mb-2">8.2x</div>
+                        <div class="text-sm text-gray-600">Advocacy Rate</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PERFORMANCE TAB -->
+        <section id="content-performance" class="tab-content">
+            <div class="glass-card rounded-2xl p-8">
+                <h2 class="text-3xl font-bold text-gray-900 mb-6 heading-font">Performance Metrics</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 rounded-xl" style="background: rgba(212, 132, 91, 0.1);">
+                        <div class="text-3xl font-bold text-gray-900">32%</div>
+                        <div class="text-sm text-gray-600 mt-1">Brand Awareness</div>
+                    </div>
+                    <div class="text-center p-4 rounded-xl" style="background: rgba(44, 62, 122, 0.1);">
+                        <div class="text-3xl font-bold text-gray-900">8.4%</div>
+                        <div class="text-sm text-gray-600 mt-1">Engagement Rate</div>
+                    </div>
+                    <div class="text-center p-4 rounded-xl" style="background: rgba(58, 90, 64, 0.1);">
+                        <div class="text-3xl font-bold text-gray-900">$680k</div>
+                        <div class="text-sm text-gray-600 mt-1">Revenue YTD</div>
+                    </div>
+                    <div class="text-center p-4 rounded-xl" style="background: rgba(230, 132, 91, 0.1);">
+                        <div class="text-3xl font-bold text-gray-900">2.8x</div>
+                        <div class="text-sm text-gray-600 mt-1">Current ROI</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="max-w-7xl mx-auto px-6 py-8 no-print">
+        <div class="glass-card rounded-2xl p-6">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-sm text-gray-600 text-center md:text-left">
+                    Generated by <strong>ADVERT</strong> Strategic Engine
+                    <span class="mx-2">•</span>
+                    Last updated: <span class="font-medium text-gray-900">June 15, 2026</span>
+                </div>
+                <div class="text-sm text-gray-500">
+                    Document v1.0 • Confidential
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, initializing...');
+
+            // Initialize Lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+                console.log('Icons initialized');
+            } else {
+                console.error('Lucide not loaded');
+            }
+
+            // Tab Navigation
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+
+            console.log('Found', tabs.length, 'tabs and', contents.length, 'contents');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetTab = this.dataset.tab;
+                    console.log('Switching to tab:', targetTab);
+
+                    // Remove active from all tabs
+                    tabs.forEach(t => {
+                        t.classList.remove('active');
+                    });
+
+                    // Add active to clicked tab
+                    this.classList.add('active');
+
+                    // Hide all content
+                    contents.forEach(c => {
+                        c.classList.remove('active');
+                    });
+
+                    // Show target content
+                    const targetContent = document.getElementById('content-' + targetTab);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                        console.log('Showed content for:', targetTab);
+
+                        // Reinitialize icons in the new tab
+                        if (typeof lucide !== 'undefined') {
+                            lucide.createIcons();
+                        }
+                    } else {
+                        console.error('Content not found for:', targetTab);
+                    }
+                });
+            });
+
+            console.log('Tab navigation initialized successfully');
+        });
+    </script>
+</body>
+</html>

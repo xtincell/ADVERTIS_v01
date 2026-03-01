@@ -1,0 +1,412 @@
+═══════════════════════════════════════════════════════════════════
+  ADVERTIS TRANSFER PACKAGE - MANIFEST COMPLET
+═══════════════════════════════════════════════════════════════════
+  Date: 2026-02-15
+  Source: ADVERT_01/_bmad-output
+  Destination: Nouveau repo ADVERTIS v2.0
+  Total fichiers: 68
+═══════════════════════════════════════════════════════════════════
+
+LÉGENDE:
+  ✅ TIER 1 - Prêt à utiliser (copier tel quel)
+  ⚠️  TIER 2 - À mettre à jour (modifications requises)
+  📦 TIER 3 - Référence uniquement (archivé)
+
+═══════════════════════════════════════════════════════════════════
+📁 ROOT (4 fichiers)
+═══════════════════════════════════════════════════════════════════
+
+  ✅ README.md                    Guide principal du package
+  ⚠️  UPDATE-NOTES.md             Notes de mise à jour détaillées
+  ✅ auto-update.sh               Script automatisation mises à jour
+  ✅ MANIFEST.txt                 Ce fichier
+
+═══════════════════════════════════════════════════════════════════
+📁 docs/ (35 fichiers)
+═══════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/ ROOT (3 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ ADVERTIS-REFERENCE.md        ⭐ Référence officielle ADVERTIS v2.0
+                                  8 piliers, nomenclature, architecture
+
+  ✅ EVOLUTION-ADVERTIS.md        ⭐ Histoire ADVERT→ADVERTIS
+                                  Comparaisons, migration path
+
+  ✅ EXPORT-GUIDE.md              Guide export PDF (générique)
+                                  3 méthodes, packaging, pro tips
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/research/ (4 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ domain-advert-method-guide-research-2026-02-08.md
+     Market analysis: $12.8B→31.2B (9.4% CAGR)
+     7 competing frameworks analyzed
+     African opportunity: 570M+ mobile users
+
+  ✅ domain-advert-method-guide-research-2026-02-08-FR.md
+     Version française (même contenu)
+
+  ✅ deliverables-architecture-research.md
+     ⭐ Analyse Havas/McKinsey/Wolff Olins
+     Package architecture patterns (50-120p)
+     Pricing: $500k-$1M+ engagements
+
+  ✅ recherche-strategique-methodologies-branding-agences-majeures.md
+     Recherche méthodologies branding majeures (FR)
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/specifications/ (9 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ 00-MASTER-SPECIFICATIONS.md  ⭐ Master specs 8 piliers
+                                  Framework 5-layer, quality gates
+
+  ✅ 01-DOCUMENT-S-TEMPLATE.md    Strategy Bible (50-120p)
+                                  ⚠️  Note: Ajouter mention "dual nature"
+
+  ✅ 02-DOCUMENT-A-TEMPLATE.md    Authenticité (15-30p)
+  ✅ 03-DOCUMENT-D-TEMPLATE.md    Distinction (30-80p)
+  ✅ 04-DOCUMENT-V-TEMPLATE.md    Valeur (20-40p)
+  ✅ 05-DOCUMENT-E-TEMPLATE.md    Engagement (40-70p)
+  ✅ 06-DOCUMENT-R-TEMPLATE.md    Risk (30-60p)
+  ✅ 07-DOCUMENT-T-TEMPLATE.md    Track (35-60p)
+  ✅ 08-DOCUMENT-I-TEMPLATE.md    Implementation (50-80p)
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/architecture/ (3 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ⚠️  architecture.md             Architecture système complète
+                                  112 functional requirements, 10 domains
+                                  → Mettre à jour terminologie ADVERT→ADVERTIS
+
+  ⚠️  INTERFACE-ARCHITECTURE.md   Architecture Strategic Cockpit
+                                  → Clarifier architecture pilier S dual
+
+  ⚠️  advertis-agent-army-architecture.md
+                                  Multi-agent AI architecture
+                                  → Ajouter agents I & S
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/guide/ (9 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ⚠️  ADVERTIS-Guide-Complet.md  ⭐ CRITIQUE - Guide méthodologie
+                                  → Ajouter chapitre Pilier I
+                                  → Mettre à jour chapitre Pilier S (dual)
+                                  → MAJ table des matières
+
+  docs/guide/annexes/ (7 fichiers):
+
+    ⚠️  annexe-a-variables.md     Variables 40+ pour tous piliers
+                                  → Ajouter variables I & S
+
+    ⚠️  annexe-b-templates-piliers.md
+                                  Templates structure documents
+                                  → Ajouter template Pilier I
+
+    ⚠️  annexe-c-questions-entretien.md
+                                  Questions discovery client
+                                  → Ajouter questions Pilier I
+
+    ✅ annexe-d-template-swot.md  Template SWOT (générique)
+
+    ⚠️  annexe-e-template-strategie.md
+                                  Template stratégie
+                                  → Mettre à jour pour S dual
+
+    ✅ annexe-f-checklists-reglementaires.md
+                                  Checklists compliance (générique)
+
+    ✅ annexe-g-protocole-donnees.md
+                                  Protocole data (générique)
+
+┌─────────────────────────────────────────────────────────────────
+│ docs/planning/ (7 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ⚠️  ADVERTIS_02-PRD.md          Product Requirements Document
+                                  → Ajouter success metrics I & S
+                                  → Mettre à jour user stories
+
+  ⚠️  ADVERTIS-Product-Brief.md   Executive product brief
+                                  → Mettre à jour vision statement
+                                  → Clarifier évolution ADVERT→ADVERTIS
+
+  ⚠️  epics.md                    Product epics
+                                  → Ajouter epics I & S
+
+  ⚠️  prd-validation-report.md    Validation PRD
+                                  → Mettre à jour critères ADVERTIS
+
+  ⚠️  ux-design-specification.md  UX specs interface
+                                  → Mettre à jour pour S dual
+
+  ⚠️  ux-spec-interface-presentation-advertis.md
+                                  Specs mode présentation
+                                  → Mettre à jour branding
+
+  ⚠️  ADVERTIS-MIGRATION-STATUS.md
+                                  Tracking migration
+                                  → Initialiser pour ADVERTIS v2.0
+
+  ⚠️  ADVERTIS-DELIVERY.md        Delivery checklist
+                                  → Mettre à jour pour ADVERTIS v2.0
+
+═══════════════════════════════════════════════════════════════════
+📁 interface/ (12 fichiers)
+═══════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────
+│ interface/ ROOT (1 fichier)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ INTEGRATION-GUIDE.md         ⭐ Guide technique intégration
+                                  Template structure, navigation, viz
+                                  Export, modes, accessibility WCAG 2.1 AA
+
+┌─────────────────────────────────────────────────────────────────
+│ interface/assets/css/ (2 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ main.css                     Design system principal
+                                  Variables, typography, base styles
+
+  ✅ components.css               Component library
+                                  Sidebars, cards, navigation, etc.
+
+┌─────────────────────────────────────────────────────────────────
+│ interface/assets/js/ (4 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ✅ app.js                       Core app functionality
+  ✅ navigation.js                Navigation basique
+  ✅ navigation-advanced.js       Scroll-spy, présentation, search
+  ✅ visualizations.js            Chart.js integration
+
+┌─────────────────────────────────────────────────────────────────
+│ interface/templates/ (5 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  ⚠️  README-INTERFACE.md         Guide interface utilisateur
+                                  → Mettre à jour branding AMARA→ADVERTIS
+
+  ⚠️  index.html                  Page d'accueil + dashboard
+                                  → Mettre à jour texte/branding
+
+  ⚠️  strategic-overview.html     Vue d'ensemble stratégique
+                                  → Mettre à jour narratif
+
+  ✅ export-to-pdf.html           Outil export PDF (générique)
+
+═══════════════════════════════════════════════════════════════════
+📁 reference/ (21 fichiers)
+═══════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────
+│ reference/historical/ (1 fichier)
+└─────────────────────────────────────────────────────────────────
+
+  📦 brainstorming-session-2026-02-04.md
+     Brainstorming ADVERT v1.0 (100 idées)
+     Historique: "comment on est arrivé là"
+
+┌─────────────────────────────────────────────────────────────────
+│ reference/amara-demo/documents/ (17 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  Démos AMARA (brand fictif):
+
+  📦 INDEX-NEW.html               Dashboard index
+  📦 MIGRATION-REPORT.md          Rapport migration
+  📦 MIGRATION-SUCCESS.txt        Metrics succès
+  📦 README-PREMIUM.md            Guide features premium
+
+  📦 document-s.html              Demo original Stratégie
+  📦 document-s-new.html          Demo enhanced Stratégie
+  📦 document-a.html              Demo original Authenticité
+  📦 document-a-new.html          Demo enhanced Authenticité
+  📦 document-d.html              Demo original Distinction
+  📦 document-d-new.html          Demo enhanced Distinction
+  📦 document-v.html              Demo original Valeur
+  📦 document-v-new.html          Demo enhanced Valeur
+  📦 document-e.html              Demo original Engagement
+  📦 document-e-new.html          Demo enhanced Engagement
+  📦 document-r.html              Demo original Risk
+  📦 document-r-new.html          Demo enhanced Risk
+  📦 document-t.html              Demo original Track
+  📦 document-t-new.html          Demo enhanced Track
+  📦 document-i.html              Demo original Implementation
+  📦 document-i-new.html          Demo enhanced Implementation
+
+  NOTE: Ces fichiers sont des TEMPLATES de démonstration.
+        Utiliser comme référence visuelle uniquement.
+
+┌─────────────────────────────────────────────────────────────────
+│ reference/interactive-demos/ (3 fichiers)
+└─────────────────────────────────────────────────────────────────
+
+  📦 document-i-roadmap-interactive.html
+     Prototype interactif roadmap Pilier I
+
+  📦 strategic-interface-amara.html
+     Prototype interface stratégique v1
+
+  📦 strategic-interface-amara-fixed.html
+     Prototype interface stratégique v2
+
+═══════════════════════════════════════════════════════════════════
+📊 STATISTIQUES PACKAGE
+═══════════════════════════════════════════════════════════════════
+
+FICHIERS PAR TIER:
+  ✅ TIER 1 (Ready)      : 20 fichiers (~500KB)  - 29%
+  ⚠️  TIER 2 (Update)    : 28 fichiers (~1.2MB)  - 41%
+  📦 TIER 3 (Archive)    : 20 fichiers (~2.5MB)  - 30%
+  ─────────────────────────────────────────────────────
+  📦 TOTAL               : 68 fichiers (~4.2MB)  - 100%
+
+FICHIERS PAR CATÉGORIE:
+  📄 Markdown (.md)      : 33 fichiers
+  🌐 HTML (.html)        : 26 fichiers
+  🎨 CSS (.css)          : 2 fichiers
+  ⚙️  JavaScript (.js)   : 4 fichiers
+  📝 Text (.txt)         : 1 fichier
+  🔧 Shell (.sh)         : 1 fichier
+
+PRIORITÉ MISES À JOUR:
+  🔥🔥🔥 CRITIQUE         : 3 fichiers  (Guide, Annexes A-C)
+  🔥🔥   HAUTE            : 9 fichiers  (Architecture, PRD, Brief)
+  🔥     MOYENNE          : 16 fichiers (Epics, UX, HTML)
+
+═══════════════════════════════════════════════════════════════════
+🎯 TOP 10 FICHIERS À PRIORISER
+═══════════════════════════════════════════════════════════════════
+
+  1. ⭐ docs/ADVERTIS-REFERENCE.md
+     → Référence officielle 8 piliers (déjà prêt!)
+
+  2. ⭐ docs/EVOLUTION-ADVERTIS.md
+     → Histoire complète ADVERT→ADVERTIS (déjà prêt!)
+
+  3. 🔥 docs/guide/ADVERTIS-Guide-Complet.md
+     → Guide terrain consultants (⚠️ à compléter I & S)
+
+  4. 🔥 docs/guide/annexes/annexe-a-variables.md
+     → Variables méthodologie (⚠️ ajouter I & S)
+
+  5. 🔥 docs/guide/annexes/annexe-b-templates-piliers.md
+     → Templates documents (⚠️ ajouter template I)
+
+  6. ⭐ docs/specifications/00-MASTER-SPECIFICATIONS.md
+     → Master specs 8 piliers (déjà prêt!)
+
+  7. ⭐ interface/INTEGRATION-GUIDE.md
+     → Guide technique interface (déjà prêt!)
+
+  8. 🔥 docs/planning/ADVERTIS_02-PRD.md
+     → PRD complet (⚠️ ajouter metrics I & S)
+
+  9. 🔥 docs/planning/ADVERTIS-Product-Brief.md
+     → Brief exécutif (⚠️ mettre à jour vision)
+
+  10. ⭐ docs/research/deliverables-architecture-research.md
+      → Analyse concurrence premium (déjà prêt!)
+
+═══════════════════════════════════════════════════════════════════
+📋 CHECKLIST MIGRATION RAPIDE
+═══════════════════════════════════════════════════════════════════
+
+JOUR 1: Foundation
+  [ ] Copier package dans nouveau repo ADVERTIS
+  [ ] Lire ADVERTIS-REFERENCE.md
+  [ ] Lire EVOLUTION-ADVERTIS.md
+  [ ] Exécuter ./auto-update.sh (mises à jour automatiques)
+
+JOUR 2-3: Guide Méthodologie (CRITIQUE)
+  [ ] Compléter ADVERTIS-Guide-Complet.md (chapitre I)
+  [ ] Mettre à jour chapitre S (dual nature)
+  [ ] Ajouter variables I & S (annexe-a)
+  [ ] Ajouter template I (annexe-b)
+  [ ] Ajouter questions I (annexe-c)
+
+JOUR 4-5: Planning & Architecture
+  [ ] Mettre à jour ADVERTIS_02-PRD.md (metrics)
+  [ ] Mettre à jour ADVERTIS-Product-Brief.md (vision)
+  [ ] Mettre à jour epics.md (epics I & S)
+  [ ] Review architecture.md (terminologie)
+  [ ] Mettre à jour agent-army (agents I & S)
+
+JOUR 6-7: Interface & Validation
+  [ ] Customiser HTML templates (branding)
+  [ ] Tester navigation interface
+  [ ] Valider export PDF
+  [ ] Test accessibilité WCAG 2.1 AA
+  [ ] Review cross-référence 8 piliers
+
+═══════════════════════════════════════════════════════════════════
+🚀 QUICK START
+═══════════════════════════════════════════════════════════════════
+
+# 1. Copier package
+cp -r ADVERTIS_TRANSFER ~/ADVERTIS
+cd ~/ADVERTIS
+
+# 2. Lire docs clés
+cat docs/ADVERTIS-REFERENCE.md
+cat docs/EVOLUTION-ADVERTIS.md
+cat README.md
+
+# 3. Mises à jour automatiques
+./auto-update.sh
+
+# 4. Identifier mises à jour manuelles
+cat UPDATE-NOTES.md
+
+# 5. Valider structure
+tree -L 3
+
+═══════════════════════════════════════════════════════════════════
+📞 RÉFÉRENCES UTILES
+═══════════════════════════════════════════════════════════════════
+
+  📄 README.md              Guide principal package
+  🔧 UPDATE-NOTES.md        Modifications détaillées par fichier
+  ⚙️  auto-update.sh        Script automatisation
+  📊 MANIFEST.txt           Ce fichier
+
+  Pour questions nomenclature:
+    → docs/ADVERTIS-REFERENCE.md
+
+  Pour contexte historique:
+    → docs/EVOLUTION-ADVERTIS.md
+
+  Pour intégration technique:
+    → interface/INTEGRATION-GUIDE.md
+
+═══════════════════════════════════════════════════════════════════
+✅ RÉSUMÉ
+═══════════════════════════════════════════════════════════════════
+
+Vous disposez d'un package COMPLET pour démarrer ADVERTIS v2.0:
+
+  ✅ Recherche marché solide (4 fichiers, insights premium)
+  ✅ Templates 8 piliers production-ready (9 specs, 300-600p)
+  ✅ Code interface complet (CSS/JS design system)
+  ✅ Documentation ADVERTIS officielle (référence + évolution)
+  ✅ Architecture système détaillée (blueprint technique)
+  ✅ Base guide méthodologie (à compléter piliers I & S)
+
+~80% de la documentation ADVERT_01 est réutilisable pour ADVERTIS!
+
+Effort estimé migration complète: 5-7 jours travail focused
+
+═══════════════════════════════════════════════════════════════════
+  Package créé: 2026-02-15
+  Source: ADVERT_01/_bmad-output
+  Version: ADVERTIS v2.0 (8 piliers)
+═══════════════════════════════════════════════════════════════════

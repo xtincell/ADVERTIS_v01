@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document T - Track | AMARA Strategic Package</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  <div class="app-container">
+    <header class="app-header">
+      <a href="../index.html" class="header-logo">
+        <div class="logo-icon">A</div>
+        <div>
+          <div style="font-size: 1.25rem; line-height: 1;">AMARA</div>
+          <div style="font-size: 0.75rem; font-weight: 400; color: var(--text-tertiary);">Strategic Package</div>
+        </div>
+      </a>
+      <nav class="header-nav">
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" placeholder="Search document..." id="globalSearch" aria-label="Search document">
+        </div>
+        <div class="document-switcher">
+          <select class="doc-select" aria-label="Switch document" onchange="if(this.value) window.location.href=this.value">
+            <option value="">Switch Document</option>
+            <option value="document-s-new.html">S - Strategy Bible</option>
+            <option value="document-a-new.html">A - Authenticité</option>
+            <option value="document-d-new.html">D - Distinction</option>
+            <option value="document-v-new.html">V - Valeur</option>
+            <option value="document-e-new.html">E - Engagement</option>
+            <option value="document-r-new.html">R - Risk</option>
+            <option value="document-t-new.html" selected>T - Track</option>
+            <option value="document-i-new.html">I - Implementation</option>
+          </select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="window.print()">
+          📄 Export PDF
+        </button>
+      </nav>
+    </header>
+
+    
+    <!-- Progress Indicator -->
+    <div class="progress-indicator" id="progressIndicator" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+
+    <div class="document-layout">
+      <aside class="document-sidebar" role="navigation" aria-label="Document navigation">
+        <div class="sidebar-header">
+          <div class="doc-badge" style="background: oklch(55% 0.15 160);">T</div>
+          <div>
+            <h3 style="font-size: var(--text-lg); margin: 0;">Track</h3>
+            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: 0;">Metrics & Performance</p>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#executive-summary" class="sidebar-link active"><span class="sidebar-number">1</span><span>Executive Summary</span></a>
+          <a href="#measurement-framework" class="sidebar-link"><span class="sidebar-number">2</span><span>Measurement Framework</span></a>
+          <a href="#north-star-metric" class="sidebar-link"><span class="sidebar-number">3</span><span>North Star Metric</span></a>
+          <a href="#kpi-tree" class="sidebar-link"><span class="sidebar-number">4</span><span>KPI Tree</span></a>
+          <a href="#dashboards" class="sidebar-link"><span class="sidebar-number">5</span><span>Dashboards</span></a>
+        </nav>
+        <div class="sidebar-stats">
+          <div class="stat-item"><div class="stat-label">North Star</div><div class="stat-value">150</div></div>
+          <div class="stat-item"><div class="stat-label">Target (Y3)</div><div class="stat-value">5,000</div></div>
+        </div>
+      </aside>
+
+      <main class="document-main" id="main-content">
+        <div class="document-content">
+          <div class="document-header">
+            <div class="breadcrumb"><a href="../index.html">Home</a><span>/</span><span>Document T - Track</span></div>
+            <h1 class="document-title">Track<span class="title-subtitle">Document T - Measurement Framework & KPIs</span></h1>
+          </div>
+
+          <div class="content-divider"></div>
+
+          <section id="executive-summary" class="content-section">
+            <div class="section-header">
+              <span class="section-number">01</span>
+              <h2 class="section-title">Executive Summary</h2>
+            </div>
+            <div class="card card-highlight">
+              <h3>North Star Metric: Superfans</h3>
+              <p><strong>Definition:</strong> Customers with 3+ purchases, 1+ referral, 2+ engagements/month, NPS 9-10</p>
+              <div class="grid grid-3">
+                <div><strong>Current:</strong> 150</div>
+                <div><strong>Year 1 Target:</strong> 250</div>
+                <div><strong>Year 3 Target:</strong> 5,000</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Primary KPIs (The Big 4)</h3>
+              <table>
+                <thead><tr><th>Metric</th><th>Current</th><th>Y1 Target</th><th>Y3 Target</th></tr></thead>
+                <tbody>
+                  <tr><td><strong>Revenue</strong></td><td>$1.2M</td><td>$2.1M</td><td>$24M</td></tr>
+                  <tr><td><strong>Brand Awareness</strong></td><td>12%</td><td>28%</td><td>65%</td></tr>
+                  <tr><td><strong>CAC</strong></td><td>$92</td><td>&lt;$85</td><td>&lt;$65</td></tr>
+                  <tr><td><strong>LTV</strong></td><td>$285</td><td>$340</td><td>$650</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="measurement-framework" class="content-section">
+            <div class="section-header">
+              <span class="section-number">02</span>
+              <h2 class="section-title">Measurement Framework</h2>
+            </div>
+            <div class="card">
+              <h3>Metrics Hierarchy</h3>
+              <p><strong>Level 1 - North Star:</strong> Superfans (the one metric that matters most)</p>
+              <p><strong>Level 2 - Primary KPIs (4):</strong> Revenue, Brand Awareness, CAC, LTV</p>
+              <p><strong>Level 3 - Secondary KPIs (12):</strong> AOV, Repeat Rate, NPS, Conversion, etc.</p>
+              <p><strong>Level 4 - Operational (30+):</strong> Daily tracking metrics</p>
+            </div>
+
+            <div class="card">
+              <h3>Reporting Cadence</h3>
+              <ul class="list-styled">
+                <li><strong>Daily:</strong> Revenue, orders, traffic (Leadership, 2-min review)</li>
+                <li><strong>Weekly:</strong> All primary KPIs, trends (Full team, 30-min)</li>
+                <li><strong>Monthly:</strong> Comprehensive report (Board, investors, 60-min)</li>
+                <li><strong>Quarterly:</strong> Strategic review + roadmap progress (Board, 90-min)</li>
+              </ul>
+            </div>
+          </section>
+
+          <section id="north-star-metric" class="content-section">
+            <div class="section-header">
+              <span class="section-number">03</span>
+              <h2 class="section-title">North Star Metric: Superfans</h2>
+            </div>
+
+            <div class="card">
+              <h3>Why Superfans?</h3>
+              <div class="grid grid-2">
+                <div>
+                  <h4>Financial Impact</h4>
+                  <ul class="list-styled">
+                    <li><strong>6× LTV:</strong> $890 vs. $148 regular customer</li>
+                    <li><strong>60% of revenue</strong> from 25% of customers</li>
+                    <li><strong>Lower CAC:</strong> Referrals reduce acquisition costs</li>
+                    <li><strong>Predictable cash flow:</strong> Regular purchases</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4>Strategic Impact</h4>
+                  <ul class="list-styled">
+                    <li><strong>Organic growth:</strong> Each refers 3.2 customers</li>
+                    <li><strong>Brand resilience:</strong> Loyal through challenges</li>
+                    <li><strong>Feedback loop:</strong> Co-create products</li>
+                    <li><strong>Social proof:</strong> UGC, testimonials, reviews</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Superfan Targets</h3>
+              <table>
+                <thead><tr><th>Period</th><th>Target</th><th>Current</th><th>Progress</th></tr></thead>
+                <tbody>
+                  <tr><td>Baseline</td><td>—</td><td>150</td><td>—</td></tr>
+                  <tr><td>Year 1</td><td>250</td><td>150</td><td><span class="badge badge-warning">60%</span></td></tr>
+                  <tr><td>Year 2</td><td>1,500</td><td>—</td><td>—</td></tr>
+                  <tr><td>Year 3</td><td>5,000</td><td>—</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="kpi-tree" class="content-section">
+            <div class="section-header">
+              <span class="section-number">04</span>
+              <h2 class="section-title">KPI Tree</h2>
+            </div>
+
+            <div class="card">
+              <h3>Secondary KPIs (Key 12)</h3>
+              <table>
+                <thead><tr><th>Metric</th><th>Current</th><th>Y1</th><th>Y3</th><th>Feeds Into</th></tr></thead>
+                <tbody>
+                  <tr><td>Total Customers</td><td>850</td><td>1,000</td><td>18,000</td><td>Revenue</td></tr>
+                  <tr><td>AOV</td><td>$158</td><td>$165</td><td>$210</td><td>Revenue, LTV</td></tr>
+                  <tr><td>Repeat Rate</td><td>22%</td><td>28%</td><td>48%</td><td>LTV</td></tr>
+                  <tr><td>NPS</td><td>65</td><td>72</td><td>78</td><td>Superfans</td></tr>
+                  <tr><td>Conversion Rate</td><td>2.2%</td><td>2.5%</td><td>4.0%</td><td>CAC</td></tr>
+                  <tr><td>Traffic</td><td>18K/mo</td><td>45K/mo</td><td>250K/mo</td><td>Revenue</td></tr>
+                  <tr><td>Organic %</td><td>28%</td><td>35%</td><td>68%</td><td>CAC</td></tr>
+                  <tr><td>Referral Rate</td><td>8%</td><td>12%</td><td>22%</td><td>CAC</td></tr>
+                  <tr><td>Gross Margin</td><td>42%</td><td>45%</td><td>52%</td><td>Revenue</td></tr>
+                  <tr><td>Churn</td><td>18%</td><td>15%</td><td>8%</td><td>LTV</td></tr>
+                  <tr><td>Email Open Rate</td><td>32%</td><td>38%</td><td>45%</td><td>Engagement</td></tr>
+                  <tr><td>Social Engagement</td><td>4.2%</td><td>5.5%</td><td>8.0%</td><td>Awareness</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="card">
+              <h3>Impact Metrics (Mission Fulfillment)</h3>
+              <table>
+                <thead><tr><th>Metric</th><th>Current</th><th>Y1</th><th>Y3</th></tr></thead>
+                <tbody>
+                  <tr><td>Artisan Collectives</td><td>12</td><td>18</td><td>40</td></tr>
+                  <tr><td>Individual Artisans</td><td>85</td><td>220</td><td>2,000</td></tr>
+                  <tr><td>Fair Wage Premium</td><td>$42K</td><td>$180K</td><td>$1.8M</td></tr>
+                  <tr><td>CO2 per Item</td><td>8.2kg</td><td>6.5kg</td><td>3.8kg</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section id="dashboards" class="content-section">
+            <div class="section-header">
+              <span class="section-number">05</span>
+              <h2 class="section-title">Dashboards</h2>
+            </div>
+
+            <div class="card">
+              <h3>Dashboard Stack</h3>
+              <ol class="list-styled">
+                <li><strong>Executive Dashboard (CEO, Board)</strong> - North Star + 4 Primary KPIs, Real-time</li>
+                <li><strong>Growth Dashboard (CMO)</strong> - Traffic, Conversion, CAC by channel, ROAS, Daily</li>
+                <li><strong>Retention Dashboard (CMO)</strong> - Repeat rate, Churn, NPS, Superfan conversion, Weekly</li>
+                <li><strong>Operations Dashboard (COO)</strong> - Inventory, Fulfillment, Returns, Artisan capacity, Daily</li>
+                <li><strong>Campaign Dashboard (Marketing)</strong> - Active campaign KPIs, ROAS, Attribution, Real-time</li>
+              </ol>
+            </div>
+
+            <div class="card">
+              <h3>Data Infrastructure</h3>
+              <p><strong>Stack:</strong> Segment (collection) → PostgreSQL (warehouse) → Mode/Amplitude (analysis) → Dashboards</p>
+              <p><strong>Governance:</strong> Single source of truth, weekly audits, documented definitions, GDPR/CCPA compliant</p>
+            </div>
+          </section>
+
+          <div class="document-footer">
+            <div class="footer-nav">
+              <a href="document-r-new.html" class="btn btn-outline">← Back: Document R (Risk)</a>
+              <a href="document-i-new.html" class="btn btn-primary">Next: Document I (Implementation) →</a>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  <!-- Back to Top Button -->
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+      ↑
+    </button>
+
+    <!-- Search Results Modal -->
+    <div class="search-results" id="searchResults" style="display: none;">
+      <div class="search-results-header">
+        <h3>Search Results</h3>
+        <button class="search-close" id="searchClose" aria-label="Close search">×</button>
+      </div>
+      <div class="search-results-content" id="searchResultsContent">
+        <p class="search-empty">No results found</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/navigation-advanced.js"></script>
+  <script src="../assets/js/visualizations.js"></script>
+</body>
+</html>

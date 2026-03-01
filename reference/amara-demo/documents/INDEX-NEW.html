@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMARA Documents - Premium Version Index</title>
+  <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/components.css">
+  <style>
+    .index-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--space-16);
+    }
+    .index-header {
+      text-align: center;
+      margin-bottom: var(--space-16);
+    }
+    .index-title {
+      font-size: var(--text-5xl);
+      font-weight: 700;
+      margin-bottom: var(--space-4);
+      color: var(--text-primary);
+    }
+    .index-subtitle {
+      font-size: var(--text-xl);
+      color: var(--text-secondary);
+    }
+    .docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-6);
+      margin-top: var(--space-12);
+    }
+    .doc-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      transition: all var(--transition-base);
+      cursor: pointer;
+    }
+    .doc-card:hover {
+      border-color: var(--primary);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+    .doc-badge-large {
+      width: 60px;
+      height: 60px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: white;
+      margin-bottom: var(--space-4);
+    }
+    .doc-title {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      margin-bottom: var(--space-2);
+      color: var(--text-primary);
+    }
+    .doc-description {
+      font-size: var(--text-base);
+      color: var(--text-secondary);
+      margin-bottom: var(--space-4);
+    }
+    .doc-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: var(--text-sm);
+      color: var(--text-tertiary);
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border);
+    }
+    .status-badge {
+      display: inline-block;
+      padding: var(--space-1) var(--space-3);
+      background: var(--success-light);
+      color: var(--success);
+      border-radius: var(--radius-full);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .footer-info {
+      margin-top: var(--space-16);
+      padding: var(--space-8);
+      background: var(--surface-2);
+      border-radius: var(--radius-lg);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="index-container">
+    <div class="index-header">
+      <h1 class="index-title">AMARA Strategic Package</h1>
+      <p class="index-subtitle">Premium Document Collection - Version 2.0</p>
+      <span class="status-badge">Premium Features Enabled</span>
+    </div>
+
+    <div class="docs-grid">
+      <!-- Document S -->
+      <div class="doc-card" onclick="window.location.href='document-s-new.html'">
+        <div class="doc-badge-large" style="background: oklch(60% 0.18 270);">S</div>
+        <h2 class="doc-title">Strategy Bible</h2>
+        <p class="doc-description">La synthèse stratégique complète - Vue d'ensemble de tout le framework ADVERT</p>
+        <div class="doc-meta">
+          <span>6 sections</span>
+          <span>23K</span>
+        </div>
+      </div>
+
+      <!-- Document A -->
+      <div class="doc-card" onclick="window.location.href='document-a-new.html'">
+        <div class="doc-badge-large" style="background: oklch(55% 0.15 30);">A</div>
+        <h2 class="doc-title">Authenticité</h2>
+        <p class="doc-description">Brand Purpose, Values & Story - L'ADN authentique de la marque AMARA</p>
+        <div class="doc-meta">
+          <span>7 sections</span>
+          <span>75K</span>
+        </div>
+      </div>
+
+      <!-- Document D -->
+      <div class="doc-card" onclick="window.location.href='document-d-new.html'">
+        <div class="doc-badge-large" style="background: oklch(60% 0.18 145);">D</div>
+        <h2 class="doc-title">Distinction</h2>
+        <p class="doc-description">Visual Identity & Brand Expression - Comment nous apparaissons au monde</p>
+        <div class="doc-meta">
+          <span>9 sections</span>
+          <span>91K</span>
+        </div>
+      </div>
+
+      <!-- Document V -->
+      <div class="doc-card" onclick="window.location.href='document-v-new.html'">
+        <div class="doc-badge-large" style="background: oklch(60% 0.15 240);">V</div>
+        <h2 class="doc-title">Valeur</h2>
+        <p class="doc-description">Market Position & Customer Value - Qui nous servons et pourquoi ils nous choisissent</p>
+        <div class="doc-meta">
+          <span>6 sections</span>
+          <span>85K</span>
+        </div>
+      </div>
+
+      <!-- Document E -->
+      <div class="doc-card" onclick="window.location.href='document-e-new.html'">
+        <div class="doc-badge-large" style="background: oklch(70% 0.18 60);">E</div>
+        <h2 class="doc-title">Engagement</h2>
+        <p class="doc-description">Campaigns & Activations Framework - 3 campagnes complètes sur 36 mois</p>
+        <div class="doc-meta">
+          <span>7 sections</span>
+          <span>91K</span>
+        </div>
+      </div>
+
+      <!-- Document R -->
+      <div class="doc-card" onclick="window.location.href='document-r-new.html'">
+        <div class="doc-badge-large" style="background: oklch(50% 0.12 0);">R</div>
+        <h2 class="doc-title">Risk</h2>
+        <p class="doc-description">Risk Assessment & Mitigation - Ce qui pourrait mal tourner et comment nous préparons</p>
+        <div class="doc-meta">
+          <span>7 sections</span>
+          <span>62K</span>
+        </div>
+      </div>
+
+      <!-- Document T -->
+      <div class="doc-card" onclick="window.location.href='document-t-new.html'">
+        <div class="doc-badge-large" style="background: oklch(55% 0.15 160);">T</div>
+        <h2 class="doc-title">Track</h2>
+        <p class="doc-description">Measurement Framework & KPIs - North Star: 5,000 Superfans</p>
+        <div class="doc-meta">
+          <span>5 sections</span>
+          <span>14K</span>
+        </div>
+      </div>
+
+      <!-- Document I -->
+      <div class="doc-card" onclick="window.location.href='document-i-new.html'">
+        <div class="doc-badge-large" style="background: oklch(58% 0.16 200);">I</div>
+        <h2 class="doc-title">Implementation</h2>
+        <p class="doc-description">36-Month Roadmap & Execution Plan - De $1.2M à $24M en 3 ans</p>
+        <div class="doc-meta">
+          <span>7 sections</span>
+          <span>32K</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-info">
+      <h3 style="margin-bottom: var(--space-4);">Premium Features Included</h3>
+      <div style="display: flex; flex-wrap: wrap; gap: var(--space-4); justify-content: center;">
+        <span>✓ Advanced Navigation</span>
+        <span>✓ Progress Indicators</span>
+        <span>✓ Search Functionality</span>
+        <span>✓ Back to Top</span>
+        <span>✓ Accessibility (ARIA)</span>
+        <span>✓ Visualizations</span>
+        <span>✓ Export PDF</span>
+      </div>
+      <p style="margin-top: var(--space-8); color: var(--text-tertiary); font-size: var(--text-sm);">
+        <strong>BMAD Framework</strong> | Version 2.0 | February 2026<br>
+        Generated by Claude Sonnet 4.5
+      </p>
+    </div>
+  </div>
+</body>
+</html>

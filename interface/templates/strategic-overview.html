@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ADVERTIS Strategic Overview | Complete ADVERT Framework</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* Overview-specific styles */
+    .overview-nav {
+      position: sticky;
+      top: var(--header-height);
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: var(--space-4) 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .overview-nav-inner {
+      max-width: var(--max-content-width);
+      margin: 0 auto;
+      padding: 0 var(--space-8);
+      display: flex;
+      gap: var(--space-2);
+      overflow-x: auto;
+    }
+
+    .nav-pill {
+      padding: var(--space-2) var(--space-4);
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      cursor: pointer;
+    }
+
+    .nav-pill:hover {
+      background: var(--surface-2);
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .nav-pill.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    .mega-section {
+      min-height: 100vh;
+      padding: var(--space-16) 0;
+      border-bottom: 4px solid var(--border);
+    }
+
+    .mega-section:last-child {
+      border-bottom: none;
+    }
+
+    .section-hero {
+      text-align: center;
+      max-width: 800px;
+      margin: 0 auto var(--space-16);
+    }
+
+    .data-showcase {
+      display: grid;
+      gap: var(--space-8);
+    }
+
+    .insight-card {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 2px solid var(--border);
+      border-left: 6px solid var(--primary);
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: var(--space-4);
+      padding: var(--space-6);
+      background: var(--surface-2);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-6);
+    }
+
+    .metric-item {
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: var(--space-2);
+    }
+
+    .metric-value {
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .campaign-mega-card {
+      background: white;
+      border: 3px solid var(--primary);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      margin-bottom: var(--space-12);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: var(--space-6);
+      margin-top: var(--space-6);
+    }
+
+    .component-card {
+      background: var(--surface-2);
+      padding: var(--space-6);
+      border-radius: var(--radius-lg);
+      border-left: 4px solid var(--accent);
+    }
+
+    .timeline-visual {
+      background: var(--surface-2);
+      padding: var(--space-8);
+      border-radius: var(--radius-lg);
+      margin-top: var(--space-6);
+    }
+
+    .phase-block {
+      background: white;
+      border-left: 6px solid var(--primary);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+    }
+
+    @media print {
+      .overview-nav,
+      .app-header {
+        display: none !important;
+      }
+
+      .mega-section {
+        page-break-inside: avoid;
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <a href="index.html" class="header-logo">
+        <div class="logo-icon">A</div>
+        <div>
+          <div style="font-size: 1.25rem; line-height: 1;">ADVERTIS</div>
+          <div style="font-size: 0.75rem; font-weight: 400; color: var(--text-tertiary);">Strategic Overview</div>
+        </div>
+      </a>
+
+      <nav class="header-nav">
+        <div class="flex gap-4">
+          <button class="btn btn-ghost btn-sm" onclick="window.location.href='index.html'">← Dashboard</button>
+          <button class="btn btn-primary btn-sm" onclick="window.print()">📄 Export PDF</button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- STICKY NAVIGATION -->
+    <nav class="overview-nav">
+      <div class="overview-nav-inner">
+        <a href="#executive-summary" class="nav-pill active">📊 Executive Summary</a>
+        <a href="#brand-foundation" class="nav-pill">🎨 Brand Foundation</a>
+        <a href="#market-positioning" class="nav-pill">🎯 Market Position</a>
+        <a href="#campaigns" class="nav-pill">🚀 Campaigns</a>
+        <a href="#implementation" class="nav-pill">📅 Implementation</a>
+        <a href="#measurement" class="nav-pill">📈 Measurement</a>
+        <a href="#risk" class="nav-pill">⚠️ Risk</a>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      <div class="content-wrapper">
+
+        <!-- SECTION 1: EXECUTIVE SUMMARY -->
+        <section id="executive-summary" class="mega-section" data-section="executive-summary">
+          <div class="section-hero">
+            <div class="badge badge-primary" style="font-size: var(--text-base); padding: var(--space-3) var(--space-6); margin-bottom: var(--space-6);">
+              Strategic Package Complete
+            </div>
+            <h1 style="font-size: 3.5rem; margin-bottom: var(--space-4);">
+              ADVERTIS Strategic Overview
+            </h1>
+            <p style="font-size: var(--text-xl); color: var(--text-secondary); line-height: 1.8;">
+              <strong>"Wear Your Story"</strong> - Sustainable African Fashion<br>
+              Complete ADVERT framework spanning 8 strategic documents, 300-600 pages of guidance
+            </p>
+          </div>
+
+          <!-- Key Metrics Dashboard -->
+          <div class="metric-row">
+            <div class="metric-item">
+              <div class="metric-label">North Star Metric</div>
+              <div class="metric-value">5,000</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+                Superfans (Active Community)<br>
+                Target by Month 24
+              </div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Total Investment</div>
+              <div class="metric-value">$8.75M</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+                36-Month Budget<br>
+                Expected ROI: +148%
+              </div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Campaign Pipeline</div>
+              <div class="metric-value">3</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+                Year 1 Campaigns<br>
+                $2.1M Allocated
+              </div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Timeline</div>
+              <div class="metric-value">36 Mo</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">
+                4 Phases<br>
+                Launch → Scale → Optimize
+              </div>
+            </div>
+          </div>
+
+          <!-- Strategic Snapshot -->
+          <div class="data-showcase">
+            <div class="insight-card">
+              <h3 style="color: var(--primary); margin-bottom: var(--space-4);">🎯 Strategic Positioning</h3>
+              <p style="font-size: var(--text-lg); margin-bottom: var(--space-4); line-height: 1.8;">
+                <strong>For</strong> culturally conscious professionals (25-45, $75k+ income)<br>
+                <strong>Who</strong> seek authentic heritage fashion with sustainable values<br>
+                <strong>ADVERTIS is</strong> premium African fashion brand<br>
+                <strong>That</strong> celebrates artisan craftsmanship through storytelling<br>
+                <strong>Unlike</strong> fast fashion or generic luxury, we offer meaningful connection to heritage
+              </p>
+            </div>
+
+            <div class="insight-card">
+              <h3 style="color: var(--secondary); margin-bottom: var(--space-4);">💡 Brand Essence</h3>
+              <p style="font-size: var(--text-lg); line-height: 1.8;">
+                <strong>Purpose:</strong> Celebrate African heritage through sustainable fashion storytelling<br>
+                <strong>Vision:</strong> World where African fashion is celebrated globally as pinnacle of craft + sustainability<br>
+                <strong>Mission:</strong> Partner with African artisans to create premium fashion that honors tradition<br>
+                <strong>Values:</strong> Heritage · Sustainability · Craftsmanship · Community · Innovation
+              </p>
+            </div>
+
+            <div class="insight-card">
+              <h3 style="color: var(--accent); margin-bottom: var(--space-4);">📊 Success Framework</h3>
+              <div class="grid grid-cols-3" style="gap: var(--space-6);">
+                <div>
+                  <div style="font-weight: 700; margin-bottom: var(--space-2);">Phase 1 (M4-12)</div>
+                  <p style="font-size: var(--text-sm);">Launch campaigns, achieve 10k customers, $1M ARR, 15% brand awareness</p>
+                </div>
+                <div>
+                  <div style="font-weight: 700; margin-bottom: var(--space-2);">Phase 2 (M13-24)</div>
+                  <p style="font-size: var(--text-sm);">Scale operations, reach 50k customers, $5M ARR, 5k superfans</p>
+                </div>
+                <div>
+                  <div style="font-weight: 700; margin-bottom: var(--space-2);">Phase 3 (M25-36)</div>
+                  <p style="font-size: var(--text-sm);">Optimize & international expansion, $12M ARR, break-even achieved</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 2: BRAND FOUNDATION -->
+        <section id="brand-foundation" class="mega-section" data-section="brand-foundation">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">🎨 Brand Foundation</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary);">
+              Authenticité (Doc A) + Distinction (Doc D) - The unchanging truth of who we are
+            </p>
+          </div>
+
+          <!-- Brand DNA -->
+          <div class="card" style="margin-bottom: var(--space-8);">
+            <h3 style="margin-bottom: var(--space-6);">Brand DNA (Authenticité)</h3>
+
+            <div class="grid grid-cols-2" style="gap: var(--space-8);">
+              <div>
+                <h4 style="color: var(--primary); margin-bottom: var(--space-3);">Core Values</h4>
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">1. Heritage</h5>
+                  <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                    We honor generations of African craftsmanship, preserving traditional techniques while embracing modern design.
+                  </p>
+                  <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin: 0;">
+                    <strong>Observable:</strong> Name artisans, share origin stories, compensate fairly, cultural consultants
+                  </p>
+                </div>
+
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">2. Sustainability</h5>
+                  <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                    Environmental and social responsibility guides every decision - from materials to labor practices.
+                  </p>
+                  <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin: 0;">
+                    <strong>Observable:</strong> Organic/recycled materials, fair trade, carbon-neutral shipping, repair program
+                  </p>
+                </div>
+
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">3. Craftsmanship</h5>
+                  <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                    Quality over quantity. Each piece is meticulously crafted to last generations, not seasons.
+                  </p>
+                  <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin: 0;">
+                    <strong>Observable:</strong> Hand-made techniques, lifetime guarantee, limited editions, repair service
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <h4 style="color: var(--secondary); margin-bottom: var(--space-3);">Brand Story: Hero's Journey</h4>
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">The Ordinary World</h5>
+                  <p style="font-size: var(--text-sm);">
+                    Fast fashion dominates. African textiles commodified. Artisans underpaid. Heritage diluted. Consumers disconnected from craft.
+                  </p>
+                </div>
+
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">The Call to Adventure</h5>
+                  <p style="font-size: var(--text-sm);">
+                    Founder meets Aisha, 52-year-old Kente weaver, whose grandmother taught her patterns passed down 7 generations. Her artistry deserves celebration, not exploitation.
+                  </p>
+                </div>
+
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">The Transformation</h5>
+                  <p style="font-size: var(--text-sm);">
+                    ADVERTIS proves premium African fashion can thrive globally. Artisans earn living wages. Customers wear stories, not just clothes. Heritage celebrated, not appropriated.
+                  </p>
+                </div>
+
+                <div class="component-card">
+                  <h5 style="margin-bottom: var(--space-2);">The Return</h5>
+                  <p style="font-size: var(--text-sm);">
+                    A movement where fashion honors heritage, sustains communities, and tells authentic stories. <strong>"What's your story?"</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visual Identity -->
+          <div class="card">
+            <h3 style="margin-bottom: var(--space-6);">Visual Identity (Distinction)</h3>
+
+            <div class="grid grid-cols-4" style="gap: var(--space-6);">
+              <div class="component-card">
+                <h5 style="margin-bottom: var(--space-3);">Colors</h5>
+                <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 40px; height: 40px; background: var(--primary); border-radius: var(--radius);"></div>
+                  <div style="width: 40px; height: 40px; background: var(--secondary); border-radius: var(--radius);"></div>
+                  <div style="width: 40px; height: 40px; background: var(--accent); border-radius: var(--radius);"></div>
+                </div>
+                <p style="font-size: var(--text-xs);">
+                  Terracotta warmth<br>
+                  Deep forest green<br>
+                  Warm gold
+                </p>
+              </div>
+
+              <div class="component-card">
+                <h5 style="margin-bottom: var(--space-3);">Typography</h5>
+                <div style="font-family: var(--font-display); font-size: var(--text-2xl); font-weight: 700; margin-bottom: var(--space-2);">
+                  Aa
+                </div>
+                <p style="font-size: var(--text-xs);">
+                  Inter Display<br>
+                  Modern, warm,<br>
+                  highly legible
+                </p>
+              </div>
+
+              <div class="component-card">
+                <h5 style="margin-bottom: var(--space-3);">Photography</h5>
+                <p style="font-size: var(--text-xs);">
+                  Documentary style<br>
+                  Natural lighting<br>
+                  Artisan hands<br>
+                  Fabric textures<br>
+                  Cultural authenticity
+                </p>
+              </div>
+
+              <div class="component-card">
+                <h5 style="margin-bottom: var(--space-3);">Voice</h5>
+                <p style="font-size: var(--text-xs);">
+                  Storyteller<br>
+                  Warm, knowledgeable<br>
+                  Respectful, celebratory<br>
+                  Pride without ego<br>
+                  Heritage + innovation
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 3: MARKET POSITIONING -->
+        <section id="market-positioning" class="mega-section" data-section="market-positioning">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">🎯 Market Positioning</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary);">
+              Valeur (Doc V) - How we win in the market
+            </p>
+          </div>
+
+          <!-- Target Personas -->
+          <div class="card" style="margin-bottom: var(--space-8);">
+            <h3 style="margin-bottom: var(--space-6);">Target Audiences</h3>
+
+            <div class="grid grid-cols-2" style="gap: var(--space-8);">
+              <div class="component-card" style="border-left-color: var(--primary);">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                  <h4 style="margin: 0;">Primary: "Cultural Connector"</h4>
+                  <span class="badge badge-primary">60% Focus</span>
+                </div>
+
+                <p style="font-weight: 600; margin-bottom: var(--space-3);">Demographics:</p>
+                <ul style="font-size: var(--text-sm); line-height: 1.8; margin-bottom: var(--space-4);">
+                  <li>Age: 28-45</li>
+                  <li>Income: $75k-$150k HHI</li>
+                  <li>Location: Urban centers (NYC, London, Lagos, Paris)</li>
+                  <li>Education: Bachelor's degree+</li>
+                  <li>Identity: African diaspora or culturally conscious</li>
+                </ul>
+
+                <p style="font-weight: 600; margin-bottom: var(--space-3);">Psychographics:</p>
+                <ul style="font-size: var(--text-sm); line-height: 1.8; margin-bottom: var(--space-4);">
+                  <li><strong>Values:</strong> Cultural authenticity, heritage, sustainability</li>
+                  <li><strong>Lifestyle:</strong> Creative professionals, cultural leaders, tastemakers</li>
+                  <li><strong>Purchase Drivers:</strong> Story > product, meaning > trend</li>
+                </ul>
+
+                <p style="font-size: var(--text-sm); background: var(--primary-light); padding: var(--space-3); border-radius: var(--radius); margin: 0;">
+                  <strong>Quote:</strong> "I want fashion that tells my heritage story. Every garment should have meaning, not just style."
+                </p>
+              </div>
+
+              <div class="component-card" style="border-left-color: var(--secondary);">
+                <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                  <h4 style="margin: 0;">Secondary: "Conscious Consumer"</h4>
+                  <span class="badge badge-secondary">40% Focus</span>
+                </div>
+
+                <p style="font-weight: 600; margin-bottom: var(--space-3);">Demographics:</p>
+                <ul style="font-size: var(--text-sm); line-height: 1.8; margin-bottom: var(--space-4);">
+                  <li>Age: 25-55</li>
+                  <li>Income: $60k-$200k</li>
+                  <li>Location: Same urban centers + secondary markets</li>
+                  <li>Any background, high cultural curiosity</li>
+                </ul>
+
+                <p style="font-weight: 600; margin-bottom: var(--space-3);">Psychographics:</p>
+                <ul style="font-size: var(--text-sm); line-height: 1.8; margin-bottom: var(--space-4);">
+                  <li><strong>Values:</strong> Ethical consumption, anti-fast fashion, artisan support</li>
+                  <li><strong>Lifestyle:</strong> Values-driven purchasing, seeks brands with purpose</li>
+                  <li><strong>Purchase Drivers:</strong> Sustainability credentials, transparency, impact</li>
+                </ul>
+
+                <p style="font-size: var(--text-sm); background: var(--secondary-light); padding: var(--space-3); border-radius: var(--radius); margin: 0;">
+                  <strong>Quote:</strong> "I research brands deeply before buying. I want to know my purchase supports fair wages and sustainable practices."
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Value Proposition -->
+          <div class="card">
+            <h3 style="margin-bottom: var(--space-6);">Value Proposition Architecture</h3>
+
+            <div class="grid grid-cols-3" style="gap: var(--space-6);">
+              <div class="component-card" style="border-left-color: var(--info);">
+                <h5 style="color: var(--info); margin-bottom: var(--space-3);">Functional Value</h5>
+                <ul style="font-size: var(--text-sm); line-height: 1.8;">
+                  <li><strong>Premium Quality:</strong> Hand-crafted garments that last 10-20 years</li>
+                  <li><strong>Unique Design:</strong> Authentic African textiles not found in mainstream fashion</li>
+                  <li><strong>Perfect Fit:</strong> Custom sizing, alterations included</li>
+                  <li><strong>Lifetime Guarantee:</strong> Free repairs, replacement if defective</li>
+                </ul>
+              </div>
+
+              <div class="component-card" style="border-left-color: var(--primary);">
+                <h5 style="color: var(--primary); margin-bottom: var(--space-3);">Emotional Value</h5>
+                <ul style="font-size: var(--text-sm); line-height: 1.8;">
+                  <li><strong>Pride:</strong> Wear heritage with confidence and celebration</li>
+                  <li><strong>Connection:</strong> Feel connected to artisans and African culture</li>
+                  <li><strong>Meaningful:</strong> Fashion with purpose, not just aesthetics</li>
+                  <li><strong>Peace of Mind:</strong> Know purchase supports sustainability + fair wages</li>
+                </ul>
+              </div>
+
+              <div class="component-card" style="border-left-color: var(--accent);">
+                <h5 style="color: var(--accent); margin-bottom: var(--space-3);">Social Value</h5>
+                <ul style="font-size: var(--text-sm); line-height: 1.8;">
+                  <li><strong>Identity Expression:</strong> "I value heritage and sustainability"</li>
+                  <li><strong>Community:</strong> Join movement of 5k+ passionate superfans</li>
+                  <li><strong>Status:</strong> Premium brand signals sophisticated taste + values</li>
+                  <li><strong>Conversation Starter:</strong> Every piece has a story to share</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SECTION 4: CAMPAIGNS (MOST CRITICAL) -->
+        <section id="campaigns" class="mega-section" data-section="campaigns">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">🚀 Campaigns</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary); margin-bottom: var(--space-4);">
+              Engagement (Doc E) - Year 1 campaign portfolio with complete 13-component specifications
+            </p>
+            <div class="badge badge-error" style="font-size: var(--text-base); padding: var(--space-3) var(--space-6);">
+              MOST CRITICAL SECTION
+            </div>
+          </div>
+
+          <!-- Campaign Overview -->
+          <div class="metric-row">
+            <div class="metric-item">
+              <div class="metric-label">Total Budget</div>
+              <div class="metric-value">$2.1M</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Year 1 Investment</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Expected Reach</div>
+              <div class="metric-value">2.5M</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Total Impressions</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Target Customers</div>
+              <div class="metric-value">10,000</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">First-Year Goal</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Expected ROI</div>
+              <div class="metric-value">3.2x</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">LTV:CAC Ratio</div>
+            </div>
+          </div>
+
+          <!-- CAMPAIGN 1: THREADS OF HERITAGE -->
+          <div class="campaign-mega-card">
+            <div class="flex items-center justify-between" style="margin-bottom: var(--space-6); padding-bottom: var(--space-6); border-bottom: 2px solid var(--border);">
+              <div>
+                <h3 style="font-size: var(--text-3xl); color: var(--primary); margin-bottom: var(--space-2);">
+                  Campaign 1: "Threads of Heritage"
+                </h3>
+                <p style="font-size: var(--text-lg); color: var(--text-secondary); margin-bottom: 0;">
+                  Launch storytelling campaign | M4-M9 2026 | $650k budget
+                </p>
+              </div>
+              <span class="badge badge-success" style="font-size: var(--text-base); padding: var(--space-3) var(--space-6);">Active</span>
+            </div>
+
+            <!-- 13 Components Grid -->
+            <div class="component-grid">
+
+              <!-- 1. OBJECTIF -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">1</div>
+                  <h5 style="margin: 0;">Objectif</h5>
+                </div>
+                <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);"><strong>6 SMART Objectives:</strong></p>
+                <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                  <li>Brand awareness: 15% unaided</li>
+                  <li>Website traffic: 100k visitors</li>
+                  <li>Social following: 40k total</li>
+                  <li>Media coverage: 20+ placements</li>
+                  <li>Launch sales: $400k revenue</li>
+                  <li>Perception: Top-3 attributes</li>
+                </ul>
+              </div>
+
+              <!-- 2. BIG IDEA -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">2</div>
+                  <h5 style="margin: 0;">Big Idea</h5>
+                </div>
+                <p style="font-size: var(--text-sm); font-weight: 600; margin-bottom: var(--space-2);">"Every Thread Tells a Story"</p>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  From artisan hands in Lagos to streets of NYC, each garment carries generations of craft. When you wear ADVERTIS, you wear history, artistry, a story waiting to be told.
+                </p>
+              </div>
+
+              <!-- 3. AXE CRÉATIF -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">3</div>
+                  <h5 style="margin: 0;">Axe Créatif</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>Visual:</strong> Documentary photography, warm natural lighting, artisan hands<br>
+                  <strong>Tone:</strong> Storyteller - warm, respectful, celebratory<br>
+                  <strong>Message:</strong> "Generations of mastery in every garment"
+                </p>
+              </div>
+
+              <!-- 4. PISTES CRÉATIVES -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">4</div>
+                  <h5 style="margin: 0;">Pistes Créatives</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>1.</strong> "Master Class" video series (6 episodes)<br>
+                  <strong>2.</strong> #WearYourStory UGC contest<br>
+                  <strong>3.</strong> Pop-up immersive experiences (3 cities)
+                </p>
+              </div>
+
+              <!-- 5. SKU -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">5</div>
+                  <h5 style="margin: 0;">SKU / Products</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>12 pieces</strong> Founding Collection<br>
+                  Price range: $420-$1,200<br>
+                  Hero: Aisha Wrap Dress ($890)<br>
+                  Limited: 50 units per SKU
+                </p>
+              </div>
+
+              <!-- 6. SECTEUR/TARGET -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">6</div>
+                  <h5 style="margin: 0;">Secteur / Target</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>Primary:</strong> Cultural Connector (28-45, $75k-$150k)<br>
+                  <strong>Secondary:</strong> Conscious Consumer<br>
+                  <strong>Geo:</strong> NYC, London, Lagos (Tier 1)
+                </p>
+              </div>
+
+              <!-- 7. BUDGET -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">7</div>
+                  <h5 style="margin: 0;">Budget Breakdown</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>$650k total:</strong><br>
+                  Production: $180k (28%)<br>
+                  Paid Media: $220k (34%)<br>
+                  Events: $150k (23%)<br>
+                  PR/Influencer: $60k (9%)
+                </p>
+              </div>
+
+              <!-- 8. TIMELINE -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">8</div>
+                  <h5 style="margin: 0;">Timeline</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>6 months (M4-M9):</strong><br>
+                  M4: Production<br>
+                  M5: Campaign launch<br>
+                  M6-7: Full flight<br>
+                  M8: Pop-ups<br>
+                  M9: Reporting
+                </p>
+              </div>
+
+              <!-- 9. ACTIONS -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">9</div>
+                  <h5 style="margin: 0;">Actions Détaillées</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>12 tactical actions:</strong><br>
+                  Artisan casting, video production, photography, website, paid social, PR, influencers, UGC, pop-ups, email, tracking, optimization
+                </p>
+              </div>
+
+              <!-- 10. ACTIVATIONS -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">10</div>
+                  <h5 style="margin: 0;">Activations</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>10 touchpoints:</strong><br>
+                  YouTube series, Instagram, paid social, website, email, influencers, PR, UGC contest, pop-ups, retargeting
+                </p>
+              </div>
+
+              <!-- 11. ASSETS -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">11</div>
+                  <h5 style="margin: 0;">Assets Library</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  Videos: 120+ assets<br>
+                  Photos: 200+ images<br>
+                  Graphics: 80+ templates<br>
+                  Copy: 200+ pieces
+                </p>
+              </div>
+
+              <!-- 12. METRICS -->
+              <div class="component-card">
+                <div style="display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-3);">
+                  <div style="width: 32px; height: 32px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700;">12</div>
+                  <h5 style="margin: 0;">Success Metrics</h5>
+                </div>
+                <p style="font-size: var(--text-xs); line-height: 1.6;">
+                  <strong>Primary KPIs:</strong><br>
+                  15% brand awareness<br>
+                  100k website visits<br>
+                  8k email captures<br>
+                  $400k revenue<br>
+                  ROI: 3.12x (lifetime)
+                </p>
+              </div>
+
+            </div>
+
+            <!-- Quick Link -->
+            <div style="text-align: center; margin-top: var(--space-8); padding-top: var(--space-6); border-top: 2px solid var(--border);">
+              <a href="documents/document-e.html" class="btn btn-primary btn-lg">
+                📄 View Complete Campaign Details (13 Components Expanded) →
+              </a>
+            </div>
+          </div>
+
+          <!-- CAMPAIGNS 2 & 3 SUMMARY -->
+          <div class="grid grid-cols-2" style="gap: var(--space-8);">
+
+            <!-- Campaign 2 -->
+            <div class="card" style="border-left: 6px solid var(--secondary);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Campaign 2: "Wear Your Story"</h4>
+                <span class="badge badge-info">Planned</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Period:</strong> M10-M18 (9 months)<br>
+                <strong>Budget:</strong> $850,000<br>
+                <strong>Type:</strong> Brand positioning + conversion
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                Deepen brand positioning, drive customer acquisition at scale, establish ADVERTIS as premium sustainable African fashion leader.
+              </p>
+              <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin: 0;">
+                Same 13-component structure: Objectif, Big Idea, Axe, Pistes, SKU, Target, Budget, Timeline, Actions, Activations, Assets, Metrics
+              </p>
+            </div>
+
+            <!-- Campaign 3 -->
+            <div class="card" style="border-left: 6px solid var(--accent);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Campaign 3: "Superfan Collective"</h4>
+                <span class="badge badge-info">Planned</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Period:</strong> M13-M24 (12 months)<br>
+                <strong>Budget:</strong> $600,000<br>
+                <strong>Type:</strong> Community building + retention
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                Cultivate superfan community (North Star: 5,000 active members), drive repeat purchases, build advocacy and UGC flywheel.
+              </p>
+              <p style="font-size: var(--text-xs); color: var(--text-tertiary); margin: 0;">
+                Same 13-component structure: Objectif, Big Idea, Axe, Pistes, SKU, Target, Budget, Timeline, Actions, Activations, Assets, Metrics
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 5: IMPLEMENTATION -->
+        <section id="implementation" class="mega-section" data-section="implementation">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">📅 Implementation Roadmap</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary);">
+              Implementation (Doc I) - 36-month execution plan across 4 phases
+            </p>
+          </div>
+
+          <!-- Investment Overview -->
+          <div class="metric-row">
+            <div class="metric-item">
+              <div class="metric-label">Total Investment</div>
+              <div class="metric-value">$8.75M</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">36-Month Budget</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Expected ROI</div>
+              <div class="metric-value">+148%</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">2.48x Return</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Break-Even</div>
+              <div class="metric-value">Month 18</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Cumulative Profitability</div>
+            </div>
+            <div class="metric-item">
+              <div class="metric-label">Key Milestones</div>
+              <div class="metric-value">7+</div>
+              <div style="font-size: var(--text-sm); color: var(--text-secondary); margin-top: var(--space-2);">Critical Checkpoints</div>
+            </div>
+          </div>
+
+          <!-- 4 Phases -->
+          <div class="timeline-visual">
+
+            <div class="phase-block">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Phase 0: Foundation (Months 0-3)</h4>
+                <span class="badge badge-primary">$650k • 7%</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Objective:</strong> Build foundation - brand DNA, visual identity, website, analytics, team setup
+              </p>
+              <div class="grid grid-cols-3" style="gap: var(--space-4); font-size: var(--text-sm);">
+                <div>
+                  <strong>Key Initiatives:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Brand strategy finalized</li>
+                    <li>Visual identity launched</li>
+                    <li>E-commerce site live</li>
+                    <li>Analytics implemented</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Budget Allocation:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Design/Branding: $200k</li>
+                    <li>Tech/Platform: $250k</li>
+                    <li>Team: $150k</li>
+                    <li>Contingency: $50k</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Milestone:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>✅ Visual identity launched</li>
+                    <li>✅ Website live (M3)</li>
+                    <li>✅ First collection ready</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="phase-block">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Phase 1: Launch (Months 4-12)</h4>
+                <span class="badge badge-success">$2.5M • 29%</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Objective:</strong> Launch to market, acquire first 10k customers, achieve $1M ARR, validate product-market fit
+              </p>
+              <div class="grid grid-cols-3" style="gap: var(--space-4); font-size: var(--text-sm);">
+                <div>
+                  <strong>Key Initiatives:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Campaign 1 launch</li>
+                    <li>Sales engine build-out</li>
+                    <li>Customer success program</li>
+                    <li>Content marketing engine</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Budget Allocation:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Marketing: $1.2M</li>
+                    <li>Personnel: $800k</li>
+                    <li>Operations: $400k</li>
+                    <li>Contingency: $100k</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Milestones:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>🎯 First campaign live (M5)</li>
+                    <li>🎯 100 customers (M7)</li>
+                    <li>🎯 $500k ARR (M9)</li>
+                    <li>🎯 $1M ARR (M12)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="phase-block">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Phase 2: Scale (Months 13-24)</h4>
+                <span class="badge badge-warning">$4.0M • 46%</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Objective:</strong> Scale operations, reach 50k customers, $5M ARR, achieve 5k superfans, expand channels
+              </p>
+              <div class="grid grid-cols-3" style="gap: var(--space-4); font-size: var(--text-sm);">
+                <div>
+                  <strong>Key Initiatives:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Campaign 2 + 3 launch</li>
+                    <li>Team expansion (2x)</li>
+                    <li>Retail partnerships</li>
+                    <li>International expansion prep</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Budget Allocation:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Marketing: $2.2M</li>
+                    <li>Personnel: $1.2M</li>
+                    <li>Operations: $500k</li>
+                    <li>Contingency: $100k</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Milestones:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>🎯 Break-even (M18)</li>
+                    <li>🎯 5k superfans (M24)</li>
+                    <li>🎯 $5M ARR (M24)</li>
+                    <li>🎯 Profitability sustained</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="phase-block">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Phase 3: Optimize (Months 25-36)</h4>
+                <span class="badge badge-info">$1.6M • 18%</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-4);">
+                <strong>Objective:</strong> Optimize operations, international expansion, $12M ARR, prepare Series A/growth capital
+              </p>
+              <div class="grid grid-cols-3" style="gap: var(--space-4); font-size: var(--text-sm);">
+                <div>
+                  <strong>Key Initiatives:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>International launch (3+ markets)</li>
+                    <li>Product line expansion</li>
+                    <li>Operational excellence</li>
+                    <li>Series A preparation</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Budget Allocation:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>Marketing: $800k</li>
+                    <li>Personnel: $500k</li>
+                    <li>Operations: $250k</li>
+                    <li>Contingency: $50k</li>
+                  </ul>
+                </div>
+                <div>
+                  <strong>Milestones:</strong>
+                  <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                    <li>🎯 International markets live</li>
+                    <li>🎯 $12M ARR (M36)</li>
+                    <li>🎯 Series A raised</li>
+                    <li>🎯 Sustainable profitability</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- SECTION 6: MEASUREMENT -->
+        <section id="measurement" class="mega-section" data-section="measurement">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">📈 Measurement Framework</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary);">
+              Track (Doc T) - North Star, KPIs, and data-driven decision making
+            </p>
+          </div>
+
+          <!-- North Star Metric -->
+          <div class="card" style="margin-bottom: var(--space-8); background: linear-gradient(135deg, var(--primary-light), var(--accent-light)); border: 3px solid var(--primary);">
+            <h3 style="margin-bottom: var(--space-4);">🌟 North Star Metric: Superfan Count</h3>
+            <p style="font-size: var(--text-lg); margin-bottom: var(--space-6);">
+              Number of highly engaged customers who purchase 3+ times/year, refer others, create UGC, and identify as brand advocates.
+            </p>
+            <div class="grid grid-cols-4" style="gap: var(--space-4);">
+              <div class="stat-card" style="background: white;">
+                <div class="stat-label">Current</div>
+                <div class="stat-value" style="color: var(--text-primary);">0</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Pre-Launch</div>
+              </div>
+              <div class="stat-card" style="background: white;">
+                <div class="stat-label">Month 12</div>
+                <div class="stat-value" style="color: var(--text-primary);">500</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Year 1 Target</div>
+              </div>
+              <div class="stat-card" style="background: white;">
+                <div class="stat-label">Month 24</div>
+                <div class="stat-value" style="color: var(--text-primary);">5,000</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Year 2 Target</div>
+              </div>
+              <div class="stat-card" style="background: white;">
+                <div class="stat-label">Month 36</div>
+                <div class="stat-value" style="color: var(--text-primary);">15,000</div>
+                <div style="font-size: var(--text-sm); color: var(--text-secondary);">Year 3 Stretch</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary KPIs -->
+          <div class="card">
+            <h3 style="margin-bottom: var(--space-6);">Primary KPIs (Dashboard)</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: var(--surface-2); border-bottom: 2px solid var(--border);">
+                  <th style="padding: var(--space-3); text-align: left;">Metric</th>
+                  <th style="padding: var(--space-3); text-align: right;">Baseline</th>
+                  <th style="padding: var(--space-3); text-align: right;">M12 Target</th>
+                  <th style="padding: var(--space-3); text-align: right;">M24 Target</th>
+                  <th style="padding: var(--space-3); text-align: left;">Measurement</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: var(--space-3);"><strong>Brand Awareness</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">0%</td>
+                  <td style="padding: var(--space-3); text-align: right;">15%</td>
+                  <td style="padding: var(--space-3); text-align: right;">35%</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">Quarterly surveys (n=500)</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: var(--space-3);"><strong>Customer Acquisition</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">0</td>
+                  <td style="padding: var(--space-3); text-align: right;">10,000</td>
+                  <td style="padding: var(--space-3); text-align: right;">50,000</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">E-commerce platform</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: var(--space-3);"><strong>Annual Recurring Revenue</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">$0</td>
+                  <td style="padding: var(--space-3); text-align: right;">$1M</td>
+                  <td style="padding: var(--space-3); text-align: right;">$5M</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">Financial reporting</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: var(--space-3);"><strong>Net Promoter Score</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">—</td>
+                  <td style="padding: var(--space-3); text-align: right;">50</td>
+                  <td style="padding: var(--space-3); text-align: right;">65</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">Post-purchase surveys</td>
+                </tr>
+                <tr style="border-bottom: 1px solid var(--border);">
+                  <td style="padding: var(--space-3);"><strong>Customer Lifetime Value</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">—</td>
+                  <td style="padding: var(--space-3); text-align: right;">$680</td>
+                  <td style="padding: var(--space-3); text-align: right;">$1,200</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">Cohort analysis</td>
+                </tr>
+                <tr>
+                  <td style="padding: var(--space-3);"><strong>LTV:CAC Ratio</strong></td>
+                  <td style="padding: var(--space-3); text-align: right;">—</td>
+                  <td style="padding: var(--space-3); text-align: right;">3.0x</td>
+                  <td style="padding: var(--space-3); text-align: right;">4.5x</td>
+                  <td style="padding: var(--space-3); font-size: var(--text-sm);">Financial model</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- SECTION 7: RISK -->
+        <section id="risk" class="mega-section" data-section="risk">
+          <div class="section-hero">
+            <h2 style="font-size: 3rem; margin-bottom: var(--space-4);">⚠️ Risk & Mitigation</h2>
+            <p style="font-size: var(--text-lg); color: var(--text-secondary);">
+              Risk (Doc R) - Top strategic risks and mitigation strategies
+            </p>
+          </div>
+
+          <!-- Top Risks -->
+          <div class="grid grid-cols-2" style="gap: var(--space-6);">
+
+            <div class="card" style="border-left: 6px solid var(--error);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Risk 1: Supply Chain Sustainability</h4>
+                <span class="badge badge-error">Score: 16 (High)</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Description:</strong> Artisan partners fail to meet demand, quality standards slip, or labor practices exposed as unfair.
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Probability:</strong> 4 (Likely) | <strong>Impact:</strong> 4 (Major)<br>
+                <strong>Affects:</strong> Brand reputation, product availability, values credibility
+              </p>
+              <p style="font-size: var(--text-sm);"><strong>Mitigation:</strong></p>
+              <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                <li>Diversify artisan partnerships (10+ partners, no >20% dependency)</li>
+                <li>Fair Trade certification + regular audits</li>
+                <li>Transparent supply chain tracking (blockchain)</li>
+                <li>Capacity planning with 6-month lead time</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-left: 6px solid var(--warning);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Risk 2: Cultural Appropriation Accusation</h4>
+                <span class="badge badge-warning">Score: 12 (High)</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Description:</strong> Brand accused of appropriating African culture without proper attribution, compensation, or understanding.
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Probability:</strong> 3 (Possible) | <strong>Impact:</strong> 4 (Major)<br>
+                <strong>Affects:</strong> Brand reputation, customer trust, media perception
+              </p>
+              <p style="font-size: var(--text-sm);"><strong>Mitigation:</strong></p>
+              <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                <li>Cultural consultants review all creative work</li>
+                <li>Artisans prominently credited (names, stories, photos)</li>
+                <li>Fair revenue sharing with artisan communities</li>
+                <li>Transparent about founder background + intentions</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-left: 6px solid var(--warning);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Risk 3: Premium Pricing Resistance</h4>
+                <span class="badge badge-warning">Score: 12 (High)</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Description:</strong> Target customers unwilling to pay premium prices ($420-$1,200), expect fast-fashion pricing.
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Probability:</strong> 4 (Likely) | <strong>Impact:</strong> 3 (Moderate)<br>
+                <strong>Affects:</strong> Sales velocity, customer acquisition, revenue targets
+              </p>
+              <p style="font-size: var(--text-sm);"><strong>Mitigation:</strong></p>
+              <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                <li>Education-focused marketing (cost of craftsmanship)</li>
+                <li>Transparent pricing breakdown (artisan wages, materials)</li>
+                <li>Lifetime value positioning (cost-per-wear over 10+ years)</li>
+                <li>Entry-price products ($420) to lower barrier</li>
+              </ul>
+            </div>
+
+            <div class="card" style="border-left: 6px solid var(--info);">
+              <div class="flex items-center justify-between" style="margin-bottom: var(--space-4);">
+                <h4 style="margin: 0;">Risk 4: Social Media Crisis</h4>
+                <span class="badge badge-info">Score: 9 (Medium)</span>
+              </div>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Description:</strong> Viral negative sentiment from brand action, statement, or employee behavior. Boycott calls, media scrutiny.
+              </p>
+              <p style="font-size: var(--text-sm); margin-bottom: var(--space-3);">
+                <strong>Probability:</strong> 3 (Possible) | <strong>Impact:</strong> 3 (Moderate)<br>
+                <strong>Affects:</strong> Brand reputation, sales, employee morale
+              </p>
+              <p style="font-size: var(--text-sm);"><strong>Mitigation:</strong></p>
+              <ul style="font-size: var(--text-xs); line-height: 1.6;">
+                <li>Values alignment review for all campaigns</li>
+                <li>Social listening 24/7 (Brandwatch)</li>
+                <li>Crisis communication playbook ready</li>
+                <li>Brand advocates network to amplify positive voices</li>
+              </ul>
+            </div>
+
+          </div>
+
+          <!-- Scenario Planning -->
+          <div class="card" style="margin-top: var(--space-8);">
+            <h3 style="margin-bottom: var(--space-6);">Scenario Planning (3 Scenarios)</h3>
+            <div class="grid grid-cols-3">
+              <div>
+                <h5 style="color: var(--success);">Best Case: "Heritage Boom"</h5>
+                <p style="font-size: var(--text-sm);">Sustainable African fashion trends mainstream. Celebrity endorsements. Strong demand exceeds supply. Expand faster than planned.</p>
+              </div>
+              <div>
+                <h5 style="color: var(--info);">Base Case: "Steady Growth"</h5>
+                <p style="font-size: var(--text-sm);">Plan unfolds as expected. Challenges manageable. Metrics on track. Year 2 profitability achieved. Sustainable trajectory.</p>
+              </div>
+              <div>
+                <h5 style="color: var(--error);">Worst Case: "Recession + Crisis"</h5>
+                <p style="font-size: var(--text-sm);">Economic downturn reduces luxury spending. Supply chain crisis. Cultural appropriation scandal. Extend runway, pivot strategy.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FOOTER CTA -->
+        <section style="text-align: center; padding: var(--space-16); background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border-radius: var(--radius-xl);">
+          <h2 style="color: white; margin-bottom: var(--space-4);">Strategic Package Complete</h2>
+          <p style="font-size: var(--text-xl); margin-bottom: var(--space-8); opacity: 0.95;">
+            ADVERTIS Strategic Overview synthesizes 8 documents, 300-600 pages of strategic guidance.<br>
+            Ready to execute "Wear Your Story" across 36 months.
+          </p>
+          <div class="flex items-center justify-center gap-4">
+            <button class="btn btn-lg" style="background: white; color: var(--primary);" onclick="window.print()">
+              📄 Export Complete Overview as PDF
+            </button>
+            <button class="btn btn-outline btn-lg" style="border-color: white; color: white;" onclick="window.location.href='index.html'">
+              ← Back to Dashboard
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/app.js"></script>
+  <script>
+    // Sticky nav active state
+    const navPills = document.querySelectorAll('.nav-pill');
+    const sections = document.querySelectorAll('.mega-section');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id;
+          navPills.forEach(pill => {
+            pill.classList.remove('active');
+            if (pill.getAttribute('href') === `#${sectionId}`) {
+              pill.classList.add('active');
+            }
+          });
+        }
+      });
+    }, {
+      rootMargin: '-20% 0px -80% 0px',
+      threshold: 0
+    });
+
+    sections.forEach(section => observer.observe(section));
+
+    // Smooth scroll
+    navPills.forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = pill.getAttribute('href').substring(1);
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>

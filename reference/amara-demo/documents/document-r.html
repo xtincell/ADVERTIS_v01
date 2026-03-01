@@ -1,0 +1,1268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document R - Risk | AMARA Strategic Package</title>
+  <meta name="description" content="Risk assessment, scenario planning, and mitigation strategies for AMARA.">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="../assets/css/main.css">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- HEADER -->
+    <header class="app-header">
+      <a href="../index.html" class="header-logo">
+        <div class="logo-icon">A</div>
+        <div>
+          <div style="font-size: 1.25rem; line-height: 1;">AMARA</div>
+          <div style="font-size: 0.75rem; font-weight: 400; color: var(--text-tertiary);">Strategic Package</div>
+        </div>
+      </a>
+
+      <nav class="header-nav">
+        <div class="header-search">
+          <span class="search-icon">🔍</span>
+          <input type="search" class="search-input" placeholder="Search document..." id="docSearch">
+        </div>
+
+        <div class="document-switcher">
+          <select class="doc-select" onchange="if(this.value) window.location.href=this.value">
+            <option value="">Switch Document</option>
+            <option value="document-s.html">S - Strategy Bible</option>
+            <option value="document-a.html">A - Authenticité</option>
+            <option value="document-d.html">D - Distinction</option>
+            <option value="document-v.html">V - Valeur</option>
+            <option value="document-e.html">E - Engagement</option>
+            <option value="document-r.html" selected>R - Risk</option>
+            <option value="document-t.html">T - Track</option>
+            <option value="document-i.html">I - Implementation</option>
+          </select>
+        </div>
+
+        <button class="btn btn-outline btn-sm" id="exportDocBtn">
+          📄 Export PDF
+        </button>
+      </nav>
+    </header>
+
+    <div class="document-layout">
+      <!-- SIDEBAR -->
+      <aside class="document-sidebar">
+        <div class="sidebar-header">
+          <div class="doc-badge" style="background: var(--error);">R</div>
+          <div>
+            <h3 style="font-size: var(--text-lg); margin: 0;">Risk</h3>
+            <p style="font-size: var(--text-sm); color: var(--text-secondary); margin: 0;">Risk Management & Mitigation</p>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          <a href="#executive-summary" class="sidebar-link active">
+            <span class="sidebar-number">1</span>
+            <span>Executive Summary</span>
+          </a>
+          <a href="#risk-framework" class="sidebar-link">
+            <span class="sidebar-number">2</span>
+            <span>Risk Framework</span>
+          </a>
+          <a href="#strategic-risks" class="sidebar-link">
+            <span class="sidebar-number">3</span>
+            <span>Strategic Risks</span>
+          </a>
+          <a href="#operational-risks" class="sidebar-link">
+            <span class="sidebar-number">4</span>
+            <span>Operational Risks</span>
+          </a>
+          <a href="#reputational-risks" class="sidebar-link">
+            <span class="sidebar-number">5</span>
+            <span>Reputational Risks</span>
+          </a>
+          <a href="#scenario-planning" class="sidebar-link">
+            <span class="sidebar-number">6</span>
+            <span>Scenario Planning</span>
+          </a>
+          <a href="#crisis-management" class="sidebar-link">
+            <span class="sidebar-number">7</span>
+            <span>Crisis Management</span>
+          </a>
+        </nav>
+
+        <div class="sidebar-stats">
+          <div class="stat-item">
+            <div class="stat-label">Status</div>
+            <div class="badge badge-warning">Monitored</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Critical Risks</div>
+            <div class="stat-value">5</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Last Review</div>
+            <div class="stat-value">Feb 2026</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- MAIN CONTENT -->
+      <main class="document-main">
+        <div class="document-content">
+
+          <!-- DOCUMENT HEADER -->
+          <div class="document-header">
+            <div class="breadcrumb">
+              <a href="../index.html">Home</a>
+              <span>/</span>
+              <span>Document R - Risk</span>
+            </div>
+
+            <h1 class="document-title">
+              Risk
+              <span class="title-subtitle">Document R - Risk Assessment & Mitigation Strategies</span>
+            </h1>
+
+            <div class="document-meta">
+              <div class="meta-item">
+                <span class="meta-label">Brand:</span>
+                <span class="meta-value">AMARA - Wear Your Story</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Focus:</span>
+                <span class="meta-value">What Could Go Wrong & How We Prepare</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Framework:</span>
+                <span class="meta-value">ADVERT - Dimension R</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 1: EXECUTIVE SUMMARY -->
+          <section id="executive-summary" class="content-section">
+            <div class="section-header">
+              <span class="section-number">01</span>
+              <h2 class="section-title">Executive Summary</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Every ambitious strategy carries risk. This document identifies AMARA's top threats across strategic, operational, and reputational dimensions—and outlines mitigation strategies to protect our vision while maintaining agility.
+              </p>
+            </div>
+
+            <div class="card card-highlight">
+              <h3>Risk Philosophy</h3>
+              <blockquote style="font-size: var(--text-lg); font-style: italic; padding: var(--space-6); background: var(--warning-light); border-left: 4px solid var(--warning); border-radius: var(--radius-md);">
+                "We don't avoid risk—we understand it, prepare for it, and move forward anyway. The biggest risk is not taking one."
+              </blockquote>
+              <p style="margin-top: var(--space-4);">
+                <strong>Our approach:</strong> Proactive identification, transparent assessment, decisive mitigation. We monitor 15 key risks monthly and update this document quarterly.
+              </p>
+            </div>
+
+            <div class="card">
+              <h3>Top 5 Critical Risks (Priority Matrix)</h3>
+
+              <div class="risk-priority-grid">
+                <div class="risk-item critical">
+                  <div class="risk-header">
+                    <span class="risk-badge critical">CRITICAL</span>
+                    <h4>Supply Chain Disruption</h4>
+                  </div>
+                  <div class="risk-metrics">
+                    <span><strong>Probability:</strong> 35%</span>
+                    <span><strong>Impact:</strong> High</span>
+                    <span><strong>Risk Score:</strong> 8.5/10</span>
+                  </div>
+                  <p>Natural disasters, political instability, or artisan health issues could halt production in key regions.</p>
+                </div>
+
+                <div class="risk-item high">
+                  <div class="risk-header">
+                    <span class="risk-badge high">HIGH</span>
+                    <h4>CAC Inflation</h4>
+                  </div>
+                  <div class="risk-metrics">
+                    <span><strong>Probability:</strong> 40%</span>
+                    <span><strong>Impact:</strong> Medium-High</span>
+                    <span><strong>Risk Score:</strong> 7.2/10</span>
+                  </div>
+                  <p>Digital advertising costs rising 15-20% annually could make customer acquisition unsustainable.</p>
+                </div>
+
+                <div class="risk-item high">
+                  <div class="risk-header">
+                    <span class="risk-badge high">HIGH</span>
+                    <h4>Cultural Appropriation Accusations</h4>
+                  </div>
+                  <div class="risk-metrics">
+                    <span><strong>Probability:</strong> 25%</span>
+                    <span><strong>Impact:</strong> High</span>
+                    <span><strong>Risk Score:</strong> 6.8/10</span>
+                  </div>
+                  <p>Despite authentic partnerships, social media backlash could damage brand reputation.</p>
+                </div>
+
+                <div class="risk-item medium">
+                  <div class="risk-header">
+                    <span class="risk-badge medium">MEDIUM</span>
+                    <h4>Competitor Imitation</h4>
+                  </div>
+                  <div class="risk-metrics">
+                    <span><strong>Probability:</strong> 60%</span>
+                    <span><strong>Impact:</strong> Medium</span>
+                    <span><strong>Risk Score:</strong> 6.0/10</span>
+                  </div>
+                  <p>Larger brands (Everlane, Reformation) could launch similar artisan-partnership programs.</p>
+                </div>
+
+                <div class="risk-item medium">
+                  <div class="risk-header">
+                    <span class="risk-badge medium">MEDIUM</span>
+                    <h4>Quality Control Failures</h4>
+                  </div>
+                  <div class="risk-metrics">
+                    <span><strong>Probability:</strong> 30%</span>
+                    <span><strong>Impact:</strong> Medium</span>
+                    <span><strong>Risk Score:</strong> 5.5/10</span>
+                  </div>
+                  <p>Scaling artisan production while maintaining quality standards could lead to defects.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-3">
+              <div class="card">
+                <h4>Risks Identified</h4>
+                <div class="stat-large">15</div>
+                <p>Total risks tracked across strategic, operational, and reputational categories</p>
+              </div>
+
+              <div class="card">
+                <h4>Mitigation Plans</h4>
+                <div class="stat-large">15</div>
+                <p>Documented response strategies for each identified risk</p>
+              </div>
+
+              <div class="card">
+                <h4>Review Frequency</h4>
+                <div class="stat-large">Monthly</div>
+                <p>Risk register updated monthly, full assessment quarterly</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 2: RISK FRAMEWORK -->
+          <section id="risk-framework" class="content-section">
+            <div class="section-header">
+              <span class="section-number">02</span>
+              <h2 class="section-title">Risk Framework</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Our risk management framework categorizes threats, assesses probability and impact, and assigns ownership. Every risk has a mitigation strategy and monitoring cadence.
+              </p>
+            </div>
+
+            <div class="card">
+              <h3>Risk Assessment Matrix</h3>
+
+              <div class="matrix-visual" style="position: relative; width: 100%; height: 500px; background: var(--surface-2); border-radius: var(--radius-lg); padding: var(--space-8);">
+                <!-- Axes -->
+                <div style="position: absolute; left: 15%; top: 10%; bottom: 10%; width: 2px; background: var(--border-strong);"></div>
+                <div style="position: absolute; bottom: 15%; left: 15%; right: 5%; height: 2px; background: var(--border-strong);"></div>
+
+                <!-- Labels -->
+                <div style="position: absolute; left: 5%; top: 50%; transform: translateY(-50%); writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 600;">IMPACT</div>
+                <div style="position: absolute; bottom: 5%; left: 50%; transform: translateX(-50%); font-weight: 600;">PROBABILITY</div>
+
+                <!-- Quadrants -->
+                <div style="position: absolute; right: 10%; top: 15%; padding: var(--space-2); background: var(--error); color: white; font-weight: 600; border-radius: var(--radius-sm);">HIGH PRIORITY</div>
+                <div style="position: absolute; left: 20%; top: 15%; padding: var(--space-2); background: var(--warning); color: white; font-weight: 600; border-radius: var(--radius-sm);">MONITOR</div>
+                <div style="position: absolute; right: 10%; bottom: 20%; padding: var(--space-2); background: var(--warning); color: white; font-weight: 600; border-radius: var(--radius-sm);">MANAGE</div>
+                <div style="position: absolute; left: 20%; bottom: 20%; padding: var(--space-2); background: var(--success); color: white; font-weight: 600; border-radius: var(--radius-sm);">LOW PRIORITY</div>
+
+                <!-- Risk Points -->
+                <div style="position: absolute; right: 25%; top: 25%; width: 12px; height: 12px; background: var(--error); border-radius: 50%; border: 2px solid white;" title="Supply Chain"></div>
+                <div style="position: absolute; right: 30%; top: 35%; width: 12px; height: 12px; background: var(--error); border-radius: 50%; border: 2px solid white;" title="CAC Inflation"></div>
+                <div style="position: absolute; left: 40%; top: 30%; width: 12px; height: 12px; background: var(--warning); border-radius: 50%; border: 2px solid white;" title="Appropriation"></div>
+                <div style="position: absolute; right: 20%; top: 48%; width: 12px; height: 12px; background: var(--warning); border-radius: 50%; border: 2px solid white;" title="Competitor"></div>
+                <div style="position: absolute; left: 45%; top: 50%; width: 12px; height: 12px; background: var(--warning); border-radius: 50%; border: 2px solid white;" title="Quality Control"></div>
+              </div>
+
+              <p style="margin-top: var(--space-6);"><strong>Matrix Logic:</strong></p>
+              <ul class="list-styled">
+                <li><strong>High Probability + High Impact:</strong> Critical risks requiring immediate mitigation (red zone)</li>
+                <li><strong>Low Probability + High Impact:</strong> Monitor closely, prepare contingencies (orange zone)</li>
+                <li><strong>High Probability + Low Impact:</strong> Manage proactively, accept some occurrence (orange zone)</li>
+                <li><strong>Low Probability + Low Impact:</strong> Accept risk, minimal monitoring (green zone)</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h3>Risk Categories</h3>
+
+              <div class="category-breakdown">
+                <div class="category-item">
+                  <h4>1. Strategic Risks</h4>
+                  <p>Threats to long-term business model, market position, or competitive advantage</p>
+                  <div class="category-examples">
+                    <strong>Examples:</strong> Market shifts, competitive threats, category disruption, positioning erosion
+                  </div>
+                  <div class="category-count"><strong>5 risks identified</strong></div>
+                </div>
+
+                <div class="category-item">
+                  <h4>2. Operational Risks</h4>
+                  <p>Threats to day-to-day operations, supply chain, production, or delivery</p>
+                  <div class="category-examples">
+                    <strong>Examples:</strong> Supply chain disruption, quality control failures, inventory issues, logistics breakdowns
+                  </div>
+                  <div class="category-count"><strong>6 risks identified</strong></div>
+                </div>
+
+                <div class="category-item">
+                  <h4>3. Reputational Risks</h4>
+                  <p>Threats to brand trust, customer perception, or public image</p>
+                  <div class="category-examples">
+                    <strong>Examples:</strong> Cultural appropriation accusations, greenwashing claims, artisan exploitation allegations, social media crises
+                  </div>
+                  <div class="category-count"><strong>4 risks identified</strong></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Risk Management Process</h3>
+
+              <div class="process-flow">
+                <div class="process-step">
+                  <div class="step-number">1</div>
+                  <div class="step-content">
+                    <h4>Identify</h4>
+                    <p>Monthly risk scanning (team input, market monitoring, customer feedback)</p>
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="process-step">
+                  <div class="step-number">2</div>
+                  <div class="step-content">
+                    <h4>Assess</h4>
+                    <p>Score probability (0-100%) and impact (Low/Medium/High)</p>
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="process-step">
+                  <div class="step-number">3</div>
+                  <div class="step-content">
+                    <h4>Prioritize</h4>
+                    <p>Plot on matrix, calculate risk score, assign priority level</p>
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="process-step">
+                  <div class="step-number">4</div>
+                  <div class="step-content">
+                    <h4>Mitigate</h4>
+                    <p>Develop response strategy, assign owner, allocate resources</p>
+                  </div>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="process-step">
+                  <div class="step-number">5</div>
+                  <div class="step-content">
+                    <h4>Monitor</h4>
+                    <p>Track indicators, update scores, review quarterly</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 3: STRATEGIC RISKS -->
+          <section id="strategic-risks" class="content-section">
+            <div class="section-header">
+              <span class="section-number">03</span>
+              <h2 class="section-title">Strategic Risks</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Strategic risks threaten our business model, market position, or competitive advantage. These require leadership attention and often strategic pivots.
+              </p>
+            </div>
+
+            <!-- RISK 1 -->
+            <div class="risk-detail-card">
+              <div class="risk-detail-header">
+                <div>
+                  <h3>Risk S1: CAC Inflation Exceeds LTV Growth</h3>
+                  <div class="risk-badges">
+                    <span class="badge" style="background: var(--error);">Strategic</span>
+                    <span class="badge" style="background: var(--warning);">High Priority</span>
+                  </div>
+                </div>
+                <div class="risk-score-box">
+                  <div class="score-label">Risk Score</div>
+                  <div class="score-value">7.2/10</div>
+                </div>
+              </div>
+
+              <div class="risk-detail-content">
+                <div class="risk-section">
+                  <h4>Description</h4>
+                  <p>
+                    Digital advertising costs (Facebook, Instagram, Google) are increasing 15-20% YoY. If our Customer Acquisition Cost (CAC) grows faster than Customer Lifetime Value (LTV), unit economics become unsustainable.
+                  </p>
+                </div>
+
+                <div class="grid grid-3">
+                  <div class="risk-metric">
+                    <strong>Probability:</strong> 40%
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Impact:</strong> High
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Timeline:</strong> 12-24 months
+                  </div>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Potential Impact</h4>
+                  <ul class="list-styled">
+                    <li>CAC exceeds $120 (vs. target $85), destroying unit economics</li>
+                    <li>LTV:CAC ratio falls below 3:1 (vs. target 4:1+)</li>
+                    <li>Forced to reduce marketing spend, slowing growth</li>
+                    <li>Burn rate increases, runway shortens</li>
+                    <li>Investor confidence erodes</li>
+                  </ul>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Mitigation Strategies</h4>
+                  <div class="mitigation-list">
+                    <div class="mitigation-item">
+                      <strong>1. Diversify Acquisition Channels (Primary)</strong>
+                      <p>Reduce dependence on paid ads. Target: 68% organic traffic by Year 3</p>
+                      <ul class="list-plain">
+                        <li>• Build superfan referral program (each fan refers 3.2 customers)</li>
+                        <li>• Invest in SEO/content (blog, cultural education, maker stories)</li>
+                        <li>• Leverage PR and earned media (15+ placements Year 1)</li>
+                        <li>• Community events and pop-ups (direct customer touchpoints)</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>2. Increase LTV Through Retention</strong>
+                      <p>Focus on repeat purchases and lifetime value growth</p>
+                      <ul class="list-plain">
+                        <li>• Superfan program increases LTV from $340 to $890</li>
+                        <li>• Subscription/membership model (exploring Year 2)</li>
+                        <li>• Cross-sell and upsell strategies</li>
+                        <li>• Exceptional customer service (NPS 78+ target)</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>3. Optimize Paid Performance</strong>
+                      <p>Maximize ROAS through better targeting and creative</p>
+                      <ul class="list-plain">
+                        <li>• A/B test creative (storytelling vs. product-focused ads)</li>
+                        <li>• Refine audience targeting (lookalike of superfans)</li>
+                        <li>• Retargeting campaigns (lower CAC than cold traffic)</li>
+                        <li>• Set hard CAC ceiling ($100) - pause if exceeded</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Monitoring Indicators</h4>
+                  <div class="grid grid-2">
+                    <div>
+                      <strong>Leading Indicators:</strong>
+                      <ul class="list-plain">
+                        <li>• CPM trends (monthly)</li>
+                        <li>• CPC trends (monthly)</li>
+                        <li>• Organic traffic % (monthly)</li>
+                        <li>• Referral rate (monthly)</li>
+                      </ul>
+                    </div>
+                    <div>
+                      <strong>Lagging Indicators:</strong>
+                      <ul class="list-plain">
+                        <li>• Blended CAC (monthly)</li>
+                        <li>• LTV estimates (quarterly)</li>
+                        <li>• LTV:CAC ratio (quarterly)</li>
+                        <li>• Payback period (quarterly)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="risk-owner">
+                  <strong>Risk Owner:</strong> CMO | <strong>Review Frequency:</strong> Monthly
+                </div>
+              </div>
+            </div>
+
+            <!-- RISK 2 -->
+            <div class="risk-detail-card">
+              <div class="risk-detail-header">
+                <div>
+                  <h3>Risk S2: Competitor Imitation at Scale</h3>
+                  <div class="risk-badges">
+                    <span class="badge" style="background: var(--error);">Strategic</span>
+                    <span class="badge" style="background: var(--warning);">Medium-High</span>
+                  </div>
+                </div>
+                <div class="risk-score-box">
+                  <div class="score-label">Risk Score</div>
+                  <div class="score-value">6.0/10</div>
+                </div>
+              </div>
+
+              <div class="risk-detail-content">
+                <div class="risk-section">
+                  <h4>Description</h4>
+                  <p>
+                    Larger sustainable brands (Everlane, Reformation, Patagonia) launch similar "artisan partnership" programs, leveraging their scale, brand awareness, and resources to compete directly.
+                  </p>
+                </div>
+
+                <div class="grid grid-3">
+                  <div class="risk-metric">
+                    <strong>Probability:</strong> 60%
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Impact:</strong> Medium
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Timeline:</strong> 18-36 months
+                  </div>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Mitigation Strategies</h4>
+                  <ul class="list-styled">
+                    <li><strong>Deepen artisan relationships:</strong> 3-5 year contracts, co-creation, profit-sharing create loyalty</li>
+                    <li><strong>Cultural expertise moat:</strong> Years of cultural knowledge, artisan trust can't be replicated quickly</li>
+                    <li><strong>Community network effects:</strong> Superfan community creates switching costs</li>
+                    <li><strong>Speed to market:</strong> First-mover advantage in "Contemporary African Heritage" category</li>
+                    <li><strong>Authenticity narrative:</strong> Founded by diaspora, not corporate greenwashing</li>
+                  </ul>
+                </div>
+
+                <div class="risk-owner">
+                  <strong>Risk Owner:</strong> CEO | <strong>Review Frequency:</strong> Quarterly
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional strategic risks listed more concisely -->
+            <div class="card">
+              <h3>Additional Strategic Risks (Summary)</h3>
+
+              <div class="risk-summary-grid">
+                <div class="risk-summary-item">
+                  <strong>S3: Market Size Overestimation</strong>
+                  <div class="summary-meta">Probability: 30% | Impact: High | Score: 5.5/10</div>
+                  <p>TAM/SAM calculations prove optimistic; actual addressable market smaller than projected.</p>
+                  <p><strong>Mitigation:</strong> Conservative growth targets, adjacent market expansion (Conscious Consumers), international markets.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>S4: Category Never Scales</strong>
+                  <div class="summary-meta">Probability: 20% | Impact: High | Score: 4.5/10</div>
+                  <p>"Contemporary Heritage Fashion" remains niche; mass market never adopts.</p>
+                  <p><strong>Mitigation:</strong> Profitable at niche scale ($10M+ revenue sustainable), diversify revenue streams, pivot if needed.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>S5: Positioning Dilution</strong>
+                  <div class="summary-meta">Probability: 25% | Impact: Medium | Score: 4.0/10</div>
+                  <p>Growth pressures force compromises that dilute "authentic heritage" positioning.</p>
+                  <p><strong>Mitigation:</strong> Clear values hierarchy (Heritage First), decision framework, superfan feedback loop.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 4: OPERATIONAL RISKS -->
+          <section id="operational-risks" class="content-section">
+            <div class="section-header">
+              <span class="section-number">04</span>
+              <h2 class="section-title">Operational Risks</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Operational risks affect our ability to produce, deliver, and maintain quality. These require process improvements and contingency planning.
+              </p>
+            </div>
+
+            <!-- RISK O1 -->
+            <div class="risk-detail-card">
+              <div class="risk-detail-header">
+                <div>
+                  <h3>Risk O1: Supply Chain Disruption</h3>
+                  <div class="risk-badges">
+                    <span class="badge" style="background: var(--info);">Operational</span>
+                    <span class="badge" style="background: var(--error);">CRITICAL</span>
+                  </div>
+                </div>
+                <div class="risk-score-box">
+                  <div class="score-label">Risk Score</div>
+                  <div class="score-value">8.5/10</div>
+                </div>
+              </div>
+
+              <div class="risk-detail-content">
+                <div class="risk-section">
+                  <h4>Description</h4>
+                  <p>
+                    Natural disasters (floods, drought), political instability, health crises, or artisan capacity issues could disrupt production in one or more key regions (Nigeria, Ghana, Senegal, Kenya, Mali, Ethiopia).
+                  </p>
+                </div>
+
+                <div class="grid grid-3">
+                  <div class="risk-metric">
+                    <strong>Probability:</strong> 35%
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Impact:</strong> High
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Timeline:</strong> Ongoing
+                  </div>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Mitigation Strategies</h4>
+                  <div class="mitigation-list">
+                    <div class="mitigation-item">
+                      <strong>1. Geographic Diversification</strong>
+                      <ul class="list-plain">
+                        <li>• Partner with collectives in 6+ countries (not dependent on single region)</li>
+                        <li>• Each technique (Kente, Adire, Bogolan) available from 2+ locations</li>
+                        <li>• Target: No single country represents >30% of production</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>2. Inventory Buffer</strong>
+                      <ul class="list-plain">
+                        <li>• Maintain 45-60 days finished goods inventory (vs. 30-day standard)</li>
+                        <li>• Pre-order system for custom pieces (manage customer expectations)</li>
+                        <li>• Strategic stockpiling before rainy seasons or known risk periods</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>3. Artisan Support Fund</strong>
+                      <ul class="list-plain">
+                        <li>• $50K emergency fund for workshop repairs, health crises</li>
+                        <li>• Insurance coverage for artisan collectives</li>
+                        <li>• Rapid response protocol (24-48 hour assessment, aid deployment)</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>4. Transparent Communication</strong>
+                      <ul class="list-plain">
+                        <li>• If disruption occurs, immediately inform affected customers</li>
+                        <li>• Share artisan stories (humanize the situation)</li>
+                        <li>• Offer refunds or extended timelines (customer choice)</li>
+                        <li>• Turn crisis into community moment (customers rally to support artisans)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="risk-owner">
+                  <strong>Risk Owner:</strong> COO | <strong>Review Frequency:</strong> Monthly
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional operational risks -->
+            <div class="card">
+              <h3>Additional Operational Risks (Summary)</h3>
+
+              <div class="risk-summary-grid">
+                <div class="risk-summary-item">
+                  <strong>O2: Quality Control Failures</strong>
+                  <div class="summary-meta">Probability: 30% | Impact: Medium | Score: 5.5/10</div>
+                  <p>Scaling production leads to defects, customer dissatisfaction, high return rates.</p>
+                  <p><strong>Mitigation:</strong> Quality checkpoints (artisan → coordinator → warehouse), artisan training, defect tracking, 30-day returns.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>O3: Logistics & Fulfillment Breakdowns</strong>
+                  <div class="summary-meta">Probability: 25% | Impact: Medium | Score: 4.5/10</div>
+                  <p>Delayed shipments, lost packages, cross-border customs issues damage customer experience.</p>
+                  <p><strong>Mitigation:</strong> Multi-carrier strategy, tracking transparency, proactive communication, 3PL partnership.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>O4: Inventory Mismatch</strong>
+                  <div class="summary-meta">Probability: 35% | Impact: Low-Medium | Score: 4.0/10</div>
+                  <p>Stockouts of popular items or overstock of slow movers hurt cash flow.</p>
+                  <p><strong>Mitigation:</strong> Demand forecasting, pre-order system, limited editions, artisan communication loops.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>O5: Technology Failures</strong>
+                  <div class="summary-meta">Probability: 20% | Impact: Medium | Score: 3.5/10</div>
+                  <p>Website crashes, payment processing failures, blockchain traceability downtime.</p>
+                  <p><strong>Mitigation:</strong> Redundant hosting, backup payment processors, regular testing, 24/7 monitoring.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>O6: Key Person Dependency</strong>
+                  <div class="summary-meta">Probability: 15% | Impact: Medium | Score: 3.0/10</div>
+                  <p>Loss of founder or key artisan relationship manager disrupts operations.</p>
+                  <p><strong>Mitigation:</strong> Documentation, cross-training, succession planning, distributed decision-making.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 5: REPUTATIONAL RISKS -->
+          <section id="reputational-risks" class="content-section">
+            <div class="section-header">
+              <span class="section-number">05</span>
+              <h2 class="section-title">Reputational Risks</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Reputational risks threaten brand trust and customer perception. In the age of social media, these can escalate rapidly and cause lasting damage.
+              </p>
+            </div>
+
+            <!-- RISK R1 -->
+            <div class="risk-detail-card">
+              <div class="risk-detail-header">
+                <div>
+                  <h3>Risk R1: Cultural Appropriation Accusations</h3>
+                  <div class="risk-badges">
+                    <span class="badge" style="background: var(--warning);">Reputational</span>
+                    <span class="badge" style="background: var(--warning);">High</span>
+                  </div>
+                </div>
+                <div class="risk-score-box">
+                  <div class="score-label">Risk Score</div>
+                  <div class="score-value">6.8/10</div>
+                </div>
+              </div>
+
+              <div class="risk-detail-content">
+                <div class="risk-section">
+                  <h4>Description</h4>
+                  <p>
+                    Despite authentic artisan partnerships, social media users accuse AMARA of cultural appropriation—claiming we're profiting from African culture or exploiting artisans. Viral tweet/post damages brand reputation.
+                  </p>
+                </div>
+
+                <div class="grid grid-3">
+                  <div class="risk-metric">
+                    <strong>Probability:</strong> 25%
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Impact:</strong> High
+                  </div>
+                  <div class="risk-metric">
+                    <strong>Timeline:</strong> Ongoing (social media risk)
+                  </div>
+                </div>
+
+                <div class="risk-section">
+                  <h4>Mitigation Strategies</h4>
+                  <div class="mitigation-list">
+                    <div class="mitigation-item">
+                      <strong>1. Proactive Transparency (Best Defense)</strong>
+                      <ul class="list-plain">
+                        <li>• Publish artisan wages, profit-sharing details publicly</li>
+                        <li>• Show artisan consent (video testimonials, partnership agreements)</li>
+                        <li>• Cultural advisory board (5 members from represented communities)</li>
+                        <li>• Quarterly impact reports (artisan earnings, community investment)</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>2. Founder Story & Diaspora Identity</strong>
+                      <ul class="list-plain">
+                        <li>• Amplify founder's diaspora background (personal connection to heritage)</li>
+                        <li>• Share "why we exist" narrative (reconnection, not exploitation)</li>
+                        <li>• Position as diaspora-led, not Western appropriation</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>3. Artisan Voices Front & Center</strong>
+                      <ul class="list-plain">
+                        <li>• Artisans featured prominently in marketing (not just "suppliers")</li>
+                        <li>• Direct artisan social media takeovers</li>
+                        <li>• Artisan testimonials: "AMARA changed my life" stories</li>
+                        <li>• Artisans as brand ambassadors, not invisible labor</li>
+                      </ul>
+                    </div>
+
+                    <div class="mitigation-item">
+                      <strong>4. Rapid Response Protocol</strong>
+                      <ul class="list-plain">
+                        <li>• Social media monitoring (24/7 alerts for brand mentions + negative sentiment)</li>
+                        <li>• Response within 4 hours (not days)</li>
+                        <li>• Invite conversation: "Let's talk. Here's our full supply chain data."</li>
+                        <li>• Mobilize superfans (community defense, authentic testimonials)</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="risk-owner">
+                  <strong>Risk Owner:</strong> CEO + CMO | <strong>Review Frequency:</strong> Weekly (social monitoring)
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional reputational risks -->
+            <div class="card">
+              <h3>Additional Reputational Risks (Summary)</h3>
+
+              <div class="risk-summary-grid">
+                <div class="risk-summary-item">
+                  <strong>R2: Greenwashing Accusations</strong>
+                  <div class="summary-meta">Probability: 20% | Impact: Medium-High | Score: 5.0/10</div>
+                  <p>Sustainability claims questioned; accused of exaggerating environmental impact.</p>
+                  <p><strong>Mitigation:</strong> Third-party certifications (B-Corp target), transparent methodology, conservative claims, data publication.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>R3: Artisan Exploitation Allegations</strong>
+                  <div class="summary-meta">Probability: 15% | Impact: High | Score: 4.8/10</div>
+                  <p>Despite fair wages, accused of exploiting low-cost labor in developing countries.</p>
+                  <p><strong>Mitigation:</strong> Publish wage data (150%+ local median), artisan testimonials, independent audits, profit-sharing proof.</p>
+                </div>
+
+                <div class="risk-summary-item">
+                  <strong>R4: Quality/Customer Service Crisis</strong>
+                  <div class="summary-meta">Probability: 20% | Impact: Medium | Score: 4.0/10</div>
+                  <p>Series of defects or poor customer service experiences go viral on social media.</p>
+                  <p><strong>Mitigation:</strong> Proactive quality control, excellent CS training, empower team to solve issues, address publicly + honestly.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 6: SCENARIO PLANNING -->
+          <section id="scenario-planning" class="content-section">
+            <div class="section-header">
+              <span class="section-number">06</span>
+              <h2 class="section-title">Scenario Planning</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                Scenario planning prepares us for multiple possible futures. We've modeled three scenarios across two key uncertainties: Market Adoption and Execution Success.
+              </p>
+            </div>
+
+            <div class="card">
+              <h3>Scenario Matrix</h3>
+
+              <div class="scenario-matrix">
+                <div class="scenario-card best">
+                  <div class="scenario-header">
+                    <h4>🚀 Best Case: "Category Leader"</h4>
+                    <div class="scenario-probability">Probability: 25%</div>
+                  </div>
+                  <div class="scenario-conditions">
+                    <p><strong>Conditions:</strong> High market adoption + Strong execution</p>
+                  </div>
+                  <div class="scenario-outcomes">
+                    <h5>Outcomes (Year 3):</h5>
+                    <ul class="list-styled">
+                      <li>Revenue: $35M+ (vs. $24M target)</li>
+                      <li>Superfans: 8,000+ (vs. 5,000 target)</li>
+                      <li>Brand awareness: 75%+ (vs. 65% target)</li>
+                      <li>Category: "Contemporary Heritage Fashion" becomes mainstream</li>
+                      <li>Competitors: 5+ brands copy our model (validation)</li>
+                    </ul>
+                  </div>
+                  <div class="scenario-strategy">
+                    <h5>Strategic Response:</h5>
+                    <p><strong>SCALE AGGRESSIVELY</strong> — Raise Series A, expand to 50+ artisan collectives, international markets, wholesale partnerships, product line extensions.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-card base">
+                  <div class="scenario-header">
+                    <h4>✅ Base Case: "Niche Domination"</h4>
+                    <div class="scenario-probability">Probability: 50%</div>
+                  </div>
+                  <div class="scenario-conditions">
+                    <p><strong>Conditions:</strong> Moderate market adoption + Good execution</p>
+                  </div>
+                  <div class="scenario-outcomes">
+                    <h5>Outcomes (Year 3):</h5>
+                    <ul class="list-styled">
+                      <li>Revenue: $24M (on target)</li>
+                      <li>Superfans: 5,000 (on target)</li>
+                      <li>Brand awareness: 65% (on target)</li>
+                      <li>Category: Remains niche but profitable</li>
+                      <li>Profitability: EBITDA positive Year 3</li>
+                    </ul>
+                  </div>
+                  <div class="scenario-strategy">
+                    <h5>Strategic Response:</h5>
+                    <p><strong>OPTIMIZE & EXPAND</strong> — Focus on profitability, cautious geographic expansion, adjacent product categories, maintain niche leadership.</p>
+                  </div>
+                </div>
+
+                <div class="scenario-card worst">
+                  <div class="scenario-header">
+                    <h4>⚠️ Worst Case: "Pivot Required"</h4>
+                    <div class="scenario-probability">Probability: 25%</div>
+                  </div>
+                  <div class="scenario-conditions">
+                    <p><strong>Conditions:</strong> Low market adoption OR Poor execution</p>
+                  </div>
+                  <div class="scenario-outcomes">
+                    <h5>Outcomes (Year 3):</h5>
+                    <ul class="list-styled">
+                      <li>Revenue: $12M (50% of target)</li>
+                      <li>Superfans: 2,000 (40% of target)</li>
+                      <li>Brand awareness: 35% (struggling)</li>
+                      <li>CAC unsustainable (>$150)</li>
+                      <li>Cash runway: 6-9 months remaining</li>
+                    </ul>
+                  </div>
+                  <div class="scenario-strategy">
+                    <h5>Strategic Response:</h5>
+                    <p><strong>PIVOT OR SELL</strong> — Options: (1) Narrow to ultra-niche (fewer SKUs, higher margins), (2) Pivot to B2B (white-label artisan partnerships), (3) Acquisition by larger brand, (4) Controlled wind-down.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Trigger Points & Contingency Actions</h3>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Trigger Point</th>
+                    <th>Threshold</th>
+                    <th>Contingency Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Revenue significantly below target</strong></td>
+                    <td>&lt;70% of quarterly target for 2 consecutive quarters</td>
+                    <td>• Halt expansion plans<br>• Cut non-essential spend<br>• Reassess product-market fit<br>• Consider pivot options</td>
+                  </tr>
+                  <tr>
+                    <td><strong>CAC exceeds ceiling</strong></td>
+                    <td>CAC &gt;$120 for 3 consecutive months</td>
+                    <td>• Pause paid acquisition<br>• Double down on organic/referral<br>• Reassess value prop messaging<br>• Test pricing adjustments</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Cash runway critical</strong></td>
+                    <td>&lt;9 months runway remaining</td>
+                    <td>• Activate fundraising (bridge or Series A)<br>• Explore strategic partnerships/acquisitions<br>• Cut burn rate 30%+<br>• Prepare controlled wind-down if needed</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Major supply chain disruption</strong></td>
+                    <td>&gt;50% of production capacity offline &gt;30 days</td>
+                    <td>• Activate emergency artisan fund<br>• Communicate transparently with customers<br>• Offer refunds/extended timelines<br>• Expedite new partnerships</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Reputational crisis</strong></td>
+                    <td>Viral negative story (&gt;100K impressions) + &lt;50% positive sentiment</td>
+                    <td>• Activate crisis comms protocol<br>• CEO public response within 24h<br>• Release full transparency data<br>• Mobilize superfan community</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <div class="content-divider"></div>
+
+          <!-- SECTION 7: CRISIS MANAGEMENT -->
+          <section id="crisis-management" class="content-section">
+            <div class="section-header">
+              <span class="section-number">07</span>
+              <h2 class="section-title">Crisis Management</h2>
+            </div>
+
+            <div class="section-intro">
+              <p class="lead">
+                When a risk materializes into a crisis, rapid, coordinated response is critical. This section outlines our crisis management protocol.
+              </p>
+            </div>
+
+            <div class="card">
+              <h3>Crisis Response Framework</h3>
+
+              <div class="crisis-protocol">
+                <div class="protocol-phase">
+                  <div class="phase-header">
+                    <div class="phase-number">Phase 1</div>
+                    <h4>Detection & Assessment (0-2 hours)</h4>
+                  </div>
+                  <div class="phase-content">
+                    <p><strong>Actions:</strong></p>
+                    <ul class="list-styled">
+                      <li>Identify and confirm crisis (monitoring alerts, customer reports, team notification)</li>
+                      <li>Assess severity (Low/Medium/High/Critical)</li>
+                      <li>Activate crisis team (CEO, CMO, COO, Legal if needed)</li>
+                      <li>Gather facts (what happened, impact scope, who's affected)</li>
+                      <li>Document timeline</li>
+                    </ul>
+                    <p><strong>Deliverable:</strong> Crisis brief (1-page summary of situation, severity, initial facts)</p>
+                  </div>
+                </div>
+
+                <div class="protocol-phase">
+                  <div class="phase-header">
+                    <div class="phase-number">Phase 2</div>
+                    <h4>Containment & Communication (2-8 hours)</h4>
+                  </div>
+                  <div class="phase-content">
+                    <p><strong>Actions:</strong></p>
+                    <ul class="list-styled">
+                      <li>Stop the bleeding (halt operations if needed, pause marketing)</li>
+                      <li>Internal communication (brief all team members)</li>
+                      <li>Customer communication (email affected customers immediately)</li>
+                      <li>Public statement (CEO statement within 4-6 hours if public crisis)</li>
+                      <li>Monitor sentiment (social media, press, community reactions)</li>
+                    </ul>
+                    <p><strong>Communication Principles:</strong></p>
+                    <ul class="list-plain">
+                      <li>• Be fast (silence breeds speculation)</li>
+                      <li>• Be honest (admit what we know and don't know)</li>
+                      <li>• Be empathetic (acknowledge impact on people)</li>
+                      <li>• Be accountable (own mistakes, no deflection)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="protocol-phase">
+                  <div class="phase-header">
+                    <div class="phase-number">Phase 3</div>
+                    <h4>Resolution & Recovery (1-7 days)</h4>
+                  </div>
+                  <div class="phase-content">
+                    <p><strong>Actions:</strong></p>
+                    <ul class="list-styled">
+                      <li>Execute fix (repair, refund, replace—whatever resolves the issue)</li>
+                      <li>Customer remediation (make affected customers whole + extra)</li>
+                      <li>Continuous updates (daily until resolved)</li>
+                      <li>Monitor metrics (sentiment, NPS, churn, brand health)</li>
+                      <li>Support team (crisis is stressful—check in on people)</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="protocol-phase">
+                  <div class="phase-header">
+                    <div class="phase-number">Phase 4</div>
+                    <h4>Post-Mortem & Prevention (7-14 days)</h4>
+                  </div>
+                  <div class="phase-content">
+                    <p><strong>Actions:</strong></p>
+                    <ul class="list-styled">
+                      <li>Conduct post-mortem (what happened, why, how we responded)</li>
+                      <li>Identify root causes (not just symptoms)</li>
+                      <li>Document lessons learned</li>
+                      <li>Update processes to prevent recurrence</li>
+                      <li>Share learnings (internal, potentially public if valuable)</li>
+                      <li>Update risk register</li>
+                    </ul>
+                    <p><strong>Deliverable:</strong> Post-mortem report + updated processes</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Crisis Communication Templates</h3>
+
+              <div class="template-section">
+                <h4>Template 1: Initial Customer Communication (Supply Chain Disruption)</h4>
+                <div class="email-template">
+                  <div class="template-subject"><strong>Subject:</strong> Important Update About Your AMARA Order</div>
+                  <div class="template-body">
+                    <p>Hi [Name],</p>
+                    <p>We need to share an update about your order (#[ORDER_NUMBER]).</p>
+                    <p><strong>What happened:</strong> [Brief explanation - e.g., "Flooding in Senegal has temporarily affected our partner workshop where your piece was being made."]</p>
+                    <p><strong>Impact on you:</strong> Your order will be delayed by approximately [X weeks]. New estimated delivery: [DATE].</p>
+                    <p><strong>Your options:</strong></p>
+                    <ul>
+                      <li><strong>Option 1:</strong> Wait for your piece (we'll add a 20% discount to your order)</li>
+                      <li><strong>Option 2:</strong> Full refund, no questions asked</li>
+                      <li><strong>Option 3:</strong> Choose a different piece from current inventory (ready to ship)</li>
+                    </ul>
+                    <p><strong>What we're doing:</strong> [Action - e.g., "We're helping our partners rebuild their workspace and have activated our emergency support fund."]</p>
+                    <p>Reply to this email to let us know your preference, or if you have any questions.</p>
+                    <p>We're deeply sorry for the inconvenience. Thank you for your patience and support.</p>
+                    <p>— The AMARA Team</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="template-section">
+                <h4>Template 2: Public Statement (Reputational Crisis)</h4>
+                <div class="statement-template">
+                  <p><strong>[Platform: Twitter/Instagram]</strong></p>
+                  <div class="template-body">
+                    <p>We've seen concerns about [ISSUE]. We want to address this directly.</p>
+                    <p><strong>Here are the facts:</strong> [Transparent data - e.g., artisan wages, partnership terms, cultural advisory board composition]</p>
+                    <p><strong>What we got wrong:</strong> [If applicable - own mistakes]</p>
+                    <p><strong>What we're doing about it:</strong> [Concrete actions]</p>
+                    <p>We're committed to radical transparency. Full details here: [LINK to detailed blog post with data, artisan testimonials, etc.]</p>
+                    <p>Questions? DM us or email ceo@amara.com. Let's talk.</p>
+                    <p>— [Founder Name], CEO</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card card-highlight">
+              <h3>Crisis Team Roles & Contacts</h3>
+
+              <table>
+                <thead>
+                  <tr>
+                    <th>Role</th>
+                    <th>Responsibilities</th>
+                    <th>Contact</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Crisis Lead (CEO)</strong></td>
+                    <td>Overall coordination, final decisions, public spokesperson</td>
+                    <td>[Contact info]</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Operations (COO)</strong></td>
+                    <td>Supply chain assessment, artisan coordination, logistics</td>
+                    <td>[Contact info]</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Communications (CMO)</strong></td>
+                    <td>Customer comms, public statements, social media monitoring</td>
+                    <td>[Contact info]</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Legal (External Counsel)</strong></td>
+                    <td>Legal implications, compliance, liability assessment</td>
+                    <td>[Contact info]</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Customer Support (CS Lead)</strong></td>
+                    <td>Customer inquiries, refunds/remediation, sentiment tracking</td>
+                    <td>[Contact info]</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- FOOTER NAVIGATION -->
+          <div class="document-footer">
+            <div class="footer-nav">
+              <a href="document-v.html" class="btn btn-outline">
+                ← Back: Document V (Valeur)
+              </a>
+              <a href="document-t.html" class="btn btn-primary">
+                Next: Document T (Track) →
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="../assets/js/app.js"></script>
+  <script src="../assets/js/navigation.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const sidebarLinks = document.querySelectorAll('.sidebar-link');
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const targetId = this.getAttribute('href');
+          const targetSection = document.querySelector(targetId);
+          if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            sidebarLinks.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+          }
+        });
+      });
+
+      const observerOptions = {
+        root: null,
+        rootMargin: '-20% 0px -70% 0px',
+        threshold: 0
+      };
+
+      const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            sidebarLinks.forEach(link => {
+              link.classList.remove('active');
+              if (link.getAttribute('href') === `#${id}`) {
+                link.classList.add('active');
+              }
+            });
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.content-section').forEach(section => {
+        observer.observe(section);
+      });
+
+      const exportBtn = document.getElementById('exportDocBtn');
+      if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+          alert('PDF export functionality will be implemented with html2pdf.js');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
