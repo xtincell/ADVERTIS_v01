@@ -465,7 +465,7 @@ export function CockpitContent({
 
       {/* ── Pillar I — Implementation (Roadmap, Campaigns, Budget, Team, Launch, Playbook) ── */}
       {show("implementation") && (
-        <SectionImplementation implContent={implContent} currency={(data.currency ?? "XOF") as SupportedCurrency} />
+        <SectionImplementation implContent={implContent} currency={(data.currency ?? "XOF") as SupportedCurrency} strategyId={data.strategyId} />
       )}
 
       {/* ── Widgets Analytiques ── */}

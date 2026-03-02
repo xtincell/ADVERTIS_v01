@@ -66,6 +66,8 @@ interface BudgetSimulatorProps {
   copyStrategy?: CopyStrategy;
   bigIdea?: BigIdea;
   activationDispositif?: ActivationDispositif;
+  /** Needed for Glory generation actions in the campaign proposal sheet */
+  strategyId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -105,6 +107,7 @@ export function BudgetSimulator({
   copyStrategy,
   bigIdea,
   activationDispositif,
+  strategyId,
 }: BudgetSimulatorProps) {
   // Parse initial values from AI-generated content
   const initialTotal = useMemo(
@@ -524,6 +527,7 @@ export function BudgetSimulator({
           copyStrategy={copyStrategy}
           bigIdea={bigIdea}
           activationDispositif={activationDispositif}
+          strategyId={strategyId}
           open={true}
           onOpenChange={(open) => {
             if (!open) setSelectedCampaignIndex(null);

@@ -1237,6 +1237,102 @@ const vendorBriefGenerator: GloryToolDescriptor = {
   tags: ["hybride", "brief", "prestataire", "production"],
 };
 
+const productionDevisGenerator: GloryToolDescriptor = {
+  slug: "production-devis-generator",
+  name: "Devis de Production",
+  shortName: "Devis Prod",
+  layer: "HYBRID",
+  description:
+    "Génère un devis de production détaillé avec lignes de coûts alignées sur les prix du marché, spécifications techniques, planning et conditions pour chaque livrable.",
+  icon: "Receipt",
+  persistable: true,
+  requiredContext: ["budgets", "missions"],
+  inputs: [
+    {
+      key: "campaignName",
+      label: "Nom de la campagne",
+      type: "text",
+      placeholder: "Ex : Lancement Produit X — Notoriété Q2…",
+      required: true,
+      helpText: "Le nom ou l'intitulé de la campagne.",
+    },
+    {
+      key: "objective",
+      label: "Objectif de la campagne",
+      type: "text",
+      placeholder: "Ex : Notoriété, Conversion, Lancement produit…",
+      required: true,
+      helpText: "L'objectif principal de la campagne.",
+    },
+    {
+      key: "deliverables",
+      label: "Liste des livrables",
+      type: "textarea",
+      placeholder:
+        "Ex : 1 affiche 4x3, 1 poster, 4 vidéos 30s, 4 visuels digital…",
+      required: true,
+      helpText:
+        "La liste complète des livrables à produire avec formats et quantités.",
+      enrichable: true,
+    },
+    {
+      key: "totalBudget",
+      label: "Enveloppe budgétaire",
+      type: "text",
+      placeholder: "Ex : 50M FCFA…",
+      required: true,
+      helpText:
+        "Le budget total alloué. Rappel : budget prod = 20-30% du budget comm.",
+      enrichable: true,
+    },
+    {
+      key: "market",
+      label: "Marché",
+      type: "select",
+      enrichable: true,
+      options: [
+        { value: "CM", label: "Cameroun" },
+        { value: "CI", label: "Côte d'Ivoire" },
+        { value: "SN", label: "Sénégal" },
+        { value: "GH", label: "Ghana" },
+        { value: "NG", label: "Nigeria" },
+        { value: "global", label: "Multi-marchés" },
+      ],
+      helpText:
+        "Le marché principal — détermine la grille tarifaire de référence.",
+    },
+    {
+      key: "qualityLevel",
+      label: "Niveau de qualité",
+      type: "select",
+      options: [
+        { value: "premium", label: "Premium" },
+        { value: "standard", label: "Standard" },
+        { value: "economique", label: "Économique" },
+      ],
+      helpText: "Le niveau de qualité attendu pour la production.",
+    },
+    {
+      key: "deadline",
+      label: "Date de livraison",
+      type: "text",
+      placeholder: "Ex : 15 avril 2026…",
+      helpText: "La date limite de livraison finale.",
+    },
+    {
+      key: "additionalSpecs",
+      label: "Spécifications additionnelles",
+      type: "textarea",
+      placeholder:
+        "Contraintes techniques, formats spécifiques, durées vidéo, etc.",
+      helpText: "Toute information complémentaire pour le chiffrage.",
+    },
+  ],
+  requiredPillars: ["A"],
+  outputFormat: "structured",
+  tags: ["devis", "production", "budget", "coûts"],
+};
+
 const contentCalendarStrategist: GloryToolDescriptor = {
   slug: "content-calendar-strategist",
   name: "Content Calendar Strategist",
@@ -2493,6 +2589,7 @@ export const GLORY_TOOLS: GloryToolDescriptor[] = [
   campaign360Simulator,
   productionBudgetOptimizer,
   vendorBriefGenerator,
+  productionDevisGenerator,
   contentCalendarStrategist,
   approvalWorkflowManager,
   brandGuardianSystem,
@@ -2537,7 +2634,7 @@ export function getToolsByLayer(
 }
 
 /**
- * Returns the complete array of all 38 GLORY tools.
+ * Returns the complete array of all 39 GLORY tools.
  */
 export function getAllTools(): GloryToolDescriptor[] {
   return [...GLORY_TOOLS];

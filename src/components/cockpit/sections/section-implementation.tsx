@@ -64,9 +64,11 @@ const COLOR = PILLAR_CONFIG.I.color; // #06B6D4
 export function SectionImplementation({
   implContent,
   currency = "XOF",
+  strategyId,
 }: {
   implContent: ImplementationData;
   currency?: SupportedCurrency;
+  strategyId?: string;
 }) {
   const [expandedCampaigns, setExpandedCampaigns] = useState<Set<number>>(new Set());
   const [showSimulator, setShowSimulator] = useState(false);
@@ -640,6 +642,7 @@ export function SectionImplementation({
                 copyStrategy={implContent.copyStrategy}
                 bigIdea={implContent.bigIdea}
                 activationDispositif={implContent.activationDispositif}
+                strategyId={strategyId}
               />
             )}
           </div>
