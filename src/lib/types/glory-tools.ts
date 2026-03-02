@@ -5,7 +5,7 @@
 // Used by: registry, tRPC router, frontend components.
 // =============================================================================
 
-export type GloryLayer = "CR" | "DC" | "HYBRID";
+export type GloryLayer = "CR" | "DC" | "HYBRID" | "BRAND";
 
 // ---------------------------------------------------------------------------
 // Context categories that tools can request from strategy data
@@ -17,7 +17,8 @@ export type GloryContextCategory =
   | "opportunities"
   | "market"
   | "missions"
-  | "signals";
+  | "signals"
+  | "visual-references";
 
 // ---------------------------------------------------------------------------
 // Field enrichment — returned by the field-enricher for smart forms
@@ -74,6 +75,10 @@ export interface GloryToolDescriptor {
   requiredContext?: GloryContextCategory[];
   /** Number of output variations to generate (default: 1) */
   variations?: number;
+  /** Sequence order within a pipeline section (1-based). Displayed in the hub. */
+  sequence?: number;
+  /** Slugs of prerequisite tools (outputs needed before this tool can run). */
+  dependsOn?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -98,5 +103,11 @@ export const GLORY_LAYER_META: Record<
     label: "Hybride",
     description: "Outils opérationnels transverses : planning, budget, workflow",
     color: "#FDCB6E",
+  },
+  BRAND: {
+    label: "Brand Identity",
+    description:
+      "Pipeline complet d'identité de marque : sémiotique, moodboard, couleurs, typo, logo, tokens, motion, guidelines",
+    color: "#EC4899",
   },
 };

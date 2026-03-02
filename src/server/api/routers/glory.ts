@@ -33,7 +33,7 @@ export const gloryRouter = createTRPCRouter({
     .input(
       z
         .object({
-          layer: z.enum(["CR", "DC", "HYBRID"]).optional(),
+          layer: z.enum(["CR", "DC", "HYBRID", "BRAND"]).optional(),
         })
         .optional(),
     )
@@ -113,7 +113,7 @@ export const gloryRouter = createTRPCRouter({
       z.object({
         strategyId: z.string().optional(),
         toolSlug: z.string().optional(),
-        layer: z.enum(["CR", "DC", "HYBRID"]).optional(),
+        layer: z.enum(["CR", "DC", "HYBRID", "BRAND"]).optional(),
         favoritesOnly: z.boolean().optional(),
         limit: z.number().min(1).max(100).default(20),
         cursor: z.string().optional(),
@@ -296,7 +296,7 @@ export const gloryRouter = createTRPCRouter({
         status: "complete" as const,
       };
 
-      const [total, favorites, tools, byCR, byDC, byHYBRID, toolBreakdown] =
+      const [total, favorites, tools, byCR, byDC, byHYBRID, byBRAND, toolBreakdown] =
         await Promise.all([
           ctx.db.gloryOutput.count({ where }),
           ctx.db.gloryOutput.count({
@@ -310,6 +310,7 @@ export const gloryRouter = createTRPCRouter({
           ctx.db.gloryOutput.count({ where: { ...where, layer: "CR" } }),
           ctx.db.gloryOutput.count({ where: { ...where, layer: "DC" } }),
           ctx.db.gloryOutput.count({ where: { ...where, layer: "HYBRID" } }),
+          ctx.db.gloryOutput.count({ where: { ...where, layer: "BRAND" } }),
           ctx.db.gloryOutput.groupBy({
             by: ["toolSlug"],
             where,
@@ -322,7 +323,7 @@ export const gloryRouter = createTRPCRouter({
         total,
         favorites,
         toolsUsed: tools.length,
-        byLayer: { CR: byCR, DC: byDC, HYBRID: byHYBRID },
+        byLayer: { CR: byCR, DC: byDC, HYBRID: byHYBRID, BRAND: byBRAND },
         toolBreakdown: toolBreakdown.map((t) => ({
           toolSlug: t.toolSlug,
           count: t._count.id,

@@ -271,7 +271,7 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
               Par layer
             </p>
             <div className="space-y-1.5">
-              {(["CR", "DC", "HYBRID"] as GloryLayer[]).map((layer) => {
+              {(["CR", "DC", "HYBRID", "BRAND"] as GloryLayer[]).map((layer) => {
                 const count = stats?.byLayer?.[layer] ?? 0;
                 const total = stats?.total ?? 1;
                 const pct = total > 0 ? Math.round((count / total) * 100) : 0;

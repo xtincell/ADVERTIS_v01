@@ -47,7 +47,7 @@ interface GloryHubProps {
 // Component
 // ---------------------------------------------------------------------------
 export function GloryHub({ tools, strategyId }: GloryHubProps) {
-  const layers: GloryLayer[] = ["CR", "DC", "HYBRID"];
+  const layers: GloryLayer[] = ["CR", "DC", "HYBRID", "BRAND"];
   const strategyQuery = strategyId ? `?strategyId=${strategyId}` : "";
 
   return (
@@ -126,14 +126,28 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
                               style={{ color: meta.color }}
                             />
                           </div>
-                          {tool.persistable && (
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
-                            >
-                              Persistable
-                            </Badge>
-                          )}
+                          <div className="flex items-center gap-1">
+                            {tool.sequence && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px]"
+                                style={{
+                                  borderColor: `${meta.color}40`,
+                                  color: meta.color,
+                                }}
+                              >
+                                Étape {tool.sequence}/10
+                              </Badge>
+                            )}
+                            {tool.persistable && (
+                              <Badge
+                                variant="outline"
+                                className="text-[9px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                              >
+                                Persistable
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <CardTitle className="text-sm font-semibold mt-2 group-hover:text-violet-500 transition-colors">
                           {tool.name}

@@ -58,14 +58,15 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // All three layers, in display order
-  const layers: GloryLayer[] = ["CR", "DC", "HYBRID"];
+  // All four layers, in display order
+  const layers: GloryLayer[] = ["CR", "DC", "HYBRID", "BRAND"];
 
   // Track which sections are open (all open by default)
   const [openSections, setOpenSections] = useState<Record<GloryLayer, boolean>>({
     CR: true,
     DC: true,
     HYBRID: true,
+    BRAND: true,
   });
 
   const toggleSection = (layer: GloryLayer) => {

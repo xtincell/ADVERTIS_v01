@@ -10,6 +10,7 @@
 //   ~/server/services/glory/registry (getToolBySlug)
 //   ~/server/services/glory/prompts (GLORY_SYSTEM_PROMPTS)
 //   ~/server/services/glory/context-builder (buildStrategyContext)
+//   ~/server/services/glory/visual-adapters/* (visual search for BRAND moodboard)
 //   ~/server/db
 // =============================================================================
 
@@ -24,6 +25,10 @@ import { getToolBySlug } from "~/server/services/glory/registry";
 import { GLORY_SYSTEM_PROMPTS } from "~/server/services/glory/prompts";
 import { buildStrategyContext } from "~/server/services/glory/context-builder";
 import { db } from "~/server/db";
+import type {
+  VisualReference,
+  VisualSearchParams,
+} from "~/server/services/glory/visual-adapters/base-visual-adapter";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -179,7 +184,54 @@ function formatUserInputs(inputs: Record<string, unknown>): string {
 }
 
 // ---------------------------------------------------------------------------
-// 4.3  Main export — generateGloryOutput
+// 4.3  Visual adapter helpers (BRAND pipeline)
+// ---------------------------------------------------------------------------
+
+/** Extract searchable keywords from user inputs (visualDirection, mood, etc.) */
+function extractKeywordsFromInputs(inputs: Record<string, unknown>): string[] {
+  const keywords: string[] = [];
+
+  // Extract from visualDirection (textarea)
+  if (typeof inputs.visualDirection === "string" && inputs.visualDirection) {
+    keywords.push(
+      ...inputs.visualDirection
+        .split(/[\s,;]+/)
+        .filter((w) => w.length > 3)
+        .slice(0, 5),
+    );
+  }
+
+  // Extract from mood (multiselect or string)
+  if (Array.isArray(inputs.mood)) {
+    keywords.push(...(inputs.mood as string[]));
+  } else if (typeof inputs.mood === "string") {
+    keywords.push(inputs.mood);
+  }
+
+  // Extract from any "keywords" field
+  if (typeof inputs.keywords === "string") {
+    keywords.push(...inputs.keywords.split(/[\s,;]+/).filter(Boolean));
+  }
+
+  return keywords.length > 0 ? keywords : ["brand", "identity", "design"];
+}
+
+/** Extract hex color codes from user inputs (colorDirection, colorPalette) */
+function extractColorsFromInputs(inputs: Record<string, unknown>): string[] {
+  if (typeof inputs.colorDirection === "string" && inputs.colorDirection) {
+    const hexMatches = inputs.colorDirection.match(/#[0-9a-fA-F]{3,8}/g);
+    if (hexMatches) return hexMatches;
+  }
+  if (Array.isArray(inputs.colorPalette)) {
+    return (inputs.colorPalette as string[]).filter(
+      (c) => typeof c === "string" && c.startsWith("#"),
+    );
+  }
+  return [];
+}
+
+// ---------------------------------------------------------------------------
+// 4.4  Main export — generateGloryOutput
 // ---------------------------------------------------------------------------
 
 export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateResult> {
@@ -197,6 +249,76 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     tool.requiredPillars,
     tool.requiredContext ?? [],
   );
+
+  // ── 2.5 Hook: Visual Adapters for BRAND tools with "visual-references" ──
+  let visualContext = "";
+  let visualData: VisualReference[] = [];
+
+  if (tool.requiredContext?.includes("visual-references")) {
+    try {
+      const {
+        aggregateVisualSearch,
+        loadConfiguredVisualAdapters,
+        formatVisualReferencesForPrompt,
+      } = await import(
+        "~/server/services/glory/visual-adapters/base-visual-adapter"
+      );
+
+      const adapters = await loadConfiguredVisualAdapters();
+      const searchParams: VisualSearchParams = {
+        brandName: strategy.brandName,
+        keywords: extractKeywordsFromInputs(opts.userInputs),
+        colors: extractColorsFromInputs(opts.userInputs),
+        style:
+          typeof opts.userInputs.mood === "string"
+            ? opts.userInputs.mood
+            : undefined,
+        regions: Array.isArray(opts.userInputs.inspirationRegions)
+          ? (opts.userInputs.inspirationRegions as string[])
+          : typeof opts.userInputs.inspirationRegions === "string"
+            ? [opts.userInputs.inspirationRegions as string]
+            : undefined,
+        perSource:
+          typeof opts.userInputs.referencesPerSource === "number"
+            ? (opts.userInputs.referencesPerSource as number)
+            : 6,
+      };
+
+      const result = await aggregateVisualSearch(searchParams, adapters);
+      visualData = result.references;
+      visualContext = formatVisualReferencesForPrompt(result.references);
+
+      if (result.errors.length > 0) {
+        console.warn("[GLORY Visual] Adapter errors:", result.errors);
+      }
+    } catch (err) {
+      console.error("[GLORY Visual] Failed to load visual adapters:", err);
+    }
+  }
+
+  // ── 2.7 Dependency check (soft warning for BRAND pipeline) ──
+  let dependencyWarning = "";
+
+  if (tool.dependsOn && tool.dependsOn.length > 0) {
+    const existingOutputs = await db.gloryOutput.findMany({
+      where: { strategyId: opts.strategyId },
+      select: { toolSlug: true },
+    });
+    const completedSlugs = new Set(existingOutputs.map((o) => o.toolSlug));
+    const missingSlugs = tool.dependsOn.filter(
+      (slug) => !completedSlugs.has(slug),
+    );
+
+    if (missingSlugs.length > 0) {
+      dependencyWarning = [
+        "",
+        "⚠️ AVERTISSEMENT : Certains outils prérequis n'ont pas encore été exécutés pour cette stratégie :",
+        ...missingSlugs.map((s) => `  - ${s}`),
+        "Les résultats peuvent être moins précis sans ces données contextuelles.",
+        "",
+      ].join("\n");
+    }
+  }
 
   // 3. Get system prompt
   const systemPrompt = GLORY_SYSTEM_PROMPTS[opts.toolSlug];
@@ -228,6 +350,8 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
   const userPrompt = [
     "# DONNÉES STRATÉGIQUES DE LA MARQUE",
     context,
+    visualContext, // Visual references from API adapters (empty if not applicable)
+    dependencyWarning, // Pipeline dependency warning (empty if all deps met)
     "",
     "# INPUTS DE L'UTILISATEUR",
     formattedInputs,
@@ -236,14 +360,15 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     variantInstruction,
   ].join("\n");
 
-  // 6. Call AI
+  // 6. Call AI (BRAND tools get a higher token budget for complex outputs)
+  const maxTokens = tool.layer === "BRAND" ? 12000 : 8000;
   const gloryStart = Date.now();
   const aiResult = await resilientGenerateText({
     label: `glory-${opts.toolSlug}`,
     model: anthropic(DEFAULT_MODEL),
     system: enrichedSystemPrompt,
     prompt: userPrompt,
-    maxOutputTokens: 8000,
+    maxOutputTokens: maxTokens,
     temperature: 0.7,
   });
 
@@ -278,6 +403,77 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
       // Fallback: treat the whole response as text
       outputData = { rawResponse: rawText };
       outputText = rawText;
+    }
+  }
+
+  // ── 7.5 Nano Banana hook for visual moodboard tool ──
+  if (
+    opts.toolSlug === "visual-moodboard-generator" &&
+    outputData &&
+    typeof outputData === "object"
+  ) {
+    try {
+      const {
+        generateNanoBananaV1Prompts,
+        generateNanoBananaV2Prompts,
+        formatNanoBananaPromptsForOutput,
+      } = await import(
+        "~/server/services/glory/visual-adapters/nano-banana"
+      );
+
+      const moodValue = opts.userInputs.mood;
+      const moodStr = Array.isArray(moodValue)
+        ? (moodValue as string[]).join(", ")
+        : typeof moodValue === "string"
+          ? moodValue
+          : "";
+
+      const nanaBananaInput = {
+        brandName: strategy.brandName,
+        visualDirection:
+          typeof opts.userInputs.visualDirection === "string"
+            ? opts.userInputs.visualDirection
+            : "",
+        colorPalette: extractColorsFromInputs(opts.userInputs),
+        mood: moodStr,
+        style: moodStr,
+        applications: Array.isArray(opts.userInputs.applications)
+          ? (opts.userInputs.applications as string[])
+          : [],
+      };
+
+      const useV2 = opts.userInputs.nanoBananaVersion === "v2";
+      const nanaBananaPrompts = useV2
+        ? generateNanoBananaV2Prompts(nanaBananaInput)
+        : generateNanoBananaV1Prompts(nanaBananaInput);
+
+      const nanaBananaOutput =
+        formatNanoBananaPromptsForOutput(nanaBananaPrompts);
+
+      // Merge Nano Banana prompts + visual references into output
+      outputData = {
+        ...(outputData as Record<string, unknown>),
+        ...nanaBananaOutput,
+        visualReferences: {
+          count: visualData.length,
+          sources: [...new Set(visualData.map((r) => r.source))],
+          references: visualData.slice(0, 20).map((r) => ({
+            title: r.title,
+            source: r.source,
+            imageUrl: r.imageUrl,
+            thumbnailUrl: r.thumbnailUrl,
+            dominantColor: r.dominantColor,
+            attribution: r.attribution,
+            sourceUrl: r.sourceUrl,
+            region: r.region,
+          })),
+        },
+      };
+
+      // Rebuild text with merged data
+      outputText = buildOutputText(outputData);
+    } catch (err) {
+      console.error("[GLORY] Nano Banana hook error:", err);
     }
   }
 

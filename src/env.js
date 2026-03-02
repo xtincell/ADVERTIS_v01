@@ -13,6 +13,12 @@ export const env = createEnv({
         : z.string().optional(),
     DATABASE_URL: z.string().url(),
     ANTHROPIC_API_KEY: z.string().optional(),
+    // Visual adapter API keys (optional — graceful degradation if not set)
+    UNSPLASH_ACCESS_KEY: z.string().optional(),
+    PEXELS_API_KEY: z.string().optional(),
+    PIXABAY_API_KEY: z.string().optional(),
+    PINTEREST_ACCESS_TOKEN: z.string().optional(),
+    ARENA_ACCESS_TOKEN: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -35,6 +41,12 @@ export const env = createEnv({
     AUTH_SECRET: process.env.AUTH_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    // Visual adapter API keys
+    UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
+    PEXELS_API_KEY: process.env.PEXELS_API_KEY,
+    PIXABAY_API_KEY: process.env.PIXABAY_API_KEY,
+    PINTEREST_ACCESS_TOKEN: process.env.PINTEREST_ACCESS_TOKEN,
+    ARENA_ACCESS_TOKEN: process.env.ARENA_ACCESS_TOKEN,
     NODE_ENV: process.env.NODE_ENV,
   },
   /**
