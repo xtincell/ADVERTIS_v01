@@ -16,7 +16,7 @@ export function getHomeByRole(role: string): string {
   switch (role) {
     case "ADMIN":
     case "OPERATOR":
-      return "/impulsion";
+      return "/dashboard";
     case "FREELANCE":
       return "/my-missions";
     case "CLIENT_RETAINER":
@@ -29,6 +29,7 @@ export function getHomeByRole(role: string): string {
 
 /** Routes only accessible by ADMIN / OPERATOR. */
 export const OPERATOR_ROUTES = [
+  "/dashboard",
   "/impulsion",
   "/pilotis",
   "/serenite",

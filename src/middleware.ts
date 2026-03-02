@@ -11,7 +11,7 @@ function getHomeByRole(role: string): string {
   switch (role) {
     case "ADMIN":
     case "OPERATOR":
-      return "/impulsion";
+      return "/dashboard";
     case "FREELANCE":
       return "/my-missions";
     case "CLIENT_RETAINER":
@@ -23,6 +23,8 @@ function getHomeByRole(role: string): string {
 }
 
 const ROLE_ROUTES: Record<string, string[]> = {
+  // General dashboard
+  "/dashboard": ["ADMIN", "OPERATOR"],
   // Operator-only portals
   "/impulsion": ["ADMIN", "OPERATOR"],
   "/pilotis": ["ADMIN", "OPERATOR"],
@@ -73,6 +75,8 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // Run middleware on all protected route prefixes
   matcher: [
+    // General dashboard
+    "/dashboard/:path*",
     // Operator portals
     "/impulsion/:path*",
     "/pilotis/:path*",
