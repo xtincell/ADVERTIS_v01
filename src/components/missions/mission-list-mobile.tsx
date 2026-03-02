@@ -103,7 +103,7 @@ export function MissionListMobile({
         const dotColor = colorClasses
           .split(" ")
           .find((c) => c.startsWith("text-"))
-          ?.replace("text-", "bg-") ?? "bg-gray-400";
+          ?.replace("text-", "bg-") ?? "bg-muted-foreground/60";
 
         return (
           <div key={status} className="rounded-lg border">

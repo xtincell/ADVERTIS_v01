@@ -166,7 +166,7 @@ export function CockpitShareDialog({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-terracotta" />
+              <Share2 className="h-5 w-5 text-primary" />
               <CardTitle>Partager le Cockpit</CardTitle>
             </div>
             <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
@@ -183,7 +183,7 @@ export function CockpitShareDialog({
           {/* Loading state */}
           {isShareLoading && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-terracotta" />
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <span className="ml-2 text-sm text-muted-foreground">
                 Chargement du statut de partage…
               </span>
@@ -379,7 +379,7 @@ export function CockpitShareDialog({
               <Button
                 onClick={handleCreate}
                 disabled={!isPasswordValid || createMutation.isPending}
-                className="w-full bg-terracotta hover:bg-terracotta/90"
+                className="w-full bg-primary hover:bg-primary/90"
               >
                 {createMutation.isPending ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

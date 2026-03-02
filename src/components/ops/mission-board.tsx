@@ -76,7 +76,7 @@ export function MissionBoard({
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
+        <div className="animate-float text-muted-foreground">
           Chargement des missions...
         </div>
       </div>
@@ -161,7 +161,7 @@ export function MissionBoard({
                               ? "border-red-300 text-red-600"
                               : mission.priority === "P1"
                                 ? "border-amber-300 text-amber-600"
-                                : "border-gray-300"
+                                : "border-border"
                           }`}
                         >
                           {mission.priority}

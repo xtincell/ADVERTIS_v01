@@ -71,18 +71,18 @@ function getIconComponent(iconName: string): LucideIcon {
 // ---------------------------------------------------------------------------
 function layerDotColor(layer: string): string {
   switch (layer) {
-    case "CR": return "bg-[#6C5CE7]";
-    case "DC": return "bg-[#00B894]";
-    case "HYBRID": return "bg-[#FDCB6E]";
+    case "CR": return "bg-violet-500";
+    case "DC": return "bg-emerald-400";
+    case "HYBRID": return "bg-amber-400";
     default: return "bg-muted-foreground";
   }
 }
 
 function layerBgClass(layer: string): string {
   switch (layer) {
-    case "CR": return "bg-[#6C5CE7]/10 text-[#6C5CE7]";
-    case "DC": return "bg-[#00B894]/10 text-[#00B894]";
-    case "HYBRID": return "bg-[#FDCB6E]/10 text-[#b08d2b]";
+    case "CR": return "bg-violet-500/10 text-violet-500";
+    case "DC": return "bg-emerald-400/10 text-emerald-600 dark:text-emerald-400";
+    case "HYBRID": return "bg-amber-400/10 text-amber-600 dark:text-amber-400";
     default: return "bg-muted text-muted-foreground";
   }
 }
@@ -209,8 +209,8 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
   if (!strategyId) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <LayoutDashboard className="h-12 w-12 text-gray-300 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-600">
+        <LayoutDashboard className="h-12 w-12 text-muted-foreground/30 mb-4" />
+        <h2 className="text-lg font-semibold text-muted-foreground">
           Sélectionnez une marque
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
@@ -247,25 +247,25 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
           label="Résultats"
           value={stats?.total ?? 0}
           icon={<FileText className="h-4 w-4" />}
-          color="text-[#6C5CE7]"
-          bgColor="bg-[#6C5CE7]/10"
+          color="text-violet-500"
+          bgColor="bg-violet-500/10"
         />
         <StatCard
           label="Favoris"
           value={stats?.favorites ?? 0}
           icon={<Star className="h-4 w-4" />}
           color="text-amber-600"
-          bgColor="bg-amber-100"
+          bgColor="bg-amber-500/10"
         />
         <StatCard
           label="Outils"
           value={stats?.toolsUsed ?? 0}
           icon={<Wrench className="h-4 w-4" />}
           color="text-emerald-600"
-          bgColor="bg-emerald-100"
+          bgColor="bg-emerald-500/10"
         />
         {/* Layer breakdown */}
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="pt-3 pb-3 px-4">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
               Par layer
@@ -281,7 +281,7 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
                     <span className="text-[10px] font-medium w-14 truncate">
                       {GLORY_LAYER_META[layer].label.split(" ")[0]}
                     </span>
-                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className={cn("h-full rounded-full", layerDotColor(layer))}
                         style={{ width: `${pct}%` }}
@@ -307,8 +307,8 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
           className={cn(
             "text-xs h-7 px-2.5 rounded-full",
             layerFilter === null
-              ? "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white"
-              : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+              ? "bg-violet-500 hover:bg-violet-600 text-white"
+              : "border border-border text-muted-foreground hover:bg-muted",
           )}
           onClick={() => setLayerFilter(null)}
         >
@@ -322,8 +322,8 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
             className={cn(
               "text-xs h-7 px-2.5 rounded-full",
               layerFilter === layer
-                ? "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white"
-                : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+                ? "bg-violet-500 hover:bg-violet-600 text-white"
+                : "border border-border text-muted-foreground hover:bg-muted",
             )}
             onClick={() => setLayerFilter(layerFilter === layer ? null : layer)}
           >
@@ -332,7 +332,7 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
           </Button>
         ))}
 
-        <div className="h-4 w-px bg-gray-300 mx-1" />
+        <div className="h-4 w-px bg-border mx-1" />
 
         {/* Favorites toggle */}
         <Button
@@ -342,7 +342,7 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
             "text-xs h-7 px-2.5 rounded-full gap-1",
             favoritesOnly
               ? "bg-amber-500 hover:bg-amber-600 text-white"
-              : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+              : "border border-border text-muted-foreground hover:bg-muted",
           )}
           onClick={() => setFavoritesOnly(!favoritesOnly)}
         >
@@ -371,7 +371,7 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
                 open={!isCollapsed}
                 onOpenChange={() => toggleToolCollapse(toolSlug)}
               >
-                <Card className="border-gray-200">
+                <Card className="border-border">
                   <CollapsibleTrigger asChild>
                     <CardHeader className="cursor-pointer py-3 px-4 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center justify-between">
@@ -443,11 +443,11 @@ export function GloryDashboard({ strategyId }: GloryDashboardProps) {
 function DashboardHeader() {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#6C5CE7]/10">
-        <LayoutDashboard className="h-5 w-5 text-[#6C5CE7]" />
+      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-500/10">
+        <LayoutDashboard className="h-5 w-5 text-violet-500" />
       </div>
       <div>
-        <h1 className="text-xl font-bold text-gray-900">Dashboard GLORY</h1>
+        <h1 className="text-xl font-bold text-foreground">Dashboard GLORY</h1>
         <p className="text-sm text-muted-foreground">
           Tous les résultats générés, classés par outil
         </p>
@@ -473,7 +473,7 @@ function StatCard({
   bgColor: string;
 }) {
   return (
-    <Card className="border-gray-200">
+    <Card className="border-border">
       <CardContent className="pt-3 pb-3 px-4">
         <div className="flex items-center gap-3">
           <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg", bgColor, color)}>
@@ -546,8 +546,8 @@ function OutputRow({
       className={cn(
         "rounded-lg border transition-all",
         isExpanded
-          ? "border-[#6C5CE7]/20 bg-[#6C5CE7]/[0.02] shadow-sm"
-          : "border-gray-100 hover:border-gray-200",
+          ? "border-violet-500/20 bg-violet-500/[0.02] shadow-sm"
+          : "border-border/50 hover:border-border",
       )}
     >
       {/* Row header */}
@@ -566,7 +566,7 @@ function OutputRow({
         {item.refNumber ? (
           <Badge
             variant="outline"
-            className="text-[9px] font-mono px-1.5 py-0 h-5 shrink-0 border-[#6C5CE7]/30 text-[#6C5CE7]"
+            className="text-[9px] font-mono px-1.5 py-0 h-5 shrink-0 border-violet-500/30 text-violet-500"
           >
             {item.refNumber}
           </Badge>
@@ -606,7 +606,7 @@ function OutputRow({
                 "h-3.5 w-3.5",
                 item.isFavorite
                   ? "fill-amber-400 text-amber-400"
-                  : "text-gray-400",
+                  : "text-muted-foreground",
               )}
             />
           </Button>
@@ -619,7 +619,7 @@ function OutputRow({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 text-gray-400 hover:text-red-600"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
                 onClick={(e) => e.stopPropagation()}
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -630,7 +630,7 @@ function OutputRow({
                 <DialogTitle>Supprimer ce résultat ?</DialogTitle>
                 <DialogDescription>
                   {item.refNumber && (
-                    <span className="font-mono text-[#6C5CE7]">{item.refNumber}</span>
+                    <span className="font-mono text-violet-500">{item.refNumber}</span>
                   )}{" "}
                   — Cette action est irréversible.
                 </DialogDescription>
@@ -680,8 +680,8 @@ function OutputRow({
 function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-20 text-center">
-      <Sparkles className="h-12 w-12 text-gray-300 mb-4" />
-      <h2 className="text-lg font-semibold text-gray-600">
+      <Sparkles className="h-12 w-12 text-muted-foreground/30 mb-4" />
+      <h2 className="text-lg font-semibold text-muted-foreground">
         Aucun résultat sauvegardé
       </h2>
       <p className="text-sm text-muted-foreground mt-1 max-w-sm">

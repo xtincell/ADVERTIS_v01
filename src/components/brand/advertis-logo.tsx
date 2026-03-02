@@ -35,9 +35,9 @@ function getColors(variant: LogoVariant) {
   switch (variant) {
     case "color":
       return {
-        stroke1: "#c45a3c", // Terracotta — main strokes
-        stroke2: "#2d5a3d", // Forest green — crossbar
-        dot: "#c49a3c",     // Gold — apex dot
+        stroke1: "#10B981", // Emerald — main strokes
+        stroke2: "#F43F5E", // Rose — crossbar
+        dot: "#F43F5E",     // Rose — apex dot
       };
     case "white":
       return {
@@ -100,7 +100,7 @@ export function AdvertisMonogram({
         strokeWidth="3.2"
         strokeLinecap="round"
       />
-      {/* Crossbar — forest green */}
+      {/* Crossbar — rose accent */}
       <line
         x1="9"
         y1="19.5"
@@ -110,7 +110,7 @@ export function AdvertisMonogram({
         strokeWidth="2.4"
         strokeLinecap="round"
       />
-      {/* Apex dot — gold accent */}
+      {/* Apex dot — rose accent */}
       <circle cx="16" cy="4" r="2" fill={dot} />
     </svg>
   );

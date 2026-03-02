@@ -27,14 +27,14 @@ interface PhasePipelineProps {
 // ---------------------------------------------------------------------------
 
 const PHASE_COLORS: Record<string, string> = {
-  fiche: "#c49a3c",
-  "fiche-review": "#d4aa4c",
-  "audit-r": "#c43c6e",
-  "market-study": "#3c7ac4",
-  "audit-t": "#8c3cc4",
-  "audit-review": "#a05cd4",
-  implementation: "#3cc4c4",
-  cockpit: "#2d5a3d",
+  fiche: "#F59E0B",
+  "fiche-review": "#FBBF24",
+  "audit-r": "#EC4899",
+  "market-study": "#3B82F6",
+  "audit-t": "#8B5CF6",
+  "audit-review": "#A78BFA",
+  implementation: "#06B6D4",
+  cockpit: "#10B981",
   complete: "#22c55e",
 };
 

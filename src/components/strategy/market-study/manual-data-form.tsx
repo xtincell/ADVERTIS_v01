@@ -132,7 +132,7 @@ export function ManualDataForm({
                 <Icon className="h-3.5 w-3.5" />
                 <span>{config.label}</span>
                 {count > 0 && (
-                  <span className="ml-1 rounded-full bg-terracotta/10 px-1.5 text-[10px] text-terracotta">
+                  <span className="ml-1 rounded-full bg-primary/10 px-1.5 text-[10px] text-primary">
                     {count}
                   </span>
                 )}
@@ -154,12 +154,12 @@ export function ManualDataForm({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de la donnée"
-            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+            className="flex-1 rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <select
             value={sourceType}
             onChange={(e) => setSourceType(e.target.value)}
-            className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+            className="rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
           >
             {MANUAL_SOURCE_TYPES[activeCategory].map((type) => (
               <option key={type} value={type}>
@@ -174,7 +174,7 @@ export function ManualDataForm({
           onChange={(e) => setContent(e.target.value)}
           placeholder="Collez ou saisissez vos données ici..."
           rows={4}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-y focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
 
         <div className="flex items-center justify-between">
@@ -198,7 +198,7 @@ export function ManualDataForm({
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-xs font-medium transition-colors",
               title.trim() && content.trim()
-                ? "bg-terracotta text-white hover:bg-terracotta/90"
+                ? "bg-primary text-white hover:bg-primary/90"
                 : "bg-muted text-muted-foreground cursor-not-allowed",
             )}
           >

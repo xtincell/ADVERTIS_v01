@@ -27,13 +27,14 @@ import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { BUDGET_TIER_CONFIG } from "~/lib/constants";
 import { CockpitSection } from "../cockpit-shared";
+import { EmptyState } from "~/components/ui/empty-state";
 
 // ---------------------------------------------------------------------------
 // Tier gradient colors
 // ---------------------------------------------------------------------------
 
 const TIER_GRADIENTS: Record<string, string> = {
-  MICRO: "from-gray-50 to-gray-100 border-gray-200",
+  MICRO: "from-muted/30 to-muted border-border",
   STARTER: "from-blue-50 to-blue-100 border-blue-200",
   IMPACT: "from-emerald-50 to-emerald-100 border-emerald-200",
   CAMPAIGN: "from-purple-50 to-purple-100 border-purple-200",
@@ -41,7 +42,7 @@ const TIER_GRADIENTS: Record<string, string> = {
 };
 
 const TIER_ACCENT: Record<string, string> = {
-  MICRO: "text-gray-600",
+  MICRO: "text-muted-foreground",
   STARTER: "text-blue-600",
   IMPACT: "text-emerald-600",
   CAMPAIGN: "text-purple-600",
@@ -96,24 +97,15 @@ export function SectionBudget({ strategyId }: { strategyId: string }) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <DollarSign className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Aucun palier budgétaire configuré.
-            </p>
-            <button
-              onClick={() => seedMutation.mutate({ strategyId })}
-              disabled={seedMutation.isPending}
-              className="inline-flex items-center gap-2 rounded-lg bg-terracotta px-4 py-2 text-sm font-medium text-white hover:bg-terracotta/90 transition-colors"
-            >
-              {seedMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
-              Initialiser les 5 paliers par défaut
-            </button>
-          </div>
+          <EmptyState
+            icon={DollarSign}
+            title="Aucun palier budgétaire configuré"
+            action={{
+              label: seedMutation.isPending ? "Initialisation…" : "Initialiser les 5 paliers par défaut",
+              onClick: () => seedMutation.mutate({ strategyId }),
+              disabled: seedMutation.isPending,
+            }}
+          />
         )}
 
         {/* Reset button */}

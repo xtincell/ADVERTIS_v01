@@ -35,7 +35,7 @@ export function RailNav({ items, logoSlot }: RailNavProps) {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden md:flex h-screen w-14 flex-col items-center border-r bg-background py-3 gap-1">
+    <nav className="hidden md:flex h-screen w-14 flex-col items-center shadow-[1px_0_0_0_oklch(0.91_0.005_260)] bg-background/80 backdrop-blur-xl py-3 gap-1">
       {/* Logo / Portal Switcher */}
       <div className="mb-4 flex h-10 w-10 items-center justify-center">
         {logoSlot ?? (
@@ -57,15 +57,19 @@ export function RailNav({ items, logoSlot }: RailNavProps) {
             <Tooltip key={item.href} delayDuration={0}>
               <TooltipTrigger asChild>
                 <Link
+                  data-slot="nav-link"
                   href={item.href}
                   className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+                    "flex h-10 w-10 flex-col items-center justify-center rounded-lg transition-colors",
                     isActive
-                      ? "bg-terracotta/10 text-terracotta"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
                   )}
                 >
                   <Icon className="h-5 w-5" />
+                  {isActive && (
+                    <div className="w-1 h-1 rounded-full bg-primary mt-1" />
+                  )}
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>

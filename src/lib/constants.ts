@@ -20,49 +20,49 @@ export const PILLAR_CONFIG: Record<
   A: {
     title: "Authenticité",
     order: 1,
-    color: "#c45a3c",
+    color: "#10B981",
     description: "ADN de marque, Purpose, Vision, Valeurs",
   },
   D: {
     title: "Distinction",
     order: 2,
-    color: "#2d5a3d",
+    color: "#8B5CF6",
     description: "Positionnement, Personas, Identité visuelle",
   },
   V: {
     title: "Valeur",
     order: 3,
-    color: "#c49a3c",
+    color: "#F59E0B",
     description: "Proposition de valeur, Pricing, Unit Economics",
   },
   E: {
     title: "Engagement",
     order: 4,
-    color: "#3c7ac4",
+    color: "#3B82F6",
     description: "Touchpoints, Rituels, AARRR, Communauté",
   },
   R: {
     title: "Risk",
     order: 5,
-    color: "#c43c6e",
+    color: "#EF4444",
     description: "SWOT, Score de risque, Mitigation",
   },
   T: {
     title: "Track",
     order: 6,
-    color: "#8c3cc4",
+    color: "#EC4899",
     description: "Validation, TAM/SAM/SOM, KPIs",
   },
   I: {
     title: "Implémentation",
     order: 7,
-    color: "#3cc4c4",
+    color: "#06B6D4",
     description: "Roadmap 36 mois, Budget, Équipe",
   },
   S: {
     title: "Stratégie",
     order: 8,
-    color: "#c4783c",
+    color: "#F97316",
     description: "Bible stratégique, Synthèse exécutive",
   },
 };
@@ -431,18 +431,21 @@ export const VIEW_MODE_LABELS: Record<ViewMode, string> = {
 export const VIEW_MODE_SECTIONS: Record<ViewMode, string[]> = {
   EXECUTIVE: [
     "synthese", "coherence", "risk", "bmf", "decisions",
-    "kpi-dashboard", "budget-sim", "axes-strategiques", "audit-suggestions",
-    "livrables", "glory",
+    "kpi-dashboard", "budget-sim", "budget-operationnel", "axes-strategiques",
+    "audit-suggestions", "feedback", "livrables", "glory", "quality-checklist",
   ],
   MARKETING: [
     "synthese", "authenticite", "distinction", "valeur", "engagement",
     "implementation", "campaigns", "briefs", "competitors",
-    "opportunities", "widgets", "glory", "signals", "budget-sim", "audit-suggestions",
+    "opportunities", "widgets", "glory", "signals", "budget-sim",
+    "audit-suggestions", "feedback", "big-idea-kit", "creative-strategy",
+    "funnel-mapping", "partners", "chrono", "budget-operationnel",
   ],
   FOUNDER: [
     "synthese", "coherence", "risk", "bmf", "authenticite",
     "distinction", "valeur", "decisions", "budget-sim",
-    "axes-strategiques", "kpi-dashboard", "audit-suggestions",
+    "budget-operationnel", "axes-strategiques", "kpi-dashboard",
+    "audit-suggestions", "feedback", "quality-checklist",
   ],
   MINIMAL: [
     "synthese", "coherence", "axes-strategiques", "kpi-dashboard",
@@ -481,7 +484,7 @@ export const SIGNAL_STATUS_COLORS: Record<string, string> = {
   ACTIVE: "text-emerald-600 bg-emerald-50 border-emerald-200",
   DECLINING: "text-red-600 bg-red-50 border-red-200",
   EMERGING: "text-blue-600 bg-blue-50 border-blue-200",
-  WATCH: "text-gray-600 bg-gray-50 border-gray-200",
+  WATCH: "text-muted-foreground bg-muted/50 border-border",
   PROBE: "text-amber-600 bg-amber-50 border-amber-200",
   BET: "text-purple-600 bg-purple-50 border-purple-200",
 };
@@ -499,7 +502,7 @@ export type DecisionPriority = (typeof DECISION_PRIORITIES)[number];
 export const DECISION_PRIORITY_CONFIG: Record<DecisionPriority, { label: string; color: string; urgency: string }> = {
   P0: { label: "Urgent", color: "text-red-700 bg-red-100 border-red-300", urgency: "Immédiat" },
   P1: { label: "Planifié", color: "text-amber-700 bg-amber-100 border-amber-300", urgency: "Cette semaine" },
-  P2: { label: "Backlog", color: "text-gray-700 bg-gray-100 border-gray-300", urgency: "Ce mois" },
+  P2: { label: "Backlog", color: "text-muted-foreground bg-muted border-border", urgency: "Ce mois" },
 };
 
 export const DECISION_STATUSES = ["PENDING", "IN_PROGRESS", "RESOLVED", "DEFERRED"] as const;
@@ -869,7 +872,7 @@ export const MISSION_STATUS_LABELS: Record<MissionStatus, string> = {
 };
 
 export const MISSION_STATUS_COLORS: Record<MissionStatus, string> = {
-  INTAKE: "text-gray-600 bg-gray-50 border-gray-200",
+  INTAKE: "text-muted-foreground bg-muted/50 border-border",
   INTELLIGENCE: "text-blue-600 bg-blue-50 border-blue-200",
   STAFFING: "text-purple-600 bg-purple-50 border-purple-200",
   IN_PROGRESS: "text-amber-600 bg-amber-50 border-amber-200",
@@ -1030,3 +1033,175 @@ export const ASSIGNMENT_STATUSES = [
   "ASSIGNED", "ACCEPTED", "IN_PROGRESS", "DELIVERED", "REVIEWED",
 ] as const;
 export type AssignmentStatus = (typeof ASSIGNMENT_STATUSES)[number];
+
+// ============================================
+// LA GUILDE — Talent Marketplace Constants
+// ============================================
+
+// ── Talent Categories ──
+export const TALENT_CATEGORIES = ["CORE", "EXTENDED", "RESEAU"] as const;
+export type TalentCategory = (typeof TALENT_CATEGORIES)[number];
+export const TALENT_CATEGORY_LABELS: Record<TalentCategory, string> = {
+  CORE: "Core (Freelances individuels)",
+  EXTENDED: "Extended (Agences partenaires)",
+  RESEAU: "Réseau (Prestataires spécialisés)",
+};
+
+// ── Talent Levels (progression) ──
+export const TALENT_LEVELS = ["NOVICE", "COMPETENT", "CONFIRMED", "EXPERT", "LEGEND"] as const;
+export type TalentLevel = (typeof TALENT_LEVELS)[number];
+export const TALENT_LEVEL_LABELS: Record<TalentLevel, string> = {
+  NOVICE: "Novice",
+  COMPETENT: "Compétent",
+  CONFIRMED: "Confirmé",
+  EXPERT: "Expert",
+  LEGEND: "Légende",
+};
+
+// Seuils de progression par niveau
+export const TALENT_LEVEL_CONFIG: Record<TalentLevel, {
+  minMissions: number;
+  minAvgScore: number;
+  color: string;
+  emoji: string;
+}> = {
+  NOVICE:    { minMissions: 0,  minAvgScore: 0,   color: "#94A3B8", emoji: "🌱" },
+  COMPETENT: { minMissions: 3,  minAvgScore: 3.0, color: "#10B981", emoji: "⚡" },
+  CONFIRMED: { minMissions: 8,  minAvgScore: 3.5, color: "#3B82F6", emoji: "🎯" },
+  EXPERT:    { minMissions: 15, minAvgScore: 4.0, color: "#8B5CF6", emoji: "🔥" },
+  LEGEND:    { minMissions: 30, minAvgScore: 4.5, color: "#F43F5E", emoji: "👑" },
+};
+
+// ── Talent Availability ──
+export const TALENT_AVAILABILITY = ["AVAILABLE", "PARTIAL", "BUSY", "UNAVAILABLE"] as const;
+export type TalentAvailability = (typeof TALENT_AVAILABILITY)[number];
+export const TALENT_AVAILABILITY_LABELS: Record<TalentAvailability, string> = {
+  AVAILABLE: "Disponible",
+  PARTIAL: "Partiellement dispo",
+  BUSY: "Occupé",
+  UNAVAILABLE: "Indisponible",
+};
+
+// ── Talent Specializations ──
+export const TALENT_SPECIALIZATIONS = [
+  "BRAND_STRATEGY", "CREATIVE_DIRECTION", "COPYWRITING", "GRAPHIC_DESIGN",
+  "MOTION_DESIGN", "WEB_DEVELOPMENT", "SOCIAL_MEDIA", "MEDIA_PLANNING",
+  "PR_COMMUNICATION", "EVENT_MANAGEMENT", "PHOTOGRAPHY", "VIDEO_PRODUCTION",
+  "UX_UI_DESIGN", "SEO_SEA", "DATA_ANALYTICS", "ILLUSTRATION",
+  "PACKAGING_DESIGN", "SOUND_DESIGN", "TRANSLATION", "PROJECT_MANAGEMENT",
+] as const;
+export type TalentSpecialization = (typeof TALENT_SPECIALIZATIONS)[number];
+export const TALENT_SPECIALIZATION_LABELS: Record<TalentSpecialization, string> = {
+  BRAND_STRATEGY: "Stratégie de marque",
+  CREATIVE_DIRECTION: "Direction artistique",
+  COPYWRITING: "Conception-rédaction",
+  GRAPHIC_DESIGN: "Design graphique",
+  MOTION_DESIGN: "Motion design",
+  WEB_DEVELOPMENT: "Développement web",
+  SOCIAL_MEDIA: "Social media",
+  MEDIA_PLANNING: "Média planning",
+  PR_COMMUNICATION: "Relations publiques",
+  EVENT_MANAGEMENT: "Événementiel",
+  PHOTOGRAPHY: "Photographie",
+  VIDEO_PRODUCTION: "Production vidéo",
+  UX_UI_DESIGN: "UX/UI Design",
+  SEO_SEA: "SEO / SEA",
+  DATA_ANALYTICS: "Data & Analytics",
+  ILLUSTRATION: "Illustration",
+  PACKAGING_DESIGN: "Design packaging",
+  SOUND_DESIGN: "Sound design",
+  TRANSLATION: "Traduction",
+  PROJECT_MANAGEMENT: "Gestion de projet",
+};
+
+// ── Review Dimensions ──
+export const REVIEW_DIMENSIONS = [
+  "qualityScore", "communicationScore", "deadlinesScore",
+  "creativityScore", "autonomyScore",
+] as const;
+export type ReviewDimension = (typeof REVIEW_DIMENSIONS)[number];
+export const REVIEW_DIMENSION_LABELS: Record<ReviewDimension, string> = {
+  qualityScore: "Qualité",
+  communicationScore: "Communication",
+  deadlinesScore: "Respect des délais",
+  creativityScore: "Créativité",
+  autonomyScore: "Autonomie",
+};
+
+// ============================================
+// SÉRÉNITÉ — Finance & Admin Constants
+// ============================================
+
+// ── Invoice Types ──
+export const INVOICE_TYPES = ["DEVIS", "FACTURE", "AVOIR"] as const;
+export type InvoiceType = (typeof INVOICE_TYPES)[number];
+export const INVOICE_TYPE_LABELS: Record<InvoiceType, string> = {
+  DEVIS: "Devis",
+  FACTURE: "Facture",
+  AVOIR: "Avoir",
+};
+
+// ── Invoice Statuses ──
+export const INVOICE_STATUSES = [
+  "DRAFT", "SENT", "ACCEPTED", "PAID", "OVERDUE", "CANCELLED",
+] as const;
+export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
+export const INVOICE_STATUS_LABELS: Record<InvoiceStatus, string> = {
+  DRAFT: "Brouillon",
+  SENT: "Envoyée",
+  ACCEPTED: "Acceptée",
+  PAID: "Payée",
+  OVERDUE: "En retard",
+  CANCELLED: "Annulée",
+};
+
+// ── Contract Types ──
+export const CONTRACT_TYPES = ["NDA", "PRESTATION", "CESSION_DROITS", "PORTAGE"] as const;
+export type ContractType = (typeof CONTRACT_TYPES)[number];
+export const CONTRACT_TYPE_LABELS: Record<ContractType, string> = {
+  NDA: "Accord de confidentialité",
+  PRESTATION: "Contrat de prestation",
+  CESSION_DROITS: "Cession de droits",
+  PORTAGE: "Convention de portage",
+};
+
+// ── Contract Statuses ──
+export const CONTRACT_STATUSES = [
+  "DRAFT", "SENT", "SIGNED", "ACTIVE", "EXPIRED", "TERMINATED",
+] as const;
+export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
+export const CONTRACT_STATUS_LABELS: Record<ContractStatus, string> = {
+  DRAFT: "Brouillon",
+  SENT: "Envoyé",
+  SIGNED: "Signé",
+  ACTIVE: "Actif",
+  EXPIRED: "Expiré",
+  TERMINATED: "Résilié",
+};
+
+// ── Escrow Statuses ──
+export const ESCROW_STATUSES = [
+  "PENDING", "HELD", "PARTIALLY_RELEASED", "RELEASED", "REFUNDED",
+] as const;
+export type EscrowStatus = (typeof ESCROW_STATUSES)[number];
+export const ESCROW_STATUS_LABELS: Record<EscrowStatus, string> = {
+  PENDING: "En attente",
+  HELD: "Séquestré",
+  PARTIALLY_RELEASED: "Partiellement libéré",
+  RELEASED: "Libéré",
+  REFUNDED: "Remboursé",
+};
+
+// ── Commission Statuses ──
+export const COMMISSION_STATUSES = ["CALCULATED", "INVOICED", "PAID"] as const;
+export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
+
+// ── Commission Rates by Talent Level ──
+// Le taux de commission diminue avec le niveau (récompense la fidélité)
+export const COMMISSION_RATES: Record<TalentLevel, number> = {
+  NOVICE: 0.25,     // 25%
+  COMPETENT: 0.20,  // 20%
+  CONFIRMED: 0.17,  // 17%
+  EXPERT: 0.15,     // 15%
+  LEGEND: 0.12,     // 12%
+};

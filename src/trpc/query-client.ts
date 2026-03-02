@@ -20,6 +20,23 @@ export const createQueryClient = () =>
         // With SSR, we usually want to set some default staleTime
         // above 0 to avoid refetching immediately on the client
         staleTime: 30 * 1000,
+        // Don't retry on deterministic errors (NOT_FOUND, UNAUTHORIZED, etc.)
+        // These will never succeed on retry and just spam console + network.
+        retry(failureCount, error) {
+          // tRPC errors carry a data.code field
+          const trpcCode = (error as Error & { data?: { code?: string } })?.data
+            ?.code;
+          if (
+            trpcCode === "NOT_FOUND" ||
+            trpcCode === "UNAUTHORIZED" ||
+            trpcCode === "FORBIDDEN" ||
+            trpcCode === "BAD_REQUEST"
+          ) {
+            return false;
+          }
+          // For transient errors (network, 500), allow up to 2 retries
+          return failureCount < 2;
+        },
       },
       dehydrate: {
         serializeData: SuperJSON.serialize,

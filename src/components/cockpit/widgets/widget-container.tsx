@@ -4,7 +4,7 @@
 // Individual widget display wrapper for cockpit-derived widgets.
 // Props: title, description, icon, status (pending/computing/ready/error),
 // errorMessage, children.
-// Key features: generic card wrapper with terracotta accent border, 4 display
+// Key features: generic card wrapper with primary accent border, 4 display
 // states (pending placeholder, computing spinner, error with message, ready
 // with children content), loading indicator in header during compute.
 // =============================================================================
@@ -15,6 +15,7 @@
 "use client";
 
 import { Loader2, AlertTriangle, Layers } from "lucide-react";
+import { EmptyState } from "~/components/ui/empty-state";
 import {
   Card,
   CardContent,
@@ -41,10 +42,10 @@ export function WidgetContainer({
   children,
 }: WidgetContainerProps) {
   return (
-    <Card className="overflow-hidden border-t-3 border-t-terracotta/50">
+    <Card className="animate-page-enter overflow-hidden border-t-3 border-t-primary/50">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-sm">
             {icon}
           </div>
           <div className="flex-1">
@@ -58,15 +59,13 @@ export function WidgetContainer({
       </CardHeader>
       <CardContent>
         {status === "pending" && (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
-            <Layers className="mb-2 h-8 w-8 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">
-              Widget pas encore calculé.
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Cliquez sur &quot;Calculer&quot; pour générer les données.
-            </p>
-          </div>
+          <EmptyState
+            icon={Layers}
+            title="Widget pas encore calculé"
+            description="Cliquez sur « Calculer » pour générer les données."
+            compact
+            className="rounded-lg border border-dashed"
+          />
         )}
 
         {status === "computing" && (

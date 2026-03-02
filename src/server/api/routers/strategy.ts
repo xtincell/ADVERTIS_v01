@@ -43,6 +43,8 @@ import {
   validatePhaseReversion,
 } from "~/server/services/pipeline-orchestrator";
 import { CreateChildStrategySchema } from "~/lib/types/phase1-schemas";
+import { setVariablesBatch, type BatchVariableEntry } from "~/server/services/variable-store";
+import { propagateStaleness } from "~/server/services/staleness-propagator";
 
 export const strategyRouter = createTRPCRouter({
   /**
@@ -178,7 +180,7 @@ export const strategyRouter = createTRPCRouter({
         tagline: z.string().optional(),
         sector: z.string().optional(),
         description: z.string().optional(),
-        interviewData: z.any().optional(),
+        interviewData: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.record(z.string(), z.unknown())])).optional(),
         currency: z.string().optional(),
       }),
     )
@@ -221,6 +223,23 @@ export const strategyRouter = createTRPCRouter({
           },
         },
       });
+
+      // Sync interview variables to BrandVariable registry if interviewData changed
+      if (input.interviewData && typeof input.interviewData === "object") {
+        const entries: BatchVariableEntry[] = Object.entries(
+          input.interviewData as Record<string, string>,
+        )
+          .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+          .map(([varId, value]) => ({
+            key: `interview.${varId}`,
+            value,
+            options: { source: "user_input" as const, changedBy: ctx.session.user.id },
+          }));
+        if (entries.length > 0) {
+          void setVariablesBatch(id, entries);
+          void propagateStaleness(id, entries.map((e) => e.key));
+        }
+      }
 
       return strategy;
     }),
@@ -357,12 +376,16 @@ export const strategyRouter = createTRPCRouter({
 
   /**
    * Update the interviewData JSON field. Verifies ownership.
+   * Values are trimmed strings keyed by variable IDs (e.g. A1, D3).
    */
   updateInterviewData: protectedProcedure
     .input(
       z.object({
         id: z.string(),
-        data: z.record(z.any()),
+        data: z.record(
+          z.string().regex(/^[A-Z]\d{1,2}$/, "Clé de variable invalide"),
+          z.string().max(10000, "La réponse ne doit pas dépasser 10 000 caractères").transform((v) => v.trim()),
+        ),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -381,6 +404,19 @@ export const strategyRouter = createTRPCRouter({
         where: { id: input.id },
         data: { interviewData: input.data },
       });
+
+      // Sync to BrandVariable registry (fire-and-forget)
+      const entries: BatchVariableEntry[] = Object.entries(input.data)
+        .filter(([, v]) => v.trim().length > 0)
+        .map(([varId, value]) => ({
+          key: `interview.${varId}`,
+          value,
+          options: { source: "user_input" as const, changedBy: ctx.session.user.id },
+        }));
+      if (entries.length > 0) {
+        void setVariablesBatch(input.id, entries);
+        void propagateStaleness(input.id, entries.map((e) => e.key));
+      }
 
       return strategy;
     }),
@@ -438,6 +474,23 @@ export const strategyRouter = createTRPCRouter({
           data: { status: "confirmed" },
         }),
       ]);
+
+      // Sync imported data to BrandVariable registry (fire-and-forget)
+      const importEntries: BatchVariableEntry[] = Object.entries(input.confirmedData)
+        .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+        .map(([varId, value]) => ({
+          key: `interview.${varId}`,
+          value,
+          options: {
+            source: "file_import" as const,
+            sourceDetail: importedFile.fileName ?? undefined,
+            changedBy: ctx.session.user.id,
+          },
+        }));
+      if (importEntries.length > 0) {
+        void setVariablesBatch(input.strategyId, importEntries);
+        void propagateStaleness(input.strategyId, importEntries.map((e) => e.key));
+      }
 
       return updatedStrategy;
     }),
@@ -555,7 +608,7 @@ export const strategyRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        interviewData: z.record(z.any()),
+        interviewData: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.record(z.string(), z.unknown())])),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -580,7 +633,7 @@ export const strategyRouter = createTRPCRouter({
       const updatedStrategy = await ctx.db.strategy.update({
         where: { id: input.id },
         data: {
-          interviewData: input.interviewData,
+          interviewData: input.interviewData as never,
           phase: "audit-r",
           status: "generating",
         },
@@ -589,6 +642,23 @@ export const strategyRouter = createTRPCRouter({
 
       // Recalculate scores after fiche review validation
       void recalculateAllScores(input.id, "fiche_review");
+
+      // Sync review data to BrandVariable registry (fire-and-forget)
+      if (input.interviewData && typeof input.interviewData === "object") {
+        const reviewEntries: BatchVariableEntry[] = Object.entries(
+          input.interviewData as Record<string, string>,
+        )
+          .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+          .map(([varId, value]) => ({
+            key: `interview.${varId}`,
+            value,
+            options: { source: "user_input" as const, changedBy: ctx.session.user.id },
+          }));
+        if (reviewEntries.length > 0) {
+          void setVariablesBatch(input.id, reviewEntries);
+          void propagateStaleness(input.id, reviewEntries.map((e) => e.key));
+        }
+      }
 
       return updatedStrategy;
     }),
@@ -601,8 +671,8 @@ export const strategyRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        riskAuditData: z.any(),
-        trackAuditData: z.any(),
+        riskAuditData: z.record(z.string(), z.unknown()),
+        trackAuditData: z.record(z.string(), z.unknown()),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -654,13 +724,13 @@ export const strategyRouter = createTRPCRouter({
         ctx.db.pillar.update({
           where: { id: pillarR.id },
           data: {
-            content: input.riskAuditData,
+            content: input.riskAuditData as never,
           },
         }),
         ctx.db.pillar.update({
           where: { id: pillarT.id },
           data: {
-            content: input.trackAuditData,
+            content: input.trackAuditData as never,
           },
         }),
       ]);

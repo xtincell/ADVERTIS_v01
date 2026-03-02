@@ -21,6 +21,7 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { BRIEF_TYPE_LABELS, BRIEF_TYPES } from "~/lib/constants";
+import { EmptyState } from "~/components/ui/empty-state";
 
 // ---------------------------------------------------------------------------
 // PresetManager
@@ -56,7 +57,7 @@ export function PresetManager() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <BookTemplate className="h-5 w-5 text-terracotta" />
+          <BookTemplate className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Presets de Briefs</h3>
           <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
             {presets?.length ?? 0} preset{(presets?.length ?? 0) > 1 ? "s" : ""}
@@ -81,7 +82,7 @@ export function PresetManager() {
 
           <button
             onClick={() => setShowCreateForm(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-terracotta px-3 py-1.5 text-xs font-medium text-white hover:bg-terracotta/90 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" />
             Nouveau preset
@@ -138,12 +139,12 @@ export function PresetManager() {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center rounded-lg border border-dashed">
-            <Package className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Aucun preset personnalisé. Créez-en un après 2-3 missions similaires.
-            </p>
-          </div>
+          <EmptyState
+            icon={Package}
+            title="Aucun preset personnalisé"
+            description="Créez-en un après 2-3 missions similaires."
+            compact
+          />
         )}
       </div>
 
@@ -245,7 +246,7 @@ function PresetCard({
               "rounded-full px-2 py-0.5 text-[9px] font-medium border",
               isSystem
                 ? "bg-white text-muted-foreground border-muted"
-                : "bg-terracotta/5 text-terracotta border-terracotta/20",
+                : "bg-primary/5 text-primary border-primary/20",
             )}
           >
             {BRIEF_TYPE_LABELS[bt] ?? bt}
@@ -328,9 +329,9 @@ function PresetForm({
   };
 
   return (
-    <div className="rounded-xl border border-terracotta/20 bg-terracotta/5 p-4 space-y-3">
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-xs font-semibold text-terracotta">
+        <h4 className="text-xs font-semibold text-primary">
           {isEdit ? "Modifier le preset" : "Nouveau preset personnalisé"}
         </h4>
         <button onClick={onCancel} className="rounded p-1 hover:bg-muted">
@@ -344,13 +345,13 @@ function PresetForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Nom du preset *"
-          className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-terracotta"
+          className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
         />
         <input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="Description (optionnel)"
-          className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-terracotta"
+          className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
         />
       </div>
 
@@ -358,7 +359,7 @@ function PresetForm({
       <select
         value={vertical}
         onChange={(e) => setVertical(e.target.value)}
-        className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-terracotta"
+        className="rounded-md border bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
       >
         <option value="">Tout vertical</option>
         <option value="FMCG">FMCG</option>
@@ -385,8 +386,8 @@ function PresetForm({
                 className={cn(
                   "rounded-full px-2.5 py-1 text-[10px] font-medium border transition-colors",
                   isSelected
-                    ? "bg-terracotta text-white border-terracotta"
-                    : "bg-white text-muted-foreground border-muted hover:border-terracotta/50",
+                    ? "bg-primary text-white border-primary"
+                    : "bg-white text-muted-foreground border-muted hover:border-primary/50",
                 )}
               >
                 {BRIEF_TYPE_LABELS[bt] ?? bt}
@@ -401,7 +402,7 @@ function PresetForm({
         <button
           onClick={handleSubmit}
           disabled={isSubmitting || !name.trim() || selectedTypes.length === 0}
-          className="inline-flex items-center gap-1.5 rounded-md bg-terracotta px-3 py-1.5 text-xs font-medium text-white hover:bg-terracotta/90 disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
           {isSubmitting ? (
             <Loader2 className="h-3 w-3 animate-spin" />

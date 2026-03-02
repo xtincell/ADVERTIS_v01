@@ -4,7 +4,8 @@
 // Interactive budget allocation simulator for Pillar I (Implementation).
 // 100% client-side — no API calls. Allows users to adjust total budget,
 // per-campaign allocation, and production/media/talent breakdown in real time.
-// Props: campaigns (annualCalendar), budgetAllocation, currency.
+// Click any campaign row to open the full Campaign Proposal Sheet.
+// Props: campaigns (annualCalendar), budgetAllocation, currency, context data.
 // =============================================================================
 
 "use client";
@@ -18,22 +19,23 @@ import {
   BarChart3,
   ChevronDown,
   ChevronUp,
+  Eye,
 } from "lucide-react";
 import type { SupportedCurrency } from "~/lib/constants";
 import { formatCurrency, parseCurrencyString } from "~/lib/currency";
+import {
+  CampaignProposalSheet,
+  type EnrichedCampaignItem,
+  type CampaignTemplate,
+  type ActivationPlan,
+  type CopyStrategy,
+  type BigIdea,
+  type ActivationDispositif,
+} from "./campaign-proposal-sheet";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-interface CampaignItem {
-  mois: string;
-  campagne: string;
-  objectif: string;
-  budget: string;
-  canaux: string[];
-  kpiCible: string;
-}
 
 interface BudgetPoste {
   poste: string;
@@ -55,9 +57,15 @@ interface BudgetAllocationData {
 }
 
 interface BudgetSimulatorProps {
-  campaigns: CampaignItem[];
+  campaigns: EnrichedCampaignItem[];
   budgetAllocation: BudgetAllocationData;
   currency: SupportedCurrency;
+  // Strategic context for campaign detail sheets
+  campaignTemplates?: CampaignTemplate[];
+  activationPlan?: ActivationPlan;
+  copyStrategy?: CopyStrategy;
+  bigIdea?: BigIdea;
+  activationDispositif?: ActivationDispositif;
 }
 
 // ---------------------------------------------------------------------------
@@ -65,7 +73,7 @@ interface BudgetSimulatorProps {
 // ---------------------------------------------------------------------------
 
 /** Parse all campaign budgets and return array of numeric values */
-function parseCampaignBudgets(campaigns: CampaignItem[]): number[] {
+function parseCampaignBudgets(campaigns: EnrichedCampaignItem[]): number[] {
   return campaigns.map((c) => parseCurrencyString(c.budget) ?? 0);
 }
 
@@ -92,6 +100,11 @@ export function BudgetSimulator({
   campaigns,
   budgetAllocation,
   currency,
+  campaignTemplates,
+  activationPlan,
+  copyStrategy,
+  bigIdea,
+  activationDispositif,
 }: BudgetSimulatorProps) {
   // Parse initial values from AI-generated content
   const initialTotal = useMemo(
@@ -134,6 +147,7 @@ export function BudgetSimulator({
     () => initialPostes.map((p) => p.percentage),
   );
   const [showDetails, setShowDetails] = useState(false);
+  const [selectedCampaignIndex, setSelectedCampaignIndex] = useState<number | null>(null);
 
   // Slider range: 50% to 200% of initial total (min 100k)
   const sliderMin = Math.max(Math.round(initialTotal * 0.2), 100_000);
@@ -204,18 +218,18 @@ export function BudgetSimulator({
   const totalPostePercentage = postePercentages.reduce((s, p) => s + p, 0);
 
   return (
-    <div className="space-y-5 rounded-xl border-2 border-dashed border-[#3cc4c4]/30 bg-[#3cc4c4]/5 p-4">
+    <div className="space-y-5 rounded-xl border-2 border-dashed border-cyan-500/30 bg-cyan-500/5 p-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Sliders className="h-5 w-5 text-[#3cc4c4]" />
+          <Sliders className="h-5 w-5 text-cyan-500" />
           <h3 className="text-sm font-bold text-foreground">
             Simulateur Budget Interactif
           </h3>
         </div>
         <button
           onClick={resetToOriginal}
-          className="rounded-md border border-[#3cc4c4]/30 bg-white px-3 py-1 text-xs font-medium text-[#3cc4c4] transition-colors hover:bg-[#3cc4c4]/10"
+          className="rounded-md border border-cyan-500/30 bg-white px-3 py-1 text-xs font-medium text-cyan-500 transition-colors hover:bg-cyan-500/10"
         >
           Réinitialiser
         </button>
@@ -225,7 +239,7 @@ export function BudgetSimulator({
       <div className="rounded-lg border bg-white p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-[#3cc4c4]" />
+            <DollarSign className="h-4 w-4 text-cyan-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Budget total
             </span>
@@ -254,7 +268,7 @@ export function BudgetSimulator({
             step={Math.max(Math.round(initialTotal * 0.01), 10000)}
             value={totalBudget}
             onChange={(e) => handleTotalChange(Number(e.target.value))}
-            className="flex-1 h-2 appearance-none rounded-full bg-gray-200 accent-[#3cc4c4] cursor-pointer"
+            className="flex-1 h-2 appearance-none rounded-full bg-muted accent-cyan-500 cursor-pointer"
           />
           <div className="w-40 shrink-0">
             <input
@@ -264,7 +278,7 @@ export function BudgetSimulator({
                 const parsed = parseCurrencyString(e.target.value);
                 if (parsed !== null) handleTotalChange(parsed);
               }}
-              className="w-full rounded-md border bg-white px-2 py-1.5 text-right text-sm font-bold text-[#3cc4c4] focus:outline-none focus:ring-2 focus:ring-[#3cc4c4]/40"
+              className="w-full rounded-md border bg-white px-2 py-1.5 text-right text-sm font-bold text-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/40"
             />
           </div>
         </div>
@@ -281,7 +295,7 @@ export function BudgetSimulator({
         <div className="rounded-lg border bg-white p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <BarChart3 className="h-4 w-4 text-[#3cc4c4]" />
+              <BarChart3 className="h-4 w-4 text-cyan-500" />
               <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Allocation par campagne
               </span>
@@ -311,14 +325,20 @@ export function BudgetSimulator({
                 <div key={i} className="group">
                   <div className="flex items-center gap-3">
                     {/* Month label */}
-                    <span className="w-12 shrink-0 text-[10px] font-bold uppercase text-[#3cc4c4]">
+                    <span className="w-12 shrink-0 text-[10px] font-bold uppercase text-cyan-500">
                       {campaign.mois.substring(0, 4)}
                     </span>
 
-                    {/* Campaign name */}
-                    <span className="w-32 shrink-0 truncate text-xs font-medium text-foreground">
-                      {campaign.campagne}
-                    </span>
+                    {/* Campaign name — clickable to open detail sheet */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCampaignIndex(i)}
+                      className="w-32 shrink-0 truncate text-left text-xs font-medium text-foreground hover:text-cyan-600 hover:underline transition-colors cursor-pointer flex items-center gap-1"
+                      title="Voir la proposition complète"
+                    >
+                      <Eye className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-60 transition-opacity" />
+                      <span className="truncate">{campaign.campagne}</span>
+                    </button>
 
                     {/* Weight slider */}
                     <input
@@ -330,7 +350,7 @@ export function BudgetSimulator({
                       onChange={(e) =>
                         handleCampaignWeightChange(i, Number(e.target.value))
                       }
-                      className="flex-1 h-1.5 appearance-none rounded-full bg-gray-200 accent-[#3cc4c4] cursor-pointer"
+                      className="flex-1 h-1.5 appearance-none rounded-full bg-muted accent-cyan-500 cursor-pointer"
                     />
 
                     {/* Allocated amount */}
@@ -384,7 +404,7 @@ export function BudgetSimulator({
       {initialPostes.length > 0 && (
         <div className="rounded-lg border bg-white p-4">
           <div className="flex items-center gap-2 mb-3">
-            <Sliders className="h-4 w-4 text-[#3cc4c4]" />
+            <Sliders className="h-4 w-4 text-cyan-500" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Ventilation par poste
             </span>
@@ -413,10 +433,10 @@ export function BudgetSimulator({
                     onChange={(e) =>
                       handlePostePercentageChange(i, Number(e.target.value))
                     }
-                    className="flex-1 h-1.5 appearance-none rounded-full bg-gray-200 accent-[#3cc4c4] cursor-pointer"
+                    className="flex-1 h-1.5 appearance-none rounded-full bg-muted accent-cyan-500 cursor-pointer"
                   />
 
-                  <span className="w-10 shrink-0 text-right text-xs font-bold text-[#3cc4c4]">
+                  <span className="w-10 shrink-0 text-right text-xs font-bold text-cyan-500">
                     {Math.round(postePercentages[i] ?? 0)}%
                   </span>
 
@@ -426,12 +446,11 @@ export function BudgetSimulator({
                 </div>
 
                 {/* Progress bar */}
-                <div className="mt-1 ml-40 mr-40 h-1 rounded-full bg-gray-100 overflow-hidden">
+                <div className="mt-1 ml-40 mr-40 h-1 rounded-full bg-muted overflow-hidden">
                   <div
-                    className="h-full rounded-full transition-all duration-300"
+                    className="h-full rounded-full bg-cyan-500 transition-all duration-300"
                     style={{
                       width: `${Math.min(postePercentages[i] ?? 0, 100)}%`,
-                      backgroundColor: "#3cc4c4",
                     }}
                   />
                 </div>
@@ -447,7 +466,7 @@ export function BudgetSimulator({
           <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             Budget simulé
           </p>
-          <p className="mt-1 text-lg font-bold text-[#3cc4c4]">
+          <p className="mt-1 text-lg font-bold text-cyan-500">
             {formatCurrency(totalBudget, currency)}
           </p>
         </div>
@@ -491,6 +510,26 @@ export function BudgetSimulator({
           </p>
         </div>
       </div>
+
+      {/* ── Campaign Proposal Detail Sheet ── */}
+      {selectedCampaignIndex !== null && campaigns[selectedCampaignIndex] && (
+        <CampaignProposalSheet
+          campaign={campaigns[selectedCampaignIndex]}
+          campaignIndex={selectedCampaignIndex}
+          simulatedBudget={computedCampaignBudgets[selectedCampaignIndex] ?? 0}
+          originalBudget={initialCampaignBudgets[selectedCampaignIndex] ?? 0}
+          currency={currency}
+          templates={campaignTemplates}
+          activationPlan={activationPlan}
+          copyStrategy={copyStrategy}
+          bigIdea={bigIdea}
+          activationDispositif={activationDispositif}
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) setSelectedCampaignIndex(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 // ==========================================================================
 // SHELL S.4 — FreelanceShell
 // Layout shell for FREELANCE role.
-// Simplified navigation: missions, briefs, upload, profile.
+// Uses the shared AppShell with sidebar + header + bottom nav.
 // ==========================================================================
 
 "use client";
@@ -11,31 +11,33 @@ import {
   FileText,
   Upload,
   User,
+  Wallet,
 } from "lucide-react";
-import { BottomNav, type BottomNavItem } from "./bottom-nav";
-import { RailNav, type RailNavItem } from "./rail-nav";
-import { PortalSwitcher, PortalSwitcherMobile } from "./portal-switcher";
+import { AppShell } from "./app-shell";
+import type { SidebarNavItem } from "./app-sidebar";
+import type { BottomNavItem } from "./bottom-nav";
 
-const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
+const SIDEBAR_ITEMS: SidebarNavItem[] = [
   { href: "/my-missions", label: "Missions", icon: Briefcase },
   { href: "/my-briefs", label: "Briefs", icon: FileText },
   { href: "/upload", label: "Upload", icon: Upload },
+  { href: "/my-finances", label: "Finances", icon: Wallet },
   { href: "/profile", label: "Profil", icon: User },
 ];
 
-interface FreelanceShellProps {
-  children: React.ReactNode;
-}
+const BOTTOM_NAV_ITEMS: BottomNavItem[] = SIDEBAR_ITEMS;
 
-export function FreelanceShell({ children }: FreelanceShellProps) {
+export function FreelanceShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <RailNav items={NAV_ITEMS} logoSlot={<PortalSwitcher />} />
-      <main className="flex-1 overflow-auto bg-dotgrid pb-20 md:pb-0">
-        {children}
-      </main>
-      <BottomNav items={NAV_ITEMS} />
-      <PortalSwitcherMobile />
-    </div>
+    <AppShell
+      portalName="Freelance"
+      portalDescription="Missions et livrables"
+      portalIcon={Briefcase}
+      portalColor="#F59E0B"
+      items={SIDEBAR_ITEMS}
+      bottomNavItems={BOTTOM_NAV_ITEMS}
+    >
+      {children}
+    </AppShell>
   );
 }

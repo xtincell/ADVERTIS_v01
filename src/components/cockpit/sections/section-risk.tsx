@@ -209,7 +209,7 @@ export function SectionRisk({
                     className="rounded-lg border px-3 py-2"
                   >
                     <div className="flex items-start gap-2">
-                      <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c43c6e]" />
+                      <Shield className="mt-0.5 h-3.5 w-3.5 shrink-0 text-pink-500" />
                       <div className="flex-1">
                         <p className="text-sm font-semibold">{mp.risk}</p>
                         <p className="text-xs text-foreground/80">

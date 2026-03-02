@@ -36,7 +36,7 @@ interface PillarData {
   updatedAt?: Date | string | null;
 }
 
-const COLOR = PILLAR_CONFIG.E.color; // #3c7ac4
+const COLOR = PILLAR_CONFIG.E.color; // #3B82F6
 
 export function SectionEngagement({
   eContent,
@@ -134,7 +134,7 @@ export function SectionEngagement({
                         </div>
                         <span className="text-sm font-semibold">{tp.canal}</span>
                         <span
-                          className={`ml-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${typeBadgeColors[tp.type] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}
+                          className={`ml-auto inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${typeBadgeColors[tp.type] ?? "bg-muted text-foreground border-border"}`}
                         >
                           {tp.type}
                         </span>
@@ -143,7 +143,7 @@ export function SectionEngagement({
                         <p className="mt-1 text-xs text-muted-foreground">{tp.role}</p>
                       )}
                       {tp.priorite > 0 && (
-                        <p className="mt-1 text-xs text-[#3c7ac4]">{"\u2726"} Priorité {tp.priorite}</p>
+                        <p className="mt-1 text-xs text-blue-500">{"\u2726"} Priorité {tp.priorite}</p>
                       )}
                     </div>
                   );
@@ -169,7 +169,7 @@ export function SectionEngagement({
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold">{r.nom}</span>
                         <span
-                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${rituelTypeBadge[r.type] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}
+                          className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${rituelTypeBadge[r.type] ?? "bg-muted text-foreground border-border"}`}
                         >
                           {r.type}
                         </span>
@@ -245,7 +245,7 @@ export function SectionEngagement({
                       <p className="mt-1 text-xs text-muted-foreground">{g.condition}</p>
                     )}
                     {g.recompense && (
-                      <p className="mt-1 text-xs text-[#3c7ac4]">{"\uD83C\uDFC6"} {g.recompense}</p>
+                      <p className="mt-1 text-xs text-blue-500">{"\uD83C\uDFC6"} {g.recompense}</p>
                     )}
                   </div>
                 ))}

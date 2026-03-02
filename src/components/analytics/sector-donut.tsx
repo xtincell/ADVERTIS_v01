@@ -27,14 +27,14 @@ interface SectorDonutProps {
 // ---------------------------------------------------------------------------
 
 const SECTOR_COLORS = [
-  "#c45a3c", // terracotta
-  "#2d5a3d", // forest
-  "#c49a3c", // gold
-  "#3c7ac4", // blue
-  "#8c3cc4", // purple
-  "#c43c6e", // pink
-  "#3cc4c4", // teal
-  "#6b7280", // gray
+  "#10B981", // emerald
+  "#8B5CF6", // violet
+  "#F59E0B", // amber
+  "#3B82F6", // blue
+  "#EF4444", // red
+  "#EC4899", // pink
+  "#06B6D4", // cyan
+  "#F97316", // orange
 ] as const;
 
 // ---------------------------------------------------------------------------

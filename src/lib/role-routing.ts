@@ -16,7 +16,7 @@ export function getHomeByRole(role: string): string {
   switch (role) {
     case "ADMIN":
     case "OPERATOR":
-      return "/dashboard";
+      return "/impulsion";
     case "FREELANCE":
       return "/my-missions";
     case "CLIENT_RETAINER":
@@ -29,13 +29,12 @@ export function getHomeByRole(role: string): string {
 
 /** Routes only accessible by ADMIN / OPERATOR. */
 export const OPERATOR_ROUTES = [
-  "/dashboard",
-  "/brand",
-  "/new",
-  "/tree",
-  "/missions",
-  "/more",
+  "/impulsion",
+  "/pilotis",
+  "/serenite",
   "/glory",
+  "/tarsis",
+  "/guilde",
 ];
 
 /** Routes only accessible by FREELANCE. */
@@ -44,6 +43,7 @@ export const FREELANCE_ROUTES = [
   "/my-briefs",
   "/upload",
   "/profile",
+  "/my-finances",
 ];
 
 /** Routes only accessible by CLIENT_RETAINER / CLIENT_STATIC. */

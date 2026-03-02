@@ -55,8 +55,8 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
       {/* Page header */}
       <div className="space-y-2">
         <div className="flex items-center gap-3">
-          <Sparkles className="h-7 w-7 text-[#6C5CE7]" />
-          <h1 className="text-2xl font-bold text-gray-900">GLORY Hub</h1>
+          <Sparkles className="h-7 w-7 text-violet-500" />
+          <h1 className="text-2xl font-bold text-foreground">GLORY Hub</h1>
         </div>
         <p className="text-sm text-muted-foreground max-w-2xl">
           Plateforme d&apos;outils opérationnels pour la création publicitaire.
@@ -80,7 +80,7 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
                   className="h-3 w-3 rounded-full shrink-0"
                   style={{ backgroundColor: meta.color }}
                 />
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   {meta.label}
                 </h2>
                 <Badge
@@ -108,8 +108,8 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
                     <Card
                       className={cn(
                         "h-full transition-all duration-200",
-                        "border-gray-200 hover:border-[#6C5CE7]/40",
-                        "hover:shadow-md hover:shadow-[#6C5CE7]/5",
+                        "border-border hover:border-violet-500/40",
+                        "hover:shadow-md hover:shadow-violet-500/5",
                         "cursor-pointer",
                       )}
                     >
@@ -129,13 +129,13 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
                           {tool.persistable && (
                             <Badge
                               variant="outline"
-                              className="text-[9px] border-green-300 text-green-700"
+                              className="text-[9px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
                             >
                               Persistable
                             </Badge>
                           )}
                         </div>
-                        <CardTitle className="text-sm font-semibold mt-2 group-hover:text-[#6C5CE7] transition-colors">
+                        <CardTitle className="text-sm font-semibold mt-2 group-hover:text-violet-500 transition-colors">
                           {tool.name}
                         </CardTitle>
                       </CardHeader>
@@ -169,8 +169,8 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
       {/* Empty state */}
       {tools.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Sparkles className="h-12 w-12 text-[#6C5CE7]/30 mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600">
+          <Sparkles className="h-12 w-12 text-violet-500/30 mb-4" />
+          <h2 className="text-lg font-semibold text-muted-foreground">
             Aucun outil disponible
           </h2>
           <p className="text-sm text-muted-foreground mt-1">

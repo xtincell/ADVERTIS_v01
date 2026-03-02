@@ -45,9 +45,21 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
     api.createClient({
       links: [
         loggerLink({
-          enabled: (op) =>
-            process.env.NODE_ENV === "development" ||
-            (op.direction === "down" && op.result instanceof Error),
+          enabled: (op) => {
+            // In development, log everything except expected tRPC errors
+            // (NOT_FOUND, UNAUTHORIZED) to avoid console spam on invalid IDs
+            if (process.env.NODE_ENV === "development") {
+              if (op.direction === "down" && op.result instanceof Error) {
+                const trpcError = op.result as Error & { shape?: { data?: { code?: string } } };
+                const code = trpcError.shape?.data?.code;
+                if (code === "NOT_FOUND" || code === "UNAUTHORIZED" || code === "FORBIDDEN") {
+                  return false;
+                }
+              }
+              return true;
+            }
+            return op.direction === "down" && op.result instanceof Error;
+          },
         }),
         httpBatchStreamLink({
           transformer: SuperJSON,

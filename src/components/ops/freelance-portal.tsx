@@ -27,7 +27,7 @@ export function FreelancePortal() {
   if (isLoading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
+        <div className="animate-float text-muted-foreground">
           Chargement...
         </div>
       </div>

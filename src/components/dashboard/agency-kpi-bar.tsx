@@ -42,7 +42,7 @@ function KpiCard({
   children: React.ReactNode;
 }) {
   return (
-    <Card className="bg-gradient-to-b from-card to-muted/30 transition-shadow hover:shadow-md">
+    <Card className="bg-gradient-to-b from-card to-muted/30 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
       <CardContent className="flex flex-col items-center gap-2 pt-5 pb-4">
         <div className="flex items-center gap-2 text-muted-foreground">
           <Icon className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function AgencyKpiBar({
   completionRate,
 }: AgencyKpiBarProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 stagger-children">
       {/* Total brands */}
       <KpiCard label="Marques" icon={BarChart3}>
         <span className="text-3xl font-bold tracking-tight">{totalBrands}</span>

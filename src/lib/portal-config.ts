@@ -7,7 +7,15 @@
 import type { UserRole } from "~/lib/constants";
 
 export interface PortalDefinition {
-  id: "operator" | "glory" | "client" | "freelance";
+  id:
+    | "impulsion"
+    | "pilotis"
+    | "glory"
+    | "tarsis"
+    | "client"
+    | "freelance"
+    | "guilde"
+    | "serenite";
   name: string;
   shortName: string;
   description: string;
@@ -22,16 +30,29 @@ export interface PortalDefinition {
 
 export const PORTALS: PortalDefinition[] = [
   {
-    id: "operator",
-    name: "ADVERTIS",
-    shortName: "ADV",
-    description: "Gestion des marques et missions",
-    href: "/dashboard",
-    color: "var(--terracotta, #c45a3c)",
-    bgClass: "bg-terracotta/10",
-    textClass: "text-terracotta",
-    borderClass: "border-terracotta/30",
-    iconName: "LayoutDashboard",
+    id: "impulsion",
+    name: "Impulsion",
+    shortName: "IMP",
+    description: "Stratégie & marques",
+    href: "/impulsion",
+    color: "#6366F1",
+    bgClass: "bg-indigo-500/10",
+    textClass: "text-indigo-500",
+    borderClass: "border-indigo-500/30",
+    iconName: "Rocket",
+    allowedRoles: ["ADMIN", "OPERATOR"],
+  },
+  {
+    id: "pilotis",
+    name: "Pilotis",
+    shortName: "PLT",
+    description: "Gestion des missions",
+    href: "/pilotis",
+    color: "#F97316",
+    bgClass: "bg-orange-500/10",
+    textClass: "text-orange-500",
+    borderClass: "border-orange-500/30",
+    iconName: "Compass",
     allowedRoles: ["ADMIN", "OPERATOR"],
   },
   {
@@ -40,11 +61,50 @@ export const PORTALS: PortalDefinition[] = [
     shortName: "GLR",
     description: "Outils IA opérationnels",
     href: "/glory",
-    color: "#6C5CE7",
-    bgClass: "bg-[#6C5CE7]/10",
-    textClass: "text-[#6C5CE7]",
-    borderClass: "border-[#6C5CE7]/30",
+    color: "#8B5CF6",
+    bgClass: "bg-violet-500/10",
+    textClass: "text-violet-500",
+    borderClass: "border-violet-500/30",
     iconName: "Sparkles",
+    allowedRoles: ["ADMIN", "OPERATOR"],
+  },
+  {
+    id: "tarsis",
+    name: "TARSIS",
+    shortName: "TRS",
+    description: "Intelligence marché & signaux",
+    href: "/tarsis",
+    color: "#0891B2",
+    bgClass: "bg-cyan-600/10",
+    textClass: "text-cyan-600",
+    borderClass: "border-cyan-600/30",
+    iconName: "Radar",
+    allowedRoles: ["ADMIN", "OPERATOR"],
+  },
+  {
+    id: "guilde",
+    name: "La Guilde",
+    shortName: "GLD",
+    description: "Talents & matching",
+    href: "/guilde",
+    color: "#059669",
+    bgClass: "bg-emerald-600/10",
+    textClass: "text-emerald-600",
+    borderClass: "border-emerald-600/30",
+    iconName: "Users",
+    allowedRoles: ["ADMIN", "OPERATOR"],
+  },
+  {
+    id: "serenite",
+    name: "Sérénité",
+    shortName: "SER",
+    description: "Finance & administration",
+    href: "/serenite",
+    color: "#06B6D4",
+    bgClass: "bg-cyan-500/10",
+    textClass: "text-cyan-500",
+    borderClass: "border-cyan-500/30",
+    iconName: "Shield",
     allowedRoles: ["ADMIN", "OPERATOR"],
   },
   {
@@ -53,10 +113,10 @@ export const PORTALS: PortalDefinition[] = [
     shortName: "CLI",
     description: "Cockpit et documents",
     href: "/cockpit",
-    color: "var(--forest, #2d5a3d)",
-    bgClass: "bg-forest/10",
-    textClass: "text-forest",
-    borderClass: "border-forest/30",
+    color: "#F43F5E",
+    bgClass: "bg-rose-500/10",
+    textClass: "text-rose-500",
+    borderClass: "border-rose-500/30",
     iconName: "BarChart3",
     allowedRoles: ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
   },
@@ -66,10 +126,10 @@ export const PORTALS: PortalDefinition[] = [
     shortName: "FRL",
     description: "Missions et livrables",
     href: "/my-missions",
-    color: "var(--gold, #c49a3c)",
-    bgClass: "bg-gold/10",
-    textClass: "text-gold",
-    borderClass: "border-gold/30",
+    color: "#F59E0B",
+    bgClass: "bg-amber-500/10",
+    textClass: "text-amber-600",
+    borderClass: "border-amber-500/30",
     iconName: "Briefcase",
     allowedRoles: ["ADMIN", "FREELANCE"],
   },
@@ -77,10 +137,14 @@ export const PORTALS: PortalDefinition[] = [
 
 /** Route prefixes that belong to each portal (for detection). */
 const PORTAL_ROUTES: Record<PortalDefinition["id"], string[]> = {
+  impulsion: ["/impulsion"],
+  pilotis: ["/pilotis"],
   glory: ["/glory"],
+  tarsis: ["/tarsis"],
+  guilde: ["/guilde"],
+  serenite: ["/serenite"],
   client: ["/cockpit", "/oracle", "/my-documents", "/requests"],
-  freelance: ["/my-missions", "/my-briefs", "/upload", "/profile"],
-  operator: ["/dashboard", "/brand", "/new", "/tree", "/missions", "/more"],
+  freelance: ["/my-missions", "/my-briefs", "/upload", "/profile", "/my-finances"],
 };
 
 /** Detect which portal a pathname belongs to. */
@@ -91,6 +155,6 @@ export function detectPortal(pathname: string): PortalDefinition {
       return portal;
     }
   }
-  // Default to operator
+  // Default to impulsion
   return PORTALS[0]!;
 }

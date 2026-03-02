@@ -7,6 +7,7 @@ import {
   Minus,
   type LucideIcon,
 } from "lucide-react";
+import { EmptyState } from "~/components/ui/empty-state";
 
 import {
   Card,
@@ -531,7 +532,7 @@ export function RiskLevelBadge({ level }: { level: string }) {
     high: "Élevé",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorMap[level] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorMap[level] ?? "bg-muted text-foreground border-border"}`}>
       {labelMap[level] ?? level}
     </span>
   );
@@ -553,7 +554,7 @@ export function UrgencyBadge({ urgency }: { urgency: string }) {
     medium_term: "Moyen terme",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorMap[urgency] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorMap[urgency] ?? "bg-muted text-foreground border-border"}`}>
       {labelMap[urgency] ?? urgency}
     </span>
   );
@@ -575,7 +576,7 @@ export function StatusBadge({ status }: { status: string }) {
     to_test: "À tester",
   };
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${colorMap[status] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-bold ${colorMap[status] ?? "bg-muted text-foreground border-border"}`}>
       {labelMap[status] ?? status}
     </span>
   );
@@ -596,23 +597,23 @@ interface PillarData {
 export function PillarContentDisplay({ pillar }: { pillar?: PillarData | null }) {
   if (!pillar) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
-        <Layers className="mb-2 h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">
-          Données non disponibles.
-        </p>
-      </div>
+      <EmptyState
+        icon={Layers}
+        title="Données non disponibles"
+        compact
+        className="rounded-lg border border-dashed"
+      />
     );
   }
 
   if (pillar.status !== "complete") {
     return (
-      <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
-        <Layers className="mb-2 h-8 w-8 text-muted-foreground/30" />
-        <p className="text-sm text-muted-foreground">
-          Ce pilier n&apos;a pas encore été généré.
-        </p>
-      </div>
+      <EmptyState
+        icon={Layers}
+        title="Ce pilier n'a pas encore été généré"
+        compact
+        className="rounded-lg border border-dashed"
+      />
     );
   }
 
@@ -768,11 +769,11 @@ export function PillarContentDisplay({ pillar }: { pillar?: PillarData | null })
 
   // Fallback for unknown types
   return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-8 text-center">
-      <Layers className="mb-2 h-8 w-8 text-muted-foreground/30" />
-      <p className="text-sm text-muted-foreground">
-        Format de contenu non reconnu.
-      </p>
-    </div>
+    <EmptyState
+      icon={Layers}
+      title="Format de contenu non reconnu"
+      compact
+      className="rounded-lg border border-dashed"
+    />
   );
 }

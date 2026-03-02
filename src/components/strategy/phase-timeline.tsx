@@ -5,7 +5,7 @@
 // Props (PhaseTimeline): currentPhase, className, orientation (horizontal/vertical).
 // Props (PhaseBadge): phase, className.
 // Key features: 9-phase canonical order from PHASES constant, 3 statuses
-// (complete/active/locked) with green/terracotta/gray styling, phase icons
+// (complete/active/locked) with green/primary/gray styling, phase icons
 // mapped from PHASE_CONFIG, connector lines between phases, horizontal scroll
 // or vertical layout, legacy phase name resolution via LEGACY_PHASE_MAP,
 // PhaseBadge compact sub-component for headers.
@@ -32,6 +32,8 @@ interface PhaseTimelineProps {
   currentPhase: Phase;
   className?: string;
   orientation?: "horizontal" | "vertical";
+  /** When provided, clicking a non-locked phase scrolls/navigates to it */
+  onPhaseClick?: (phase: Phase) => void;
 }
 
 const PHASE_ICONS: Record<string, React.ComponentType<{ className?: string }>> =
@@ -69,6 +71,7 @@ export function PhaseTimeline({
   currentPhase,
   className,
   orientation = "horizontal",
+  onPhaseClick,
 }: PhaseTimelineProps) {
   const displayPhases = PHASE_ORDER.filter((p) => p !== "complete");
 
@@ -86,33 +89,39 @@ export function PhaseTimeline({
         const config = PHASE_CONFIG[phase];
         const status = getPhaseStatus(phase, currentPhase);
         const Icon = PHASE_ICONS[config.icon] ?? CheckCircle;
+        const isClickable = onPhaseClick && status !== "locked";
 
         return (
           <div key={phase} className="flex shrink-0 items-center gap-2" role="listitem">
             {/* Phase item */}
-            <div
+            <button
+              type="button"
+              onClick={isClickable ? () => onPhaseClick(phase) : undefined}
+              disabled={!isClickable}
               className={cn(
                 "flex items-center gap-3 rounded-lg border px-4 py-3 transition-all",
                 status === "complete" &&
                   "border-green-200 bg-green-50 text-green-700",
                 status === "active" &&
-                  "border-terracotta/30 bg-terracotta/5 text-terracotta ring-2 ring-terracotta/20",
+                  "border-primary/30 bg-primary/5 text-primary ring-2 ring-primary/20",
                 status === "locked" &&
                   "border-muted bg-muted/30 text-muted-foreground opacity-60",
+                isClickable && "cursor-pointer hover:shadow-md hover:scale-[1.02]",
+                !isClickable && status === "locked" && "cursor-default",
               )}
             >
               <div
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full",
                   status === "complete" && "bg-green-100",
-                  status === "active" && "bg-terracotta/10",
+                  status === "active" && "bg-primary/10",
                   status === "locked" && "bg-muted",
                 )}
               >
                 {status === "complete" ? (
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 ) : status === "active" ? (
-                  <Icon className="h-4 w-4 text-terracotta" />
+                  <Icon className="h-4 w-4 text-primary" />
                 ) : (
                   <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                 )}
@@ -122,7 +131,7 @@ export function PhaseTimeline({
                 <p
                   className={cn(
                     "text-sm font-medium leading-tight",
-                    status === "active" && "text-terracotta",
+                    status === "active" && "text-primary",
                   )}
                 >
                   {config.title}
@@ -133,7 +142,7 @@ export function PhaseTimeline({
                   </p>
                 )}
               </div>
-            </div>
+            </button>
 
             {/* Connector line */}
             {index < displayPhases.length - 1 && (
@@ -176,7 +185,7 @@ export function PhaseBadge({ phase, className }: PhaseBadgeProps) {
         "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm font-medium",
         phase === "complete"
           ? "border-green-200 bg-green-50 text-green-700"
-          : "border-terracotta/30 bg-terracotta/5 text-terracotta",
+          : "border-primary/30 bg-primary/5 text-primary",
         className,
       )}
     >

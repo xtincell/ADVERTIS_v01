@@ -52,9 +52,9 @@ const PRIORITY_STYLES: Record<string, { bg: string; border: string; badge: strin
     badge: "bg-amber-100 text-amber-800",
   },
   P2: {
-    bg: "bg-gray-50/50",
-    border: "border-gray-200",
-    badge: "bg-gray-100 text-gray-700",
+    bg: "bg-muted/30",
+    border: "border-border",
+    badge: "bg-muted text-muted-foreground",
   },
 };
 
@@ -62,7 +62,7 @@ const STATUS_ICONS: Record<string, React.ReactNode> = {
   PENDING: <Clock className="h-3.5 w-3.5 text-amber-500" />,
   IN_PROGRESS: <Zap className="h-3.5 w-3.5 text-blue-500" />,
   RESOLVED: <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />,
-  DEFERRED: <Pause className="h-3.5 w-3.5 text-gray-400" />,
+  DEFERRED: <Pause className="h-3.5 w-3.5 text-muted-foreground/60" />,
 };
 
 // ---------------------------------------------------------------------------
@@ -92,7 +92,7 @@ export function SectionDecisions({ strategyId }: { strategyId: string }) {
         pillarLetter="R"
         title="File de Décisions"
         subtitle="Chargement…"
-        color="#c45a3c"
+        color="#EF4444"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -109,7 +109,7 @@ export function SectionDecisions({ strategyId }: { strategyId: string }) {
       pillarLetter="R"
       title="File de Décisions"
       subtitle={`${totalDecisions} décision${totalDecisions > 1 ? "s" : ""}${pendingCount > 0 ? ` · ${pendingCount} en attente` : ""}`}
-      color="#c45a3c"
+      color="#EF4444"
     >
       <div className="space-y-3">
         {decisions?.map((decision) => (
@@ -240,7 +240,7 @@ function DecisionCard({ decision, onResolve, onDefer, isMutating }: DecisionCard
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
                 placeholder="Décrivez la résolution…"
-                className="w-full rounded-lg border bg-white px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-terracotta/50"
+                className="w-full rounded-lg border bg-white px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/50"
                 rows={2}
               />
               <div className="flex gap-2">

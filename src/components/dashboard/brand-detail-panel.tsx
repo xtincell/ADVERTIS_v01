@@ -179,7 +179,7 @@ export function BrandDetailPanel({ brand, onBack }: BrandDetailPanelProps) {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-terracotta" />
+                  <DollarSign className="h-4 w-4 text-primary" />
                   <CardTitle className="text-base">Unit Economics</CardTitle>
                 </div>
               </CardHeader>
@@ -225,47 +225,47 @@ export function BrandDetailPanel({ brand, onBack }: BrandDetailPanelProps) {
             {brand.pillars.some((p) => p.status === "complete") && (
               <Link
                 href={`/brand/${brand.id}/oracle`}
-                className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-[#8b5cf6]/5 to-[#8b5cf6]/10 p-4 transition-all hover:border-[#8b5cf6]/30 hover:shadow-md"
+                className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-violet-500/5 to-violet-500/10 p-4 transition-all hover:border-violet-500/30 hover:shadow-md"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#8b5cf6]/10 text-[#8b5cf6] transition-transform group-hover:scale-110">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-violet-500/10 text-violet-500 transition-transform group-hover:scale-110">
                   <Presentation className="size-5" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-semibold">Fiche S</p>
                   <p className="text-[11px] text-muted-foreground">Présentation interactive</p>
                 </div>
-                <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-[#8b5cf6]" />
+                <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-violet-500" />
               </Link>
             )}
 
             {/* Cockpit */}
             <Link
               href={`/brand/${brand.id}`}
-              className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-terracotta/5 to-terracotta/10 p-4 transition-all hover:border-terracotta/30 hover:shadow-md"
+              className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-primary/5 to-primary/10 p-4 transition-all hover:border-primary/30 hover:shadow-md"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-terracotta/10 text-terracotta transition-transform group-hover:scale-110">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary transition-transform group-hover:scale-110">
                 <LayoutDashboard className="size-5" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold">Cockpit</p>
                 <p className="text-[11px] text-muted-foreground">Tableau de bord stratégique</p>
               </div>
-              <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-terracotta" />
+              <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-primary" />
             </Link>
 
             {/* Modifier la fiche */}
             <Link
               href={`/brand/${brand.id}/generate`}
-              className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-forest/5 to-forest/10 p-4 transition-all hover:border-forest/30 hover:shadow-md"
+              className="group flex flex-col items-center gap-2.5 rounded-lg border-2 border-transparent bg-gradient-to-b from-accent/5 to-accent/10 p-4 transition-all hover:border-accent/30 hover:shadow-md"
             >
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-forest/10 text-forest transition-transform group-hover:scale-110">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-accent transition-transform group-hover:scale-110">
                 <Edit3 className="size-5" />
               </div>
               <div className="text-center">
                 <p className="text-sm font-semibold">Modifier</p>
                 <p className="text-[11px] text-muted-foreground">Fiche de marque complète</p>
               </div>
-              <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-forest" />
+              <ExternalLink className="size-3 text-muted-foreground/40 group-hover:text-accent" />
             </Link>
           </div>
         </CardContent>

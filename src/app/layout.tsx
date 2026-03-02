@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable}`}>
       <head>
-        <meta name="theme-color" content="#c45a3c" />
+        <meta name="theme-color" content="#10B981" />
       </head>
       <body className="font-sans antialiased">
         <TRPCReactProvider>

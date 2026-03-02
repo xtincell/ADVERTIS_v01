@@ -18,5 +18,9 @@ export default function ToolPage(props: {
   const searchParams = useSearchParams();
   const strategyId = searchParams.get("strategyId") ?? undefined;
 
-  return <GloryToolPage toolSlug={params.toolSlug} strategyId={strategyId} />;
+  return (
+    <div className="animate-page-enter">
+      <GloryToolPage toolSlug={params.toolSlug} strategyId={strategyId} />
+    </div>
+  );
 }

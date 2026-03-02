@@ -166,7 +166,7 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
     generateMutation.mutate({
       toolSlug: tool.slug,
       strategyId,
-      inputs: formValues,
+      inputs: formValues as Record<string, string | number | boolean | Record<string, unknown> | unknown[] | null>,
       save: false,
     });
   }, [tool, strategyId, formValues, generateMutation]);
@@ -177,7 +177,7 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
     saveMutation.mutate({
       toolSlug: tool.slug,
       strategyId,
-      inputs: formValues,
+      inputs: formValues as Record<string, string | number | boolean | Record<string, unknown> | unknown[] | null>,
       save: true,
     });
   }, [tool, strategyId, formValues, saveMutation]);
@@ -207,7 +207,7 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-        <h2 className="text-lg font-semibold text-gray-800">Outil introuvable</h2>
+        <h2 className="text-lg font-semibold text-foreground">Outil introuvable</h2>
         <p className="text-sm text-muted-foreground mt-1">
           L&apos;outil &laquo;&nbsp;{toolSlug}&nbsp;&raquo; n&apos;existe pas dans le registre GLORY.
         </p>
@@ -222,10 +222,10 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
     return (
       <div className="space-y-6">
         <ToolHeader tool={tool} />
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-500/20 bg-amber-50 dark:bg-amber-950/20">
           <CardContent className="flex items-center gap-3 py-6">
-            <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
-            <p className="text-sm text-amber-800">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+            <p className="text-sm text-amber-700 dark:text-amber-400">
               Sélectionnez une marque pour utiliser cet outil. Utilisez le
               sélecteur de marque dans la barre supérieure.
             </p>
@@ -247,7 +247,7 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
       <ToolHeader tool={tool} />
 
       {/* Input form card */}
-      <Card className="border-gray-200">
+      <Card className="border-border">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Paramètres</CardTitle>
           <CardDescription className="text-xs">
@@ -270,7 +270,7 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
               disabled={!canGenerate || genState === "generating"}
               className={cn(
                 "gap-2 px-6",
-                "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white",
+                "bg-violet-500 hover:bg-violet-600 text-white",
               )}
             >
               {genState === "generating" ? (
@@ -291,20 +291,20 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
 
       {/* Error state */}
       {genState === "error" && (
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive/20 bg-destructive/5">
           <CardContent className="py-6 space-y-3">
             <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <p className="text-sm font-medium text-red-800">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              <p className="text-sm font-medium text-destructive">
                 Erreur de génération
               </p>
             </div>
-            <p className="text-sm text-red-700">{errorMessage}</p>
+            <p className="text-sm text-destructive">{errorMessage}</p>
             <Button
               variant="outline"
               size="sm"
               onClick={handleRetry}
-              className="gap-1.5 border-red-300 text-red-700 hover:bg-red-100"
+              className="gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Réessayer
@@ -315,10 +315,10 @@ export function GloryToolPage({ toolSlug, strategyId }: GloryToolPageProps) {
 
       {/* Output display */}
       {genState === "complete" && (
-        <Card className="border-[#6C5CE7]/20">
+        <Card className="border-violet-500/20">
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <LucideIcons.CheckCircle2 className="h-5 w-5 text-green-600" />
+              <LucideIcons.CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               Résultat
             </CardTitle>
           </CardHeader>
@@ -355,7 +355,7 @@ function ToolHeader({ tool }: { tool: GloryToolDescriptor }) {
           <IconComp className="h-5 w-5" style={{ color: layerMeta.color }} />
         </div>
         <div className="space-y-0.5">
-          <h1 className="text-xl font-bold text-gray-900">{tool.name}</h1>
+          <h1 className="text-xl font-bold text-foreground">{tool.name}</h1>
           <p className="text-sm text-muted-foreground">{tool.description}</p>
         </div>
       </div>
@@ -382,7 +382,7 @@ function ToolHeader({ tool }: { tool: GloryToolDescriptor }) {
         {tool.persistable && (
           <Badge
             variant="outline"
-            className="text-[10px] border-green-300 text-green-700"
+            className="text-[10px] border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
           >
             Persistable
           </Badge>

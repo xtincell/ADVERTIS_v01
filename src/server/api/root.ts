@@ -22,6 +22,7 @@
 //   analytics     — T.15 Dashboard analytics + scores
 //   marketStudy   — T.16 Market study lifecycle
 //   glory         — T.17 GLORY operational tools
+//   variable      — T.18 BrandVariable registry CRUD + exploration
 //
 // Exports:
 //   appRouter    — Combined tRPC router
@@ -51,6 +52,11 @@ import { missionRouter } from "~/server/api/routers/mission";
 import { marketPricingRouter } from "~/server/api/routers/market-pricing-router";
 import { interventionRouter } from "~/server/api/routers/intervention";
 import { gloryRouter } from "~/server/api/routers/glory";
+import { deliverablesRouter } from "~/server/api/routers/deliverables";
+import { guildeRouter } from "~/server/api/routers/guilde";
+import { sereniteRouter } from "~/server/api/routers/serenite";
+import { ecosystemRouter } from "~/server/api/routers/ecosystem";
+import { variableRouter } from "~/server/api/routers/variable";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -77,6 +83,11 @@ export const appRouter = createTRPCRouter({
   marketPricing: marketPricingRouter,
   intervention: interventionRouter,
   glory: gloryRouter,
+  deliverables: deliverablesRouter,
+  guilde: guildeRouter,
+  serenite: sereniteRouter,
+  ecosystem: ecosystemRouter,
+  variable: variableRouter,
 });
 
 // export type definition of API

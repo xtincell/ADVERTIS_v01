@@ -54,7 +54,7 @@ export function SourceStatusCard({
       className={cn(
         "rounded-lg border p-3 transition-all",
         status === "complete" && "border-green-200 bg-green-50/50",
-        status === "collecting" && "border-terracotta/30 animate-pulse",
+        status === "collecting" && "border-primary/30 animate-pulse",
         status === "error" && "border-red-200 bg-red-50/50",
         status === "not_configured" && "border-dashed border-muted opacity-50",
         status === "pending" && "border-muted",
@@ -67,7 +67,7 @@ export function SourceStatusCard({
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-lg",
               status === "complete" && "bg-green-100 text-green-600",
-              status === "collecting" && "bg-terracotta/10 text-terracotta",
+              status === "collecting" && "bg-primary/10 text-primary",
               status === "error" && "bg-red-100 text-red-500",
               status === "not_configured" && "bg-muted text-muted-foreground",
               status === "pending" && "bg-muted text-muted-foreground",
@@ -124,7 +124,7 @@ function StatusBadge({
     collecting: {
       icon: Loader2,
       label: "Collecte...",
-      className: "text-terracotta",
+      className: "text-primary",
     },
     complete: {
       icon: CheckCircle,

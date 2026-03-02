@@ -64,7 +64,7 @@ export const gloryRouter = createTRPCRouter({
       z.object({
         toolSlug: z.string(),
         strategyId: z.string(),
-        inputs: z.record(z.unknown()),
+        inputs: z.record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.array(z.unknown()), z.record(z.string(), z.unknown()), z.null()])),
         save: z.boolean().default(false),
         title: z.string().optional(),
       }),

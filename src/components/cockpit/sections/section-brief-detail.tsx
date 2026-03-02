@@ -92,14 +92,14 @@ export function SectionBriefDetail({
   const typeLabel = BRIEF_TYPE_LABELS[doc.type] ?? doc.type;
 
   const STATUS_BADGES: Record<string, string> = {
-    DRAFT: "bg-gray-100 text-gray-700 border-gray-200",
+    DRAFT: "bg-muted text-muted-foreground border-border",
     VALIDATED: "bg-emerald-100 text-emerald-700 border-emerald-200",
     STALE: "bg-red-100 text-red-700 border-red-200",
-    ARCHIVED: "bg-gray-100 text-gray-500 border-gray-200",
+    ARCHIVED: "bg-muted text-muted-foreground border-border",
   };
 
   const BLOCK_TYPE_STYLES: Record<string, string> = {
-    rule: "border-l-terracotta bg-terracotta/5",
+    rule: "border-l-primary bg-primary/5",
     recommendation: "border-l-blue-500 bg-blue-50",
     insight: "border-l-amber-500 bg-amber-50",
     warning: "border-l-red-500 bg-red-50",

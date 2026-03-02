@@ -70,14 +70,14 @@ function PortalCard({
           "flex flex-col items-center gap-2 rounded-xl border p-4 transition-all active:scale-[0.97]",
           isCurrent
             ? cn("border-2 shadow-sm", portal.borderClass, portal.bgClass)
-            : "border bg-white hover:shadow-md",
+            : "border bg-card hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20",
         )}
       >
         <PortalIcon portal={portal} />
         <span
           className={cn(
             "text-sm font-semibold",
-            isCurrent ? portal.textClass : "text-gray-900",
+            isCurrent ? portal.textClass : "text-foreground",
           )}
         >
           {portal.name}

@@ -55,7 +55,7 @@ const BudgetSimulator = dynamic(
   { ssr: false },
 );
 
-const COLOR = PILLAR_CONFIG.I.color; // #3cc4c4
+const COLOR = PILLAR_CONFIG.I.color; // #06B6D4
 
 // ---------------------------------------------------------------------------
 // SectionImplementation
@@ -144,7 +144,7 @@ export function SectionImplementation({
                         key={i}
                         className="flex items-start gap-2 rounded-md border bg-muted/20 px-3 py-2"
                       >
-                        <Award className="mt-0.5 h-4 w-4 shrink-0 text-[#c45a3c]" />
+                        <Award className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
                         <p className="text-sm text-foreground/80">{prio}</p>
                       </div>
                     ))}
@@ -154,7 +154,7 @@ export function SectionImplementation({
 
             {/* Year 3 Vision */}
             {implContent.strategicRoadmap.year3Vision && (
-              <div className="rounded-lg border-l-4 border-[#3cc4c4]/30 bg-[#3cc4c4]/5 px-4 py-3">
+              <div className="rounded-lg border-l-4 border-cyan-500/30 bg-cyan-500/5 px-4 py-3">
                 <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Vision 3 ans
                 </p>
@@ -230,7 +230,7 @@ export function SectionImplementation({
                               {cal.canaux.map((canal, j) => (
                                 <span
                                   key={j}
-                                  className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
+                                  className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium"
                                 >
                                   {canal}
                                 </span>
@@ -389,7 +389,7 @@ export function SectionImplementation({
                               {tpl.canauxPrincipaux.map((c, j) => (
                                 <span
                                   key={j}
-                                  className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
+                                  className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium"
                                 >
                                   {c}
                                 </span>
@@ -623,7 +623,7 @@ export function SectionImplementation({
             <div className="pt-2 border-t">
               <button
                 onClick={() => setShowSimulator(!showSimulator)}
-                className="flex items-center gap-2 rounded-lg border border-[#3cc4c4]/30 bg-[#3cc4c4]/5 px-4 py-2 text-sm font-medium text-[#3cc4c4] transition-colors hover:bg-[#3cc4c4]/10 w-full justify-center"
+                className="flex items-center gap-2 rounded-lg border border-cyan-500/30 bg-cyan-500/5 px-4 py-2 text-sm font-medium text-cyan-500 transition-colors hover:bg-cyan-500/10 w-full justify-center"
               >
                 <Sliders className="h-4 w-4" />
                 {showSimulator ? "Masquer le simulateur" : "Ouvrir le simulateur budget"}
@@ -635,6 +635,11 @@ export function SectionImplementation({
                 campaigns={implContent.campaigns?.annualCalendar ?? []}
                 budgetAllocation={implContent.budgetAllocation}
                 currency={currency}
+                campaignTemplates={implContent.campaigns?.templates}
+                activationPlan={implContent.campaigns?.activationPlan}
+                copyStrategy={implContent.copyStrategy}
+                bigIdea={implContent.bigIdea}
+                activationDispositif={implContent.activationDispositif}
               />
             )}
           </div>
@@ -696,7 +701,7 @@ export function SectionImplementation({
                     {implContent.teamStructure.recrutements.map((rec, i) => (
                       <div key={i} className="rounded-lg border p-3">
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center rounded-full border border-[#3cc4c4]/30 bg-[#3cc4c4]/10 px-2 py-0.5 text-[10px] font-bold" style={{ color: COLOR }}>
+                          <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-bold" style={{ color: COLOR }}>
                             P{rec.priorite}
                           </span>
                           <span className="text-sm font-semibold">
@@ -813,7 +818,7 @@ export function SectionImplementation({
                               {phase.livrables.map((liv, j) => (
                                 <span
                                   key={j}
-                                  className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
+                                  className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium"
                                 >
                                   {liv}
                                 </span>
@@ -919,7 +924,7 @@ export function SectionImplementation({
                                 key={i}
                                 className="flex items-start gap-1.5 text-xs text-foreground/80"
                               >
-                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#3cc4c4]" />
+                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
                                 {item}
                               </li>
                             ),
@@ -945,7 +950,7 @@ export function SectionImplementation({
                                 key={i}
                                 className="flex items-start gap-1.5 text-xs text-foreground/80"
                               >
-                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#3cc4c4]" />
+                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
                                 {item}
                               </li>
                             ),
@@ -968,7 +973,7 @@ export function SectionImplementation({
                                 key={i}
                                 className="flex items-start gap-1.5 text-xs text-foreground/80"
                               >
-                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-[#3cc4c4]" />
+                                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-500" />
                                 {item}
                               </li>
                             ),
@@ -1068,7 +1073,7 @@ export function SectionImplementation({
             {/* Hero card — Purpose, Vision, Mission */}
             <div className="grid gap-3 sm:grid-cols-3">
               {implContent.brandPlatform.purpose && (
-                <div className="rounded-lg border-l-4 border-[#3cc4c4] bg-[#3cc4c4]/5 px-4 py-3">
+                <div className="rounded-lg border-l-4 border-cyan-500 bg-cyan-500/5 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Purpose (WHY)
                   </p>
@@ -1078,7 +1083,7 @@ export function SectionImplementation({
                 </div>
               )}
               {implContent.brandPlatform.vision && (
-                <div className="rounded-lg border-l-4 border-[#c45a3c] bg-[#c45a3c]/5 px-4 py-3">
+                <div className="rounded-lg border-l-4 border-emerald-500 bg-emerald-500/5 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Vision
                   </p>
@@ -1110,7 +1115,7 @@ export function SectionImplementation({
                     {implContent.brandPlatform.values.map((val, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center rounded-full border border-[#3cc4c4]/30 bg-[#3cc4c4]/10 px-3 py-1.5 text-xs font-semibold"
+                        className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold"
                         style={{ color: COLOR }}
                       >
                         {val}
@@ -1146,7 +1151,7 @@ export function SectionImplementation({
 
             {/* Tagline */}
             {implContent.brandPlatform.tagline && (
-              <div className="rounded-lg border-2 border-dashed border-[#3cc4c4]/40 bg-[#3cc4c4]/5 px-6 py-4 text-center">
+              <div className="rounded-lg border-2 border-dashed border-cyan-500/40 bg-cyan-500/5 px-6 py-4 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Tagline / Signature
                 </p>
@@ -1231,11 +1236,11 @@ export function SectionImplementation({
           <div className="space-y-4">
             {/* Concept hero */}
             {implContent.bigIdea.concept && (
-              <div className="rounded-lg border-2 border-[#c45a3c]/30 bg-[#c45a3c]/5 px-6 py-5 text-center">
+              <div className="rounded-lg border-2 border-emerald-500/30 bg-emerald-500/5 px-6 py-5 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Concept central
                 </p>
-                <p className="mt-2 text-lg font-bold text-[#c45a3c]">
+                <p className="mt-2 text-lg font-bold text-emerald-500">
                   {implContent.bigIdea.concept}
                 </p>
               </div>
@@ -1306,10 +1311,10 @@ export function SectionImplementation({
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {(
                 [
-                  { key: "owned" as const, label: "Owned", color: "#3cc4c4" },
-                  { key: "earned" as const, label: "Earned", color: "#c45a3c" },
-                  { key: "paid" as const, label: "Paid", color: "#e6a23c" },
-                  { key: "shared" as const, label: "Shared", color: "#7c5cbf" },
+                  { key: "owned" as const, label: "Owned", color: "#06B6D4" },
+                  { key: "earned" as const, label: "Earned", color: "#10B981" },
+                  { key: "paid" as const, label: "Paid", color: "#F59E0B" },
+                  { key: "shared" as const, label: "Shared", color: "#8B5CF6" },
                 ] as const
               ).map((cat) => {
                 const items = implContent.activationDispositif?.[cat.key];
@@ -1344,7 +1349,7 @@ export function SectionImplementation({
 
             {/* Parcours conso */}
             {implContent.activationDispositif.parcoursConso && (
-              <div className="rounded-lg border-l-4 border-[#3cc4c4]/30 bg-[#3cc4c4]/5 px-4 py-3">
+              <div className="rounded-lg border-l-4 border-cyan-500/30 bg-cyan-500/5 px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Parcours consommateur
                 </p>
@@ -1478,7 +1483,7 @@ export function SectionImplementation({
                         {stream.livrables.map((liv, j) => (
                           <span
                             key={j}
-                            className="inline-flex items-center rounded-full border border-[#3cc4c4]/20 bg-[#3cc4c4]/5 px-2 py-0.5 text-[10px] font-medium"
+                            className="inline-flex items-center rounded-full border border-cyan-500/20 bg-cyan-500/5 px-2 py-0.5 text-[10px] font-medium"
                           >
                             {liv}
                           </span>
@@ -1523,7 +1528,7 @@ export function SectionImplementation({
           <div className="space-y-4">
             {/* Model */}
             {implContent.brandArchitecture.model && (
-              <div className="rounded-lg border-l-4 border-[#3cc4c4] bg-[#3cc4c4]/5 px-4 py-3">
+              <div className="rounded-lg border-l-4 border-cyan-500 bg-cyan-500/5 px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Modèle d&apos;architecture
                 </p>
@@ -1662,7 +1667,7 @@ export function SectionImplementation({
                     {implContent.guidingPrinciples.coherenceCriteria.map((item, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center rounded-full border border-[#3cc4c4]/30 bg-[#3cc4c4]/10 px-3 py-1 text-[11px] font-medium"
+                        className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-[11px] font-medium"
                       >
                         {item}
                       </span>

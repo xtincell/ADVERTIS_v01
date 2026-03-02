@@ -60,16 +60,16 @@ export function GloryShell({ children }: GloryShellProps) {
   const toolsList = tools ?? [];
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#fafafa]">
+    <div className="flex h-screen overflow-hidden bg-background">
       {/* Mobile portal switcher */}
       <PortalSwitcherMobile />
       {/* ----------------------------------------------------------------- */}
       {/* Desktop Sidebar */}
       {/* ----------------------------------------------------------------- */}
       {toolsLoading ? (
-        <aside className="hidden md:flex flex-col w-[240px] min-w-[240px] bg-[#1a1a2e] h-screen">
+        <aside className="hidden md:flex flex-col w-[240px] min-w-[240px] bg-zinc-950 h-screen">
           <div className="flex items-center gap-2 px-5 pt-5 pb-4">
-            <Sparkles className="h-6 w-6 text-[#6C5CE7]" />
+            <Sparkles className="h-6 w-6 text-violet-500" />
             <span className="text-xl font-bold tracking-tight text-white">
               GLORY
             </span>
@@ -97,7 +97,7 @@ export function GloryShell({ children }: GloryShellProps) {
         <header
           className={cn(
             "flex items-center justify-between gap-3 px-4 py-3",
-            "border-b border-gray-200 bg-white shrink-0",
+            "border-b border-border bg-card/80 backdrop-blur-xl shrink-0",
           )}
         >
           {/* Mobile hamburger + sheet nav */}
@@ -108,7 +108,7 @@ export function GloryShell({ children }: GloryShellProps) {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0 bg-[#1a1a2e]">
+              <SheetContent side="left" className="w-[280px] p-0 bg-zinc-950">
                 <SheetHeader className="sr-only">
                   <SheetTitle>Navigation GLORY</SheetTitle>
                 </SheetHeader>
@@ -123,7 +123,7 @@ export function GloryShell({ children }: GloryShellProps) {
 
           {/* Mobile title */}
           <div className="flex items-center gap-2 md:hidden">
-            <Sparkles className="h-5 w-5 text-[#6C5CE7]" />
+            <Sparkles className="h-5 w-5 text-violet-500" />
             <span className="font-bold text-lg">GLORY</span>
           </div>
 
@@ -139,8 +139,8 @@ export function GloryShell({ children }: GloryShellProps) {
         {/* --------------------------------------------------------------- */}
         {/* Page content (scrollable) */}
         {/* --------------------------------------------------------------- */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-5xl px-4 py-6 md:px-8 md:py-8">
+        <main className="flex-1 overflow-y-auto animate-page-enter">
+          <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
             {children}
           </div>
         </main>

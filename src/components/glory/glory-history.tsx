@@ -123,8 +123,8 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-6">
-          <History className="h-6 w-6 text-[#6C5CE7]" />
-          <h1 className="text-xl font-bold text-gray-900">Historique</h1>
+          <History className="h-6 w-6 text-violet-500" />
+          <h1 className="text-xl font-bold text-foreground">Historique</h1>
         </div>
         {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-20 w-full rounded-lg" />
@@ -140,13 +140,13 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3 mb-6">
-          <History className="h-6 w-6 text-[#6C5CE7]" />
-          <h1 className="text-xl font-bold text-gray-900">Historique</h1>
+          <History className="h-6 w-6 text-violet-500" />
+          <h1 className="text-xl font-bold text-foreground">Historique</h1>
         </div>
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-destructive/20 bg-destructive/5">
           <CardContent className="flex items-center gap-3 py-6">
-            <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
-            <p className="text-sm text-red-800">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+            <p className="text-sm text-destructive">
               Impossible de charger l&apos;historique. Veuillez réessayer.
             </p>
           </CardContent>
@@ -167,8 +167,8 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
-          <History className="h-6 w-6 text-[#6C5CE7]" />
-          <h1 className="text-xl font-bold text-gray-900">Historique</h1>
+          <History className="h-6 w-6 text-violet-500" />
+          <h1 className="text-xl font-bold text-foreground">Historique</h1>
           <Badge variant="secondary" className="text-xs">
             {items.length} résultat{items.length !== 1 ? "s" : ""}
           </Badge>
@@ -178,8 +178,8 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
       {/* Empty state */}
       {items.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <History className="h-12 w-12 text-gray-300 mb-4" />
-          <h2 className="text-lg font-semibold text-gray-600">
+          <History className="h-12 w-12 text-muted-foreground/30 mb-4" />
+          <h2 className="text-lg font-semibold text-muted-foreground">
             Aucun résultat sauvegardé
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
@@ -197,8 +197,8 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
             <Card
               key={item.id}
               className={cn(
-                "border-gray-200 transition-all",
-                isExpanded && "border-[#6C5CE7]/20 shadow-sm",
+                "border-border transition-all",
+                isExpanded && "border-violet-500/20 shadow-sm",
               )}
             >
               {/* Summary row */}
@@ -251,7 +251,7 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
                           "h-4 w-4",
                           item.isFavorite
                             ? "fill-amber-400 text-amber-400"
-                            : "text-gray-400",
+                            : "text-muted-foreground",
                         )}
                       />
                     </Button>
@@ -267,7 +267,7 @@ export function GloryHistory({ strategyId }: GloryHistoryProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-600"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
                           }}

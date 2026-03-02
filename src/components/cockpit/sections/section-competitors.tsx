@@ -30,14 +30,15 @@ import {
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { CockpitSection } from "../cockpit-shared";
+import { EmptyState } from "~/components/ui/empty-state";
 
 // ---------------------------------------------------------------------------
 // Colors for radar polygon vertices
 // ---------------------------------------------------------------------------
 
 const RADAR_COLORS = [
-  "#8c3cc4", // purple
-  "#c45a3c", // terracotta
+  "#8B5CF6", // purple
+  "#10B981", // emerald
   "#2563eb", // blue
   "#16a34a", // green
   "#d97706", // amber
@@ -90,7 +91,7 @@ export function SectionCompetitors({ strategyId }: { strategyId: string }) {
         pillarLetter="T"
         title="Paysage Concurrentiel"
         subtitle="Chargement…"
-        color="#8c3cc4"
+        color="#8B5CF6"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -105,7 +106,7 @@ export function SectionCompetitors({ strategyId }: { strategyId: string }) {
       pillarLetter="T"
       title="Paysage Concurrentiel"
       subtitle={`${totalCompetitors} concurrent${totalCompetitors > 1 ? "s" : ""}`}
-      color="#8c3cc4"
+      color="#8B5CF6"
     >
       <div className="space-y-4">
         {/* View mode toggle */}
@@ -174,12 +175,12 @@ export function SectionCompetitors({ strategyId }: { strategyId: string }) {
 
         {/* Empty state */}
         {totalCompetitors === 0 && (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Users className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Aucun concurrent enregistré. Ajoutez des concurrents pour suivre le paysage.
-            </p>
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Aucun concurrent enregistré"
+            description="Ajoutez des concurrents pour suivre le paysage."
+            compact
+          />
         )}
 
         {/* Add form */}
@@ -310,7 +311,7 @@ function CompetitorRadar({
         <path
           d={polygonPath}
           fill="rgba(140, 60, 196, 0.15)"
-          stroke="#8c3cc4"
+          stroke="#8B5CF6"
           strokeWidth={2}
           strokeLinejoin="round"
         />

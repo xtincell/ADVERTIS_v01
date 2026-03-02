@@ -1,7 +1,7 @@
 // ==========================================================================
 // SHELL S.5 — ClientShell
-// Layout shell for CLIENT_RETAINER role.
-// Minimal navigation: cockpit, briefs, intervention requests.
+// Layout shell for CLIENT_RETAINER + CLIENT_STATIC roles.
+// Uses the shared AppShell with sidebar + header + bottom nav.
 // ==========================================================================
 
 "use client";
@@ -12,30 +12,30 @@ import {
   FileText,
   MessageSquare,
 } from "lucide-react";
-import { BottomNav, type BottomNavItem } from "./bottom-nav";
-import { RailNav, type RailNavItem } from "./rail-nav";
-import { PortalSwitcher, PortalSwitcherMobile } from "./portal-switcher";
+import { AppShell } from "./app-shell";
+import type { SidebarNavItem } from "./app-sidebar";
+import type { BottomNavItem } from "./bottom-nav";
 
-const NAV_ITEMS: (BottomNavItem & RailNavItem)[] = [
+const SIDEBAR_ITEMS: SidebarNavItem[] = [
   { href: "/cockpit", label: "Cockpit", icon: BarChart3 },
   { href: "/oracle", label: "L'Oracle", icon: Eye },
   { href: "/my-documents", label: "Documents", icon: FileText },
   { href: "/requests", label: "Demandes", icon: MessageSquare },
 ];
 
-interface ClientShellProps {
-  children: React.ReactNode;
-}
+const BOTTOM_NAV_ITEMS: BottomNavItem[] = SIDEBAR_ITEMS;
 
-export function ClientShell({ children }: ClientShellProps) {
+export function ClientShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden">
-      <RailNav items={NAV_ITEMS} logoSlot={<PortalSwitcher />} />
-      <main className="flex-1 overflow-auto bg-dotgrid pb-20 md:pb-0">
-        {children}
-      </main>
-      <BottomNav items={NAV_ITEMS} />
-      <PortalSwitcherMobile />
-    </div>
+    <AppShell
+      portalName="Client"
+      portalDescription="Cockpit et documents"
+      portalIcon={BarChart3}
+      portalColor="#F43F5E"
+      items={SIDEBAR_ITEMS}
+      bottomNavItems={BOTTOM_NAV_ITEMS}
+    >
+      {children}
+    </AppShell>
   );
 }

@@ -157,7 +157,7 @@ function CampaignWidgetCard({ data }: { data: Record<string, unknown> }) {
           <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Calendrier</p>
           {d.annualCalendar.slice(0, 4).map((entry, i) => (
             <div key={i} className="flex items-center gap-2 rounded-md border px-2 py-1">
-              <span className="text-[10px] font-semibold text-terracotta w-[28px]">{entry.mois?.substring(0, 3)}</span>
+              <span className="text-[10px] font-semibold text-primary w-[28px]">{entry.mois?.substring(0, 3)}</span>
               <span className="text-[11px] truncate flex-1">{entry.campagne}</span>
               <span className="text-[10px] text-muted-foreground">{entry.budget}</span>
             </div>
@@ -434,7 +434,7 @@ function WidgetCard({
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-terracotta/10 text-terracotta">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-primary">
             {icon}
           </div>
           <div>

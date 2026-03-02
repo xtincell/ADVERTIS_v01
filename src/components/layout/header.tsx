@@ -1,3 +1,10 @@
+// ==========================================================================
+// LAYOUT — Header
+// Top bar with dynamic page title, breadcrumbs, and user menu.
+// Routes updated to match /brand/[id]/* (operator), /more/* (operator),
+// /cockpit (client), /my-missions (freelance).
+// ==========================================================================
+
 "use client";
 
 import { Fragment } from "react";
@@ -16,100 +23,182 @@ import {
 } from "~/components/ui/dropdown-menu";
 
 // ---------------------------------------------------------------------------
-// Page titles
+// Page titles — maps pathname patterns to display titles
 // ---------------------------------------------------------------------------
 
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Tableau de bord",
-  "/strategy/new": "Nouvelle Fiche de Marque",
-  "/market-intelligence": "Intelligence Marché",
-  "/settings": "Paramètres",
-  "/missions": "Missions",
-  "/pricing": "Référentiel Pricing",
-  "/presets": "Presets de Briefs",
-  "/costs": "Coûts IA",
+const PAGE_TITLES: Record<string, string> = {
+  // Impulsion portal (strategy & brands)
+  "/impulsion": "Tableau de bord",
+  "/impulsion/new": "Nouvelle Fiche de Marque",
+  "/impulsion/tree": "Arbre stratégique",
+  "/impulsion/risk": "Portrait Risques",
+  "/impulsion/market": "Portrait Marché",
+  "/impulsion/intelligence": "Intelligence",
+  "/impulsion/ecosystem": "Écosystème",
+  "/impulsion/presets": "Presets de Briefs",
+  // Pilotis portal (missions)
+  "/pilotis": "Missions",
+  "/pilotis/interventions": "Interventions",
+  "/pilotis/pricing": "Référentiel Pricing",
+  // Sérénité portal (finance & admin)
+  "/serenite": "Sérénité",
+  "/serenite/invoices": "Factures",
+  "/serenite/contracts": "Contrats",
+  "/serenite/escrow": "Escrow",
+  "/serenite/costs": "Coûts IA",
+  "/serenite/admin": "Administration",
+  "/serenite/settings": "Paramètres",
+  // Client routes
+  "/cockpit": "Cockpit",
+  "/oracle": "L'Oracle",
+  "/my-documents": "Documents",
+  "/requests": "Demandes",
+  // Freelance routes
+  "/my-missions": "Mes Missions",
+  "/my-briefs": "Mes Briefs",
+  "/upload": "Upload",
+  "/my-finances": "Mes Finances",
+  "/profile": "Profil",
 };
 
 function getPageTitle(pathname: string): string {
   // Exact match first
-  if (pageTitles[pathname]) {
-    return pageTitles[pathname];
-  }
+  if (PAGE_TITLES[pathname]) return PAGE_TITLES[pathname]!;
 
-  // Strategy sub-pages — provide meaningful titles
-  if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
-    return "Cockpit Stratégique";
-  }
-  if (pathname.match(/^\/strategy\/[^/]+\/presentation$/)) {
-    return "Fiche S";
-  }
-  if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
-    return "Génération";
-  }
-  if (pathname.match(/^\/strategy\/[^/]+\/market-study$/)) {
-    return "Étude de Marché";
-  }
-  if (pathname.match(/^\/strategy\/[^/]+\/pillar\/[^/]+\/edit$/)) {
-    return "Éditeur de pilier";
-  }
-  if (pathname.match(/^\/strategy\/[^/]+$/)) {
-    return "Fiche de Marque";
-  }
+  // Brand sub-pages (Impulsion — /impulsion/brand/[id]/...)
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+\/generate$/)) return "Pipeline de génération";
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+\/market-study$/)) return "Étude de Marché";
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+\/oracle$/)) return "L'Oracle";
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+\/edit\/[^/]+$/)) return "Éditeur de pilier";
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+\/document\/[^/]+$/)) return "Document";
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+$/)) return "Cockpit Stratégique";
 
-  // Check prefix matches for dynamic routes
-  for (const [path, title] of Object.entries(pageTitles)) {
-    if (pathname.startsWith(path + "/")) {
-      return title;
-    }
+  // Mission detail (Pilotis — /pilotis/[id])
+  if (pathname.match(/^\/pilotis\/[^/]+$/) && !pathname.startsWith("/pilotis/interventions") && !pathname.startsWith("/pilotis/pricing")) return "Détail Mission";
+
+  // Prefix fallback
+  for (const [path, title] of Object.entries(PAGE_TITLES)) {
+    if (pathname.startsWith(path + "/")) return title;
   }
 
   return "ADVERTIS";
 }
 
 // ---------------------------------------------------------------------------
-// Breadcrumbs
+// Breadcrumbs — build dynamic trail from pathname
 // ---------------------------------------------------------------------------
 
-interface Breadcrumb {
+interface BreadcrumbEntry {
   label: string;
-  href: string;
+  href?: string;
 }
 
-function getBreadcrumbs(pathname: string): Breadcrumb[] {
-  const crumbs: Breadcrumb[] = [{ label: "Accueil", href: "/dashboard" }];
+function getBreadcrumbs(pathname: string): BreadcrumbEntry[] {
+  const crumbs: BreadcrumbEntry[] = [];
 
-  // Strategy sub-pages
-  if (pathname.match(/^\/strategy\/[^/]+\/cockpit$/)) {
-    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/cockpit$/, "") });
-    crumbs.push({ label: "Cockpit", href: pathname });
-  } else if (pathname.match(/^\/strategy\/[^/]+\/presentation$/)) {
-    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/presentation$/, "") });
-    crumbs.push({ label: "Fiche S", href: pathname });
-  } else if (pathname.match(/^\/strategy\/[^/]+\/generate$/)) {
-    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/generate$/, "") });
-    crumbs.push({ label: "Génération", href: pathname });
-  } else if (pathname.match(/^\/strategy\/[^/]+\/market-study$/)) {
-    crumbs.push({ label: "Stratégie", href: pathname.replace(/\/market-study$/, "") });
-    crumbs.push({ label: "Étude de Marché", href: pathname });
-  } else if (pathname.match(/^\/strategy\/[^/]+\/pillar\/[^/]+\/edit$/)) {
-    const strategyPath = pathname.replace(/\/pillar\/.*$/, "");
-    crumbs.push({ label: "Stratégie", href: strategyPath });
-    crumbs.push({ label: "Éditeur de pilier", href: pathname });
-  } else if (pathname.match(/^\/strategy\/[^/]+$/) && pathname !== "/strategy/new") {
-    crumbs.push({ label: "Fiche de Marque", href: pathname });
-  } else if (pathname === "/strategy/new") {
-    crumbs.push({ label: "Nouvelle Fiche", href: pathname });
-  } else if (pathname === "/settings") {
-    crumbs.push({ label: "Paramètres", href: pathname });
+  // Detect portal context
+  const isClient =
+    pathname.startsWith("/cockpit") ||
+    pathname.startsWith("/oracle") ||
+    pathname.startsWith("/my-documents") ||
+    pathname.startsWith("/requests");
+  const isFreelance =
+    pathname.startsWith("/my-missions") ||
+    pathname.startsWith("/my-briefs") ||
+    pathname.startsWith("/upload") ||
+    pathname.startsWith("/my-finances") ||
+    pathname.startsWith("/profile");
+
+  // Detect portal context for root crumb
+  const isImpulsion = pathname.startsWith("/impulsion");
+  const isPilotis = pathname.startsWith("/pilotis");
+  const isSerenite = pathname.startsWith("/serenite");
+
+  // Root crumb
+  if (isClient) {
+    crumbs.push({ label: "Cockpit", href: "/cockpit" });
+  } else if (isFreelance) {
+    crumbs.push({ label: "Missions", href: "/my-missions" });
+  } else if (isPilotis) {
+    crumbs.push({ label: "Missions", href: "/pilotis" });
+  } else if (isSerenite) {
+    crumbs.push({ label: "Sérénité", href: "/serenite" });
+  } else {
+    crumbs.push({ label: "Marques", href: "/impulsion" });
   }
 
-  return crumbs;
+  // ── Brand cockpit (/impulsion/brand/[id]) ──
+  if (pathname.match(/^\/impulsion\/brand\/[^/]+$/) && !pathname.match(/^\/impulsion\/brand\/[^/]+\//)) {
+    crumbs.push({ label: "Cockpit" });
+    return crumbs;
+  }
+
+  // ── Brand sub-pages (/impulsion/brand/[id]/generate, etc.) ──
+  const brandSubMatch = pathname.match(/^\/impulsion\/brand\/([^/]+)\//);
+  if (brandSubMatch) {
+    const brandId = brandSubMatch[1];
+    crumbs.push({ label: "Cockpit", href: `/impulsion/brand/${brandId}` });
+
+    if (pathname.endsWith("/generate")) {
+      crumbs.push({ label: "Génération" });
+    } else if (pathname.endsWith("/market-study")) {
+      crumbs.push({ label: "Étude de Marché" });
+    } else if (pathname.endsWith("/oracle")) {
+      crumbs.push({ label: "L'Oracle" });
+    } else if (pathname.match(/\/edit\/[^/]+$/)) {
+      crumbs.push({ label: "Éditeur de pilier" });
+    } else if (pathname.match(/\/document\/[^/]+$/)) {
+      crumbs.push({ label: "Document" });
+    }
+    return crumbs;
+  }
+
+  // ── Mission detail (/pilotis/[id]) ──
+  if (pathname.match(/^\/pilotis\/[^/]+$/) && !pathname.startsWith("/pilotis/interventions") && !pathname.startsWith("/pilotis/pricing")) {
+    crumbs.push({ label: "Détail" });
+    return crumbs;
+  }
+
+  // ── Sérénité sub-pages ──
+  if (isSerenite && pathname !== "/serenite") {
+    const title = PAGE_TITLES[pathname];
+    if (title) crumbs.push({ label: title });
+    return crumbs;
+  }
+
+  // ── Impulsion sub-pages ──
+  if (isImpulsion && pathname !== "/impulsion" && !pathname.startsWith("/impulsion/brand/")) {
+    const title = PAGE_TITLES[pathname];
+    if (title) crumbs.push({ label: title });
+    return crumbs;
+  }
+
+  // ── Pilotis sub-pages ──
+  if (isPilotis && pathname !== "/pilotis") {
+    const title = PAGE_TITLES[pathname];
+    if (title) crumbs.push({ label: title });
+    return crumbs;
+  }
+
+  // ── Top-level pages — no breadcrumbs ──
+  const topLevelPages = [
+    "/impulsion", "/pilotis", "/serenite",
+    "/cockpit", "/my-missions", "/my-briefs",
+  ];
+  if (topLevelPages.includes(pathname)) return [];
+
+  // ── Single-level secondary pages (oracle, requests, etc.) ──
+  const title = PAGE_TITLES[pathname];
+  if (title && crumbs.length === 1) {
+    crumbs.push({ label: title });
+  }
+
+  return crumbs.length <= 1 ? [] : crumbs;
 }
 
 function Breadcrumbs({ pathname }: { pathname: string }) {
   const segments = getBreadcrumbs(pathname);
-  // Don't show breadcrumbs for dashboard (home) or single-level pages
-  if (segments.length <= 1) return null;
+  if (segments.length === 0) return null;
 
   return (
     <nav
@@ -117,9 +206,11 @@ function Breadcrumbs({ pathname }: { pathname: string }) {
       className="flex items-center gap-1 text-xs text-muted-foreground"
     >
       {segments.map((seg, i) => (
-        <Fragment key={seg.href}>
-          {i > 0 && <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />}
-          {i === segments.length - 1 ? (
+        <Fragment key={i}>
+          {i > 0 && (
+            <ChevronRight className="size-3 shrink-0 text-muted-foreground/50" />
+          )}
+          {i === segments.length - 1 || !seg.href ? (
             <span className="font-medium text-foreground/80">{seg.label}</span>
           ) : (
             <Link
@@ -213,7 +304,7 @@ export default function Header({ title }: HeaderProps) {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/settings" className="cursor-pointer">
+            <Link href="/serenite/settings" className="cursor-pointer">
               <User className="mr-2 size-4" />
               Profil
             </Link>

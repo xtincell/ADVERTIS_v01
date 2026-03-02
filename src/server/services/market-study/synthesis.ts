@@ -27,7 +27,8 @@
 //   tRPC market-study router (synthesize mutation)
 // =============================================================================
 
-import { anthropic, resilientGenerateText } from "../anthropic-client";
+import { anthropic, DEFAULT_MODEL, resilientGenerateText } from "../anthropic-client";
+import { trackAICall } from "../ai-cost-tracker";
 import { db } from "~/server/db";
 import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import { PILLAR_CONFIG } from "~/lib/constants";
@@ -72,6 +73,7 @@ export async function synthesizeMarketStudy(
   const strategy = await db.strategy.findUnique({
     where: { id: strategyId },
     select: {
+      userId: true,
       brandName: true,
       tagline: true,
       sector: true,
@@ -110,6 +112,7 @@ export async function synthesizeMarketStudy(
 
   let text: string;
   try {
+    const synthStart = Date.now();
     const result = await resilientGenerateText({
       label: "market-study-synthesis",
       model: anthropic("claude-sonnet-4-20250514"),
@@ -195,6 +198,16 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide conforme au type MarketSt
       temperature: 0.2,
     });
     text = result.text;
+
+    // Track AI cost
+    await trackAICall({
+      model: DEFAULT_MODEL,
+      tokensIn: result.usage?.inputTokens ?? 0,
+      tokensOut: result.usage?.outputTokens ?? 0,
+      generationType: "market-study-synthesis",
+      strategyId,
+      durationMs: Date.now() - synthStart,
+    }, strategy.userId).catch(console.error);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(

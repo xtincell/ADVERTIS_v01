@@ -22,6 +22,7 @@ import {
   Search,
 } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { EmptyState } from "~/components/ui/empty-state";
 import type {
   DataSourceName,
   SourceStatus,
@@ -99,7 +100,7 @@ export function MarketStudyDashboard({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Globe className="h-5 w-5 text-terracotta" />
+          <Globe className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">Étude de Marché</h3>
           <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
             Optionnel
@@ -255,9 +256,9 @@ export function MarketStudyDashboard({
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
                 isCollecting
-                  ? "bg-terracotta/50 text-white cursor-not-allowed"
+                  ? "bg-primary/50 text-white cursor-not-allowed"
                   : configuredCount > 0
-                    ? "bg-terracotta text-white hover:bg-terracotta/90"
+                    ? "bg-primary text-white hover:bg-primary/90"
                     : "bg-muted text-muted-foreground cursor-not-allowed",
               )}
             >
@@ -302,14 +303,16 @@ export function MarketStudyDashboard({
             {synthesis ? (
               <SynthesisViewer synthesis={synthesis} />
             ) : (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <Sparkles className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  {hasAnyData
+              <EmptyState
+                icon={Sparkles}
+                title={hasAnyData ? "Synthèse non générée" : "Aucune donnée collectée"}
+                description={
+                  hasAnyData
                     ? "Lancez la synthèse pour analyser les données collectées."
-                    : "Aucune donnée collectée. La synthèse sera 100\u00A0% basée sur les connaissances IA du secteur et les données de la fiche de marque."}
-                </p>
-              </div>
+                    : "La synthèse sera 100\u00A0% basée sur les connaissances IA du secteur et les données de la fiche de marque."
+                }
+                compact
+              />
             )}
 
             {/* Synthesize button — always visible, works even without collected data */}
@@ -319,8 +322,8 @@ export function MarketStudyDashboard({
               className={cn(
                 "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all",
                 isSynthesizing
-                  ? "bg-terracotta/50 text-white cursor-not-allowed"
-                  : "bg-terracotta text-white hover:bg-terracotta/90",
+                  ? "bg-primary/50 text-white cursor-not-allowed"
+                  : "bg-primary text-white hover:bg-primary/90",
               )}
             >
               {isSynthesizing ? (
@@ -356,7 +359,7 @@ export function MarketStudyDashboard({
         {(hasAnyData || synthesis) && (
           <button
             onClick={onComplete}
-            className="inline-flex items-center gap-2 rounded-lg bg-terracotta px-6 py-2.5 text-sm font-semibold text-white hover:bg-terracotta/90 shadow-sm transition-all"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 shadow-sm transition-all"
           >
             <CheckCircle className="h-4 w-4" />
             Valider et continuer
@@ -374,7 +377,7 @@ export function MarketStudyDashboard({
 function StatusBadge({ status }: { status: string }) {
   const configs: Record<string, { label: string; className: string }> = {
     pending: { label: "En attente", className: "bg-muted text-muted-foreground" },
-    collecting: { label: "Collecte...", className: "bg-terracotta/10 text-terracotta" },
+    collecting: { label: "Collecte...", className: "bg-primary/10 text-primary" },
     partial: { label: "Partiel", className: "bg-amber-50 text-amber-700" },
     complete: { label: "Terminé", className: "bg-green-50 text-green-700" },
     skipped: { label: "Ignoré", className: "bg-muted text-muted-foreground" },

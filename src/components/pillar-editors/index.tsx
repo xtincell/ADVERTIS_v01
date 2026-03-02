@@ -10,12 +10,15 @@ import { DistinctionEditor } from "./distinction-editor";
 import { ValeurEditor } from "./valeur-editor";
 import { EngagementEditor } from "./engagement-editor";
 import { TrackEditor } from "./track-editor";
+import { RiskEditor } from "./risk-editor";
+import { ImplementationEditor } from "./implementation-editor";
+import { SyntheseEditor } from "./synthese-editor";
 
 import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
 import type { DistinctionPillarData } from "~/lib/types/pillar-data";
 import type { ValeurPillarData } from "~/lib/types/pillar-data";
 import type { EngagementPillarData } from "~/lib/types/pillar-data";
-import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
+import type { TrackAuditResult, RiskAuditResult, ImplementationData, SynthesePillarData } from "~/lib/types/pillar-schemas";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 
 // ---------------------------------------------------------------------------
@@ -65,7 +68,18 @@ export function StructuredPillarEditor({
       const { data } = parsePillarContent<TrackAuditResult>("T", content);
       return <TrackEditor data={data} onChange={onChange} />;
     }
-    // R, I, S — generic object display for now (could add dedicated editors later)
+    case "R": {
+      const { data } = parsePillarContent<RiskAuditResult>("R", content);
+      return <RiskEditor data={data} onChange={onChange} />;
+    }
+    case "I": {
+      const { data } = parsePillarContent<ImplementationData>("I", content);
+      return <ImplementationEditor data={data} onChange={onChange} />;
+    }
+    case "S": {
+      const { data } = parsePillarContent<SynthesePillarData>("S", content);
+      return <SyntheseEditor data={data} onChange={onChange} />;
+    }
     default:
       return null;
   }

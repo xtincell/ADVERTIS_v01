@@ -87,7 +87,7 @@ export function ActivityTimeline({
             <button
               type="button"
               onClick={() => onBrandClick(event.strategyId)}
-              className="text-sm font-medium hover:text-terracotta transition-colors text-left"
+              className="text-sm font-medium hover:text-primary transition-colors text-left"
             >
               {event.brandName}
             </button>

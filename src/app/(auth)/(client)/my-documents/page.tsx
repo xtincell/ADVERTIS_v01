@@ -7,13 +7,13 @@
 
 import {
   FileText,
-  Loader2,
   AlertCircle,
   CheckCircle2,
   Clock,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
 
@@ -44,11 +44,7 @@ export default function ClientBriefsPage() {
   // Loading
   // ---------------------------------------------------------------------------
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // ---------------------------------------------------------------------------

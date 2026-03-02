@@ -45,7 +45,7 @@ export function QuickActions({
                   action.action?.();
                   setIsOpen(false);
                 }}
-                className="flex items-center gap-2 rounded-full bg-card border px-3 py-2 shadow-lg text-sm font-medium hover:bg-accent transition-colors"
+                className="flex items-center gap-2 rounded-full bg-card border px-3 py-2 shadow-xl text-sm font-medium hover:bg-accent transition-colors"
               >
                 <Icon className="h-4 w-4" />
                 <span>{action.label}</span>
@@ -59,10 +59,10 @@ export function QuickActions({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-all duration-200",
+          "flex h-12 w-12 items-center justify-center rounded-full shadow-xl transition-all duration-200",
           isOpen
             ? "bg-foreground text-background rotate-45"
-            : "bg-terracotta text-white",
+            : "bg-primary text-white ring-2 ring-primary/20 ring-offset-2 ring-offset-background",
         )}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Plus className="h-5 w-5" />}

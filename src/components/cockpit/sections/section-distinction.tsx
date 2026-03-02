@@ -39,7 +39,7 @@ interface PillarData {
   updatedAt?: Date | string | null;
 }
 
-const COLOR = PILLAR_CONFIG.D.color; // #2d5a3d
+const COLOR = PILLAR_CONFIG.D.color; // #8B5CF6
 
 export function SectionDistinction({
   dContent,
@@ -99,9 +99,9 @@ export function SectionDistinction({
 
           {/* 2. Promesse Maitre — master promise with Crown icon */}
           {dContent.promessesDeMarque?.promesseMaitre && (
-            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-[#2d5a3d]/5 to-transparent p-4">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2d5a3d]/10">
-                <Crown className="h-4 w-4 text-[#2d5a3d]" />
+            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-violet-500/5 to-transparent p-4">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-500/10">
+                <Crown className="h-4 w-4 text-violet-500" />
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -127,7 +127,7 @@ export function SectionDistinction({
                       key={i}
                       className="flex items-start gap-3 rounded-md border bg-muted/20 px-3 py-2"
                     >
-                      <Zap className="mt-0.5 h-4 w-4 shrink-0 text-[#2d5a3d]" />
+                      <Zap className="mt-0.5 h-4 w-4 shrink-0 text-violet-500" />
                       <p className="text-sm">{sp}</p>
                     </div>
                   ))}
@@ -200,7 +200,7 @@ export function SectionDistinction({
                 {dContent.personas.map((p, i) => (
                   <div key={i} className="rounded-lg border p-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2d5a3d]/10 text-xs font-bold text-[#2d5a3d]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-500">
                         {p.priorite ?? i + 1}
                       </div>
                       <span className="text-sm font-semibold">{p.nom}</span>
@@ -282,9 +282,9 @@ export function SectionDistinction({
                     (a, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center gap-1.5 rounded-full border border-[#2d5a3d]/20 bg-[#2d5a3d]/5 px-3 py-1 text-sm font-medium"
+                        className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-sm font-medium"
                       >
-                        <CheckCircle2 className="h-3 w-3 text-[#2d5a3d]" />
+                        <CheckCircle2 className="h-3 w-3 text-violet-500" />
                         {a}
                       </span>
                     ),
@@ -348,7 +348,7 @@ export function SectionDistinction({
                   {dContent.assetsLinguistiques.mantras.map((m, i) => (
                     <div
                       key={i}
-                      className="rounded-lg border-l-4 border-[#2d5a3d]/30 bg-muted/30 px-4 py-2"
+                      className="rounded-lg border-l-4 border-violet-500/30 bg-muted/30 px-4 py-2"
                     >
                       <p className="text-sm italic leading-relaxed text-foreground/80">
                         &ldquo;{m}&rdquo;
@@ -373,7 +373,7 @@ export function SectionDistinction({
                     (v, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center rounded-full border border-[#2d5a3d]/20 bg-[#2d5a3d]/5 px-3 py-1 text-sm font-medium"
+                        className="inline-flex items-center rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-sm font-medium"
                       >
                         {v}
                       </span>
@@ -414,9 +414,9 @@ export function SectionDistinction({
                   {implContent.positioning.differentiators.map((d, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#2d5a3d]/20 bg-[#2d5a3d]/5 px-3 py-1 text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/20 bg-violet-500/5 px-3 py-1 text-sm font-medium"
                     >
-                      <CheckCircle2 className="h-3 w-3 text-[#2d5a3d]" />
+                      <CheckCircle2 className="h-3 w-3 text-violet-500" />
                       {d}
                     </span>
                   ))}
@@ -444,7 +444,7 @@ export function SectionDistinction({
                   {implContent.positioning.personas.map((p, i) => (
                     <div key={i} className="rounded-lg border p-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2d5a3d]/10 text-xs font-bold text-[#2d5a3d]">
+                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-violet-500/10 text-xs font-bold text-violet-500">
                           {p.priority ?? i + 1}
                         </div>
                         <span className="text-sm font-semibold">{p.name}</span>

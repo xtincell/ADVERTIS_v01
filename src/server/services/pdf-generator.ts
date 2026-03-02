@@ -84,8 +84,8 @@ Font.register({
 // ---------------------------------------------------------------------------
 
 const C = {
-  terracotta: "#c45a3c",
-  terracottaLight: "#f5e6e1",
+  emerald: "#10B981",
+  emeraldLight: "#d1fae5",
   dark: "#1a1a1a",
   gray: "#6b7280",
   grayMed: "#9ca3af",
@@ -108,7 +108,7 @@ const C = {
   amberLight: "#fef3c7",
   amberBorder: "#fde68a",
   amberDark: "#92400e",
-  purple: "#8c3cc4",
+  purple: "#8B5CF6",
   purpleLight: "#f3e8ff",
   teal: "#0d9488",
 } as const;
@@ -146,7 +146,7 @@ const sty = StyleSheet.create({
   coverBrand: {
     fontSize: 13,
     fontWeight: 700,
-    color: C.terracotta,
+    color: C.emerald,
     letterSpacing: 6,
     marginBottom: 40,
     textTransform: "uppercase",
@@ -167,7 +167,7 @@ const sty = StyleSheet.create({
   coverDivider: {
     width: 80,
     height: 3,
-    backgroundColor: C.terracotta,
+    backgroundColor: C.emerald,
     marginBottom: 35,
   },
   coverMeta: { fontSize: 10, color: C.gray, marginBottom: 6 },
@@ -217,7 +217,7 @@ const sty = StyleSheet.create({
 
   // Summary box
   summaryBox: {
-    backgroundColor: C.terracottaLight,
+    backgroundColor: C.emeraldLight,
     borderRadius: 6,
     padding: 12,
     marginBottom: 16,
@@ -225,7 +225,7 @@ const sty = StyleSheet.create({
   summaryLabel: {
     fontSize: 8,
     fontWeight: 700,
-    color: C.terracotta,
+    color: C.emerald,
     marginBottom: 4,
     textTransform: "uppercase",
     letterSpacing: 1,
@@ -253,7 +253,7 @@ const sty = StyleSheet.create({
   // Generic text
   paragraph: { fontSize: 9.5, color: C.dark, lineHeight: 1.6, marginBottom: 6 },
   bulletItem: { flexDirection: "row", marginBottom: 4, paddingLeft: 4 },
-  bulletDot: { fontSize: 9.5, color: C.terracotta, marginRight: 6, width: 8 },
+  bulletDot: { fontSize: 9.5, color: C.emerald, marginRight: 6, width: 8 },
   bulletText: { fontSize: 9.5, color: C.dark, lineHeight: 1.5, flex: 1 },
 
   // Score circle
@@ -591,7 +591,7 @@ function PdfBulletList({
         { key: `bl-${i}`, style: sty.bulletItem },
         el(
           Text,
-          { style: { ...sty.bulletDot, color: color ?? C.terracotta } },
+          { style: { ...sty.bulletDot, color: color ?? C.emerald } },
           "\u2022"
         ),
         el(Text, { style: sty.bulletText }, item)
@@ -993,7 +993,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
           el(View, { key: `per-${i}`, style: sty.card },
             el(View, { style: { flexDirection: "row" as const, justifyContent: "space-between" as const } },
               el(Text, { style: sty.cardTitle }, p.name),
-              el(Text, { style: { ...sty.badge, backgroundColor: C.terracotta } }, `P${p.priority}`)
+              el(Text, { style: { ...sty.badge, backgroundColor: C.emerald } }, `P${p.priority}`)
             ),
             el(Text, { style: sty.cardText }, p.description)
           )
@@ -1050,7 +1050,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
         out.push(
           el(View, { key: `pl-${i}`, style: i % 2 === 0 ? sty.tableRow : sty.tableRowAlt },
             el(Text, { style: { ...sty.tableCell, flex: 1, fontWeight: 700 } }, t.tier),
-            el(Text, { style: { ...sty.tableCell, flex: 1, color: C.terracotta, fontWeight: 700 } }, t.price),
+            el(Text, { style: { ...sty.tableCell, flex: 1, color: C.emerald, fontWeight: 700 } }, t.price),
             el(Text, { style: { ...sty.tableCell, flex: 2 } }, t.description)
           )
         );
@@ -1065,7 +1065,7 @@ function renderImplementationContent(content: unknown): React.ReactElement[] {
         el(View, { key: "ue-r", style: sty.row3 },
           el(View, { key: "ue-cac", style: sty.tamCard },
             el(Text, { style: sty.tamLabel }, "CAC"),
-            el(Text, { style: { ...sty.tamValue, color: C.terracotta } }, ue.cac)
+            el(Text, { style: { ...sty.tamValue, color: C.emerald } }, ue.cac)
           ),
           el(View, { key: "ue-ltv", style: sty.tamCard },
             el(Text, { style: sty.tamLabel }, "LTV"),
@@ -1270,7 +1270,7 @@ function CoverPage({ strategy }: { strategy: StrategyData }): React.ReactElement
       { style: { alignItems: "center" as const } },
       el(Text, { style: sty.coverBrandName }, strategy.brandName),
       strategy.tagline
-        ? el(Text, { style: { ...sty.coverSubtitle, fontStyle: "italic" as const, color: C.terracotta } }, `\u201C${strategy.tagline}\u201D`)
+        ? el(Text, { style: { ...sty.coverSubtitle, fontStyle: "italic" as const, color: C.emerald } }, `\u201C${strategy.tagline}\u201D`)
         : null,
       el(Text, { style: sty.coverSubtitle }, strategy.name),
       el(View, { style: sty.coverDivider }),
@@ -1293,7 +1293,7 @@ function TableOfContents({ pillars }: { pillars: PillarData[] }): React.ReactEle
     el(Text, { style: sty.tocTitle }, "Table des matières"),
     ...pillars.map((pillar, i) => {
       const config = PILLAR_CONFIG[pillar.type as PillarType];
-      const color = config?.color ?? C.terracotta;
+      const color = config?.color ?? C.emerald;
       return el(
         View,
         { key: `toc-${i}`, style: sty.tocItem },
@@ -1312,7 +1312,7 @@ function TableOfContents({ pillars }: { pillars: PillarData[] }): React.ReactEle
 
 function PillarPage({ pillar }: { pillar: PillarData }): React.ReactElement {
   const config = PILLAR_CONFIG[pillar.type as PillarType];
-  const color = config?.color ?? C.terracotta;
+  const color = config?.color ?? C.emerald;
 
   // Choose renderer based on pillar type
   let contentElements: React.ReactElement[];
@@ -1463,7 +1463,7 @@ function LightweightPillarPage({
   pageStyle: Record<string, unknown>;
 }): React.ReactElement {
   const config = PILLAR_CONFIG[pillar.type as PillarType];
-  const color = config?.color ?? C.terracotta;
+  const color = config?.color ?? C.emerald;
 
   // Choose renderer based on pillar type (same logic, content is reusable)
   let contentElements: React.ReactElement[];

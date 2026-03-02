@@ -68,7 +68,7 @@ export function TemplateCard({
       className={cn(
         "rounded-lg border bg-card p-4 transition-all",
         status === "complete" && "border-green-200",
-        status === "generating" && "border-terracotta/30 animate-pulse",
+        status === "generating" && "border-primary/30 animate-pulse",
         status === "error" && "border-red-200",
         status === "pending" && "border-muted opacity-60",
         className,
@@ -81,7 +81,7 @@ export function TemplateCard({
             className={cn(
               "flex h-10 w-10 items-center justify-center rounded-lg",
               status === "complete" && "bg-green-50 text-green-600",
-              status === "generating" && "bg-terracotta/10 text-terracotta",
+              status === "generating" && "bg-primary/10 text-primary",
               status === "error" && "bg-red-50 text-red-500",
               status === "pending" && "bg-muted text-muted-foreground",
             )}
@@ -123,7 +123,7 @@ export function TemplateCard({
           </div>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-terracotta transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{
                 width: `${((sectionCount ?? 0) / totalSections) * 100}%`,
               }}
@@ -175,7 +175,7 @@ export function TemplateCard({
         <div className="mt-4">
           <button
             onClick={onGenerate}
-            className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Générer
@@ -189,7 +189,7 @@ export function TemplateCard({
           {status === "complete" && onView && (
             <button
               onClick={onView}
-              className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
             >
               <Eye className="h-3.5 w-3.5" />
               Voir
@@ -226,7 +226,7 @@ function TemplateStatusBadge({
     },
     generating: {
       label: "Génération...",
-      className: "bg-terracotta/10 text-terracotta",
+      className: "bg-primary/10 text-primary",
     },
     complete: {
       label: "Terminé",

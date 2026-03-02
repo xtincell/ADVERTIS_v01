@@ -64,9 +64,9 @@ export function SectionAuthenticite({
         <div className="space-y-5">
           {/* Archetype + Noyau identitaire */}
           {aContent.identite.archetype && (
-            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-[#c45a3c]/5 to-transparent p-4">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#c45a3c]/10">
-                <Star className="h-4 w-4 text-[#c45a3c]" />
+            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-emerald-500/5 to-transparent p-4">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                <Star className="h-4 w-4 text-emerald-500" />
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -86,7 +86,7 @@ export function SectionAuthenticite({
 
           {/* Citation fondatrice */}
           {aContent.identite.citationFondatrice && (
-            <div className="rounded-lg border-l-4 border-[#c45a3c]/30 bg-muted/30 px-4 py-3">
+            <div className="rounded-lg border-l-4 border-emerald-500/30 bg-muted/30 px-4 py-3">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Citation fondatrice
               </p>
@@ -158,7 +158,7 @@ export function SectionAuthenticite({
               <div className="space-y-2">
                 {aContent.valeurs.map((v, i) => (
                   <div key={i} className="flex items-start gap-3 rounded-md border px-3 py-2">
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#c45a3c]/10 text-xs font-bold text-[#c45a3c]">
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-500">
                       {v.rang ?? i + 1}
                     </div>
                     <div>
@@ -183,14 +183,14 @@ export function SectionAuthenticite({
                 {aContent.hierarchieCommunautaire.map((h, i) => (
                   <div key={i} className="rounded-lg border p-3">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#c45a3c]/10 text-xs font-bold text-[#c45a3c]">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/10 text-xs font-bold text-emerald-500">
                         {h.niveau}
                       </div>
                       <span className="text-sm font-semibold">{h.nom}</span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">{h.description}</p>
                     {h.privileges && (
-                      <p className="mt-1 text-xs text-[#c45a3c]">{"\u2726"} {h.privileges}</p>
+                      <p className="mt-1 text-xs text-emerald-500">{"\u2726"} {h.privileges}</p>
                     )}
                   </div>
                 ))}
@@ -224,9 +224,9 @@ export function SectionAuthenticite({
       ) : implContent?.brandIdentity?.archetype ? (
         <div className="space-y-5">
           {implContent.brandIdentity.archetype && (
-            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-[#c45a3c]/5 to-transparent p-4">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#c45a3c]/10">
-                <Star className="h-4 w-4 text-[#c45a3c]" />
+            <div className="flex items-start gap-3 rounded-lg border bg-gradient-to-r from-emerald-500/5 to-transparent p-4">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10">
+                <Star className="h-4 w-4 text-emerald-500" />
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Archétype de marque</p>
@@ -247,15 +247,15 @@ export function SectionAuthenticite({
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Valeurs fondamentales</p>
               <div className="flex flex-wrap gap-2">
                 {implContent.brandIdentity.values.map((v, i) => (
-                  <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-[#c45a3c]/20 bg-[#c45a3c]/5 px-3 py-1 text-sm font-medium">
-                    <Heart className="h-3 w-3 text-[#c45a3c]" />{v}
+                  <span key={i} className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3 py-1 text-sm font-medium">
+                    <Heart className="h-3 w-3 text-emerald-500" />{v}
                   </span>
                 ))}
               </div>
             </div>
           )}
           {implContent.brandIdentity.narrative && (
-            <div className="rounded-lg border-l-4 border-[#c45a3c]/30 bg-muted/30 px-4 py-3">
+            <div className="rounded-lg border-l-4 border-emerald-500/30 bg-muted/30 px-4 py-3">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Récit de marque</p>
               <p className="text-sm italic leading-relaxed text-foreground/80">{implContent.brandIdentity.narrative}</p>
             </div>

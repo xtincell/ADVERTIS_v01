@@ -11,6 +11,7 @@
  */
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   Users,
@@ -63,7 +64,7 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
   if (isLoading || !mission) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
+        <div className="animate-float text-muted-foreground">
           Chargement...
         </div>
       </div>
@@ -86,9 +87,12 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-xl font-bold">{mission.title}</h2>
-            <p className="text-sm text-muted-foreground">
+            <Link
+              href={`/impulsion/brand/${mission.strategy.id}`}
+              className="text-sm text-muted-foreground hover:text-indigo-500 hover:underline transition-colors"
+            >
               {mission.strategy.brandName} — {mission.strategy.name}
-            </p>
+            </Link>
           </div>
           <div className="flex items-center gap-2">
             <Badge
@@ -98,7 +102,7 @@ export function MissionDetail({ missionId, onBack }: MissionDetailProps) {
                   ? "border-red-300 text-red-600"
                   : mission.priority === "P1"
                     ? "border-amber-300 text-amber-600"
-                    : "border-gray-300"
+                    : "border-border"
               }`}
             >
               {mission.priority}

@@ -73,108 +73,224 @@ function formatSection(label: string, value: unknown): string {
 
 function extractPillarA(content: unknown): string {
   const lines: string[] = [];
+  // Schema: identite (contains archetype, noyauIdentitaire), herosJourney, ikigai,
+  //         valeurs, hierarchieCommunautaire, timelineNarrative
   const identite = safeGet(content, "identite");
-  const archetype = safeGet(content, "archetype");
-  const noyau = safeGet(content, "noyauIdentitaire");
   const heros = safeGet(content, "herosJourney");
   const ikigai = safeGet(content, "ikigai");
+  const valeurs = safeGet(content, "valeurs");
+  const hierarchie = safeGet(content, "hierarchieCommunautaire");
+  const timeline = safeGet(content, "timelineNarrative");
 
-  if (archetype) lines.push(formatSection("Archétype", archetype));
-  if (identite) lines.push(formatSection("Identité", identite));
-  if (noyau) lines.push(formatSection("Noyau identitaire", noyau));
+  if (identite) lines.push(formatSection("Identité (archétype, noyau)", identite));
   if (heros) lines.push(formatSection("Parcours du héros", heros));
   if (ikigai) lines.push(formatSection("Ikigai", ikigai));
+  if (valeurs) lines.push(formatSection("Valeurs", valeurs));
+  if (hierarchie) lines.push(formatSection("Hiérarchie communautaire", hierarchie));
+  if (timeline) lines.push(formatSection("Timeline narrative", timeline));
 
   return lines.join("");
 }
 
 function extractPillarD(content: unknown): string {
   const lines: string[] = [];
-  const positionnement = safeGet(content, "positionnement");
+  // Schema: personas, paysageConcurrentiel, promessesDeMarque, positionnement,
+  //         tonDeVoix, identiteVisuelle, assetsLinguistiques
   const personas = safeGet(content, "personas");
-  const concurrents = safeGet(content, "concurrents");
+  const paysage = safeGet(content, "paysageConcurrentiel");
+  const promesses = safeGet(content, "promessesDeMarque");
+  const positionnement = safeGet(content, "positionnement");
+  const ton = safeGet(content, "tonDeVoix");
+  const identiteVisuelle = safeGet(content, "identiteVisuelle");
+  const assets = safeGet(content, "assetsLinguistiques");
 
-  if (positionnement) lines.push(formatSection("Positionnement", positionnement));
   if (personas) lines.push(formatSection("Personas", personas));
-  if (concurrents) lines.push(formatSection("Concurrents", concurrents));
+  if (paysage) lines.push(formatSection("Paysage concurrentiel", paysage));
+  if (promesses) lines.push(formatSection("Promesses de marque", promesses));
+  if (positionnement) lines.push(formatSection("Positionnement", positionnement));
+  if (ton) lines.push(formatSection("Ton de voix", ton));
+  if (identiteVisuelle) lines.push(formatSection("Identité visuelle", identiteVisuelle));
+  if (assets) lines.push(formatSection("Assets linguistiques", assets));
 
   return lines.join("");
 }
 
 function extractPillarV(content: unknown): string {
   const lines: string[] = [];
-  const proposition = safeGet(content, "propositionValeur");
+  // Schema: productLadder, valeurMarque, valeurClient, coutMarque, coutClient, unitEconomics
+  const productLadder = safeGet(content, "productLadder");
+  const valeurMarque = safeGet(content, "valeurMarque");
+  const valeurClient = safeGet(content, "valeurClient");
+  const coutMarque = safeGet(content, "coutMarque");
+  const coutClient = safeGet(content, "coutClient");
   const unitEconomics = safeGet(content, "unitEconomics");
-  const pricing = safeGet(content, "pricing");
 
-  if (proposition) lines.push(formatSection("Proposition de valeur", proposition));
+  if (productLadder) lines.push(formatSection("Product Ladder / Pricing", productLadder));
+  if (valeurMarque) lines.push(formatSection("Valeur Marque", valeurMarque));
+  if (valeurClient) lines.push(formatSection("Valeur Client", valeurClient));
+  if (coutMarque) lines.push(formatSection("Coût Marque", coutMarque));
+  if (coutClient) lines.push(formatSection("Coût Client", coutClient));
   if (unitEconomics) lines.push(formatSection("Unit Economics", unitEconomics));
-  if (pricing) lines.push(formatSection("Pricing", pricing));
 
   return lines.join("");
 }
 
 function extractPillarE(content: unknown): string {
   const lines: string[] = [];
+  // Schema: touchpoints, rituels, principesCommunautaires, gamification, aarrr, kpis
   const touchpoints = safeGet(content, "touchpoints");
   const rituels = safeGet(content, "rituels");
+  const principes = safeGet(content, "principesCommunautaires");
+  const gamification = safeGet(content, "gamification");
   const aarrr = safeGet(content, "aarrr");
-  const community = safeGet(content, "communityModel");
+  const kpis = safeGet(content, "kpis");
 
   if (touchpoints) lines.push(formatSection("Touchpoints", touchpoints));
   if (rituels) lines.push(formatSection("Rituels", rituels));
+  if (principes) lines.push(formatSection("Principes communautaires", principes));
+  if (gamification) lines.push(formatSection("Gamification", gamification));
   if (aarrr) lines.push(formatSection("AARRR", aarrr));
-  if (community) lines.push(formatSection("Modèle communautaire", community));
+  if (kpis) lines.push(formatSection("KPIs", kpis));
 
   return lines.join("");
 }
 
 function extractPillarR(content: unknown): string {
   const lines: string[] = [];
-  const riskScore = safeGet(content, "riskScore");
-  const globalSwot = safeGet(content, "globalSwot");
+  // Schema: microSwots, globalSwot, riskScore, riskScoreJustification,
+  //         probabilityImpactMatrix, mitigationPriorities, summary
   const microSwots = safeGet(content, "microSwots");
+  const globalSwot = safeGet(content, "globalSwot");
+  const riskScore = safeGet(content, "riskScore");
+  const justification = safeGet(content, "riskScoreJustification");
+  const matrix = safeGet(content, "probabilityImpactMatrix");
+  const mitigation = safeGet(content, "mitigationPriorities");
+  const summary = safeGet(content, "summary");
 
   if (riskScore) lines.push(formatSection("Score de risque", riskScore));
+  if (justification) lines.push(formatSection("Justification score", justification));
   if (globalSwot) lines.push(formatSection("SWOT global", globalSwot));
   if (microSwots) lines.push(formatSection("Micro-SWOTs", microSwots));
+  if (matrix) lines.push(formatSection("Matrice probabilité × impact", matrix));
+  if (mitigation) lines.push(formatSection("Priorités de mitigation", mitigation));
+  if (summary) lines.push(formatSection("Synthèse risques", summary));
 
   return lines.join("");
 }
 
 function extractPillarT(content: unknown): string {
   const lines: string[] = [];
-  const bmf = safeGet(content, "brandMarketFitScore");
-  const tam = safeGet(content, "tamSamSom");
+  // Schema: triangulation, hypothesisValidation, marketReality, tamSamSom,
+  //         competitiveBenchmark, brandMarketFitScore, brandMarketFitJustification,
+  //         strategicRecommendations, summary
+  const triangulation = safeGet(content, "triangulation");
+  const hypotheses = safeGet(content, "hypothesisValidation");
   const market = safeGet(content, "marketReality");
+  const tam = safeGet(content, "tamSamSom");
+  const benchmark = safeGet(content, "competitiveBenchmark");
+  const bmf = safeGet(content, "brandMarketFitScore");
+  const bmfJustification = safeGet(content, "brandMarketFitJustification");
+  const recs = safeGet(content, "strategicRecommendations");
+  const summary = safeGet(content, "summary");
 
-  if (bmf) lines.push(formatSection("Brand-Market Fit Score", bmf));
-  if (tam) lines.push(formatSection("TAM / SAM / SOM", tam));
+  if (triangulation) lines.push(formatSection("Triangulation", triangulation));
+  if (hypotheses) lines.push(formatSection("Validation des hypothèses", hypotheses));
   if (market) lines.push(formatSection("Réalité marché", market));
+  if (tam) lines.push(formatSection("TAM / SAM / SOM", tam));
+  if (benchmark) lines.push(formatSection("Benchmark concurrentiel", benchmark));
+  if (bmf) lines.push(formatSection("Brand-Market Fit Score", bmf));
+  if (bmfJustification) lines.push(formatSection("Justification BMF", bmfJustification));
+  if (recs) lines.push(formatSection("Recommandations stratégiques", recs));
+  if (summary) lines.push(formatSection("Synthèse Track", summary));
 
   return lines.join("");
 }
 
 function extractPillarI(content: unknown): string {
   const lines: string[] = [];
-  const roadmap = safeGet(content, "roadmap");
-  const budget = safeGet(content, "budget");
-  const equipe = safeGet(content, "equipe");
+  // Schema (22+ fields): brandIdentity, positioning, valueArchitecture,
+  //   engagementStrategy, riskSynthesis, marketValidation, strategicRoadmap,
+  //   campaigns, budgetAllocation, teamStructure, launchPlan, operationalPlaybook,
+  //   brandPlatform, copyStrategy, bigIdea, activationDispositif, governance,
+  //   workstreams, brandArchitecture, guidingPrinciples, coherenceScore, executiveSummary
+  const brandIdentity = safeGet(content, "brandIdentity");
+  const positioning = safeGet(content, "positioning");
+  const valueArch = safeGet(content, "valueArchitecture");
+  const engagement = safeGet(content, "engagementStrategy");
+  const riskSynth = safeGet(content, "riskSynthesis");
+  const marketVal = safeGet(content, "marketValidation");
+  const roadmap = safeGet(content, "strategicRoadmap");
+  const campaigns = safeGet(content, "campaigns");
+  const budgetAlloc = safeGet(content, "budgetAllocation");
+  const team = safeGet(content, "teamStructure");
+  const launch = safeGet(content, "launchPlan");
+  const playbook = safeGet(content, "operationalPlaybook");
+  const brandPlatform = safeGet(content, "brandPlatform");
+  const copyStrategy = safeGet(content, "copyStrategy");
+  const bigIdea = safeGet(content, "bigIdea");
+  const activation = safeGet(content, "activationDispositif");
+  const governance = safeGet(content, "governance");
+  const workstreams = safeGet(content, "workstreams");
+  const brandArch = safeGet(content, "brandArchitecture");
+  const principles = safeGet(content, "guidingPrinciples");
+  const coherence = safeGet(content, "coherenceScore");
+  const execSummary = safeGet(content, "executiveSummary");
 
-  if (roadmap) lines.push(formatSection("Roadmap", roadmap));
-  if (budget) lines.push(formatSection("Budget", budget));
-  if (equipe) lines.push(formatSection("Équipe", equipe));
+  if (execSummary) lines.push(formatSection("Résumé exécutif", execSummary));
+  if (brandIdentity) lines.push(formatSection("Identité de marque", brandIdentity));
+  if (brandPlatform) lines.push(formatSection("Plateforme de marque", brandPlatform));
+  if (positioning) lines.push(formatSection("Positionnement", positioning));
+  if (valueArch) lines.push(formatSection("Architecture de valeur", valueArch));
+  if (copyStrategy) lines.push(formatSection("Copy Strategy", copyStrategy));
+  if (bigIdea) lines.push(formatSection("Big Idea", bigIdea));
+  if (engagement) lines.push(formatSection("Stratégie d'engagement", engagement));
+  if (riskSynth) lines.push(formatSection("Synthèse risques", riskSynth));
+  if (marketVal) lines.push(formatSection("Validation marché", marketVal));
+  if (roadmap) lines.push(formatSection("Roadmap stratégique", roadmap));
+  if (campaigns) lines.push(formatSection("Campagnes", campaigns));
+  if (activation) lines.push(formatSection("Dispositif d'activation", activation));
+  if (budgetAlloc) lines.push(formatSection("Allocation budget", budgetAlloc));
+  if (team) lines.push(formatSection("Structure équipe", team));
+  if (launch) lines.push(formatSection("Plan de lancement", launch));
+  if (playbook) lines.push(formatSection("Playbook opérationnel", playbook));
+  if (governance) lines.push(formatSection("Gouvernance", governance));
+  if (workstreams) lines.push(formatSection("Workstreams", workstreams));
+  if (brandArch) lines.push(formatSection("Architecture de marque", brandArch));
+  if (principles) lines.push(formatSection("Principes directeurs", principles));
+  if (coherence) lines.push(formatSection("Score de cohérence", coherence));
 
   return lines.join("");
 }
 
 function extractPillarS(content: unknown): string {
   const lines: string[] = [];
+  // Schema: syntheseExecutive, visionStrategique, coherencePiliers,
+  //         facteursClesSucces, recommandationsPrioritaires, scoreCoherence,
+  //         axesStrategiques, sprint90Recap, campaignsSummary, activationSummary,
+  //         kpiDashboard
   const synthese = safeGet(content, "syntheseExecutive");
+  const vision = safeGet(content, "visionStrategique");
+  const coherence = safeGet(content, "coherencePiliers");
+  const fcs = safeGet(content, "facteursClesSucces");
+  const recs = safeGet(content, "recommandationsPrioritaires");
+  const score = safeGet(content, "scoreCoherence");
   const axes = safeGet(content, "axesStrategiques");
+  const sprint = safeGet(content, "sprint90Recap");
+  const campSummary = safeGet(content, "campaignsSummary");
+  const actSummary = safeGet(content, "activationSummary");
+  const kpiDash = safeGet(content, "kpiDashboard");
 
   if (synthese) lines.push(formatSection("Synthèse exécutive", synthese));
+  if (vision) lines.push(formatSection("Vision stratégique", vision));
+  if (score) lines.push(formatSection("Score de cohérence", score));
+  if (coherence) lines.push(formatSection("Cohérence des piliers", coherence));
+  if (fcs) lines.push(formatSection("Facteurs clés de succès", fcs));
+  if (recs) lines.push(formatSection("Recommandations prioritaires", recs));
   if (axes) lines.push(formatSection("Axes stratégiques", axes));
+  if (sprint) lines.push(formatSection("Sprint 90 jours", sprint));
+  if (campSummary) lines.push(formatSection("Résumé campagnes", campSummary));
+  if (actSummary) lines.push(formatSection("Résumé activation", actSummary));
+  if (kpiDash) lines.push(formatSection("Dashboard KPIs", kpiDash));
 
   return lines.join("");
 }

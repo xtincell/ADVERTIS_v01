@@ -71,13 +71,13 @@ const NODE_TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }
 // ---------------------------------------------------------------------------
 
 const NODE_TYPE_COLORS: Record<string, string> = {
-  BRAND: "bg-terracotta/10 text-terracotta",
+  BRAND: "bg-primary/10 text-primary",
   PRODUCT: "bg-blue-50 text-blue-600",
   CAMPAIGN: "bg-purple-50 text-purple-600",
   CHARACTER: "bg-amber-50 text-amber-600",
   ENVIRONMENT: "bg-emerald-50 text-emerald-600",
   EVENT: "bg-pink-50 text-pink-600",
-  SKU: "bg-gray-100 text-gray-600",
+  SKU: "bg-muted text-muted-foreground",
   COLLECTION: "bg-indigo-50 text-indigo-600",
   ZONE: "bg-teal-50 text-teal-600",
   EDITION: "bg-orange-50 text-orange-600",

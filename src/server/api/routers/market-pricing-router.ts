@@ -47,6 +47,8 @@ import {
   getAgencyCostOverview,
   getCostSummaryByMission,
   getCostSummaryByMonth,
+  getCostSummaryByStrategy,
+  getCostBreakdownByBrand,
 } from "~/server/services/ai-cost-tracker";
 
 const opsProcedure = roleProtectedProcedure(["ADMIN", "OPERATOR"]);
@@ -138,5 +140,17 @@ export const marketPricingRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       return getCostSummaryByMonth(ctx.session.user.id, input.year, input.month);
+    }),
+
+  // ── Per-Brand Cost Breakdown ──
+
+  getCostBreakdownByBrand: protectedProcedure.query(async ({ ctx }) => {
+    return getCostBreakdownByBrand(ctx.session.user.id);
+  }),
+
+  getCostByStrategy: protectedProcedure
+    .input(z.object({ strategyId: z.string().min(1) }))
+    .query(async ({ input }) => {
+      return getCostSummaryByStrategy(input.strategyId);
     }),
 });

@@ -406,7 +406,7 @@ export async function regenerateAllPillars(
           })
           .filter(Boolean) as Array<{ type: string; content: string }>;
 
-        generatedContent = await generatePillarContent(
+        const pillarResult = await generatePillarContent(
           pillarType,
           interviewData,
           previousPillars,
@@ -416,11 +416,12 @@ export async function regenerateAllPillars(
           strategy.tagline,
           currency,
         );
+        generatedContent = pillarResult.data;
       } else if (pillarType === "R") {
         // ── RISK AUDIT ──
         const ficheContent = buildFicheContentFromFresh(freshContent);
 
-        generatedContent = await generateRiskAudit(
+        const riskResult = await generateRiskAudit(
           interviewData,
           ficheContent,
           strategy.brandName,
@@ -429,6 +430,7 @@ export async function regenerateAllPillars(
           strategy.tagline,
           currency,
         );
+        generatedContent = riskResult.data;
       } else if (pillarType === "T") {
         // ── TRACK AUDIT ──
         const ficheContent = buildFicheContentFromFresh(freshContent);
@@ -448,7 +450,7 @@ export async function regenerateAllPillars(
           ? (marketStudy.synthesis as unknown as MarketStudySynthesis)
           : null;
 
-        generatedContent = await generateTrackAudit(
+        const trackResult = await generateTrackAudit(
           interviewData,
           ficheContent,
           riskResults,
@@ -459,6 +461,7 @@ export async function regenerateAllPillars(
           strategy.tagline,
           currency,
         );
+        generatedContent = trackResult.data;
 
         // Auto-sync competitor snapshots + opportunity calendar
         void syncTrackToMarketContext(strategyId, generatedContent as TrackAuditResult);
@@ -477,7 +480,7 @@ export async function regenerateAllPillars(
           trackData ?? null,
         );
 
-        generatedContent = await generateImplementationData(
+        const implResult = await generateImplementationData(
           interviewData,
           riskResults,
           trackResults,
@@ -488,6 +491,7 @@ export async function regenerateAllPillars(
           strategy.tagline,
           currency,
         );
+        generatedContent = implResult.data;
 
         // Recreate budget tiers from fresh Implementation data
         try {
@@ -523,7 +527,7 @@ export async function regenerateAllPillars(
             };
           });
 
-        generatedContent = await generateSyntheseContent(
+        const syntheseResult = await generateSyntheseContent(
           interviewData,
           allCompletedPillars,
           strategy.brandName,
@@ -532,6 +536,7 @@ export async function regenerateAllPillars(
           strategy.tagline,
           currency,
         );
+        generatedContent = syntheseResult.data;
       }
 
       // Snapshot previous version before overwriting

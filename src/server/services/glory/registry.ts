@@ -1596,8 +1596,91 @@ const postCampaignReader: GloryToolDescriptor = {
   tags: ["hybride", "analytics", "performance", "post-campagne"],
 };
 
+const digitalPlanner: GloryToolDescriptor = {
+  slug: "digital-planner",
+  name: "Planning Digital",
+  shortName: "Planner",
+  layer: "HYBRID",
+  description:
+    "Génère un calendrier éditorial digital complet avec répartition par plateforme, content pillars, planning semaine par semaine, formats recommandés et KPIs cibles.",
+  icon: "CalendarDays",
+  persistable: true,
+  requiredContext: ["competitors", "market"],
+  inputs: [
+    {
+      key: "platforms",
+      label: "Plateformes",
+      type: "multiselect",
+      required: true,
+      options: [
+        { value: "instagram", label: "Instagram" },
+        { value: "tiktok", label: "TikTok" },
+        { value: "facebook", label: "Facebook" },
+        { value: "linkedin", label: "LinkedIn" },
+        { value: "twitter", label: "X (Twitter)" },
+        { value: "youtube", label: "YouTube" },
+        { value: "whatsapp", label: "WhatsApp Business" },
+      ],
+      helpText: "Les plateformes à inclure dans le planning éditorial.",
+      enrichable: true,
+    },
+    {
+      key: "duration",
+      label: "Durée du planning (semaines)",
+      type: "number",
+      required: true,
+      helpText: "Nombre de semaines à planifier (4 à 16 recommandé).",
+    },
+    {
+      key: "postsPerWeek",
+      label: "Posts par semaine (total)",
+      type: "number",
+      required: true,
+      helpText: "Nombre total de publications par semaine toutes plateformes confondues.",
+    },
+    {
+      key: "contentPillars",
+      label: "Piliers de contenu",
+      type: "textarea",
+      placeholder: "Ex : Éducation, Inspiration, Promotion, Behind the scenes, Témoignages…",
+      helpText: "Les thématiques récurrentes autour desquelles organiser le contenu. Laissez vide pour une suggestion IA.",
+      enrichable: true,
+    },
+    {
+      key: "tone",
+      label: "Ton éditorial",
+      type: "select",
+      required: true,
+      options: [
+        { value: "professionnel", label: "Professionnel" },
+        { value: "decontracte", label: "Décontracté" },
+        { value: "inspirant", label: "Inspirant" },
+        { value: "educatif", label: "Éducatif" },
+        { value: "humoristique", label: "Humoristique" },
+      ],
+      helpText: "Le registre de communication dominant pour le contenu.",
+    },
+    {
+      key: "objective",
+      label: "Objectif principal",
+      type: "select",
+      required: true,
+      options: [
+        { value: "awareness", label: "Notoriété" },
+        { value: "engagement", label: "Engagement" },
+        { value: "conversion", label: "Conversion" },
+        { value: "retention", label: "Fidélisation" },
+      ],
+      helpText: "L'objectif marketing principal que le planning doit servir.",
+    },
+  ],
+  requiredPillars: ["D", "E"],
+  outputFormat: "structured",
+  tags: ["hybride", "planning", "social-media", "calendar", "digital"],
+};
+
 // =============================================================================
-// GLORY_TOOLS — Registre complet des 27 outils
+// GLORY_TOOLS — Registre complet des 28 outils
 // =============================================================================
 
 export const GLORY_TOOLS: GloryToolDescriptor[] = [
@@ -1621,7 +1704,7 @@ export const GLORY_TOOLS: GloryToolDescriptor[] = [
   creativeDirectionMemo,
   pitchArchitect,
   awardCaseBuilder,
-  // Couche HYBRIDE (9 outils)
+  // Couche HYBRIDE (10 outils)
   campaign360Simulator,
   productionBudgetOptimizer,
   vendorBriefGenerator,
@@ -1631,6 +1714,7 @@ export const GLORY_TOOLS: GloryToolDescriptor[] = [
   clientEducationModule,
   benchmarkReferenceFinder,
   postCampaignReader,
+  digitalPlanner,
 ];
 
 // =============================================================================

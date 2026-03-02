@@ -61,7 +61,7 @@ export function SourceRefTooltip({
         <TooltipTrigger asChild>
           <span
             className={cn(
-              "cursor-help border-b border-dashed border-muted-foreground/30 transition-colors hover:border-terracotta",
+              "cursor-help border-b border-dashed border-muted-foreground/30 transition-colors hover:border-primary",
               className,
             )}
           >

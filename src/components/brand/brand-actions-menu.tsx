@@ -81,7 +81,7 @@ export function BrandActionsMenu({
       void utils.analytics.getAgencyOverview.invalidate();
       void utils.strategy.getAll.invalidate();
       onMutationSuccess?.();
-      router.push(`/brand/${data.id}`);
+      router.push(`/impulsion/brand/${data.id}`);
     },
     onError: () => toast.error("Erreur lors de la duplication"),
   });
@@ -113,7 +113,7 @@ export function BrandActionsMenu({
       void utils.strategy.getAll.invalidate();
       onMutationSuccess?.();
       // Navigate to dashboard if we're on the brand page
-      router.push("/dashboard");
+      router.push("/impulsion");
     },
     onError: () => toast.error("Erreur lors de la suppression"),
   });

@@ -40,11 +40,11 @@ import { GLORY_LAYER_META, type GloryLayer } from "~/lib/types/glory-tools";
 function layerBgClass(layer: string): string {
   switch (layer) {
     case "CR":
-      return "bg-[#6C5CE7]/10 text-[#6C5CE7]";
+      return "bg-violet-500/10 text-violet-500";
     case "DC":
-      return "bg-[#00B894]/10 text-[#00B894]";
+      return "bg-emerald-400/10 text-emerald-400";
     case "HYBRID":
-      return "bg-[#FDCB6E]/10 text-[#b08d2b]";
+      return "bg-amber-300/10 text-amber-700";
     default:
       return "bg-muted text-muted-foreground";
   }
@@ -53,11 +53,11 @@ function layerBgClass(layer: string): string {
 function layerDotColor(layer: string): string {
   switch (layer) {
     case "CR":
-      return "bg-[#6C5CE7]";
+      return "bg-violet-500";
     case "DC":
-      return "bg-[#00B894]";
+      return "bg-emerald-400";
     case "HYBRID":
-      return "bg-[#FDCB6E]";
+      return "bg-amber-300";
     default:
       return "bg-muted-foreground";
   }
@@ -103,8 +103,8 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
       {/* ── Header ── */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#6C5CE7]/10">
-            <Sparkles className="h-4.5 w-4.5 text-[#6C5CE7]" />
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10">
+            <Sparkles className="h-4.5 w-4.5 text-violet-500" />
           </div>
           <div>
             <h2 className="text-lg font-semibold">Résultats GLORY</h2>
@@ -115,7 +115,7 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
         </div>
         <Link
           href={`/glory/history?strategyId=${strategyId}`}
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6C5CE7] hover:text-[#5b4bd5] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-violet-500 hover:text-violet-600 transition-colors"
         >
           Voir tout
           <ArrowRight className="h-3 w-3" />
@@ -125,7 +125,7 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
       {/* ── Loading state ── */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-5 w-5 animate-spin text-[#6C5CE7]" />
+          <Loader2 className="h-5 w-5 animate-spin text-violet-500" />
         </div>
       )}
 
@@ -133,9 +133,9 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
         <div className="space-y-5">
           {/* ── Stats row ── */}
           <div className="grid grid-cols-3 gap-3">
-            <Card className="border-[#6C5CE7]/20">
+            <Card className="border-violet-500/20">
               <CardContent className="pt-4 pb-3 text-center">
-                <p className="text-2xl font-bold text-[#6C5CE7]">
+                <p className="text-2xl font-bold text-violet-500">
                   {stats?.total ?? 0}
                 </p>
                 <p className="text-[11px] text-muted-foreground font-medium">
@@ -174,8 +174,8 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
                 className={cn(
                   "text-xs h-7 px-2.5 rounded-full",
                   layerFilter === null
-                    ? "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white"
-                    : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+                    ? "bg-violet-500 hover:bg-violet-600 text-white"
+                    : "border border-border text-muted-foreground hover:bg-muted",
                 )}
                 onClick={() => setLayerFilter(null)}
               >
@@ -189,8 +189,8 @@ export function SectionGlory({ strategyId }: { strategyId: string }) {
                   className={cn(
                     "text-xs h-7 px-2.5 rounded-full",
                     layerFilter === layer
-                      ? "bg-[#6C5CE7] hover:bg-[#5b4bd5] text-white"
-                      : "border border-gray-300 text-gray-600 hover:bg-gray-100",
+                      ? "bg-violet-500 hover:bg-violet-600 text-white"
+                      : "border border-border text-muted-foreground hover:bg-muted",
                   )}
                   onClick={() =>
                     setLayerFilter(layerFilter === layer ? null : layer)
@@ -260,7 +260,7 @@ function OutputCard({ output }: { output: OutputRecord }) {
     .join(" ");
 
   return (
-    <Card className="group relative transition-shadow hover:shadow-md border-gray-200">
+    <Card className="group relative transition-shadow hover:shadow-md border-border">
       {/* Favorite indicator */}
       {output.isFavorite && (
         <div className="absolute top-2 right-2">

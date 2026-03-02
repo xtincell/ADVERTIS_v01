@@ -26,9 +26,10 @@ model User {
     role          String    @default("OPERATOR") // USER_ROLES: ADMIN, OPERATOR, FREELANCE, CLIENT_RETAINER, CLIENT_STATIC
     viewMode      String    @default("MARKETING") // EXECUTIVE, MARKETING, FOUNDER, MINIMAL
 
-    accounts   Account[]
-    sessions   Session[]
-    strategies Strategy[]
+    accounts      Account[]
+    sessions      Session[]
+    strategies    Strategy[]
+    talentProfile TalentProfile?
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -136,6 +137,19 @@ model Strategy {
 
     // === Phase 4: GLORY Operational Tools ===
     gloryOutputs         GloryOutput[]
+
+    // === Phase 5: Livrables Manquants (Architecture UPGRADERS) ===
+    bigIdeaKits          BigIdeaKit[]
+    creativeStrategy     CreativeStrategy?
+    operationalBudget    OperationalBudget?
+    chronoTasks          ChronoTask[]
+    partners             Partner[]
+    marketAdaptations    MarketAdaptation[]
+    funnelMapping        FunnelMapping?
+    qualityChecklist     QualityChecklist?
+
+    // === Variable Registry (Atomic Modularity) ===
+    brandVariables       BrandVariable[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -824,4 +838,420 @@ model GloryOutput {
     @@index([toolSlug])
     @@index([createdBy])
     @@index([strategyId, toolSlug])
+}
+
+// ============================================
+// LIVRABLES MANQUANTS — Architecture UPGRADERS
+// Phase 5: T04, T06, M1-M3, M5, M7 + Checklist
+// ============================================
+
+// T04 — Big Idea Kit (per occasion)
+model BigIdeaKit {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    occasion     String   // e.g., "Rentrée Scolaire", "Fête des Mères", "Black Friday"
+    insight      String?  @db.Text // Consumer insight driving this kit
+    ideas        Json     // Array<{ title, concept, copy, visual, priority: P0|P1|P2, funnelStage }>
+    funnelMapping Json?   // { awareness: [...ideaIds], consideration: [...], conversion: [...] }
+    status       String   @default("draft") // draft, review, approved
+    generatedBy  String   @default("manual") // manual, ai
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([occasion])
+}
+
+// T06 — Stratégie Créative
+model CreativeStrategy {
+    id         String   @id @default(cuid())
+    strategyId String   @unique
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    content    Json     // { moodboard, keyVisual, graphicSystem, manifesto, copiesByChannel, tonalGuidelines }
+    status     String   @default("draft") // draft, review, approved
+    version    Int      @default(1)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// M1 — Budget Opérationnel 3 Couches
+model OperationalBudget {
+    id              String   @id @default(cuid())
+    strategyId      String   @unique
+    strategy        Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    layer1Vision    Json     // { phases: [{ name, allocation, percentage }], totalBudget, decisionView }
+    layer2Detail    Json     // { activations: [{ name, category, unitCost, quantity, subtotal, supplier }] }
+    layer3Scenarios Json     // { P0: { items, total }, P1: { items, total }, P2: { items, total }, grandTotal }
+    currency        String   @default("XAF")
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// M2 — Chrono-Architecture (Gantt tasks)
+model ChronoTask {
+    id                     String    @id @default(cuid())
+    strategyId             String
+    strategy               Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    title                  String
+    description            String?   @db.Text
+    startDate              DateTime
+    endDate                DateTime
+    week                   Int       // Week number for Gantt positioning
+    phase                  String    // "Préparation", "Lancement", "Activation", "Bilan"
+    owner                  String?   // Responsible person/team
+    status                 String    @default("pending") // pending, in_progress, done, blocked
+    priority               String    @default("P1") // P0, P1, P2
+    dependencies           Json?     // Array of ChronoTask IDs this depends on
+    isValidationMilestone  Boolean   @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([phase])
+    @@index([week])
+}
+
+// M3 — Dossier Partenaires
+model Partner {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    name         String
+    type         String   // INFLUENCER, TERRAIN, INSTITUTIONAL, MEDIA
+    category     String?  // Sub-type: e.g. "Micro-Influencer", "ONG", "Radio"
+    metrics      Json?    // { followers, engagementRate, reach, pastCollabs, audienceDemo }
+    costEstimate Float?
+    currency     String   @default("XAF")
+    market       String?  // CM, CI, SN, GH, NG
+    contactInfo  Json?    // { email, phone, social }
+    notes        String?  @db.Text
+    status       String   @default("prospect") // prospect, contacted, confirmed, active
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([type])
+    @@index([market])
+}
+
+// M5 — Adaptations Multi-Marchés
+model MarketAdaptation {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    country      String   // CM, CI, SN, GH, NG, etc.
+    linguistic   Json     // { language, dialect, adaptations, translations }
+    cultural     Json     // { taboos, celebrations, localInsights, colorMeaning }
+    distribution Json     // { channels, partnerships, logistics }
+    media        Json     // { topChannels, mediaHabits, digitalPenetration, costs }
+    regulatory   Json     // { restrictions, requiredMentions, approvalProcess }
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, country])
+    @@index([strategyId])
+    @@index([country])
+}
+
+// M7 — Funnel & KPIs Mapping
+model FunnelMapping {
+    id         String   @id @default(cuid())
+    strategyId String   @unique
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    content    Json     // { stages: { awareness, consideration, conversion, loyalty }, bigIdeaMatrix, decisionMatrix, kpis }
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Checklist Qualité — Validation pré-livraison
+model QualityChecklist {
+    id           String   @id @default(cuid())
+    strategyId   String   @unique
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    items        Json     // Array<{ category, label, checked, comment, checkedBy, checkedAt }>
+    overallScore Float?   // 0-100 percentage of items checked
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// ============================================
+// PHASE 6 — LA GUILDE (Talent Marketplace)
+// ============================================
+
+// Profil enrichi d'un talent (freelance, agence, prestataire)
+model TalentProfile {
+    id              String   @id @default(cuid())
+    userId          String   @unique
+    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    displayName     String?
+    bio             String?  @db.Text
+    headline        String?
+    experienceYears Int?
+    location        String?
+    country         String?
+    languages       Json?    // string[]
+    specializations Json?    // TalentSpecialization[]
+    skills          Json?    // string[]
+    tools           Json?    // string[]
+    sectors         Json?    // string[]
+    portfolioUrls   Json?    // string[]
+    linkedinUrl     String?
+    showreel        String?
+    tjmMin          Float?
+    tjmMax          Float?
+    currency        String   @default("XAF")
+    category        String   @default("RESEAU") // CORE | EXTENDED | RESEAU
+    availability    String   @default("AVAILABLE")
+    level           String   @default("NOVICE") // NOVICE | COMPETENT | CONFIRMED | EXPERT | LEGEND
+    totalMissions   Int      @default(0)
+    avgScore        Float?
+
+    certifications TalentCertification[]
+    reviews        TalentReview[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([category])
+    @@index([level])
+    @@index([availability])
+}
+
+// Certifications et badges attribués à un talent
+model TalentCertification {
+    id              String        @id @default(cuid())
+    talentProfileId String
+    talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+    name            String
+    issuedBy        String?
+    issuedAt        DateTime?
+    expiresAt       DateTime?
+    score           Int?
+    badgeUrl        String?
+    metadata        Json?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([talentProfileId])
+}
+
+// Avis post-mission sur un talent
+model TalentReview {
+    id                 String        @id @default(cuid())
+    talentProfileId    String
+    talentProfile      TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+    missionId          String
+    assignmentId       String?
+    reviewerId         String
+    qualityScore       Int           // 1-5
+    communicationScore Int?          // 1-5
+    deadlinesScore     Int?          // 1-5
+    creativityScore    Int?          // 1-5
+    autonomyScore      Int?          // 1-5
+    comment            String?       @db.Text
+    isPublic           Boolean       @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([talentProfileId, missionId])
+    @@index([talentProfileId])
+    @@index([missionId])
+}
+
+// ============================================
+// PHASE 6 — SÉRÉNITÉ (Finance & Admin)
+// ============================================
+
+// Factures (devis, facture, avoir)
+model Invoice {
+    id        String  @id @default(cuid())
+    refNumber String  @unique
+    type      String  // DEVIS | FACTURE | AVOIR
+    status    String  @default("DRAFT") // DRAFT | SENT | ACCEPTED | PAID | OVERDUE | CANCELLED
+    clientId  String?
+    talentId  String?
+    missionId String?
+    subtotal  Float
+    taxRate   Float   @default(0)
+    taxAmount Float   @default(0)
+    total     Float
+    currency  String  @default("XAF")
+    issuedAt  DateTime?
+    dueDate   DateTime?
+    paidAt    DateTime?
+    notes     String? @db.Text
+    terms     String? @db.Text
+
+    items InvoiceItem[]
+
+    createdBy String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([clientId])
+    @@index([talentId])
+    @@index([missionId])
+    @@index([status])
+}
+
+// Ligne de facture
+model InvoiceItem {
+    id           String  @id @default(cuid())
+    invoiceId    String
+    invoice      Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+    description  String
+    quantity     Float   @default(1)
+    unitPrice    Float
+    total        Float
+    assignmentId String?
+
+    createdAt DateTime @default(now())
+
+    @@index([invoiceId])
+}
+
+// Contrats (NDA, prestation, cession de droits, portage)
+model Contract {
+    id            String    @id @default(cuid())
+    refNumber     String    @unique
+    type          String    // NDA | PRESTATION | CESSION_DROITS | PORTAGE
+    status        String    @default("DRAFT") // DRAFT | SENT | SIGNED | ACTIVE | EXPIRED | TERMINATED
+    partyAId      String
+    partyBId      String
+    missionId     String?
+    title         String
+    content       String?   @db.Text
+    templateId    String?
+    sentAt        DateTime?
+    signedAt      DateTime?
+    startDate     DateTime?
+    endDate       DateTime?
+    signatureData Json?
+
+    createdBy String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([partyAId])
+    @@index([partyBId])
+    @@index([missionId])
+    @@index([status])
+}
+
+// Transactions escrow (séquestre mission)
+model EscrowTransaction {
+    id               String    @id @default(cuid())
+    missionId        String
+    amount           Float
+    currency         String    @default("XAF")
+    status           String    @default("PENDING") // PENDING | HELD | PARTIALLY_RELEASED | RELEASED | REFUNDED
+    releaseCondition String?   @db.Text
+    heldAt           DateTime?
+    releasedAt       DateTime?
+    refundedAt       DateTime?
+    releasedAmount   Float?
+    notes            String?   @db.Text
+
+    createdBy String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([missionId])
+    @@index([status])
+}
+
+// Commissions calculées par mission × talent
+model Commission {
+    id               String    @id @default(cuid())
+    missionId        String
+    talentId         String
+    assignmentId     String?
+    grossAmount      Float
+    commissionRate   Float
+    commissionAmount Float
+    netAmount        Float
+    currency         String    @default("XAF")
+    status           String    @default("CALCULATED") // CALCULATED | INVOICED | PAID
+    paidAt           DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([missionId, talentId])
+    @@index([talentId])
+    @@index([missionId])
+}
+
+// ============================================
+// VARIABLE REGISTRY (Atomic Modularity)
+// Canonical store for every piece of brand knowledge.
+// Each meaningful "unit of brand knowledge" (~103 per strategy)
+// is tracked individually with provenance, confidence, history, staleness.
+// ============================================
+
+model BrandVariable {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Variable identity
+    key          String   // "interview.A1", "A.identite", "D.personas", "score.coherence"
+
+    // Content
+    value        Json?    // The actual variable value (section-level JSON or primitive)
+
+    // Provenance
+    source       String   // "user_input" | "ai_generation" | "file_import" | "module" | "debrief" | "score_engine" | "manual_edit"
+    sourceDetail String?  // e.g., module ID, file name, pillar generation run
+    confidence   String   @default("HIGH") // LOW | MEDIUM | HIGH
+
+    // Staleness
+    isStale      Boolean  @default(false)
+    staleReason  String?
+    staleSince   DateTime?
+
+    // Versioning
+    version      Int      @default(1)
+
+    // Audit
+    updatedBy    String?  // userId who last changed this variable
+
+    // History
+    history      BrandVariableHistory[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, key])
+    @@index([strategyId])
+    @@index([isStale])
+}
+
+model BrandVariableHistory {
+    id             String        @id @default(cuid())
+    variableId     String
+    variable       BrandVariable @relation(fields: [variableId], references: [id], onDelete: Cascade)
+
+    version        Int      // Version number at snapshot time
+    value          Json?    // Frozen value at this version
+    source         String   // What caused this version
+    sourceDetail   String?
+    confidence     String
+    changeNote     String?  // Optional human description
+    changedBy      String   // userId or "system"
+
+    createdAt DateTime @default(now())
+
+    @@index([variableId])
 }

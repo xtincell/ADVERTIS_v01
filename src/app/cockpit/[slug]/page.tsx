@@ -95,7 +95,7 @@ export default function PublicCockpitPage(props: {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-terracotta" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="mt-4 text-sm text-muted-foreground">
           Chargement du cockpit...
         </p>
@@ -154,8 +154,8 @@ function PasswordGate({
     <div className="flex min-h-[60vh] items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-terracotta/10">
-            <Lock className="h-6 w-6 text-terracotta" />
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Lock className="h-6 w-6 text-primary" />
           </div>
           <CardTitle>Cockpit Stratégique</CardTitle>
           <CardDescription>
@@ -170,7 +170,7 @@ function PasswordGate({
                 value={password}
                 onChange={(e) => onPasswordChange(e.target.value)}
                 placeholder="Mot de passe"
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-terracotta/30"
+                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
                 autoFocus
               />
               {error && (
@@ -182,7 +182,7 @@ function PasswordGate({
             </div>
             <Button
               type="submit"
-              className="w-full bg-terracotta hover:bg-terracotta/90"
+              className="w-full bg-primary hover:bg-primary/90"
               disabled={password.length === 0 || isLoading}
             >
               {isLoading ? (
@@ -196,7 +196,7 @@ function PasswordGate({
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Propulsé par{" "}
-            <span className="font-semibold text-terracotta">ADVERTIS</span>
+            <span className="font-semibold text-primary">ADVERTIS</span>
           </p>
         </CardContent>
       </Card>

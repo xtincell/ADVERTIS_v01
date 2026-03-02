@@ -260,7 +260,7 @@ function SynthesisSection({
     <div className="rounded-lg border p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-terracotta" />
+          <Icon className="h-4 w-4 text-primary" />
           <h4 className="text-sm font-semibold">{title}</h4>
         </div>
         {confidence && <ConfidenceBadge confidence={confidence} />}

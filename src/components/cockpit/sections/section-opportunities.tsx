@@ -32,6 +32,7 @@ import {
   IMPACT_LABELS,
 } from "~/lib/constants";
 import { CockpitSection } from "../cockpit-shared";
+import { EmptyState } from "~/components/ui/empty-state";
 
 // ---------------------------------------------------------------------------
 // Impact colors
@@ -40,7 +41,7 @@ import { CockpitSection } from "../cockpit-shared";
 const IMPACT_COLORS: Record<string, string> = {
   HIGH: "bg-red-100 text-red-700",
   MEDIUM: "bg-amber-100 text-amber-700",
-  LOW: "bg-gray-100 text-gray-600",
+  LOW: "bg-muted text-muted-foreground",
 };
 
 // ---------------------------------------------------------------------------
@@ -75,7 +76,7 @@ export function SectionOpportunities({ strategyId }: { strategyId: string }) {
         pillarLetter="T"
         title="Calendrier d'Opportunités"
         subtitle="Chargement…"
-        color="#8c3cc4"
+        color="#EC4899"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -90,7 +91,7 @@ export function SectionOpportunities({ strategyId }: { strategyId: string }) {
       pillarLetter="T"
       title="Calendrier d'Opportunités"
       subtitle={`${totalOpportunities} opportunité${totalOpportunities > 1 ? "s" : ""}`}
-      color="#8c3cc4"
+      color="#EC4899"
     >
       <div className="space-y-4">
         {totalOpportunities > 0 ? (
@@ -105,12 +106,12 @@ export function SectionOpportunities({ strategyId }: { strategyId: string }) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <Calendar className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground">
-              Aucune opportunité enregistrée. Ajoutez des fenêtres d&apos;opportunité.
-            </p>
-          </div>
+          <EmptyState
+            icon={Calendar}
+            title="Aucune opportunité enregistrée"
+            description="Ajoutez des fenêtres d'opportunité."
+            compact
+          />
         )}
 
         {/* Add form */}
@@ -160,7 +161,7 @@ function OpportunityRow({
 }) {
   const channels = Array.isArray(opportunity.channels) ? opportunity.channels : [];
   const typeLabel = OPPORTUNITY_TYPE_LABELS[opportunity.type as keyof typeof OPPORTUNITY_TYPE_LABELS] ?? opportunity.type;
-  const typeColor = OPPORTUNITY_TYPE_COLORS[opportunity.type as keyof typeof OPPORTUNITY_TYPE_COLORS] ?? "bg-gray-100 text-gray-700";
+  const typeColor = OPPORTUNITY_TYPE_COLORS[opportunity.type as keyof typeof OPPORTUNITY_TYPE_COLORS] ?? "bg-muted text-muted-foreground";
   const impactColor = IMPACT_COLORS[opportunity.impact] ?? IMPACT_COLORS.MEDIUM!;
   const impactLabel = IMPACT_LABELS[opportunity.impact as keyof typeof IMPACT_LABELS] ?? opportunity.impact;
 

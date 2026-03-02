@@ -17,7 +17,7 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           borderRadius: "6px",
-          background: "linear-gradient(135deg, #1a2e1f 0%, #2d5a3d 100%)",
+          background: "linear-gradient(135deg, #059669 0%, #10B981 100%)",
         }}
       >
         <svg
@@ -33,7 +33,7 @@ export default function Icon() {
             y1="28"
             x2="16"
             y2="4"
-            stroke="#c45a3c"
+            stroke="rgba(255,255,255,0.95)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -43,7 +43,7 @@ export default function Icon() {
             y1="28"
             x2="16"
             y2="4"
-            stroke="#c45a3c"
+            stroke="rgba(255,255,255,0.95)"
             strokeWidth="3.5"
             strokeLinecap="round"
           />
@@ -53,12 +53,12 @@ export default function Icon() {
             y1="19.5"
             x2="23"
             y2="19.5"
-            stroke="rgba(255,255,255,0.8)"
+            stroke="rgba(255,255,255,0.7)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
-          {/* Apex dot */}
-          <circle cx="16" cy="4" r="2" fill="#c49a3c" />
+          {/* Apex dot — Rose accent */}
+          <circle cx="16" cy="4" r="2" fill="#F43F5E" />
         </svg>
       </div>
     ),

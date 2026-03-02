@@ -162,7 +162,7 @@ const PILLAR_D_VARIABLES: InterviewVariable[] = [
     description:
       "Couleurs, direction photo, mood boards, typographies, ambiance generale souhaitee.",
     placeholder:
-      "Ex: Palette : Bleu profond (#1a365d), Or (#c49a3c). Direction photo : minimaliste, lumiere naturelle...",
+      "Ex: Palette : Bleu profond (#1a365d), Or (#F59E0B). Direction photo : minimaliste, lumiere naturelle...",
     priority: false,
     type: "textarea",
   },

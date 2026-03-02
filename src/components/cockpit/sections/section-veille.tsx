@@ -27,7 +27,7 @@ import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { CockpitSection } from "../cockpit-shared";
 
-const COLOR = PILLAR_CONFIG.T.color; // #8c3cc4
+const COLOR = PILLAR_CONFIG.T.color; // #EC4899
 
 // ---------------------------------------------------------------------------
 // SectionVeille
@@ -106,7 +106,7 @@ export function SectionVeille({
         {macroTrends.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-[#8c3cc4]" />
+              <TrendingUp className="h-4 w-4 text-pink-500" />
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Tendances macro
               </p>
@@ -115,9 +115,9 @@ export function SectionVeille({
               {macroTrends.map((trend, i) => (
                 <span
                   key={i}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[#8c3cc4]/20 bg-[#8c3cc4]/5 px-3 py-1.5 text-sm font-medium"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/20 bg-pink-500/5 px-3 py-1.5 text-sm font-medium"
                 >
-                  <TrendingUp className="h-3 w-3 text-[#8c3cc4]" />
+                  <TrendingUp className="h-3 w-3 text-pink-500" />
                   {trend}
                 </span>
               ))}
@@ -179,7 +179,7 @@ export function SectionVeille({
         {recommendations.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <ArrowUpRight className="h-4 w-4 text-[#8c3cc4]" />
+              <ArrowUpRight className="h-4 w-4 text-pink-500" />
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Recommandations strategiques
               </p>
@@ -190,7 +190,7 @@ export function SectionVeille({
                   key={i}
                   className="flex items-start gap-2 rounded-md border bg-muted/20 px-3 py-2"
                 >
-                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[#8c3cc4]/10 text-[10px] font-bold text-[#8c3cc4]">
+                  <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-pink-500/10 text-[10px] font-bold text-pink-500">
                     {i + 1}
                   </span>
                   <p className="text-sm text-foreground/80">{rec}</p>

@@ -563,10 +563,67 @@ export async function completeMissionDebrief(
     console.error("[MissionManager] Debrief feedback loop error:", err);
   }
 
+  // ── 4. La Guilde → Auto-Review: create talent reviews from debrief ──
+  let talentReviewsCreated = 0;
+  try {
+    const talentEngine = await import("~/server/services/talent-engine");
+
+    // Get all assignments for this mission with user info
+    const missionAssignments = await db.missionAssignment.findMany({
+      where: { missionId: data.missionId },
+      select: { id: true, userId: true, role: true },
+    });
+
+    for (const assignment of missionAssignments) {
+      // Check if this user has a TalentProfile
+      const talentProfile = await db.talentProfile.findUnique({
+        where: { userId: assignment.userId },
+      });
+
+      if (!talentProfile) continue;
+
+      // Check if a review already exists for this talent + mission
+      const existingReview = await db.talentReview.findUnique({
+        where: {
+          talentProfileId_missionId: {
+            talentProfileId: talentProfile.id,
+            missionId: data.missionId,
+          },
+        },
+      });
+
+      if (existingReview) continue;
+
+      // Map debrief qualityScore (0-100) → review score (1-5)
+      const qualityRaw = data.qualityScore ?? 70;
+      const qualityScore = Math.max(1, Math.min(5, Math.round(qualityRaw / 20)));
+
+      // Infer deadline score from onTime
+      const deadlinesScore = data.onTime === true ? 5 : data.onTime === false ? 2 : 3;
+
+      // Create auto-review
+      await talentEngine.createReview(completedBy, {
+        talentProfileId: talentProfile.id,
+        missionId: data.missionId,
+        assignmentId: assignment.id,
+        qualityScore,
+        deadlinesScore,
+        comment: `Auto-review depuis debrief mission "${mission.title}" (score: ${qualityRaw}/100)`,
+        isPublic: false,
+      });
+
+      talentReviewsCreated++;
+    }
+  } catch (err) {
+    // Non-blocking: auto-review errors shouldn't prevent debrief completion
+    console.error("[MissionManager] Auto-review creation error:", err);
+  }
+
   return {
     ...debrief,
     feedbackSignalsCreated,
     feedbackPillarsStale,
+    talentReviewsCreated,
   };
 }
 
@@ -613,7 +670,7 @@ export async function calculateEstimatedCharge(missionId: string) {
 
 /**
  * Search across all debriefs for the given user.
- * Uses ILIKE on summary, clientFeedback, and lessonsLearned JSON text.
+ * Uses Prisma findMany with proper parameterised filters (no raw SQL).
  */
 export async function searchDebriefs(
   userId: string,
@@ -624,95 +681,119 @@ export async function searchDebriefs(
     onTime?: boolean;
   },
 ) {
-  // Build WHERE conditions dynamically
-  const conditions: string[] = [
-    `s."userId" = '${userId}'`,
-    `(
-      d."summary" ILIKE '%${query}%'
-      OR d."clientFeedback" ILIKE '%${query}%'
-      OR d."lessonsLearned"::text ILIKE '%${query}%'
-    )`,
-  ];
+  const searchPattern = `%${query}%`;
 
-  if (filters?.sector) {
-    conditions.push(`s."sector" = '${filters.sector}'`);
-  }
+  // Build Prisma-safe where clause
+  const debriefWhere: Record<string, unknown> = {
+    mission: {
+      strategy: {
+        userId,
+        ...(filters?.sector ? { sector: filters.sector } : {}),
+      },
+    },
+    OR: [
+      { summary: { contains: query, mode: "insensitive" } },
+      { clientFeedback: { contains: query, mode: "insensitive" } },
+    ],
+  };
+
   if (filters?.qualityMin != null) {
-    conditions.push(`d."qualityScore" >= ${filters.qualityMin}`);
+    debriefWhere.qualityScore = { gte: filters.qualityMin };
   }
   if (filters?.onTime != null) {
-    conditions.push(`d."onTime" = ${filters.onTime}`);
+    debriefWhere.onTime = filters.onTime;
   }
 
-  const whereClause = conditions.join(" AND ");
+  const results = await db.missionDebrief.findMany({
+    where: debriefWhere,
+    select: {
+      id: true,
+      missionId: true,
+      summary: true,
+      clientFeedback: true,
+      qualityScore: true,
+      onTime: true,
+      onBudget: true,
+      createdAt: true,
+      mission: {
+        select: {
+          title: true,
+          strategy: {
+            select: {
+              brandName: true,
+              sector: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
 
-  const results = await db.$queryRawUnsafe<
-    Array<{
-      id: string;
-      missionId: string;
-      missionTitle: string;
-      brandName: string;
-      sector: string | null;
-      summary: string | null;
-      clientFeedback: string | null;
-      qualityScore: number | null;
-      onTime: boolean | null;
-      onBudget: boolean | null;
-      createdAt: Date;
-    }>
-  >(`
-    SELECT
-      d."id",
-      d."missionId",
-      m."title" AS "missionTitle",
-      s."brandName",
-      s."sector",
-      d."summary",
-      d."clientFeedback",
-      d."qualityScore",
-      d."onTime",
-      d."onBudget",
-      d."createdAt"
-    FROM "MissionDebrief" d
-    JOIN "Mission" m ON m."id" = d."missionId"
-    JOIN "Strategy" s ON s."id" = m."strategyId"
-    WHERE ${whereClause}
-    ORDER BY d."createdAt" DESC
-    LIMIT 50
-  `);
-
-  return results;
+  // Flatten to match the expected return shape
+  return results.map((d) => ({
+    id: d.id,
+    missionId: d.missionId,
+    missionTitle: d.mission.title,
+    brandName: d.mission.strategy.brandName,
+    sector: d.mission.strategy.sector,
+    summary: d.summary,
+    clientFeedback: d.clientFeedback,
+    qualityScore: d.qualityScore,
+    onTime: d.onTime,
+    onBudget: d.onBudget,
+    createdAt: d.createdAt,
+  }));
 }
 
 /**
  * Aggregate debrief statistics for a user.
+ * Uses Prisma aggregate instead of raw SQL for safety.
  */
 export async function getDebriefStats(userId: string) {
-  const stats = await db.$queryRawUnsafe<
-    Array<{
-      totalDebriefs: bigint;
-      avgQuality: number | null;
-      onTimePercent: number | null;
-      onBudgetPercent: number | null;
-    }>
-  >(`
-    SELECT
-      COUNT(d."id") AS "totalDebriefs",
-      AVG(d."qualityScore") AS "avgQuality",
-      AVG(CASE WHEN d."onTime" = true THEN 100.0 ELSE 0.0 END) AS "onTimePercent",
-      AVG(CASE WHEN d."onBudget" = true THEN 100.0 ELSE 0.0 END) AS "onBudgetPercent"
-    FROM "MissionDebrief" d
-    JOIN "Mission" m ON m."id" = d."missionId"
-    JOIN "Strategy" s ON s."id" = m."strategyId"
-    WHERE s."userId" = '${userId}'
-  `);
+  const debriefs = await db.missionDebrief.findMany({
+    where: {
+      mission: {
+        strategy: { userId },
+      },
+    },
+    select: {
+      qualityScore: true,
+      onTime: true,
+      onBudget: true,
+    },
+  });
 
-  const row = stats[0];
+  const total = debriefs.length;
+  if (total === 0) {
+    return {
+      totalDebriefs: 0,
+      avgQuality: null,
+      onTimePercent: null,
+      onBudgetPercent: null,
+    };
+  }
+
+  const qualityScores = debriefs
+    .map((d) => d.qualityScore)
+    .filter((s): s is number => s != null);
+  const avgQuality =
+    qualityScores.length > 0
+      ? Math.round(
+          (qualityScores.reduce((a, b) => a + b, 0) / qualityScores.length) *
+            10,
+        ) / 10
+      : null;
+
+  const onTimeCount = debriefs.filter((d) => d.onTime === true).length;
+  const onBudgetCount = debriefs.filter((d) => d.onBudget === true).length;
+
   return {
-    totalDebriefs: Number(row?.totalDebriefs ?? 0),
-    avgQuality: row?.avgQuality ? Math.round(row.avgQuality * 10) / 10 : null,
-    onTimePercent: row?.onTimePercent ? Math.round(row.onTimePercent) : null,
-    onBudgetPercent: row?.onBudgetPercent ? Math.round(row.onBudgetPercent) : null,
+    totalDebriefs: total,
+    avgQuality,
+    onTimePercent: Math.round((onTimeCount / total) * 100),
+    onBudgetPercent: Math.round((onBudgetCount / total) * 100),
   };
 }
 

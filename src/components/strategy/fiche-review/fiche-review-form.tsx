@@ -356,7 +356,7 @@ export function FicheReviewForm({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ClipboardEdit className="h-5 w-5 text-terracotta" />
+          <ClipboardEdit className="h-5 w-5 text-primary" />
           <h3 className="text-lg font-semibold">
             Validation de la Fiche de Marque
           </h3>
@@ -697,7 +697,7 @@ export function FicheReviewForm({
                 className={cn(
                   "w-full rounded-md border bg-background px-3 py-2 text-xs font-mono",
                   "placeholder:text-muted-foreground/50",
-                  "focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
                   "resize-y min-h-[300px]",
                   modifiedPillarContent.has(activeTab) &&
                     "border-amber-300 bg-amber-50/20",
@@ -767,8 +767,8 @@ export function FicheReviewForm({
           className={cn(
             "inline-flex items-center gap-2 rounded-lg px-6 py-2.5 text-sm font-semibold text-white transition-all",
             isValidating || isAiFilling
-              ? "bg-terracotta/50 cursor-not-allowed"
-              : "bg-terracotta hover:bg-terracotta/90 shadow-sm",
+              ? "bg-primary/50 cursor-not-allowed"
+              : "bg-primary hover:bg-primary/90 shadow-sm",
           )}
         >
           {isValidating ? (
@@ -876,7 +876,7 @@ function VariableField({
             className={cn(
               "w-full rounded-md border bg-background px-3 py-2 text-sm",
               "placeholder:text-muted-foreground/50",
-              "focus:outline-none focus:ring-2 focus:ring-terracotta/30 focus:border-terracotta",
+              "focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary",
               "resize-y min-h-[72px]",
               isAutoFilled &&
                 !isModified &&

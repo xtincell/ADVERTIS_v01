@@ -127,7 +127,7 @@ export function MarketPricingAdmin() {
       {/* Pricing Table */}
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
-          <div className="animate-pulse text-muted-foreground">
+          <div className="animate-float text-muted-foreground">
             Chargement...
           </div>
         </div>
@@ -184,7 +184,7 @@ export function MarketPricingAdmin() {
                               ? "border-emerald-300 text-emerald-600"
                               : entry.confidence === "MEDIUM"
                                 ? "border-amber-300 text-amber-600"
-                                : "border-gray-300 text-gray-500"
+                                : "border-border text-muted-foreground"
                           }`}
                         >
                           {entry.confidence}

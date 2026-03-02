@@ -112,13 +112,13 @@ export function BrandCardGrid({ brands, onBrandClick, onMutationSuccess }: Brand
         {brands.map((brand) => (
           <Card
             key={brand.id}
-            className="cursor-pointer transition-all hover:shadow-md hover:border-terracotta/30"
+            className="cursor-pointer transition-all hover:shadow-md hover:border-primary/30"
             onClick={() => onBrandClick(brand.id)}
           >
             <CardContent className="pt-5 pb-4">
               {/* Header: initials + name + badges + actions */}
               <div className="mb-4 flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-terracotta/10 text-sm font-bold text-terracotta">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
                   {brandInitials(brand.brandName)}
                 </div>
                 <div className="min-w-0 flex-1">

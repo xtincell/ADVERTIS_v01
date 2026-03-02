@@ -47,9 +47,9 @@ function ScoreItem({ value, label, invertColor, onClick }: ScoreItemProps) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card p-3 transition-colors hover:border-terracotta/30 active:bg-accent"
+      className="group flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card p-3 transition-colors hover:border-primary/30 active:bg-accent"
     >
-      <span className={`text-2xl font-bold ${colorClass}`}>{displayValue}</span>
+      <span className={`text-2xl font-bold animate-count-up group-hover:scale-110 transition-transform ${colorClass}`}>{displayValue}</span>
       <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
         {label}
       </span>
@@ -86,7 +86,7 @@ export function ScoreTriad({
 
   return (
     <>
-      <div className="flex gap-3 px-4">
+      <div className="flex gap-3 px-4 stagger-children">
         <ScoreItem
           value={coherence}
           label="Cohérence"

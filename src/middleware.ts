@@ -11,7 +11,7 @@ function getHomeByRole(role: string): string {
   switch (role) {
     case "ADMIN":
     case "OPERATOR":
-      return "/dashboard";
+      return "/impulsion";
     case "FREELANCE":
       return "/my-missions";
     case "CLIENT_RETAINER":
@@ -23,16 +23,16 @@ function getHomeByRole(role: string): string {
 }
 
 const ROLE_ROUTES: Record<string, string[]> = {
-  // Operator-only
-  "/dashboard": ["ADMIN", "OPERATOR"],
-  "/brand": ["ADMIN", "OPERATOR"],
-  "/new": ["ADMIN", "OPERATOR"],
-  "/tree": ["ADMIN", "OPERATOR"],
-  "/missions": ["ADMIN", "OPERATOR"],
-  "/more": ["ADMIN", "OPERATOR"],
+  // Operator-only portals
+  "/impulsion": ["ADMIN", "OPERATOR"],
+  "/pilotis": ["ADMIN", "OPERATOR"],
+  "/serenite": ["ADMIN", "OPERATOR"],
   "/glory": ["ADMIN", "OPERATOR"],
+  "/tarsis": ["ADMIN", "OPERATOR"],
+  "/guilde": ["ADMIN", "OPERATOR"],
   // Freelance (+ ADMIN preview)
   "/my-missions": ["ADMIN", "FREELANCE"],
+  "/my-finances": ["ADMIN", "FREELANCE"],
   "/my-briefs": ["ADMIN", "FREELANCE"],
   "/upload": ["ADMIN", "FREELANCE"],
   "/profile": ["ADMIN", "FREELANCE"],
@@ -60,7 +60,7 @@ export async function middleware(req: NextRequest) {
   for (const [route, allowedRoles] of Object.entries(ROLE_ROUTES)) {
     if (pathname === route || pathname.startsWith(route + "/")) {
       if (!allowedRoles.includes(userRole)) {
-        // Redirect to the user's actual home, not /dashboard
+        // Redirect to the user's actual home, not /impulsion
         return NextResponse.redirect(new URL(getHomeByRole(userRole), req.url));
       }
       break;
@@ -73,16 +73,16 @@ export async function middleware(req: NextRequest) {
 export const config = {
   // Run middleware on all protected route prefixes
   matcher: [
-    // Operator routes
-    "/dashboard/:path*",
-    "/brand/:path*",
-    "/new/:path*",
-    "/tree/:path*",
-    "/missions/:path*",
-    "/more/:path*",
+    // Operator portals
+    "/impulsion/:path*",
+    "/pilotis/:path*",
+    "/serenite/:path*",
     "/glory/:path*",
+    "/tarsis/:path*",
+    "/guilde/:path*",
     // Freelance routes
     "/my-missions/:path*",
+    "/my-finances/:path*",
     "/my-briefs/:path*",
     "/upload/:path*",
     "/profile/:path*",

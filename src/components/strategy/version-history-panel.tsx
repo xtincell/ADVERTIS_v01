@@ -61,11 +61,11 @@ function getSourceLabel(source: string) {
     case "ai_update":
       return { label: "Mise à jour IA", icon: Sparkles, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300" };
     case "restore":
-      return { label: "Avant restauration", icon: ArrowDownToLine, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" };
+      return { label: "Avant restauration", icon: ArrowDownToLine, color: "bg-muted text-muted-foreground" };
     case "import":
       return { label: "Import", icon: ArrowDownToLine, color: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" };
     default:
-      return { label: source, icon: Clock, color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" };
+      return { label: source, icon: Clock, color: "bg-muted text-muted-foreground" };
   }
 }
 

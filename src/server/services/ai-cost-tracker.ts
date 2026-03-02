@@ -221,6 +221,84 @@ export async function getAgencyCostOverview(userId: string) {
   };
 }
 
+/**
+ * Get cost breakdown by brand (strategy) for a user.
+ * Groups AI usage logs by strategyId and enriches with brand name.
+ */
+export async function getCostBreakdownByBrand(userId: string) {
+  const logs = await db.aIUsageLog.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Group by strategyId (null = unattributed)
+  const byStrategy: Record<string, {
+    costUsd: number;
+    costXaf: number;
+    tokensIn: number;
+    tokensOut: number;
+    callCount: number;
+    lastUsed: Date;
+    byType: Record<string, { costUsd: number; costXaf: number; count: number }>;
+  }> = {};
+
+  for (const log of logs) {
+    const sid = log.strategyId ?? "__unattributed__";
+    if (!byStrategy[sid]) {
+      byStrategy[sid] = {
+        costUsd: 0, costXaf: 0, tokensIn: 0, tokensOut: 0,
+        callCount: 0, lastUsed: log.createdAt,
+        byType: {},
+      };
+    }
+    const entry = byStrategy[sid]!;
+    entry.costUsd += log.costUsd;
+    entry.costXaf += log.costXaf;
+    entry.tokensIn += log.tokensIn;
+    entry.tokensOut += log.tokensOut;
+    entry.callCount += 1;
+    if (log.createdAt > entry.lastUsed) entry.lastUsed = log.createdAt;
+
+    // Track by generation type within each strategy
+    if (!entry.byType[log.generationType]) {
+      entry.byType[log.generationType] = { costUsd: 0, costXaf: 0, count: 0 };
+    }
+    entry.byType[log.generationType]!.costUsd += log.costUsd;
+    entry.byType[log.generationType]!.costXaf += log.costXaf;
+    entry.byType[log.generationType]!.count += 1;
+  }
+
+  // Fetch brand names
+  const strategyIds = Object.keys(byStrategy).filter((s) => s !== "__unattributed__");
+  const strategies = strategyIds.length > 0
+    ? await db.strategy.findMany({
+        where: { id: { in: strategyIds } },
+        select: { id: true, brandName: true, sector: true },
+      })
+    : [];
+
+  const strategyMap = new Map(strategies.map((s) => [s.id, s]));
+
+  return Object.entries(byStrategy)
+    .map(([sid, entry]) => ({
+      strategyId: sid === "__unattributed__" ? null : sid,
+      brandName: sid === "__unattributed__"
+        ? "Non attribué"
+        : (strategyMap.get(sid)?.brandName ?? "Inconnu"),
+      sector: sid === "__unattributed__" ? null : (strategyMap.get(sid)?.sector ?? null),
+      costUsd: Math.round(entry.costUsd * 100) / 100,
+      costXaf: Math.round(entry.costXaf),
+      tokensIn: entry.tokensIn,
+      tokensOut: entry.tokensOut,
+      callCount: entry.callCount,
+      lastUsed: entry.lastUsed,
+      byType: Object.entries(entry.byType)
+        .map(([type, data]) => ({ type, ...data }))
+        .sort((a, b) => b.costUsd - a.costUsd),
+    }))
+    .sort((a, b) => b.costUsd - a.costUsd);
+}
+
 // ============================================
 // HELPERS
 // ============================================

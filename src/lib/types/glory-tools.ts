@@ -87,7 +87,7 @@ export const GLORY_LAYER_META: Record<
   CR: {
     label: "Concepteur-Rédacteur",
     description: "Production créative : concepts, scripts, copy, dialogues",
-    color: "#6C5CE7",
+    color: "#8B5CF6",
   },
   DC: {
     label: "Direction de Création",

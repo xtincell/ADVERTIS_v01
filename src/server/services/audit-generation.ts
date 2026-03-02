@@ -36,6 +36,9 @@ import { getFicheDeMarqueSchema } from "~/lib/interview-schema";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
 import { injectSpecialization, type SpecializationOptions } from "./prompt-helpers";
 import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
+import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
+import { MicroSwotSchema } from "~/lib/types/pillar-schemas";
+import type { AIUsageMetadata } from "./ai-generation";
 
 // ---------------------------------------------------------------------------
 // Types — re-exported from Zod schemas (source of truth)
@@ -71,7 +74,10 @@ export async function generateRiskAudit(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<RiskAuditResult> {
+): Promise<{ data: RiskAuditResult; usage: AIUsageMetadata }> {
+  const overallStart = Date.now();
+  let totalTokensIn = 0;
+  let totalTokensOut = 0;
   const schema = getFicheDeMarqueSchema();
 
   // Collect non-empty variables for micro-SWOT analysis
@@ -127,7 +133,7 @@ export async function generateRiskAudit(
         .map((v) => `- ${v.id} (${v.label}): ${v.value}`)
         .join("\n");
 
-      const { text } = await resilientGenerateText({
+      const { text, usage: callUsage } = await resilientGenerateText({
         label: `audit-R-microswot-${pillarType}`,
         model: anthropic(DEFAULT_MODEL),
         system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
@@ -169,13 +175,19 @@ Exemple :
         temperature: 0.4,
       });
 
-      return parseJsonArray<MicroSwot>(text);
+      return {
+        swots: parseAndValidateMicroSwots(text),
+        tokensIn: callUsage?.inputTokens ?? 0,
+        tokensOut: callUsage?.outputTokens ?? 0,
+      };
     },
   );
 
   const pillarResults = await Promise.all(pillarPromises);
   for (const result of pillarResults) {
-    microSwots.push(...result);
+    microSwots.push(...result.swots);
+    totalTokensIn += result.tokensIn;
+    totalTokensOut += result.tokensOut;
   }
 
   // --- Step 2: Global SWOT synthesis + risk score ---
@@ -190,7 +202,7 @@ Exemple :
     )
     .join("\n\n");
 
-  const { text: synthesisText } = await resilientGenerateText({
+  const { text: synthesisText, usage: synthesisUsage } = await resilientGenerateText({
     label: "audit-R-synthesis",
     model: anthropic(DEFAULT_MODEL),
     system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
@@ -230,29 +242,26 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide :
     temperature: 0.3,
   });
 
-  const synthesis = parseJsonObject<{
-    globalSwot: RiskAuditResult["globalSwot"];
-    riskScore: number;
-    riskScoreJustification: string;
-    probabilityImpactMatrix: RiskAuditResult["probabilityImpactMatrix"];
-    mitigationPriorities: RiskAuditResult["mitigationPriorities"];
-    summary: string;
-  }>(synthesisText);
+  // Use Zod-validated parsing (4-tier: strict → coerce → deep-merge → defaults)
+  // We wrap the synthesis text with microSwots so the schema validates everything
+  const syntheticJson = injectMicroSwotsIntoSynthesis(synthesisText, microSwots);
+  const parsed = parseAiGeneratedContent<RiskAuditResult>("R", syntheticJson);
+
+  if (!parsed.success) {
+    console.warn("[Audit-R] Zod validation errors (auto-corrected):", parsed.errors);
+  }
+
+  totalTokensIn += synthesisUsage?.inputTokens ?? 0;
+  totalTokensOut += synthesisUsage?.outputTokens ?? 0;
 
   return {
-    microSwots,
-    globalSwot: synthesis.globalSwot ?? {
-      strengths: [],
-      weaknesses: [],
-      opportunities: [],
-      threats: [],
+    data: parsed.data,
+    usage: {
+      model: DEFAULT_MODEL,
+      tokensIn: totalTokensIn,
+      tokensOut: totalTokensOut,
+      durationMs: Date.now() - overallStart,
     },
-    riskScore: synthesis.riskScore ?? 50,
-    riskScoreJustification:
-      synthesis.riskScoreJustification ?? "Score non calculé",
-    probabilityImpactMatrix: synthesis.probabilityImpactMatrix ?? [],
-    mitigationPriorities: synthesis.mitigationPriorities ?? [],
-    summary: synthesis.summary ?? "",
   };
 }
 
@@ -284,7 +293,7 @@ export async function generateTrackAudit(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<TrackAuditResult> {
+): Promise<{ data: TrackAuditResult; usage: AIUsageMetadata }> {
   // Build comprehensive context
   const ficheContext = ficheContent
     .map((p) => {
@@ -346,7 +355,8 @@ NOTE : Aucune étude de marché réelle n'est disponible.
 Toutes tes analyses seront basées sur tes connaissances du secteur.
 Indique explicitement quand tu spécules ou estimes.`;
 
-  const { text } = await resilientGenerateText({
+  const trackStart = Date.now();
+  const { text, usage: trackUsage } = await resilientGenerateText({
     label: "audit-T-track",
     model: anthropic(DEFAULT_MODEL),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
@@ -422,33 +432,21 @@ ${hasMarketStudy ? "UTILISE EN PRIORITÉ les données réelles de l'étude de ma
     temperature: 0.3,
   });
 
-  const result = parseJsonObject<TrackAuditResult>(text);
+  // Use Zod-validated parsing (4-tier: strict → coerce → deep-merge → defaults)
+  const parsed = parseAiGeneratedContent<TrackAuditResult>("T", text);
+
+  if (!parsed.success) {
+    console.warn("[Audit-T] Zod validation errors (auto-corrected):", parsed.errors);
+  }
 
   return {
-    triangulation: result.triangulation ?? {
-      internalData: "",
-      marketData: "",
-      customerData: "",
-      synthesis: "",
+    data: parsed.data,
+    usage: {
+      model: DEFAULT_MODEL,
+      tokensIn: trackUsage?.inputTokens ?? 0,
+      tokensOut: trackUsage?.outputTokens ?? 0,
+      durationMs: Date.now() - trackStart,
     },
-    hypothesisValidation: result.hypothesisValidation ?? [],
-    marketReality: result.marketReality ?? {
-      macroTrends: [],
-      weakSignals: [],
-      emergingPatterns: [],
-    },
-    tamSamSom: result.tamSamSom ?? {
-      tam: { value: "", description: "" },
-      sam: { value: "", description: "" },
-      som: { value: "", description: "" },
-      methodology: "",
-    },
-    competitiveBenchmark: result.competitiveBenchmark ?? [],
-    brandMarketFitScore: result.brandMarketFitScore ?? 50,
-    brandMarketFitJustification:
-      result.brandMarketFitJustification ?? "Score non calculé",
-    strategicRecommendations: result.strategicRecommendations ?? [],
-    summary: result.summary ?? "",
   };
 }
 
@@ -457,9 +455,10 @@ ${hasMarketStudy ? "UTILISE EN PRIORITÉ les données réelles de l'étude de ma
 // ---------------------------------------------------------------------------
 
 /**
- * Parse AI response as a JSON array, with fallback to empty array.
+ * Parse AI response as JSON array of MicroSwot, validating each element via Zod.
+ * Falls back to empty array on total parse failure.
  */
-function parseJsonArray<T>(responseText: string): T[] {
+function parseAndValidateMicroSwots(responseText: string): MicroSwot[] {
   let jsonString = responseText.trim();
 
   // Remove markdown code block if present
@@ -469,11 +468,25 @@ function parseJsonArray<T>(responseText: string): T[] {
   }
 
   try {
-    const parsed = JSON.parse(jsonString) as T[];
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(jsonString) as unknown[];
+    if (!Array.isArray(parsed)) return [];
+
+    // Validate each element through Zod schema
+    return parsed
+      .map((item) => {
+        const result = MicroSwotSchema.safeParse(item);
+        if (result.success) return result.data;
+        // Coerce parse: merge item over defaults then re-validate
+        const defaults = MicroSwotSchema.parse({});
+        const merged = typeof item === "object" && item !== null
+          ? { ...defaults, ...(item as Record<string, unknown>) }
+          : defaults;
+        const coerced = MicroSwotSchema.safeParse(merged);
+        return coerced.success ? coerced.data : defaults;
+      });
   } catch {
     console.error(
-      "[Audit] Failed to parse JSON array:",
+      "[Audit-R] Failed to parse micro-SWOTs JSON:",
       responseText.substring(0, 200),
     );
     return [];
@@ -481,10 +494,14 @@ function parseJsonArray<T>(responseText: string): T[] {
 }
 
 /**
- * Parse AI response as a JSON object, with fallback to empty object.
+ * Inject already-parsed microSwots into the synthesis JSON text so that
+ * parseAiGeneratedContent("R", ...) can validate the full RiskAuditResult.
  */
-function parseJsonObject<T>(responseText: string): Partial<T> {
-  let jsonString = responseText.trim();
+function injectMicroSwotsIntoSynthesis(
+  synthesisText: string,
+  microSwots: MicroSwot[],
+): string {
+  let jsonString = synthesisText.trim();
 
   // Remove markdown code block if present
   const jsonMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -493,13 +510,12 @@ function parseJsonObject<T>(responseText: string): Partial<T> {
   }
 
   try {
-    return JSON.parse(jsonString) as Partial<T>;
+    const synthesisObj = JSON.parse(jsonString) as Record<string, unknown>;
+    synthesisObj.microSwots = microSwots;
+    return JSON.stringify(synthesisObj);
   } catch {
-    console.error(
-      "[Audit] Failed to parse JSON object:",
-      responseText.substring(0, 200),
-    );
-    return {} as Partial<T>;
+    // If synthesis text is unparseable, build a minimal valid JSON with just microSwots
+    return JSON.stringify({ microSwots });
   }
 }
 

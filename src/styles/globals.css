@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ============================================
-   ADVERTIS Design System
-   Brand: Terracotta + Forest Green + Warm Gold
-   Based on: interface/assets/css/main.css tokens
+   ADVERTIS Design System — v2
+   Brand: Emerald + Rose · Premium SaaS
+   Palette: Fresh, creative, Notion/Figma vibe
    ============================================ */
 
 @theme {
@@ -56,110 +56,112 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ADVERTIS Custom Palette */
-  --color-terracotta: var(--terracotta);
-  --color-terracotta-light: var(--terracotta-light);
-  --color-terracotta-dark: var(--terracotta-dark);
-  --color-forest: var(--forest);
-  --color-forest-light: var(--forest-light);
-  --color-forest-dark: var(--forest-dark);
-  --color-gold: var(--gold);
-  --color-gold-light: var(--gold-light);
-  --color-gold-dark: var(--gold-dark);
+  /* ADVERTIS Brand Palette — Emerald + Rose */
+  --color-emerald: var(--emerald);
+  --color-emerald-light: var(--emerald-light);
+  --color-emerald-dark: var(--emerald-dark);
+  --color-rose: var(--rose);
+  --color-rose-light: var(--rose-light);
+  --color-rose-dark: var(--rose-dark);
+  --color-amber: var(--amber);
+  --color-amber-light: var(--amber-light);
+  --color-amber-dark: var(--amber-dark);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
-  /* ADVERTIS Brand Colors (from main.css OKLCH tokens) */
-  --terracotta: oklch(0.55 0.15 30);        /* Primary warmth */
-  --terracotta-light: oklch(0.75 0.12 30);
-  --terracotta-dark: oklch(0.40 0.18 30);
-  --forest: oklch(0.35 0.10 120);           /* Deep forest green */
-  --forest-light: oklch(0.55 0.08 120);
-  --forest-dark: oklch(0.25 0.12 120);
-  --gold: oklch(0.70 0.18 60);              /* Warm gold accent */
-  --gold-light: oklch(0.85 0.12 60);
-  --gold-dark: oklch(0.55 0.22 60);
+  /* ADVERTIS Brand Colors — Emerald + Rose (OKLCH) */
+  --emerald: oklch(0.70 0.17 163);           /* Primary — fresh, creative */
+  --emerald-light: oklch(0.80 0.12 163);
+  --emerald-dark: oklch(0.50 0.20 163);
+  --rose: oklch(0.63 0.22 12);               /* Accent — warm, energetic */
+  --rose-light: oklch(0.75 0.15 12);
+  --rose-dark: oklch(0.45 0.22 12);
+  --amber: oklch(0.75 0.16 75);              /* Tertiary — value, warmth */
+  --amber-light: oklch(0.85 0.12 75);
+  --amber-dark: oklch(0.60 0.20 75);
+
+  /* Brand color aliases (for direct usage in templates) */
 
   /* Semantic Colors */
-  --success: oklch(0.60 0.15 145);
-  --warning: oklch(0.70 0.15 75);
+  --success: oklch(0.65 0.17 155);
+  --warning: oklch(0.75 0.15 75);
   --info: oklch(0.60 0.15 240);
 
-  /* shadcn/ui mappings → ADVERTIS */
-  --background: oklch(0.98 0 0);            /* Off-white */
-  --foreground: oklch(0.20 0 0);            /* Near black */
-  --card: oklch(1 0 0);                     /* Pure white */
-  --card-foreground: oklch(0.20 0 0);
+  /* shadcn/ui mappings → ADVERTIS v2 */
+  --background: oklch(0.985 0 0);            /* #FAFAFA — off-white */
+  --foreground: oklch(0.15 0 0);             /* #18181B — near black */
+  --card: oklch(1 0 0);                      /* Pure white */
+  --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.20 0 0);
-  --primary: oklch(0.55 0.15 30);           /* Terracotta */
-  --primary-foreground: oklch(0.98 0 0);    /* White on terracotta */
-  --secondary: oklch(0.35 0.10 120);        /* Forest green */
-  --secondary-foreground: oklch(0.98 0 0);  /* White on forest */
-  --muted: oklch(0.96 0 0);
-  --muted-foreground: oklch(0.45 0 0);
-  --accent: oklch(0.70 0.18 60);            /* Warm gold */
-  --accent-foreground: oklch(0.20 0 0);     /* Dark on gold */
-  --destructive: oklch(0.55 0.20 25);
-  --border: oklch(0.90 0 0);
-  --input: oklch(0.90 0 0);
-  --ring: oklch(0.55 0.15 30);              /* Terracotta ring */
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.70 0.17 163);           /* Emerald */
+  --primary-foreground: oklch(0.99 0 0);     /* White on emerald */
+  --secondary: oklch(0.965 0.005 260);       /* Zinc-100 neutral */
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.96 0.005 260);            /* #F4F4F5 */
+  --muted-foreground: oklch(0.55 0 0);       /* #71717A */
+  --accent: oklch(0.63 0.22 12);             /* Rose */
+  --accent-foreground: oklch(0.99 0 0);      /* White on rose */
+  --destructive: oklch(0.55 0.22 25);
+  --border: oklch(0.91 0.005 260);           /* #E4E4E7 */
+  --input: oklch(0.91 0.005 260);
+  --ring: oklch(0.70 0.17 163);              /* Emerald focus ring */
 
-  /* Chart colors - ADVERTIS 8 pillar palette */
-  --chart-1: oklch(0.55 0.15 30);           /* A - Terracotta */
-  --chart-2: oklch(0.35 0.10 120);          /* D - Forest Green */
-  --chart-3: oklch(0.70 0.18 60);           /* V - Warm Gold */
-  --chart-4: oklch(0.60 0.15 240);          /* E - Blue */
-  --chart-5: oklch(0.55 0.20 25);           /* R - Red */
+  /* Chart colors — harmonized Emerald/Rose palette */
+  --chart-1: oklch(0.70 0.17 163);           /* Emerald */
+  --chart-2: oklch(0.63 0.22 12);            /* Rose */
+  --chart-3: oklch(0.75 0.16 75);            /* Amber */
+  --chart-4: oklch(0.60 0.15 240);           /* Blue */
+  --chart-5: oklch(0.55 0.22 25);            /* Red */
 
-  /* Sidebar */
-  --sidebar: oklch(0.25 0.12 120);          /* Forest dark bg */
+  /* Sidebar — neutral dark */
+  --sidebar: oklch(0.12 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.55 0.15 30);   /* Terracotta */
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.35 0.08 120);
+  --sidebar-primary: oklch(0.70 0.17 163);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.18 0 0);
   --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(0.35 0.06 120);
-  --sidebar-ring: oklch(0.55 0.15 30);
+  --sidebar-border: oklch(0.22 0 0);
+  --sidebar-ring: oklch(0.70 0.17 163);
 }
 
 .dark {
-  --background: oklch(0.15 0.02 120);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.20 0.02 120);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.20 0.02 120);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.65 0.15 30);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.45 0.10 120);
+  --background: oklch(0.09 0 0);             /* #0C0C0C */
+  --foreground: oklch(0.96 0 0);
+  --card: oklch(0.14 0 0);                   /* #18181B */
+  --card-foreground: oklch(0.96 0 0);
+  --popover: oklch(0.14 0 0);
+  --popover-foreground: oklch(0.96 0 0);
+  --primary: oklch(0.72 0.17 163);           /* Emerald — slightly lighter */
+  --primary-foreground: oklch(0.10 0 0);
+  --secondary: oklch(0.22 0 0);
   --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.25 0.02 120);
+  --muted: oklch(0.19 0 0);                  /* #27272A */
   --muted-foreground: oklch(0.65 0 0);
-  --accent: oklch(0.75 0.18 60);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.65 0.20 25);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.15 30);
-  --chart-1: oklch(0.65 0.15 30);
-  --chart-2: oklch(0.50 0.10 120);
-  --chart-3: oklch(0.75 0.18 60);
+  --accent: oklch(0.65 0.22 12);             /* Rose — slightly lighter */
+  --accent-foreground: oklch(0.10 0 0);
+  --destructive: oklch(0.65 0.22 25);
+  --border: oklch(0.28 0 0);                 /* #3F3F46 */
+  --input: oklch(0.28 0 0);
+  --ring: oklch(0.72 0.17 163);
+  --chart-1: oklch(0.72 0.17 163);
+  --chart-2: oklch(0.65 0.22 12);
+  --chart-3: oklch(0.78 0.16 75);
   --chart-4: oklch(0.65 0.15 240);
-  --chart-5: oklch(0.65 0.20 25);
-  --sidebar: oklch(0.15 0.04 120);
+  --chart-5: oklch(0.65 0.22 25);
+  --sidebar: oklch(0.08 0 0);
   --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.65 0.15 30);
+  --sidebar-primary: oklch(0.72 0.17 163);
   --sidebar-primary-foreground: oklch(0.95 0 0);
-  --sidebar-accent: oklch(0.25 0.04 120);
+  --sidebar-accent: oklch(0.16 0 0);
   --sidebar-accent-foreground: oklch(0.95 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.65 0.15 30);
+  --sidebar-border: oklch(0.22 0 0);
+  --sidebar-ring: oklch(0.72 0.17 163);
 }
 
 @layer base {
@@ -173,7 +175,7 @@
 }
 
 /* ============================================
-   ADVERTIS Global Polish
+   ADVERTIS Global Polish — Premium SaaS
    ============================================ */
 
 /* Smooth scrolling */
@@ -255,40 +257,52 @@ html {
   }
 }
 
-/* Selection color */
+/* Selection color — Emerald tint */
 ::selection {
-  background-color: oklch(0.55 0.15 30 / 20%);
-  color: oklch(0.20 0 0);
+  background-color: oklch(0.70 0.17 163 / 20%);
+  color: oklch(0.15 0 0);
 }
 
 /* Scrollbar styling for WebKit browsers */
 @layer base {
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.80 0 0);
-    border-radius: 4px;
+    background: oklch(0.82 0 0);
+    border-radius: 3px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.65 0 0);
+    background: oklch(0.68 0 0);
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: oklch(0.35 0 0);
+    background: oklch(0.30 0 0);
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: oklch(0.45 0 0);
+    background: oklch(0.42 0 0);
   }
 }
 
 /* ============================================
-   Page Transition Animation
+   ANIMATION SYSTEM — Premium Spring Easing
    ============================================ */
 
+/* -- Spring easing custom property -- */
+:root {
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 400ms;
+  --duration-page: 500ms;
+}
+
+/* -- Page enter with stagger support -- */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -300,28 +314,293 @@ html {
   }
 }
 
-.animate-page-enter {
-  animation: fadeInUp 0.3s ease-out;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.70 0.17 163 / 0%); }
+  50% { box-shadow: 0 0 0 6px oklch(0.70 0.17 163 / 12%); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-page-enter {
+  animation: fadeInUp var(--duration-page) var(--ease-spring) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--duration-normal) var(--ease-smooth) both;
+}
+
+.animate-slide-in {
+  animation: slideInRight var(--duration-slow) var(--ease-spring) both;
+}
+
+.animate-scale-in {
+  animation: scaleIn var(--duration-normal) var(--ease-spring) both;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-count-up {
+  animation: count-up var(--duration-slow) var(--ease-spring) both;
+}
+
+/* -- Stagger children animation -- */
+.stagger-children > * {
+  animation: fadeInUp var(--duration-slow) var(--ease-spring) both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 50ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 100ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 200ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 250ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 350ms; }
+.stagger-children > *:nth-child(9) { animation-delay: 400ms; }
+.stagger-children > *:nth-child(10) { animation-delay: 450ms; }
+
 /* ============================================
-   Card Hover Polish
+   CARD SYSTEM — Premium Depth & Interaction
    ============================================ */
 
 [data-slot="card"] {
-  transition: box-shadow 0.2s ease, transform 0.15s ease;
+  transition:
+    box-shadow var(--duration-normal) var(--ease-smooth),
+    transform var(--duration-normal) var(--ease-spring),
+    border-color var(--duration-normal) var(--ease-smooth);
 }
 
 [data-slot="card"]:hover {
-  box-shadow: 0 4px 16px oklch(0 0 0 / 6%);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 4%),
+    0 4px 12px oklch(0 0 0 / 6%),
+    0 8px 24px oklch(0 0 0 / 3%);
+  transform: translateY(-2px);
+  border-color: oklch(0.85 0.005 260);
 }
 
 .dark [data-slot="card"]:hover {
-  box-shadow: 0 4px 16px oklch(0 0 0 / 20%);
+  box-shadow:
+    0 1px 2px oklch(0 0 0 / 15%),
+    0 4px 12px oklch(0 0 0 / 20%),
+    0 8px 24px oklch(0 0 0 / 10%);
+  transform: translateY(-2px);
+  border-color: oklch(0.32 0 0);
+}
+
+/* Interactive card variant — clickable cards get stronger feedback */
+[data-slot="card"][role="button"],
+[data-slot="card"]:has(> a:first-child) {
+  cursor: pointer;
+}
+
+[data-slot="card"][role="button"]:active,
+[data-slot="card"]:has(> a:first-child):active {
+  transform: translateY(0) scale(0.995);
+  transition-duration: var(--duration-fast);
 }
 
 /* ============================================
-   Subtle Background Texture (main content)
+   GLASSMORPHISM SYSTEM
+   ============================================ */
+
+.glass {
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  background: oklch(1 0 0 / 75%);
+  border: 1px solid oklch(0 0 0 / 6%);
+}
+
+.dark .glass {
+  background: oklch(0.12 0 0 / 75%);
+  border-color: oklch(1 0 0 / 8%);
+}
+
+.glass-subtle {
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  background: oklch(1 0 0 / 85%);
+}
+
+.dark .glass-subtle {
+  background: oklch(0.12 0 0 / 85%);
+}
+
+/* ============================================
+   SHIMMER SKELETON — Premium loading
+   ============================================ */
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.96 0.005 260) 0%,
+    oklch(0.93 0.005 260) 20%,
+    oklch(0.96 0.005 260) 40%,
+    oklch(0.96 0.005 260) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+.dark .shimmer {
+  background: linear-gradient(
+    90deg,
+    oklch(0.19 0 0) 0%,
+    oklch(0.24 0 0) 20%,
+    oklch(0.19 0 0) 40%,
+    oklch(0.19 0 0) 100%
+  );
+  background-size: 200% 100%;
+}
+
+/* ============================================
+   BUTTON SYSTEM — Press & Interaction
+   ============================================ */
+
+[data-slot="button"] {
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth),
+    transform var(--duration-fast) var(--ease-spring),
+    opacity var(--duration-fast) var(--ease-smooth);
+}
+
+[data-slot="button"]:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Primary button glow on hover */
+[data-slot="button"][data-variant="default"]:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px oklch(0.70 0.17 163 / 15%);
+}
+
+.dark [data-slot="button"][data-variant="default"]:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px oklch(0.72 0.17 163 / 20%);
+}
+
+/* ============================================
+   INPUT SYSTEM — Focus Glow
+   ============================================ */
+
+input:not([type="checkbox"]):not([type="radio"]),
+textarea,
+[data-slot="select-trigger"] {
+  transition:
+    border-color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):focus,
+textarea:focus,
+[data-slot="select-trigger"]:focus {
+  box-shadow: 0 0 0 3px oklch(0.70 0.17 163 / 12%);
+}
+
+.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+.dark textarea:focus,
+.dark [data-slot="select-trigger"]:focus {
+  box-shadow: 0 0 0 3px oklch(0.72 0.17 163 / 18%);
+}
+
+/* ============================================
+   NAVIGATION — Active Indicator System
+   ============================================ */
+
+/* Nav link base transition */
+[data-slot="nav-link"] {
+  position: relative;
+  transition:
+    color var(--duration-fast) var(--ease-smooth),
+    background-color var(--duration-fast) var(--ease-smooth);
+}
+
+/* Active pill indicator for bottom nav */
+.nav-active-indicator {
+  position: relative;
+}
+
+.nav-active-indicator::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: oklch(0.70 0.17 163);
+  transform: translateX(-50%);
+  animation: scaleIn var(--duration-normal) var(--ease-spring);
+}
+
+/* ============================================
+   GRADIENT TEXT — Hero sections
+   ============================================ */
+
+.text-gradient {
+  background: linear-gradient(135deg, oklch(0.70 0.17 163), oklch(0.63 0.22 12));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-subtle {
+  background: linear-gradient(135deg, oklch(0.20 0 0), oklch(0.45 0 0));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .text-gradient-subtle {
+  background: linear-gradient(135deg, oklch(0.95 0 0), oklch(0.70 0 0));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   SUBTLE BACKGROUND TEXTURES
    ============================================ */
 
 .bg-dotgrid {
@@ -330,14 +609,106 @@ html {
 }
 
 .dark .bg-dotgrid {
-  background-image: radial-gradient(circle, oklch(0.20 0 0) 0.5px, transparent 0.5px);
+  background-image: radial-gradient(circle, oklch(0.14 0 0) 0.5px, transparent 0.5px);
   background-size: 20px 20px;
 }
 
+/* Gradient mesh background for hero sections */
+.bg-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, oklch(0.70 0.17 163 / 5%) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, oklch(0.63 0.22 12 / 4%) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, oklch(0.75 0.16 75 / 3%) 0%, transparent 50%);
+}
+
+.dark .bg-mesh {
+  background:
+    radial-gradient(ellipse at 20% 50%, oklch(0.70 0.17 163 / 8%) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, oklch(0.63 0.22 12 / 6%) 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, oklch(0.75 0.16 75 / 4%) 0%, transparent 50%);
+}
+
 /* ============================================
-   Sidebar Transition Refinement
+   SIDEBAR — Transition Refinement
    ============================================ */
 
 .sidebar-transition {
-  transition: width 300ms ease-in-out;
+  transition: width 300ms var(--ease-spring);
+}
+
+/* ============================================
+   SCORE RING — Animated circular progress
+   ============================================ */
+
+.score-ring-animate {
+  transition: stroke-dashoffset 0.8s var(--ease-spring), stroke 0.4s var(--ease-smooth);
+}
+
+/* ============================================
+   SAFE AREA — Mobile bottom padding
+   ============================================ */
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================
+   SCROLLBAR HIDE — For horizontal scroll areas
+   ============================================ */
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================
+   SECTION DIVIDER — Premium separator
+   ============================================ */
+
+.section-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.91 0.005 260) 20%,
+    oklch(0.91 0.005 260) 80%,
+    transparent 100%
+  );
+}
+
+.dark .section-divider {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.28 0 0) 20%,
+    oklch(0.28 0 0) 80%,
+    transparent 100%
+  );
+}
+
+/* ============================================
+   TOOLTIP & POPOVER — Entrance animations
+   ============================================ */
+
+[data-slot="tooltip-content"],
+[data-slot="popover-content"],
+[data-slot="dropdown-menu-content"] {
+  animation: scaleIn var(--duration-fast) var(--ease-spring);
+}
+
+/* ============================================
+   DIALOG — Premium overlay
+   ============================================ */
+
+[data-slot="dialog-overlay"] {
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+[data-slot="dialog-content"] {
+  animation: scaleIn var(--duration-normal) var(--ease-spring);
 }

@@ -25,6 +25,7 @@ import { db } from "~/server/db";
 import { getModule } from "./registry";
 import { resolveModuleInputs } from "./input-resolver";
 import { applyModuleOutputs } from "./output-applier";
+import { extractVariablesFromPillar } from "~/server/services/variable-extractor";
 import type { ModuleContext, ModuleResult, ModuleTriggeredBy } from "~/lib/types/module-system";
 
 // ---------------------------------------------------------------------------
@@ -95,6 +96,20 @@ export async function executeModule(
 
     // 5. Apply outputs to pillar data (partial updates)
     await applyModuleOutputs(handler.descriptor, strategyId, result.data);
+
+    // 5b. Sync module outputs to BrandVariable registry (fire-and-forget)
+    for (const output of handler.descriptor.outputs) {
+      // Re-read the updated pillar to extract full content
+      const updatedPillar = await db.pillar.findUnique({
+        where: { strategyId_type: { strategyId, type: output.pillarType } },
+        select: { content: true },
+      });
+      if (updatedPillar?.content) {
+        void extractVariablesFromPillar(
+          strategyId, output.pillarType, updatedPillar.content, userId, "module", moduleId,
+        );
+      }
+    }
 
     // 6. Update run record — success
     await db.moduleRun.update({

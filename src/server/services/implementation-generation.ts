@@ -2,24 +2,27 @@
 // MODULE 9 — Implementation Generation (Pillar I)
 // =============================================================================
 //
-// Generates the operational cockpit data for Pillar I using a 2-pass strategy:
-//   Pass 1 (~10K tokens): Core strategic sections (engagement, campaigns, brand platform)
-//   Pass 2 (~12K tokens): Operational sections (budget, team, governance, launch plan)
-// Total: ~22K tokens of structured JSON output.
+// Generates the operational cockpit data for Pillar I using a 3-pass strategy:
+//   Pass 1  (~10K tokens): Core strategic sections (identity, positioning, roadmap)
+//   Pass 2a (~10K tokens): Campaigns & financial sections (calendar, budget, launch)
+//   Pass 2b (~8K tokens):  Brand & operational sections (platform, governance, team)
+// Total: ~28K tokens of structured JSON output.
 //
 // PUBLIC API :
-//   9.1  generateImplementationData() — Full 2-pass generation → ImplementationData
+//   9.1  generateImplementationData() — Full 3-pass generation → ImplementationData
 //
 // INTERNAL :
-//   9.H1  buildSharedContext()  — Assembles interview + audit + fiche context
-//   9.H2  generatePass1()      — Core sections (engagement, campaigns, brand platform)
-//   9.H3  generatePass2()      — Operational sections (budget, team, governance)
-//   9.H4  mergeResults()       — Deep-merges Pass 1 + Pass 2 into final ImplementationData
+//   9.H0  safeParseJson()     — JSON.parse with jsonrepair fallback
+//   9.H1  buildSharedContext() — Assembles interview + audit + fiche context
+//   9.H2  generatePass1()     — Core sections (identity, positioning, roadmap)
+//   9.H3  generatePass2a()    — Campaigns & financial sections
+//   9.H4  generatePass2b()    — Brand & operational sections
 //
 // DEPENDENCIES :
 //   - Module 5  (anthropic-client) → resilientGenerateText, anthropic, DEFAULT_MODEL
 //   - Module 5B (prompt-helpers)   → injectSpecialization, SpecializationOptions
 //   - lib/types/pillar-schemas → RiskAuditResult, TrackAuditResult, ImplementationData
+//   - jsonrepair              → JSON repair for truncated/malformed AI output
 //
 // CALLED BY :
 //   - API Route POST /api/ai/generate (pillarType I)
@@ -35,6 +38,8 @@ import { PILLAR_CONFIG } from "~/lib/constants";
 import type { PillarType, SupportedCurrency } from "~/lib/constants";
 import { injectSpecialization, type SpecializationOptions } from "./prompt-helpers";
 import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
+import { jsonrepair } from "jsonrepair";
+import type { AIUsageMetadata } from "./ai-generation";
 
 // ---------------------------------------------------------------------------
 // JSON Rules (shared between passes)
@@ -48,14 +53,42 @@ const JSON_RULES = `RÈGLES CRITIQUES :
 - Si une donnée n'est pas fournie, propose une recommandation réaliste basée sur le secteur`;
 
 // ---------------------------------------------------------------------------
+// JSON safe-parser with repair fallback
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse AI-generated text as JSON with automatic repair.
+ * 1. Strip markdown code blocks
+ * 2. Try JSON.parse()
+ * 3. If that fails → jsonrepair() then JSON.parse() again
+ */
+function safeParseJson(text: string, label: string): Record<string, unknown> {
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+  try {
+    return JSON.parse(cleaned) as Record<string, unknown>;
+  } catch {
+    console.warn(`[Implementation] ${label}: JSON.parse failed, attempting repair…`);
+    try {
+      const repaired = jsonrepair(cleaned);
+      return JSON.parse(repaired) as Record<string, unknown>;
+    } catch (repairErr) {
+      throw new Error(
+        `${label}: JSON irréparable — ${repairErr instanceof Error ? repairErr.message : "unknown"}`,
+      );
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
 /**
  * Generate the Implementation Data (Pillar I).
- * Uses a 2-pass approach for higher quality:
- * - Pass 1: Core strategic sections
- * - Pass 2: Enriched operational sections (using Pass 1 as context)
+ * Uses a 3-pass approach for reliability:
+ * - Pass 1:  Core strategic sections (identity, positioning, roadmap)
+ * - Pass 2a: Campaigns & financial sections (calendar, budget, launch)
+ * - Pass 2b: Brand & operational sections (platform, governance, team)
  */
 export async function generateImplementationData(
   interviewData: Record<string, string>,
@@ -67,7 +100,9 @@ export async function generateImplementationData(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<ImplementationData> {
+): Promise<{ data: ImplementationData; usage: AIUsageMetadata }> {
+  const overallStart = Date.now();
+
   // Build shared context
   const sharedContext = buildSharedContext(
     interviewData,
@@ -79,8 +114,8 @@ export async function generateImplementationData(
     tagline,
   );
 
-  // ── Pass 1: Core sections ──
-  const pass1Result = await generatePass1(
+  // ── Pass 1: Core strategic sections ──
+  const { data: pass1Result, usage: pass1Usage } = await generatePass1(
     sharedContext,
     brandName,
     sector,
@@ -91,8 +126,8 @@ export async function generateImplementationData(
     currency,
   );
 
-  // ── Pass 2: Enriched sections (with Pass 1 as context) ──
-  const pass2Result = await generatePass2(
+  // ── Pass 2a: Campaigns & financial sections ──
+  const { data: pass2aResult, usage: pass2aUsage } = await generatePass2a(
     sharedContext,
     pass1Result,
     brandName,
@@ -102,15 +137,35 @@ export async function generateImplementationData(
     currency,
   );
 
-  // Merge both passes into a single object
-  const merged = { ...pass1Result, ...pass2Result };
+  // ── Pass 2b: Brand & operational sections ──
+  const { data: pass2bResult, usage: pass2bUsage } = await generatePass2b(
+    sharedContext,
+    pass1Result,
+    pass2aResult,
+    brandName,
+    sector,
+    specialization,
+    tagline,
+    currency,
+  );
 
-  // Validate with Zod schema
+  // Merge all 3 passes into a single object
+  const merged = { ...pass1Result, ...pass2aResult, ...pass2bResult };
+
+  // Validate with Zod schema (4-tier fallback: strict → coerce → deep-merge → defaults)
   const { data, errors } = parseAiGeneratedContent<ImplementationData>("I", JSON.stringify(merged));
   if (errors?.length) {
     console.warn("[Implementation] Pillar I validation issues:", errors);
   }
-  return data;
+  return {
+    data,
+    usage: {
+      model: DEFAULT_MODEL,
+      tokensIn: pass1Usage.tokensIn + pass2aUsage.tokensIn + pass2bUsage.tokensIn,
+      tokensOut: pass1Usage.tokensOut + pass2aUsage.tokensOut + pass2bUsage.tokensOut,
+      durationMs: Date.now() - overallStart,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -203,8 +258,9 @@ async function generatePass1(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<Record<string, unknown>> {
-  const { text } = await resilientGenerateText({
+): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
+  const start = Date.now();
+  const { text, usage: callUsage } = await resilientGenerateText({
     label: "pillar-I-pass1",
     model: anthropic(DEFAULT_MODEL),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
@@ -293,13 +349,20 @@ ${JSON_RULES}`, specialization),
   });
 
   try {
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+    const parsed = safeParseJson(text, "Pass 1");
     // Validate core fields exist — don't accept empty Pass 1
     if (!parsed.brandIdentity && !parsed.positioning && !parsed.executiveSummary) {
       throw new Error("Pass 1 returned incomplete data — missing core fields");
     }
-    return parsed;
+    return {
+      data: parsed,
+      usage: {
+        model: DEFAULT_MODEL,
+        tokensIn: callUsage?.inputTokens ?? 0,
+        tokensOut: callUsage?.outputTokens ?? 0,
+        durationMs: Date.now() - start,
+      },
+    };
   } catch (err) {
     console.error("[Implementation] Pass 1 failed:", err);
     throw new Error(`Pillar I Pass 1: ${err instanceof Error ? err.message : "JSON parse error"}`);
@@ -307,10 +370,10 @@ ${JSON_RULES}`, specialization),
 }
 
 // ---------------------------------------------------------------------------
-// Pass 2: Enriched operational sections
+// Pass 2a: Campaigns & financial sections
 // ---------------------------------------------------------------------------
 
-async function generatePass2(
+async function generatePass2a(
   ctx: SharedContext,
   pass1Data: Record<string, unknown>,
   brandName: string,
@@ -318,17 +381,17 @@ async function generatePass2(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<Record<string, unknown>> {
-  // Summarize Pass 1 for context continuity
+): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
   const pass1Summary = JSON.stringify(pass1Data).substring(0, 6000);
 
-  const { text } = await resilientGenerateText({
-    label: "pillar-I-pass2",
+  const start2a = Date.now();
+  const { text, usage: callUsage2a } = await resilientGenerateText({
+    label: "pillar-I-pass2a",
     model: anthropic(DEFAULT_MODEL),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
 
 Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
-Tu complètes les données d'implémentation avec les sections opérationnelles enrichies.
+Tu génères les sections campagnes et financières de l'implémentation.
 
 CONTEXTE :
 - Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
@@ -340,8 +403,8 @@ ${pass1Summary}
 DONNÉES SOURCE :
 ${ctx.ficheContext.substring(0, 4000)}
 
-INSTRUCTIONS — PASSE 2 (Sections opérationnelles enrichies) :
-Génère les sections opérationnelles. Chaque section doit être remplie en détail.
+INSTRUCTIONS — PASSE 2a (Campagnes & sections financières) :
+Génère le calendrier annuel de campagnes, le budget et le plan de lancement.
 
 FORMAT JSON OBLIGATOIRE :
 {
@@ -397,22 +460,98 @@ FORMAT JSON OBLIGATOIRE :
     "parPhase": [{ "phase": "Phase", "montant": "${getCurrencySymbol(currency ?? "XOF")}", "focus": "Focus" }],
     "roiProjections": { "mois6": "ROI 6m", "mois12": "ROI 12m", "mois24": "ROI 24m", "hypotheses": "Hyp" }
   },
-  "teamStructure": {
-    "equipeActuelle": [{ "role": "Rôle", "profil": "Profil", "allocation": "Temps" }],
-    "recrutements": [{ "role": "Rôle", "profil": "Profil", "echeance": "Échéance", "priorite": 1 }],
-    "partenairesExternes": [{ "type": "Type", "mission": "Mission", "budget": "${getCurrencySymbol(currency ?? "XOF")}", "duree": "Durée" }]
-  },
   "launchPlan": {
     "phases": [{ "nom": "Phase 1", "debut": "M1", "fin": "M2", "objectifs": ["Obj"], "livrables": ["Livr"], "goNoGo": "Critère" }],
     "milestones": [{ "date": "M1", "jalon": "Jalon", "responsable": "Resp", "critereSucces": "Critère" }]
-  },
-  "operationalPlaybook": {
-    "rythmeQuotidien": ["Action 1"],
-    "rythmeHebdomadaire": ["Action 1"],
-    "rythmeMensuel": ["Action 1"],
-    "escalation": [{ "scenario": "Crise", "action": "Action", "responsable": "Resp" }],
-    "outilsStack": [{ "outil": "Outil", "usage": "Usage", "cout": "${getCurrencySymbol(currency ?? "XOF")}/mois" }]
-  },
+  }
+}
+
+RÈGLES :
+- annualCalendar : OBLIGATOIRE 12 mois (un objet par mois, de Janvier à Décembre). Chaque mois DOIT contenir :
+  * campagne : nom unique et évocateur
+  * objectif : objectif stratégique précis
+  * canaux : 2-4 canaux pertinents
+  * budget : montant réaliste en ${getCurrencySymbol(currency ?? "XOF")}
+  * actionsDetaillees : 5-8 actions concrètes et opérationnelles (format "Action : description avec canal et support")
+  * messagesCles : 2-3 messages clés adaptés à la cible
+  * budgetDetail : ventilation obligatoire en production, media, talent (en ${getCurrencySymbol(currency ?? "XOF")})
+  * timeline : dates de début et fin du mois
+  * metriquesSucces : 3-5 KPIs mesurables et chiffrés
+- campaigns.templates : 3-4 types différents (lancement, récurrence, événement, activation), chaque template avec budgetEstime et kpisAttendus
+- budgetAllocation : ventilé par poste (4-6 postes) ET par phase (3-4 phases)
+- launchPlan : 3-5 phases avec critères go/no-go
+${JSON_RULES}`, specialization),
+    prompt: `Génère les campagnes et données financières (Passe 2a) pour la marque "${brandName}"${tagline ? ` (accroche: "${tagline}")` : ""} dans le secteur "${sector || "Non spécifié"}".
+Appuie-toi sur les données stratégiques de la Passe 1 pour garantir la cohérence.`,
+    maxOutputTokens: 10000,
+    temperature: 0.3,
+  });
+
+  try {
+    const parsed = safeParseJson(text, "Pass 2a");
+    if (!parsed.campaigns && !parsed.budgetAllocation) {
+      throw new Error("Pass 2a returned incomplete data — missing campaigns/budget sections");
+    }
+    return {
+      data: parsed,
+      usage: {
+        model: DEFAULT_MODEL,
+        tokensIn: callUsage2a?.inputTokens ?? 0,
+        tokensOut: callUsage2a?.outputTokens ?? 0,
+        durationMs: Date.now() - start2a,
+      },
+    };
+  } catch (err) {
+    console.error("[Implementation] Pass 2a failed:", err);
+    throw new Error(`Pillar I Pass 2a: ${err instanceof Error ? err.message : "JSON parse error"}`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pass 2b: Brand & operational sections
+// ---------------------------------------------------------------------------
+
+async function generatePass2b(
+  ctx: SharedContext,
+  pass1Data: Record<string, unknown>,
+  pass2aData: Record<string, unknown>,
+  brandName: string,
+  sector: string,
+  specialization?: SpecializationOptions | null,
+  tagline?: string | null,
+  currency?: SupportedCurrency,
+): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
+  const pass1Summary = JSON.stringify(pass1Data).substring(0, 4000);
+  const pass2aSummary = JSON.stringify(pass2aData).substring(0, 3000);
+
+  const start2b = Date.now();
+  const { text, usage: callUsage2b } = await resilientGenerateText({
+    label: "pillar-I-pass2b",
+    model: anthropic(DEFAULT_MODEL),
+    system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
+
+Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
+Tu complètes les données d'implémentation avec les sections brand platform et opérationnelles.
+
+CONTEXTE :
+- Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
+- Secteur : ${sector || "Non spécifié"}
+
+DONNÉES STRATÉGIQUES (Passe 1) :
+${pass1Summary}
+
+DONNÉES CAMPAGNES & BUDGET (Passe 2a) :
+${pass2aSummary}
+
+DONNÉES SOURCE :
+${ctx.ficheContext.substring(0, 3000)}
+
+INSTRUCTIONS — PASSE 2b (Brand platform & sections opérationnelles) :
+Génère les sections brand platform, copy strategy, big idea, dispositif d'activation,
+équipe, playbook opérationnel, governance, workstreams, architecture et principes directeurs.
+
+FORMAT JSON OBLIGATOIRE :
+{
   "brandPlatform": {
     "purpose": "Raison d'être (WHY)",
     "vision": "Vision à 10 ans",
@@ -448,6 +587,18 @@ FORMAT JSON OBLIGATOIRE :
     "shared": [{ "canal": "Canal", "role": "Rôle", "budget": "${getCurrencySymbol(currency ?? "XOF")}" }],
     "parcoursConso": "Parcours cross-canal"
   },
+  "teamStructure": {
+    "equipeActuelle": [{ "role": "Rôle", "profil": "Profil", "allocation": "Temps" }],
+    "recrutements": [{ "role": "Rôle", "profil": "Profil", "echeance": "Échéance", "priorite": 1 }],
+    "partenairesExternes": [{ "type": "Type", "mission": "Mission", "budget": "${getCurrencySymbol(currency ?? "XOF")}", "duree": "Durée" }]
+  },
+  "operationalPlaybook": {
+    "rythmeQuotidien": ["Action 1"],
+    "rythmeHebdomadaire": ["Action 1"],
+    "rythmeMensuel": ["Action 1"],
+    "escalation": [{ "scenario": "Crise", "action": "Action", "responsable": "Resp" }],
+    "outilsStack": [{ "outil": "Outil", "usage": "Usage", "cout": "${getCurrencySymbol(currency ?? "XOF")}/mois" }]
+  },
   "governance": {
     "comiteStrategique": { "frequence": "Trimestriel", "participants": "Direction", "objectif": "Orientations" },
     "comitePilotage": { "frequence": "Mensuel", "participants": "Équipe", "objectif": "Suivi KPIs" },
@@ -472,44 +623,39 @@ FORMAT JSON OBLIGATOIRE :
 }
 
 RÈGLES :
-- annualCalendar : OBLIGATOIRE 12 mois (un objet par mois, de Janvier à Décembre). Chaque mois DOIT contenir :
-  * campagne : nom unique et évocateur
-  * objectif : objectif stratégique précis
-  * canaux : 2-4 canaux pertinents
-  * budget : montant réaliste en ${getCurrencySymbol(currency ?? "XOF")}
-  * actionsDetaillees : 5-8 actions concrètes et opérationnelles (format "Action : description avec canal et support")
-  * messagesCles : 2-3 messages clés adaptés à la cible
-  * budgetDetail : ventilation obligatoire en production, media, talent (en ${getCurrencySymbol(currency ?? "XOF")})
-  * timeline : dates de début et fin du mois
-  * metriquesSucces : 3-5 KPIs mesurables et chiffrés
-- campaigns.templates : 3-4 types différents (lancement, récurrence, événement, activation), chaque template avec budgetEstime et kpisAttendus
-- budgetAllocation : ventilé par poste ET par phase
-- launchPlan : 3-5 phases avec critères go/no-go
-- operationalPlaybook : rythmes quotidien, hebdo et mensuel
 - brandPlatform : purpose, vision, mission, values (3-5), personality, territory, tagline — tout rempli
 - copyStrategy : promesse + RTB (2-3) + bénéfice + ton + contrainte
 - bigIdea : 5+ déclinaisons (TV, social, print, digital, terrain)
 - activationDispositif : 4 catégories POEM + parcours conso
-- governance : 3 niveaux + process validation
-- workstreams : minimum 3 streams
-- guidingPrinciples : minimum 3 do's et 3 don'ts
+- teamStructure : équipe actuelle + recrutements + partenaires
+- operationalPlaybook : rythmes quotidien, hebdo et mensuel + escalation + outils
+- governance : 3 niveaux + process validation + délais standards
+- workstreams : minimum 3 streams avec objectifs et KPIs
+- brandArchitecture : modèle + hiérarchie + règles de coexistence
+- guidingPrinciples : minimum 3 do's et 3 don'ts + principes communication
 ${JSON_RULES}`, specialization),
-    prompt: `Génère les données opérationnelles enrichies (Passe 2) pour la marque "${brandName}"${tagline ? ` (accroche: "${tagline}")` : ""} dans le secteur "${sector || "Non spécifié"}".
-Appuie-toi sur les données stratégiques de la Passe 1 pour garantir la cohérence.`,
-    maxOutputTokens: 12000,
+    prompt: `Génère les sections brand platform et opérationnelles (Passe 2b) pour la marque "${brandName}"${tagline ? ` (accroche: "${tagline}")` : ""} dans le secteur "${sector || "Non spécifié"}".
+Appuie-toi sur les données des Passes 1 et 2a pour garantir la cohérence globale.`,
+    maxOutputTokens: 8000,
     temperature: 0.3,
   });
 
   try {
-    const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-    const parsed = JSON.parse(cleaned) as Record<string, unknown>;
-    // Validate operational fields exist — don't accept empty Pass 2
-    if (!parsed.campaigns && !parsed.budgetAllocation && !parsed.brandPlatform) {
-      throw new Error("Pass 2 returned incomplete data — missing operational sections");
+    const parsed = safeParseJson(text, "Pass 2b");
+    if (!parsed.brandPlatform && !parsed.governance && !parsed.guidingPrinciples) {
+      throw new Error("Pass 2b returned incomplete data — missing brand/operational sections");
     }
-    return parsed;
+    return {
+      data: parsed,
+      usage: {
+        model: DEFAULT_MODEL,
+        tokensIn: callUsage2b?.inputTokens ?? 0,
+        tokensOut: callUsage2b?.outputTokens ?? 0,
+        durationMs: Date.now() - start2b,
+      },
+    };
   } catch (err) {
-    console.error("[Implementation] Pass 2 failed:", err);
-    throw new Error(`Pillar I Pass 2: ${err instanceof Error ? err.message : "JSON parse error"}`);
+    console.error("[Implementation] Pass 2b failed:", err);
+    throw new Error(`Pillar I Pass 2b: ${err instanceof Error ? err.message : "JSON parse error"}`);
   }
 }

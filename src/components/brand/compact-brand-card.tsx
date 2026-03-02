@@ -86,7 +86,7 @@ export function CompactBrandCard({
     <div
       className={cn(
         "relative w-full rounded-xl border bg-card p-4",
-        "transition-all hover:shadow-md hover:border-terracotta/30",
+        "transition-all duration-200 hover:shadow-md hover:border-primary/30",
         status === "archived" && "opacity-60",
       )}
     >

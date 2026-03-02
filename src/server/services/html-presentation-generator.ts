@@ -639,8 +639,8 @@ export function generateStrategyHTML(
   pillars: PillarInput[],
   options: HTMLPresentationOptions = {},
 ): string {
-  const accent1 = sanitizeColor(options.brandAccent, "#c45a3c");
-  const accent2 = sanitizeColor(options.brandAccent2, "#2d5a3d");
+  const accent1 = sanitizeColor(options.brandAccent, "#10B981");
+  const accent2 = sanitizeColor(options.brandAccent2, "#F43F5E");
   // Resolve currency: accept either a currency code ("XOF") or display symbol ("FCFA")
   const currency = options.currency
     ? getCurrencySymbol(options.currency as SupportedCurrency)
@@ -1714,7 +1714,7 @@ function buildSectionSynthese(ctx: OracleResolved, currency: string, imageUrl?: 
   // ── Funnel AARRR ──
   const aarrr = ctx.engagementStrategy?.aarrr;
   const funnelColors = ["rgba(255,71,87,0.15)", "rgba(255,165,2,0.15)", "rgba(46,213,115,0.15)", "rgba(55,66,250,0.15)", "rgba(140,60,196,0.15)"];
-  const funnelTextColors = ["#FF4757", "#FFA502", "#2ED573", "#3742FA", "#8c3cc4"];
+  const funnelTextColors = ["#FF4757", "#FFA502", "#2ED573", "#3742FA", "#8B5CF6"];
   const funnelSteps = [
     { label: "Acquisition", desc: aarrr?.acquisition },
     { label: "Activation", desc: aarrr?.activation },
@@ -3329,8 +3329,8 @@ function buildScripts(
   if (!ctx || typeof Chart === 'undefined') return;
   var rawScores = ctx.getAttribute('data-scores');
   var scores = rawScores ? rawScores.split(',').map(Number) : [0, 0, 0, 0, 0, 0, 0, 0];
-  var accent1 = getComputedStyle(document.documentElement).getPropertyValue('--accent-1').trim() || '#c45a3c';
-  var accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim() || '#2d5a3d';
+  var accent1 = getComputedStyle(document.documentElement).getPropertyValue('--accent-1').trim() || '#10B981';
+  var accent2 = getComputedStyle(document.documentElement).getPropertyValue('--accent-2').trim() || '#F43F5E';
   new Chart(ctx, {
     type: 'radar',
     data: {

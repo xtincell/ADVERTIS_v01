@@ -17,6 +17,7 @@ import {
   Crown,
   FileText,
   Loader2,
+  MessageSquareText,
   Monitor,
   Presentation,
   Sparkles,
@@ -80,7 +81,16 @@ import { SectionBudget } from "./sections/section-budget";
 import { SectionWidgets } from "./sections/section-widgets";
 import { SectionGlory } from "./sections/section-glory";
 import { SectionBriefs } from "./sections/section-briefs";
+import { SectionQualityChecklist } from "./sections/section-quality-checklist";
+import { SectionPartners } from "./sections/section-partners";
+import { SectionBigIdeaKit } from "./sections/section-big-idea-kit";
+import { SectionCreativeStrategy } from "./sections/section-creative-strategy";
+import { SectionBudgetOperationnel } from "./sections/section-budget-operationnel";
+import { SectionChrono } from "./sections/section-chrono";
+import { SectionMultiMarkets } from "./sections/section-multi-markets";
+import { SectionFunnelMapping } from "./sections/section-funnel-mapping";
 import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
+import { StrategyFeedbackModule } from "~/components/feedback/strategy-feedback-module";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -195,9 +205,9 @@ export function CockpitContent({
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative">
         <div className="mb-6 text-center">
-          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-1.5">
-            <Crown className="h-3.5 w-3.5 text-terracotta" />
-            <span className="text-xs font-medium text-terracotta">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5">
+            <Crown className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-medium text-primary">
               Cockpit Stratégique
             </span>
           </div>
@@ -205,7 +215,7 @@ export function CockpitContent({
             {data.brandName}
           </h1>
           {(data.tagline || implContent?.brandPlatform?.tagline) && (
-            <p className="mt-1 text-lg font-medium italic text-terracotta/70">
+            <p className="mt-1 text-lg font-medium italic text-primary/70">
               &ldquo;{data.tagline || implContent?.brandPlatform?.tagline}&rdquo;
             </p>
           )}
@@ -421,7 +431,7 @@ export function CockpitContent({
           pillarLetter="R"
           title="Améliorations R+T"
           subtitle="Actualiser les piliers à partir de l'audit Risk & Track"
-          color="#c43c6e"
+          color="#EC4899"
         >
           <AuditSuggestionsPanel
             strategyId={data.strategyId}
@@ -433,6 +443,22 @@ export function CockpitContent({
                 content: p.content,
               }))}
             onSuggestionsApplied={onRefresh}
+          />
+        </CockpitSection>
+      )}
+
+      {/* ── Feedback Stratégique — Mise à jour en langage naturel ── */}
+      {!isPublic && show("feedback") && data.strategyId && (
+        <CockpitSection
+          icon={<MessageSquareText className="h-5 w-5" />}
+          pillarLetter="S"
+          title="Feedback Stratégique"
+          subtitle="Mettez à jour votre stratégie en décrivant ce qui a changé"
+          color="#F59E0B"
+        >
+          <StrategyFeedbackModule
+            strategyId={data.strategyId}
+            onComplete={onRefresh}
           />
         </CockpitSection>
       )}
@@ -450,6 +476,50 @@ export function CockpitContent({
       {/* ── Résultats GLORY ── */}
       {show("glory") && data.strategyId && !isPublic && (
         <SectionGlory strategyId={data.strategyId} />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LIVRABLES UPGRADERS — Phase 5 Sections
+          ═══════════════════════════════════════════════════════════════════ */}
+
+      {/* ── T04 — Big Idea Kits ── */}
+      {show("big-idea-kit") && data.strategyId && (
+        <SectionBigIdeaKit strategyId={data.strategyId} />
+      )}
+
+      {/* ── T06 — Creative Strategy ── */}
+      {show("creative-strategy") && data.strategyId && (
+        <SectionCreativeStrategy strategyId={data.strategyId} />
+      )}
+
+      {/* ── M1 — Budget Opérationnel 3 Couches ── */}
+      {show("budget-operationnel") && data.strategyId && (
+        <SectionBudgetOperationnel strategyId={data.strategyId} />
+      )}
+
+      {/* ── M2 — Chrono-Architecture ── */}
+      {show("chrono") && data.strategyId && (
+        <SectionChrono strategyId={data.strategyId} />
+      )}
+
+      {/* ── M3 — Dossier Partenaires ── */}
+      {show("partners") && data.strategyId && (
+        <SectionPartners strategyId={data.strategyId} />
+      )}
+
+      {/* ── M5 — Multi-Marchés ── */}
+      {show("multi-markets") && data.strategyId && (
+        <SectionMultiMarkets strategyId={data.strategyId} />
+      )}
+
+      {/* ── M7 — Funnel & KPIs ── */}
+      {show("funnel-mapping") && data.strategyId && (
+        <SectionFunnelMapping strategyId={data.strategyId} />
+      )}
+
+      {/* ── Checklist Qualité ── */}
+      {show("quality-checklist") && data.strategyId && (
+        <SectionQualityChecklist strategyId={data.strategyId} />
       )}
 
       {/* ── Pillar S — Synthèse Stratégique ── */}
@@ -507,7 +577,7 @@ export function CockpitContent({
                 pillarLetter="S"
                 title="L'ORACLE & Livrables"
                 subtitle="Présentation interactive complète + templates stratégiques"
-                color="#c45a3c"
+                color="#10B981"
               >
                 <div className="space-y-5">
                   {/* ── L'ORACLE — Hero card (hidden on public share links) ── */}
@@ -519,12 +589,12 @@ export function CockpitContent({
                         : `/brand/${data.strategyId}/oracle`
                     }
                   >
-                    <Card className="group relative overflow-hidden border-terracotta/30 bg-gradient-to-br from-[#0A0A12] to-[#17171F] transition-all hover:shadow-xl hover:shadow-terracotta/10 hover:border-terracotta/50 cursor-pointer">
+                    <Card className="group relative overflow-hidden border-primary/30 bg-gradient-to-br from-zinc-950 to-zinc-900 transition-all hover:shadow-xl hover:shadow-primary/10 hover:border-primary/50 cursor-pointer">
                       {/* Gradient accent bar */}
-                      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#c45a3c] via-[#c49a3c] to-[#2d5a3d]" />
+                      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-500 via-amber-500 to-violet-500" />
                       <CardContent className="pt-6 pb-5">
                         <div className="flex items-center gap-4">
-                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#c45a3c] to-[#2d5a3d] shadow-lg shadow-terracotta/20">
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-violet-500 shadow-lg shadow-primary/20">
                             <Monitor className="h-7 w-7 text-white" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -532,7 +602,7 @@ export function CockpitContent({
                               <h3 className="text-lg font-bold tracking-tight text-white">
                                 L&apos;ORACLE
                               </h3>
-                              <span className="inline-flex items-center gap-1 rounded-full bg-[#c45a3c]/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#c45a3c]">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-500">
                                 <Sparkles className="h-2.5 w-2.5" />
                                 Interactif
                               </span>
@@ -553,7 +623,7 @@ export function CockpitContent({
                             </div>
                           </div>
                           <div className="hidden md:flex items-center">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-terracotta/20 bg-terracotta/5 px-4 py-2 text-xs font-semibold text-terracotta group-hover:bg-terracotta/10 transition-colors">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/5 px-4 py-2 text-xs font-semibold text-primary group-hover:bg-primary/10 transition-colors">
                               Ouvrir L&apos;ORACLE
                               <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                             </span>
@@ -561,7 +631,7 @@ export function CockpitContent({
                         </div>
                         {/* Mobile CTA */}
                         <div className="mt-3 flex items-center justify-end md:hidden">
-                          <span className="text-xs font-semibold text-terracotta group-hover:underline">
+                          <span className="text-xs font-semibold text-primary group-hover:underline">
                             Ouvrir L&apos;ORACLE →
                           </span>
                         </div>
@@ -587,12 +657,12 @@ export function CockpitContent({
                               key={doc.id}
                               href={`/brand/${data.strategyId}/document/${doc.id}`}
                             >
-                              <Card className="group relative overflow-hidden border-terracotta/20 transition-all hover:shadow-lg hover:border-terracotta/40 cursor-pointer">
-                                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-terracotta to-terracotta/60" />
+                              <Card className="group relative overflow-hidden border-primary/20 transition-all hover:shadow-lg hover:border-primary/40 cursor-pointer">
+                                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-primary to-primary/60" />
                                 <CardContent className="pt-4 pb-3">
                                   <div className="flex items-start gap-3">
-                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-terracotta/10">
-                                      <Presentation className="h-4 w-4 text-terracotta" />
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                                      <Presentation className="h-4 w-4 text-primary" />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <p className="text-sm font-semibold leading-tight">{doc.title}</p>
@@ -617,7 +687,7 @@ export function CockpitContent({
                                     </div>
                                   </div>
                                   <div className="mt-2 flex items-center justify-end">
-                                    <span className="text-xs font-medium text-terracotta group-hover:underline">
+                                    <span className="text-xs font-medium text-primary group-hover:underline">
                                       Consulter →
                                     </span>
                                   </div>
@@ -630,7 +700,7 @@ export function CockpitContent({
                       {!isPublic && data.strategyId && (
                         <Link
                           href={`/brand/${data.strategyId}/generate`}
-                          className="inline-flex items-center gap-1.5 text-xs font-medium text-terracotta hover:text-terracotta/80"
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80"
                         >
                           <Sparkles className="h-3 w-3" />
                           Générer / régénérer des livrables
@@ -657,7 +727,7 @@ export function CockpitContent({
       <footer className="border-t pt-6 text-center">
         <p className="text-xs text-muted-foreground">
           Généré avec la méthodologie{" "}
-          <span className="font-semibold text-terracotta">ADVERTIS</span>
+          <span className="font-semibold text-primary">ADVERTIS</span>
           {" "}&mdash; Intelligence stratégique en 8 piliers
         </p>
       </footer>
@@ -724,7 +794,7 @@ function TemplatePlaceholder({
               key={tt}
               className={
                 isGenerating
-                  ? "border-terracotta/30 bg-terracotta/5 animate-pulse"
+                  ? "border-primary/30 bg-primary/5 animate-pulse"
                   : "border-dashed border-muted-foreground/20 opacity-70"
               }
             >
@@ -732,7 +802,7 @@ function TemplatePlaceholder({
                 <div className="flex items-start gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
                     {isGenerating ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-terracotta" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     ) : (
                       <Presentation className="h-4 w-4 text-muted-foreground" />
                     )}
@@ -752,14 +822,14 @@ function TemplatePlaceholder({
       </div>
 
       {isGenerating ? (
-        <div className="flex items-center gap-2 text-sm text-terracotta">
+        <div className="flex items-center gap-2 text-sm text-primary">
           <Loader2 className="h-4 w-4 animate-spin" />
           Génération des templates en cours\u2026 (quelques minutes)
         </div>
       ) : pillarIComplete && !isPublic && strategyId ? (
         <button
           onClick={() => void handleGenerate()}
-          className="inline-flex items-center gap-1.5 rounded-md bg-terracotta px-4 py-2 text-xs font-semibold text-white hover:bg-terracotta/90 transition-colors shadow-sm"
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary/90 transition-colors shadow-sm"
         >
           <Sparkles className="h-3.5 w-3.5" />
           Générer les templates maintenant
@@ -772,7 +842,7 @@ function TemplatePlaceholder({
           {!isPublic && strategyId && (
             <Link
               href={`/brand/${strategyId}/generate`}
-              className="inline-flex items-center gap-1.5 rounded-md bg-terracotta/10 px-3 py-1.5 text-xs font-medium text-terracotta hover:bg-terracotta/20 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/20 transition-colors"
             >
               <Sparkles className="h-3.5 w-3.5" />
               Aller au Pipeline

@@ -27,6 +27,7 @@
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type { ModuleDescriptor, ModuleInputSource } from "~/lib/types/module-system";
+import { getVariables } from "~/server/services/variable-store";
 
 // ---------------------------------------------------------------------------
 // Deep-get utility for dot-notation paths
@@ -111,6 +112,16 @@ async function resolveSource(
         select: { outputData: true },
       });
       return { key: `module_${source.moduleId}`, value: run?.outputData ?? null };
+    }
+
+    case "brandVariable": {
+      // Read BrandVariables by their registry keys
+      const variables = await getVariables(strategyId, source.keys);
+      const valueMap: Record<string, unknown> = {};
+      for (const v of variables) {
+        valueMap[v.key] = v.value;
+      }
+      return { key: "brandVariables", value: valueMap };
     }
   }
 }

@@ -57,12 +57,12 @@ export function StrategySelector({ value, onChange }: StrategySelectorProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <Building2 className="h-4 w-4 text-[#6C5CE7] shrink-0" />
+      <Building2 className="h-4 w-4 text-violet-500 shrink-0" />
       <Select value={value ?? ""} onValueChange={onChange}>
         <SelectTrigger
           className={cn(
             "w-full max-w-[260px] h-9 text-sm",
-            "border-[#6C5CE7]/20 focus:ring-[#6C5CE7]/30",
+            "border-violet-500/20 focus:ring-violet-500/30",
           )}
         >
           <SelectValue placeholder="Sélectionner une marque..." />

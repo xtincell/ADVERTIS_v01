@@ -70,7 +70,7 @@ export function InterventionPanel() {
   if (isLoading) {
     return (
       <div className="flex h-48 items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">
+        <div className="animate-float text-muted-foreground">
           Chargement...
         </div>
       </div>
@@ -166,7 +166,7 @@ export function InterventionPanel() {
                         type="checkbox"
                         checked={createSignal}
                         onChange={(e) => setCreateSignal(e.target.checked)}
-                        className="rounded border-gray-300"
+                        className="rounded border-border"
                       />
                       <Radio className="h-3 w-3 text-blue-500" />
                       Créer un signal dans le SIS
@@ -177,7 +177,7 @@ export function InterventionPanel() {
                         onChange={(e) =>
                           setSignalPillar(e.target.value as PillarType)
                         }
-                        className="w-full rounded border border-gray-200 bg-background px-2 py-1 text-xs"
+                        className="w-full rounded border border-border bg-background px-2 py-1 text-xs"
                       >
                         {PILLAR_TYPES.map((p) => (
                           <option key={p} value={p}>

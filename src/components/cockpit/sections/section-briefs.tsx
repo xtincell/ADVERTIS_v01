@@ -37,6 +37,7 @@ import {
   type BriefType,
 } from "~/lib/constants";
 import { CockpitSection } from "../cockpit-shared";
+import { EmptyState } from "~/components/ui/empty-state";
 import { FreshnessBadge } from "~/components/ui/freshness-badge";
 import { SectionBriefDetail } from "./section-brief-detail";
 
@@ -45,10 +46,10 @@ import { SectionBriefDetail } from "./section-brief-detail";
 // ---------------------------------------------------------------------------
 
 const STATUS_BADGES: Record<string, { label: string; className: string }> = {
-  DRAFT: { label: "Brouillon", className: "bg-gray-100 text-gray-700 border-gray-200" },
+  DRAFT: { label: "Brouillon", className: "bg-muted text-muted-foreground border-border" },
   VALIDATED: { label: "Validé", className: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   STALE: { label: "Obsolète", className: "bg-red-100 text-red-700 border-red-200" },
-  ARCHIVED: { label: "Archivé", className: "bg-gray-100 text-gray-500 border-gray-200" },
+  ARCHIVED: { label: "Archivé", className: "bg-muted text-muted-foreground border-border" },
 };
 
 // ---------------------------------------------------------------------------
@@ -100,7 +101,7 @@ export function SectionBriefs({ strategyId }: { strategyId: string }) {
         pillarLetter="I"
         title="Boîte à Outils — Détail"
         subtitle="Vue détaillée du brief"
-        color="#3cc4c4"
+        color="#06B6D4"
       >
         <SectionBriefDetail
           documentId={selectedDocId}
@@ -117,7 +118,7 @@ export function SectionBriefs({ strategyId }: { strategyId: string }) {
         pillarLetter="I"
         title="Boîte à Outils"
         subtitle="Chargement…"
-        color="#3cc4c4"
+        color="#06B6D4"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -136,7 +137,7 @@ export function SectionBriefs({ strategyId }: { strategyId: string }) {
           ? `${totalDocs} brief${totalDocs > 1 ? "s" : ""} généré${totalDocs > 1 ? "s" : ""}`
           : "Aucun brief généré"
       }
-      color="#3cc4c4"
+      color="#06B6D4"
     >
       <div className="space-y-4">
         {/* Freshness summary */}
@@ -175,12 +176,12 @@ export function SectionBriefs({ strategyId }: { strategyId: string }) {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <FileText className="h-8 w-8 text-muted-foreground/30 mb-2" />
-            <p className="text-sm text-muted-foreground mb-4">
-              Aucun brief généré. Commencez par un preset ou générez un brief individuel.
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title="Aucun brief généré"
+            description="Commencez par un preset ou générez un brief individuel."
+            compact
+          />
         )}
 
         {/* Action buttons */}
@@ -240,7 +241,7 @@ export function SectionBriefs({ strategyId }: { strategyId: string }) {
                   }
                 }}
                 disabled={!selectedBriefType || generateMutation.isPending}
-                className="inline-flex items-center gap-1 rounded-md bg-terracotta px-3 py-1.5 text-xs font-medium text-white hover:bg-terracotta/90 disabled:opacity-50 transition-colors"
+                className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {generateMutation.isPending ? (
                   <Loader2 className="h-3 w-3 animate-spin" />
@@ -320,7 +321,7 @@ function BriefCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate group-hover:text-terracotta transition-colors">
+          <p className="text-sm font-semibold truncate group-hover:text-primary transition-colors">
             {typeLabel}
           </p>
           <div className="mt-1 flex items-center gap-1.5">
@@ -336,7 +337,7 @@ function BriefCard({
             <FreshnessBadge date={doc.generatedAt} />
           </div>
         </div>
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 group-hover:text-terracotta transition-colors" />
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/50 group-hover:text-primary transition-colors" />
       </div>
 
       {/* Source pillars */}

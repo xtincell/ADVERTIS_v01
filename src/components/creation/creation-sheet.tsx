@@ -127,9 +127,9 @@ function ProgressDots({ current, total }: { current: number; total: number }) {
           className={cn(
             "h-2 rounded-full transition-all duration-300",
             i === current
-              ? "w-6 bg-terracotta"
+              ? "w-6 bg-primary"
               : i < current
-                ? "w-2 bg-terracotta/40"
+                ? "w-2 bg-primary/40"
                 : "w-2 bg-muted-foreground/20",
           )}
         />
@@ -343,7 +343,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
               className={cn(
                 "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
                 parentId === null
-                  ? "border-terracotta bg-terracotta/5"
+                  ? "border-primary bg-primary/5"
                   : "hover:bg-muted/50",
               )}
             >
@@ -367,11 +367,11 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
                 className={cn(
                   "flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-colors",
                   parentId === s.id
-                    ? "border-terracotta bg-terracotta/5"
+                    ? "border-primary bg-primary/5"
                     : "hover:bg-muted/50",
                 )}
               >
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-terracotta/10 text-terracotta">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Building2 className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -407,7 +407,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
             className={cn(
               "flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-colors",
               inputMethod === method.key
-                ? "border-terracotta bg-terracotta/5"
+                ? "border-primary bg-primary/5"
                 : "hover:bg-muted/50",
             )}
           >
@@ -415,7 +415,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
               className={cn(
                 "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors",
                 inputMethod === method.key
-                  ? "bg-terracotta text-white"
+                  ? "bg-primary text-white"
                   : "bg-muted text-muted-foreground",
               )}
             >
@@ -498,7 +498,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
 
             {step < 2 ? (
               <Button
-                className="flex-1 bg-terracotta hover:bg-terracotta/90"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={step === 0 && !canAdvanceStep0()}
                 onClick={() => setStep((s) => s + 1)}
               >
@@ -507,7 +507,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
               </Button>
             ) : (
               <Button
-                className="flex-1 bg-terracotta hover:bg-terracotta/90"
+                className="flex-1 bg-primary hover:bg-primary/90"
                 disabled={!inputMethod || createMutation.isPending}
                 onClick={handleConfirm}
               >

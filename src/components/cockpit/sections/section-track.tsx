@@ -49,7 +49,7 @@ interface PillarData {
   updatedAt?: Date | string | null;
 }
 
-const COLOR = PILLAR_CONFIG.T.color; // #8c3cc4
+const COLOR = PILLAR_CONFIG.T.color; // #EC4899
 
 // ---------------------------------------------------------------------------
 // Helper: status icon for hypothesis validation
@@ -168,7 +168,7 @@ export function SectionTrack({
                 )}
               </div>
               {tContent.triangulation.synthesis && (
-                <div className="mt-3 rounded-lg border-l-4 border-[#8c3cc4]/30 bg-[#8c3cc4]/5 px-4 py-3">
+                <div className="mt-3 rounded-lg border-l-4 border-pink-500/30 bg-pink-500/5 px-4 py-3">
                   <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Synthèse de la triangulation
                   </p>
@@ -200,7 +200,7 @@ export function SectionTrack({
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                           {key.toUpperCase()}
                         </p>
-                        <p className="mt-1 text-lg font-bold text-[#8c3cc4]">
+                        <p className="mt-1 text-lg font-bold text-pink-500">
                           {entry.value}
                         </p>
                         {entry.description && (
@@ -281,9 +281,9 @@ export function SectionTrack({
                       {tContent.marketReality.macroTrends.map((trend, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[#8c3cc4]/20 bg-[#8c3cc4]/5 px-3 py-1 text-sm font-medium"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/20 bg-pink-500/5 px-3 py-1 text-sm font-medium"
                         >
-                          <TrendingUp className="h-3 w-3 text-[#8c3cc4]" />
+                          <TrendingUp className="h-3 w-3 text-pink-500" />
                           {trend}
                         </span>
                       ))}
@@ -403,9 +403,9 @@ export function SectionTrack({
                   {implContent.marketValidation.trends.map((trend, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#8c3cc4]/20 bg-[#8c3cc4]/5 px-3 py-1 text-sm font-medium"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-pink-500/20 bg-pink-500/5 px-3 py-1 text-sm font-medium"
                     >
-                      <TrendingUp className="h-3 w-3 text-[#8c3cc4]" />
+                      <TrendingUp className="h-3 w-3 text-pink-500" />
                       {trend}
                     </span>
                   ))}
@@ -427,7 +427,7 @@ export function SectionTrack({
                     key={i}
                     className="flex items-start gap-2 rounded-md border bg-muted/20 px-3 py-2"
                   >
-                    <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-[#8c3cc4]" />
+                    <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-pink-500" />
                     <p className="text-sm text-foreground/80">{rec}</p>
                   </div>
                 ))}

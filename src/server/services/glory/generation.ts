@@ -18,6 +18,7 @@ import {
   anthropic,
   DEFAULT_MODEL,
 } from "~/server/services/anthropic-client";
+import { trackAICall } from "~/server/services/ai-cost-tracker";
 import { injectSpecialization } from "~/server/services/prompt-helpers";
 import { getToolBySlug } from "~/server/services/glory/registry";
 import { GLORY_SYSTEM_PROMPTS } from "~/server/services/glory/prompts";
@@ -236,6 +237,7 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
   ].join("\n");
 
   // 6. Call AI
+  const gloryStart = Date.now();
   const aiResult = await resilientGenerateText({
     label: `glory-${opts.toolSlug}`,
     model: anthropic(DEFAULT_MODEL),
@@ -244,6 +246,17 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     maxOutputTokens: 8000,
     temperature: 0.7,
   });
+
+  // Track AI cost
+  await trackAICall({
+    model: DEFAULT_MODEL,
+    tokensIn: aiResult.usage?.inputTokens ?? 0,
+    tokensOut: aiResult.usage?.outputTokens ?? 0,
+    generationType: `glory-${opts.toolSlug}`,
+    strategyId: opts.strategyId,
+    durationMs: Date.now() - gloryStart,
+    metadata: { toolSlug: opts.toolSlug, layer: tool.layer },
+  }, opts.userId).catch(console.error);
 
   const rawText: string = typeof aiResult.text === "string" ? aiResult.text : String(aiResult.text);
 

@@ -35,13 +35,13 @@ import { NODE_TYPE_LABELS, PILLAR_CONFIG } from "~/lib/constants";
 // ---------------------------------------------------------------------------
 
 const NODE_TYPE_COLORS: Record<string, string> = {
-  BRAND: "bg-terracotta/10 text-terracotta border-terracotta/20",
+  BRAND: "bg-primary/10 text-primary border-primary/20",
   PRODUCT: "bg-blue-50 text-blue-700 border-blue-200",
   CAMPAIGN: "bg-purple-50 text-purple-700 border-purple-200",
   CHARACTER: "bg-amber-50 text-amber-700 border-amber-200",
   ENVIRONMENT: "bg-emerald-50 text-emerald-700 border-emerald-200",
   EVENT: "bg-pink-50 text-pink-700 border-pink-200",
-  SKU: "bg-gray-50 text-gray-700 border-gray-200",
+  SKU: "bg-muted/50 text-muted-foreground border-border",
   COLLECTION: "bg-indigo-50 text-indigo-700 border-indigo-200",
   ZONE: "bg-teal-50 text-teal-700 border-teal-200",
   EDITION: "bg-orange-50 text-orange-700 border-orange-200",
@@ -76,7 +76,7 @@ export function StrategyTree({ strategyId, className }: StrategyTreeProps) {
   return (
     <div className={cn("space-y-2", className)}>
       <div className="flex items-center gap-2 mb-3">
-        <GitBranch className="h-4 w-4 text-terracotta" />
+        <GitBranch className="h-4 w-4 text-primary" />
         <h3 className="text-sm font-semibold">Arbre de Marques</h3>
       </div>
 
@@ -152,7 +152,7 @@ function TreeNode({ node, depth }: { node: TreeNodeData; depth: number }) {
             href={`/strategy/${node.id}`}
             className="flex-1 min-w-0 group"
           >
-            <span className="text-sm font-semibold group-hover:text-terracotta truncate block transition-colors">
+            <span className="text-sm font-semibold group-hover:text-primary truncate block transition-colors">
               {node.brandName}
             </span>
             {node.name !== node.brandName && (
@@ -185,7 +185,7 @@ function TreeNode({ node, depth }: { node: TreeNodeData; depth: number }) {
             </p>
             <div className="h-1 w-10 rounded-full bg-muted mt-0.5">
               <div
-                className="h-full rounded-full bg-terracotta transition-all"
+                className="h-full rounded-full bg-primary transition-all"
                 style={{ width: `${completionPct}%` }}
               />
             </div>

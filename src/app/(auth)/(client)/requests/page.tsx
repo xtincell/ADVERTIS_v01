@@ -9,7 +9,6 @@
 import { useState } from "react";
 import {
   MessageSquarePlus,
-  Loader2,
   AlertCircle,
   CheckCircle2,
   Clock,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { PageSpinner } from "~/components/ui/loading-skeleton";
 import {
   INTERVENTION_TYPE_LABELS,
   type InterventionType,
@@ -53,11 +53,7 @@ export default function ClientRequestsPage() {
   // Loading
   // ---------------------------------------------------------------------------
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // ---------------------------------------------------------------------------

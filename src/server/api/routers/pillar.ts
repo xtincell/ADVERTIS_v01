@@ -27,6 +27,7 @@ import { validatePillarContent } from "~/lib/types/pillar-parsers";
 import { invalidateWidgetsForPillar, computeAllWidgets } from "~/server/services/widgets/compute-engine";
 import { recalculateAllScores } from "~/server/services/score-engine";
 import { clearPillarStaleness } from "~/server/services/stale-detector";
+import { extractVariablesFromPillar } from "~/server/services/variable-extractor";
 
 export const pillarRouter = createTRPCRouter({
   /**
@@ -88,8 +89,7 @@ export const pillarRouter = createTRPCRouter({
     .input(
       z.object({
         id: z.string(),
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        content: z.any().optional() as z.ZodOptional<z.ZodType<any>>,
+        content: z.record(z.string(), z.unknown()).optional(),
         summary: z.string().optional(),
         status: z
           .enum(["pending", "generating", "complete", "error"])
@@ -136,16 +136,18 @@ export const pillarRouter = createTRPCRouter({
         });
       }
 
-      const { id, ...data } = input;
+      const { id, content: inputContent, ...restData } = input;
 
       const pillar = await ctx.db.pillar.update({
         where: { id },
         data: {
-          ...data,
+          ...restData,
+          // Cast content to satisfy Prisma's InputJsonValue type
+          ...(inputContent !== undefined ? { content: inputContent as never } : {}),
           generatedAt:
-            data.status === "complete" ? new Date() : undefined,
+            restData.status === "complete" ? new Date() : undefined,
           // Increment version + reset staleness when content changes
-          ...(input.content !== undefined
+          ...(inputContent !== undefined
             ? { version: { increment: 1 }, staleReason: null, staleSince: null }
             : {}),
         },
@@ -160,6 +162,11 @@ export const pillarRouter = createTRPCRouter({
         void computeAllWidgets(existing.strategyId);
         // Clear staleness on content update
         void clearPillarStaleness(existing.id);
+        // Sync to BrandVariable registry (fire-and-forget)
+        void extractVariablesFromPillar(
+          existing.strategyId, existing.type, input.content,
+          ctx.session.user.id, "manual_edit",
+        );
       }
 
       return pillar;

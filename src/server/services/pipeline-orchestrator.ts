@@ -17,6 +17,7 @@ import { recalculateAllScores } from "./score-engine";
 import { computeAllWidgets } from "./widgets/compute-engine";
 import { clearPillarStaleness } from "./stale-detector";
 import { syncTrackToMarketContext } from "./track-sync";
+import { extractVariablesFromPillar } from "./variable-extractor";
 import type { TrackAuditResult } from "./audit-generation";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 
@@ -57,6 +58,9 @@ export async function onPillarGenerated(
 
   // 2. Recalculate scores (fire-and-forget)
   void recalculateAllScores(strategyId, "generation");
+
+  // 2b. Extract BrandVariables from generated content (fire-and-forget)
+  void extractVariablesFromPillar(strategyId, pillarType, generatedContent, "system");
 
   // 3. Phase advancement
   const nextPhase = POST_GENERATION_PHASE[pillarType];

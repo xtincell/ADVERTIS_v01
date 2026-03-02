@@ -84,7 +84,7 @@ export function CockpitHeader({
     onSuccess: (data) => {
       toast.success(`"${brandName}" dupliquée`);
       void utils.analytics.getAgencyOverview.invalidate();
-      router.push(`/brand/${data.id}`);
+      router.push(`/impulsion/brand/${data.id}`);
     },
     onError: () => toast.error("Erreur lors de la duplication"),
   });
@@ -93,7 +93,7 @@ export function CockpitHeader({
     onSuccess: () => {
       toast.success(`"${brandName}" archivée`);
       void utils.analytics.getAgencyOverview.invalidate();
-      router.push("/dashboard");
+      router.push("/impulsion");
     },
     onError: () => toast.error("Erreur lors de l'archivage"),
   });
@@ -111,7 +111,7 @@ export function CockpitHeader({
     onSuccess: () => {
       toast.success(`"${brandName}" supprimée définitivement`);
       void utils.analytics.getAgencyOverview.invalidate();
-      router.push("/dashboard");
+      router.push("/impulsion");
     },
     onError: () => toast.error("Erreur lors de la suppression"),
   });
@@ -124,14 +124,14 @@ export function CockpitHeader({
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur-xl">
         <div className="flex items-center gap-2 px-4 py-3">
           {/* Back button */}
           <Button
             variant="ghost"
             size="icon"
             className="h-8 w-8 shrink-0"
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/impulsion")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -146,7 +146,7 @@ export function CockpitHeader({
 
           {/* Score badge */}
           {coherenceScore != null && (
-            <span className="shrink-0 rounded-full bg-terracotta/10 px-2.5 py-0.5 text-sm font-semibold text-terracotta">
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary">
               {Math.round(coherenceScore)}
             </span>
           )}
@@ -169,13 +169,13 @@ export function CockpitHeader({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
-                onClick={() => router.push(`/brand/${strategyId}/generate`)}
+                onClick={() => router.push(`/impulsion/brand/${strategyId}/generate`)}
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Éditer la fiche
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => router.push(`/brand/${strategyId}/generate`)}
+                onClick={() => router.push(`/impulsion/brand/${strategyId}/generate`)}
               >
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Générer / Régénérer
@@ -201,7 +201,7 @@ export function CockpitHeader({
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onClick={() => router.push(`/new?parentId=${strategyId}`)}
+                onClick={() => router.push(`/impulsion/new?parentId=${strategyId}`)}
               >
                 <GitBranch className="mr-2 h-4 w-4" />
                 Créer sous-marque

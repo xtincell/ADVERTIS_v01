@@ -5,6 +5,15 @@
 import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+  async rewrites() {
+    return [
+      {
+        source: "/brand/:path*",
+        destination: "/impulsion/brand/:path*",
+      },
+    ];
+  },
+};
 
 export default config;

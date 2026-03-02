@@ -22,7 +22,8 @@ export type ModuleInputSource =
   | { type: "interview"; variableIds: string[] }
   | { type: "strategy"; fields: string[] }
   | { type: "marketStudy"; fields?: string[] }
-  | { type: "moduleOutput"; moduleId: string };
+  | { type: "moduleOutput"; moduleId: string }
+  | { type: "brandVariable"; keys: string[] };
 
 // ---------------------------------------------------------------------------
 // Module Output Targets — what a module PRODUCES

@@ -178,15 +178,15 @@ export default function ClientOraclePage() {
   // ---------------------------------------------------------------------------
   if (strategiesLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-[#06060B]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#c45a3c]" />
+      <div className="flex h-screen items-center justify-center bg-zinc-950">
+        <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
       </div>
     );
   }
 
   if (strategiesError) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-[#06060B]">
+      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-zinc-950">
         <AlertCircle className="h-8 w-8 text-red-400/50" />
         <p className="text-sm text-white/50">
           Erreur lors du chargement de votre marque.
@@ -197,7 +197,7 @@ export default function ClientOraclePage() {
 
   if (!firstStrategy) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-[#06060B]">
+      <div className="flex h-screen flex-col items-center justify-center gap-2 bg-zinc-950">
         <Eye className="h-8 w-8 text-white/20" />
         <p className="text-sm text-white/50">
           Aucune marque associée à votre compte.
@@ -212,10 +212,10 @@ export default function ClientOraclePage() {
   return (
     <div
       id="oracle-container"
-      className="flex h-screen flex-col bg-[#06060B]"
+      className="flex h-screen flex-col bg-zinc-950"
     >
       {/* ── Top toolbar ── */}
-      <div className="flex items-center justify-between border-b border-white/10 bg-[#0A0A12] px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-white/10 bg-zinc-950/95 px-4 py-2.5">
         <div className="flex items-center gap-3">
           <Link
             href="/cockpit"
@@ -226,7 +226,7 @@ export default function ClientOraclePage() {
           </Link>
           <div className="h-4 w-px bg-white/10" />
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#c45a3c] to-[#2d5a3d]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-emerald-500 to-violet-500">
               <Eye className="h-3.5 w-3.5 text-white" />
             </div>
             <div>
@@ -238,7 +238,7 @@ export default function ClientOraclePage() {
               </p>
             </div>
           </div>
-          <Badge className="ml-2 bg-[#c45a3c]/15 text-[#c45a3c] border-[#c45a3c]/20 text-[10px] font-semibold uppercase tracking-wider">
+          <Badge className="ml-2 bg-emerald-500/15 text-emerald-500 border-emerald-500/20 text-[10px] font-semibold uppercase tracking-wider">
             Interactif
           </Badge>
         </div>
@@ -283,11 +283,11 @@ export default function ClientOraclePage() {
       <div className="relative flex-1 overflow-hidden">
         {/* Loading overlay */}
         {loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#06060B]">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-zinc-950">
             <div className="relative">
-              <div className="absolute inset-0 animate-ping rounded-full bg-[#c45a3c]/20" />
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-[#c45a3c]/10 border border-[#c45a3c]/20">
-                <Loader2 className="h-7 w-7 animate-spin text-[#c45a3c]" />
+              <div className="absolute inset-0 animate-ping rounded-full bg-emerald-500/20" />
+              <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                <Loader2 className="h-7 w-7 animate-spin text-emerald-500" />
               </div>
             </div>
             <p className="mt-4 text-sm font-medium text-white/60">
@@ -301,7 +301,7 @@ export default function ClientOraclePage() {
 
         {/* Error state */}
         {error && !loading && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-[#06060B]">
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-zinc-950">
             <AlertTriangle className="h-10 w-10 text-red-400/60" />
             <p className="mt-3 text-sm font-medium text-white/70">
               {error}

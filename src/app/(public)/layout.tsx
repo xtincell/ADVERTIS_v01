@@ -13,7 +13,7 @@ export default function PublicLayout({
       {/* ----------------------------------------------------------------- */}
       {/* Left panel: brand showcase (hidden on mobile) */}
       {/* ----------------------------------------------------------------- */}
-      <div className="relative hidden items-center justify-center overflow-hidden bg-gradient-to-br from-[#1a2e1f] via-[#2d5a3d] to-[#1a2e1f] lg:flex lg:w-1/2">
+      <div className="relative hidden items-center justify-center overflow-hidden bg-gradient-to-br from-violet-900 via-violet-500 to-violet-900 lg:flex lg:w-1/2">
         {/* Subtle dot grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.07]"

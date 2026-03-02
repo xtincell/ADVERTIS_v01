@@ -106,7 +106,7 @@ export function SectionSignals({ strategyId }: { strategyId: string }) {
         pillarLetter="R"
         title="Intelligence Signals (SIS)"
         subtitle="Chargement…"
-        color="#c45a3c"
+        color="#EF4444"
       >
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -123,7 +123,7 @@ export function SectionSignals({ strategyId }: { strategyId: string }) {
       pillarLetter="R"
       title="Intelligence Signals (SIS)"
       subtitle={`${totalSignals} signal${totalSignals > 1 ? "x" : ""}${criticalCount > 0 ? ` · ${criticalCount} critique${criticalCount > 1 ? "s" : ""}` : ""}`}
-      color="#c45a3c"
+      color="#EF4444"
     >
       <div className="space-y-4">
         {SIGNAL_LAYERS.map((layer) => {
@@ -206,7 +206,7 @@ interface SignalCardProps {
 function SignalCard({ signal, layer, onMutate, isMutating }: SignalCardProps) {
   const [showActions, setShowActions] = useState(false);
 
-  const statusColor = SIGNAL_STATUS_COLORS[signal.status] ?? "bg-gray-100 text-gray-700";
+  const statusColor = SIGNAL_STATUS_COLORS[signal.status] ?? "bg-muted text-muted-foreground";
   const statusLabel = SIGNAL_STATUS_LABELS[signal.status] ?? signal.status;
 
   // Allowed transitions for current layer
@@ -281,7 +281,7 @@ function SignalCard({ signal, layer, onMutate, isMutating }: SignalCardProps) {
               className={cn(
                 "inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium transition-all",
                 "border hover:shadow-sm",
-                SIGNAL_STATUS_COLORS[status] ?? "bg-gray-50 text-gray-700",
+                SIGNAL_STATUS_COLORS[status] ?? "bg-muted/50 text-muted-foreground",
               )}
             >
               {SIGNAL_STATUS_LABELS[status] ?? status}

@@ -4,7 +4,7 @@
 // Server-side Excel generation using ExcelJS. Produces a multi-sheet workbook
 // with a Synthese (overview) sheet, one sheet per pillar with flattened
 // key-value content, and a consolidated Variables sheet. Styled with ADVERTIS
-// terracotta design tokens and alternating row colors.
+// emerald design tokens and alternating row colors.
 //
 // Public API:
 //   1. generateStrategyExcel() — Generate a full strategy Excel workbook
@@ -49,15 +49,15 @@ interface ExcelOptions {
 // ---------------------------------------------------------------------------
 
 const COLORS = {
-  terracotta: "C45A3C",
-  terracottaLight: "F5E6E1",
+  emerald: "10B981",
+  emeraldLight: "D1FAE5",
   dark: "1A1A1A",
   gray: "6B7280",
   grayLight: "F3F4F6",
   white: "FFFFFF",
-  headerBg: "C45A3C",
+  headerBg: "10B981",
   headerFont: "FFFFFF",
-  altRowBg: "FDF5F3",
+  altRowBg: "ECFDF5",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -106,7 +106,7 @@ function applySectionTitleStyle(row: ExcelJS.Row): void {
     cell.font = {
       bold: true,
       size: 12,
-      color: { argb: COLORS.terracotta },
+      color: { argb: COLORS.emerald },
     };
     cell.alignment = { vertical: "middle" };
   });
@@ -243,14 +243,14 @@ export async function generateStrategyExcel(
   // Sheet 1: Synthèse
   // =========================================================================
   const synthSheet = workbook.addWorksheet("Synthèse", {
-    properties: { tabColor: { argb: COLORS.terracotta } },
+    properties: { tabColor: { argb: COLORS.emerald } },
   });
 
   // Title
   synthSheet.mergeCells("A1:D1");
   const titleCell = synthSheet.getCell("A1");
   titleCell.value = `ADVERTIS - ${strategy.brandName}`;
-  titleCell.font = { bold: true, size: 18, color: { argb: COLORS.terracotta } };
+  titleCell.font = { bold: true, size: 18, color: { argb: COLORS.emerald } };
   titleCell.alignment = { vertical: "middle" };
   synthSheet.getRow(1).height = 36;
 
@@ -311,7 +311,7 @@ export async function generateStrategyExcel(
       statusCell.font = {
         size: 10,
         bold: true,
-        color: { argb: "2D5A3D" },
+        color: { argb: "F43F5E" },
       };
     } else if (pillar?.status === "error") {
       statusCell.font = {
@@ -339,7 +339,7 @@ export async function generateStrategyExcel(
     // Excel sheet names max 31 chars
     const truncatedName = sheetName.substring(0, 31);
 
-    const pillarColor = config?.color?.replace("#", "") ?? COLORS.terracotta;
+    const pillarColor = config?.color?.replace("#", "") ?? COLORS.emerald;
     const sheet = workbook.addWorksheet(truncatedName, {
       properties: { tabColor: { argb: pillarColor } },
     });
@@ -377,7 +377,7 @@ export async function generateStrategyExcel(
       summaryLabelCell.font = {
         bold: true,
         size: 11,
-        color: { argb: COLORS.terracotta },
+        color: { argb: COLORS.emerald },
       };
       rowIdx++;
 
@@ -417,7 +417,7 @@ export async function generateStrategyExcel(
   // Sheet "Variables" - Summary of all variables across pillars
   // =========================================================================
   const variablesSheet = workbook.addWorksheet("Variables", {
-    properties: { tabColor: { argb: COLORS.terracotta } },
+    properties: { tabColor: { argb: COLORS.emerald } },
   });
 
   // Title
@@ -427,7 +427,7 @@ export async function generateStrategyExcel(
   varTitleCell.font = {
     bold: true,
     size: 16,
-    color: { argb: COLORS.terracotta },
+    color: { argb: COLORS.emerald },
   };
   varTitleCell.alignment = { vertical: "middle" };
   variablesSheet.getRow(1).height = 32;

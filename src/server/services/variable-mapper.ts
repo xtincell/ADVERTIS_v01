@@ -131,41 +131,125 @@ Extrais les informations pertinentes et mappe-les aux variables ADVERTIS A-E.`;
 // ---------------------------------------------------------------------------
 
 /**
- * Parse the AI response text as JSON, with fallback extraction.
+ * Parse the AI response text as JSON, with multi-strategy fallback extraction.
+ * Strategies (tried in order):
+ *   1. Markdown code fence extraction (```json ... ```)
+ *   2. First { ... } brace detection
+ *   3. Regex key-value extraction as last resort
+ * On total failure, returns empty mapping with error log showing data loss.
  */
 function parseAIResponse(
   responseText: string,
   validIds: string[],
 ): Record<string, string> {
-  // Try to extract JSON from the response (it might be wrapped in markdown code blocks)
-  let jsonString = responseText.trim();
+  const rawText = responseText.trim();
 
-  // Remove markdown code block if present
-  const jsonMatch = jsonString.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (jsonMatch?.[1]) {
-    jsonString = jsonMatch[1].trim();
+  // --- Strategy 1: Markdown code fence ---
+  const fenceMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch?.[1]) {
+    const parsed = tryParseJson(fenceMatch[1].trim(), validIds);
+    if (parsed) return parsed;
   }
 
+  // --- Strategy 2: Find first { ... } block ---
+  const braceStart = rawText.indexOf("{");
+  const braceEnd = rawText.lastIndexOf("}");
+  if (braceStart !== -1 && braceEnd > braceStart) {
+    const parsed = tryParseJson(rawText.substring(braceStart, braceEnd + 1), validIds);
+    if (parsed) return parsed;
+  }
+
+  // --- Strategy 3: Regex key-value extraction ---
+  // Handles cases where JSON is broken but key-value pairs are recognizable
+  const regexResult = extractByRegex(rawText, validIds);
+  if (regexResult) {
+    const filledCount = Object.values(regexResult).filter((v) => v.trim().length > 0).length;
+    console.warn(
+      `[VariableMapper] JSON parse failed, regex fallback recovered ${filledCount}/${validIds.length} variables.`,
+    );
+    return regexResult;
+  }
+
+  // --- Total failure: return empty mapping with clear error ---
+  console.error(
+    `[VariableMapper] TOTAL PARSE FAILURE — ALL ${validIds.length} variables lost. ` +
+    `Response preview: "${rawText.substring(0, 300)}..."`,
+  );
+  const result: Record<string, string> = {};
+  for (const id of validIds) {
+    result[id] = "";
+  }
+  return result;
+}
+
+/**
+ * Try to parse a JSON string and extract valid variable IDs.
+ * Returns null on failure (caller should try next strategy).
+ */
+function tryParseJson(
+  jsonString: string,
+  validIds: string[],
+): Record<string, string> | null {
   try {
     const parsed = JSON.parse(jsonString) as Record<string, unknown>;
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+      return null;
+    }
+
     const result: Record<string, string> = {};
+    let hasAnyValue = false;
 
     for (const id of validIds) {
       const value = parsed[id];
-      result[id] = typeof value === "string" ? value : "";
+      if (typeof value === "string" && value.trim().length > 0) {
+        result[id] = value;
+        hasAnyValue = true;
+      } else if (typeof value === "object" && value !== null) {
+        // AI sometimes wraps a string in an object — stringify it
+        result[id] = JSON.stringify(value);
+        hasAnyValue = true;
+      } else {
+        result[id] = "";
+      }
     }
 
-    return result;
+    // Only succeed if at least ONE variable was extracted
+    return hasAnyValue ? result : null;
   } catch {
-    // If JSON parsing fails, return empty mapping
-    console.error(
-      "Failed to parse AI variable mapping response:",
-      responseText.substring(0, 200),
+    return null;
+  }
+}
+
+/**
+ * Last resort: extract variable values via regex patterns.
+ * Looks for patterns like "A1": "some value" or "A1": "..."
+ * Returns null if no variables found at all.
+ */
+function extractByRegex(
+  text: string,
+  validIds: string[],
+): Record<string, string> | null {
+  const result: Record<string, string> = {};
+  let foundAny = false;
+
+  for (const id of validIds) {
+    // Match "ID" : "value" (with possible escaping)
+    const pattern = new RegExp(
+      `"${id}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"`
     );
-    const result: Record<string, string> = {};
-    for (const id of validIds) {
+    const match = text.match(pattern);
+    if (match?.[1]) {
+      // Unescape JSON string escapes
+      try {
+        result[id] = JSON.parse(`"${match[1]}"`);
+      } catch {
+        result[id] = match[1];
+      }
+      foundAny = true;
+    } else {
       result[id] = "";
     }
-    return result;
   }
+
+  return foundAny ? result : null;
 }

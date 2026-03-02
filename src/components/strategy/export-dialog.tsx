@@ -254,18 +254,18 @@ export function ExportDialog({
                 onClick={() => setFormat("pdf")}
                 className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors ${
                   format === "pdf"
-                    ? "border-[#c45a3c] bg-[#c45a3c]/5"
-                    : "border-border hover:border-[#c45a3c]/40"
+                    ? "border-emerald-500 bg-emerald-500/5"
+                    : "border-border hover:border-emerald-500/40"
                 }`}
               >
                 <FileText
                   className={`size-8 ${
-                    format === "pdf" ? "text-[#c45a3c]" : "text-muted-foreground"
+                    format === "pdf" ? "text-emerald-500" : "text-muted-foreground"
                   }`}
                 />
                 <span
                   className={`text-sm font-medium ${
-                    format === "pdf" ? "text-[#c45a3c]" : "text-foreground"
+                    format === "pdf" ? "text-emerald-500" : "text-foreground"
                   }`}
                 >
                   PDF
@@ -280,20 +280,20 @@ export function ExportDialog({
                 onClick={() => setFormat("excel")}
                 className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors ${
                   format === "excel"
-                    ? "border-[#2d5a3d] bg-[#2d5a3d]/5"
-                    : "border-border hover:border-[#2d5a3d]/40"
+                    ? "border-violet-500 bg-violet-500/5"
+                    : "border-border hover:border-violet-500/40"
                 }`}
               >
                 <FileSpreadsheet
                   className={`size-8 ${
                     format === "excel"
-                      ? "text-[#2d5a3d]"
+                      ? "text-violet-500"
                       : "text-muted-foreground"
                   }`}
                 />
                 <span
                   className={`text-sm font-medium ${
-                    format === "excel" ? "text-[#2d5a3d]" : "text-foreground"
+                    format === "excel" ? "text-violet-500" : "text-foreground"
                   }`}
                 >
                   Excel
@@ -308,20 +308,20 @@ export function ExportDialog({
                 onClick={() => setFormat("html")}
                 className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-colors ${
                   format === "html"
-                    ? "border-[#8b5cf6] bg-[#8b5cf6]/5"
-                    : "border-border hover:border-[#8b5cf6]/40"
+                    ? "border-violet-500 bg-violet-500/5"
+                    : "border-border hover:border-violet-500/40"
                 }`}
               >
                 <Globe
                   className={`size-8 ${
                     format === "html"
-                      ? "text-[#8b5cf6]"
+                      ? "text-violet-500"
                       : "text-muted-foreground"
                   }`}
                 />
                 <span
                   className={`text-sm font-medium ${
-                    format === "html" ? "text-[#8b5cf6]" : "text-foreground"
+                    format === "html" ? "text-violet-500" : "text-foreground"
                   }`}
                 >
                   L&apos;ORACLE
@@ -375,7 +375,7 @@ export function ExportDialog({
                     <div
                       className="flex size-6 items-center justify-center rounded text-xs font-bold text-white"
                       style={{
-                        backgroundColor: config?.color ?? "#c45a3c",
+                        backgroundColor: config?.color ?? "#10B981",
                       }}
                     >
                       {pillar.type}

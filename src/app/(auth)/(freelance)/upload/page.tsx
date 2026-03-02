@@ -9,11 +9,11 @@ import { useState } from "react";
 import {
   Upload,
   FileUp,
-  Loader2,
   AlertCircle,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -39,11 +39,7 @@ export default function FreelanceUploadPage() {
   // Loading
   // ---------------------------------------------------------------------------
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // ---------------------------------------------------------------------------

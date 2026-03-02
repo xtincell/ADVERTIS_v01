@@ -12,19 +12,25 @@ import {
   Clock,
   CheckCircle2,
   FileText,
-  Loader2,
   AlertCircle,
   MessageSquare,
   Save,
+  Star,
+  TrendingUp,
+  Trophy,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
+import { PageSpinner } from "~/components/ui/loading-skeleton";
 import {
   ASSIGNMENT_ROLE_LABELS,
   MISSION_STATUS_LABELS,
   MISSION_STATUS_COLORS,
+  TALENT_LEVEL_LABELS,
+  TALENT_LEVEL_CONFIG,
   type MissionStatus,
+  type TalentLevel,
 } from "~/lib/constants";
 import { Card, CardContent } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
@@ -107,15 +113,16 @@ export default function FreelanceHomePage() {
     error,
   } = api.mission.missions.getByFreelance.useQuery();
 
+  // La Guilde progression data
+  const { data: myStats } = api.guilde.getMyStats.useQuery();
+  const { data: progression } = api.guilde.getMyProgression.useQuery();
+  const { data: profile } = api.guilde.getMyProfile.useQuery();
+
   // ---------------------------------------------------------------------------
   // Loading
   // ---------------------------------------------------------------------------
   if (isLoading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   // ---------------------------------------------------------------------------
@@ -146,6 +153,9 @@ export default function FreelanceHomePage() {
         a.status === "REVIEWED" || a.mission.status === "CLOSED",
     ) ?? [];
 
+  const level = (profile?.level as TalentLevel) ?? "NOVICE";
+  const levelConfig = TALENT_LEVEL_CONFIG[level];
+
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
       {/* Header */}
@@ -153,6 +163,57 @@ export default function FreelanceHomePage() {
         <Briefcase className="h-5 w-5 text-primary" />
         <h1 className="text-xl font-semibold">Mes Missions</h1>
       </div>
+
+      {/* ── Progression Tracker ── */}
+      {profile && (
+        <div className="rounded-xl border bg-white p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <span className="text-xl">{levelConfig.emoji}</span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold text-sm">{TALENT_LEVEL_LABELS[level]}</span>
+                  <Badge
+                    variant="outline"
+                    className="text-[10px]"
+                    style={{ borderColor: levelConfig.color, color: levelConfig.color }}
+                  >
+                    La Guilde
+                  </Badge>
+                </div>
+                {progression && progression.nextLevel && (
+                  <div className="text-xs text-muted-foreground mt-0.5">
+                    Progression vers {TALENT_LEVEL_LABELS[progression.nextLevel as TalentLevel] ?? progression.nextLevel}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Briefcase className="h-3 w-3" />
+                {myStats?.totalMissions ?? profile.totalMissions ?? 0}
+              </span>
+              {(myStats?.avgScore ?? profile.avgScore) != null && (
+                <span className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-amber-500" />
+                  {(myStats?.avgScore ?? profile.avgScore ?? 0).toFixed(1)}
+                </span>
+              )}
+            </div>
+          </div>
+          {progression && (
+            <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.round(((progression.missionsProgress + progression.scoreProgress) / 2) * 100))}%`,
+                  backgroundColor: levelConfig.color,
+                }}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Active Assignments */}
       <section className="space-y-3">

@@ -54,7 +54,7 @@ export function StrategySubNav({ strategyId, className }: StrategySubNavProps) {
     >
       {/* Back to dashboard */}
       <Link
-        href="/dashboard"
+        href="/impulsion"
         className="flex shrink-0 items-center gap-1 px-3 py-2 text-muted-foreground transition-colors hover:text-foreground"
         aria-label="Retour au tableau de bord"
       >

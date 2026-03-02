@@ -65,7 +65,7 @@ export function BrandSearchBar({
   onPhaseChange,
 }: BrandSearchBarProps) {
   return (
-    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-2">
+    <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-2 rounded-xl bg-background/60 backdrop-blur-sm border border-border/50 p-2 sm:p-2">
       {/* Search input with icon */}
       <div className="relative flex-1">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -83,7 +83,7 @@ export function BrandSearchBar({
         value={sectorFilter}
         onValueChange={(v) => onSectorChange(v === "__all__" ? "" : v)}
       >
-        <SelectTrigger className="w-full sm:w-[160px]">
+        <SelectTrigger className="w-full sm:w-[160px] transition-colors duration-200">
           <SelectValue placeholder="Tous secteurs" />
         </SelectTrigger>
         <SelectContent>
@@ -103,7 +103,7 @@ export function BrandSearchBar({
         value={phaseFilter}
         onValueChange={(v) => onPhaseChange(v === "__all__" ? "" : v)}
       >
-        <SelectTrigger className="w-full sm:w-[160px]">
+        <SelectTrigger className="w-full sm:w-[160px] transition-colors duration-200">
           <SelectValue placeholder="Toutes phases" />
         </SelectTrigger>
         <SelectContent>

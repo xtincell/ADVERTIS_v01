@@ -80,12 +80,12 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
   const currentSlug = pathParts.length >= 3 && pathParts[1] === "glory" ? pathParts[2] : null;
 
   return (
-    <aside className="hidden md:flex flex-col w-[240px] min-w-[240px] bg-[#1a1a2e] text-white h-screen sticky top-0">
+    <aside className="hidden md:flex flex-col w-[240px] min-w-[240px] bg-zinc-950 text-white h-screen sticky top-0">
       {/* ----------------------------------------------------------------- */}
       {/* Logo / Title */}
       {/* ----------------------------------------------------------------- */}
       <div className="flex items-center gap-2 px-5 pt-5 pb-2">
-        <Sparkles className="h-6 w-6 text-[#6C5CE7]" />
+        <Sparkles className="h-6 w-6 text-violet-500" />
         <span className="text-xl font-bold tracking-tight">GLORY</span>
       </div>
 
@@ -101,9 +101,9 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
         <Link
           href={`/glory${strategyQuery}`}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200",
             pathname === "/glory"
-              ? "bg-[#6C5CE7]/20 text-white"
+              ? "bg-violet-500/20 text-white"
               : "text-white/70 hover:bg-white/5 hover:text-white",
           )}
         >
@@ -113,9 +113,9 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
         <Link
           href={`/glory/dashboard${strategyQuery}`}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200",
             pathname === "/glory/dashboard"
-              ? "bg-[#6C5CE7]/20 text-white"
+              ? "bg-violet-500/20 text-white"
               : "text-white/70 hover:bg-white/5 hover:text-white",
           )}
         >
@@ -125,9 +125,9 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
         <Link
           href={`/glory/history${strategyQuery}`}
           className={cn(
-            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors",
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200",
             pathname === "/glory/history"
-              ? "bg-[#6C5CE7]/20 text-white"
+              ? "bg-violet-500/20 text-white"
               : "text-white/70 hover:bg-white/5 hover:text-white",
           )}
         >
@@ -185,9 +185,9 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
                           key={tool.slug}
                           href={`/glory/${tool.slug}${strategyQuery}`}
                           className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-colors",
+                            "flex items-center gap-2 px-3 py-1.5 rounded-md text-xs transition-all duration-200",
                             isActive
-                              ? "bg-[#6C5CE7] text-white font-medium"
+                              ? "bg-violet-500 text-white font-medium"
                               : "text-white/60 hover:bg-white/5 hover:text-white",
                           )}
                         >

@@ -12,12 +12,12 @@
 // =============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { db } from "~/server/db";
 import { getIntegration } from "~/server/services/integrations/registry";
 
 // ---------------------------------------------------------------------------
-// HMAC Verification
+// HMAC Verification (timing-safe)
 // ---------------------------------------------------------------------------
 
 function verifyHmacSignature(
@@ -25,10 +25,13 @@ function verifyHmacSignature(
   secret: string,
   signature: string,
 ): boolean {
+  if (!signature) return false;
   const expected = createHmac("sha256", secret)
     .update(payload)
     .digest("hex");
-  return expected === signature;
+  // Use timing-safe comparison to prevent timing attacks
+  if (expected.length !== signature.length) return false;
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }
 
 // ---------------------------------------------------------------------------
@@ -90,15 +93,11 @@ export async function POST(
   }
 
   if (!matchedIntegration) {
-    // If no signature provided and only one integration, allow (for simpler integrations)
-    if (!signature && integrations.length === 1) {
-      matchedIntegration = integrations[0];
-    } else {
-      return NextResponse.json(
-        { error: "Invalid webhook signature" },
-        { status: 401 },
-      );
-    }
+    // Always require a valid HMAC signature — no bypass
+    return NextResponse.json(
+      { error: "Invalid webhook signature" },
+      { status: 401 },
+    );
   }
 
   // 6. Parse payload

@@ -132,7 +132,7 @@ function FormField({
 
       {/* Context hint from enrichment */}
       {enrichment?.contextHint && (
-        <p className="text-xs text-[#6C5CE7]/80 italic">
+        <p className="text-xs text-violet-500/80 italic">
           {enrichment.contextHint}
         </p>
       )}
@@ -140,9 +140,9 @@ function FormField({
       {/* Suggestion chips (loading skeleton or actual chips) */}
       {enrichmentLoading && (input.type === "text" || input.type === "textarea") && (
         <div className="flex gap-1.5 mb-2">
-          <Skeleton className="h-6 w-24 rounded-full bg-[#6C5CE7]/10" />
-          <Skeleton className="h-6 w-32 rounded-full bg-[#6C5CE7]/10" />
-          <Skeleton className="h-6 w-20 rounded-full bg-[#6C5CE7]/10" />
+          <Skeleton className="h-6 w-24 rounded-full bg-violet-500/10" />
+          <Skeleton className="h-6 w-32 rounded-full bg-violet-500/10" />
+          <Skeleton className="h-6 w-20 rounded-full bg-violet-500/10" />
         </div>
       )}
       {!enrichmentLoading && enrichment?.suggestions && enrichment.suggestions.length > 0 && (
@@ -162,7 +162,7 @@ function FormField({
           value={(value as string) ?? (input.defaultValue as string) ?? ""}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
-          className="border-gray-300 focus-visible:ring-[#6C5CE7]/30"
+          className="border-border focus-visible:ring-violet-500/20"
         />
       )}
 
@@ -174,7 +174,7 @@ function FormField({
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           rows={4}
-          className="border-gray-300 focus-visible:ring-[#6C5CE7]/30 resize-y"
+          className="border-border focus-visible:ring-violet-500/20 resize-y"
         />
       )}
 
@@ -186,7 +186,7 @@ function FormField({
           value={(value as number) ?? (input.defaultValue as number) ?? ""}
           onChange={(e) => onChange(e.target.valueAsNumber || 0)}
           disabled={disabled}
-          className="border-gray-300 focus-visible:ring-[#6C5CE7]/30 max-w-[200px]"
+          className="border-border focus-visible:ring-violet-500/20 max-w-[200px]"
         />
       )}
 
@@ -198,7 +198,7 @@ function FormField({
         >
           <SelectTrigger
             id={fieldId}
-            className="border-gray-300 focus:ring-[#6C5CE7]/30"
+            className="border-border focus:ring-violet-500/20"
           >
             <SelectValue placeholder={input.placeholder ?? "Choisir..."} />
           </SelectTrigger>
@@ -231,7 +231,7 @@ function FormField({
             }
             onCheckedChange={(checked) => onChange(checked === true)}
             disabled={disabled}
-            className="data-[state=checked]:bg-[#6C5CE7] data-[state=checked]:border-[#6C5CE7]"
+            className="data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500"
           />
           <Label
             htmlFor={fieldId}
@@ -286,7 +286,7 @@ function MultiSelectField({
                 handleToggle(opt.value, checked === true)
               }
               disabled={disabled}
-              className="data-[state=checked]:bg-[#6C5CE7] data-[state=checked]:border-[#6C5CE7]"
+              className="data-[state=checked]:bg-violet-500 data-[state=checked]:border-violet-500"
             />
             <Label
               htmlFor={checkId}

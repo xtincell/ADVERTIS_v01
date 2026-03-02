@@ -18,19 +18,25 @@ const DEFAULT_TABS: CockpitTab[] = [
   { id: "overview", label: "Vue d'ensemble" },
   { id: "strategy", label: "Stratégie" },
   { id: "operational", label: "Opérationnel" },
+  { id: "creative", label: "Créatif" },
+  { id: "planning", label: "Planning" },
   { id: "signals", label: "Signaux" },
   { id: "market", label: "Marché" },
   { id: "briefs", label: "Briefs" },
+  { id: "quality", label: "Qualité" },
 ];
 
 /** Maps tab IDs to the cockpit section keys they should show */
 export const TAB_SECTION_MAP: Record<string, string[]> = {
   overview: ["scores", "alerts", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables"],
   strategy: ["authenticite", "distinction", "valeur", "synthese"],
-  operational: ["engagement", "implementation", "budget", "widgets", "glory"],
+  operational: ["engagement", "implementation", "budget", "budget-operationnel", "widgets", "glory"],
+  creative: ["big-idea-kit", "creative-strategy", "funnel-mapping"],
+  planning: ["chrono", "partners", "budget-operationnel"],
   signals: ["signals", "decisions", "veille"],
-  market: ["risk", "track", "competitors", "opportunities"],
+  market: ["risk", "track", "competitors", "opportunities", "multi-markets"],
   briefs: ["briefs", "livrables"],
+  quality: ["quality-checklist"],
 };
 
 interface CockpitTabsProps {
@@ -47,16 +53,16 @@ export function CockpitTabs({
   const label = useLabel();
 
   return (
-    <div className="sticky top-[57px] z-30 border-b bg-background/95 backdrop-blur-sm">
+    <div className="sticky top-[57px] z-30 border-b bg-background/80 backdrop-blur-xl">
       <div className="flex overflow-x-auto scrollbar-none">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "shrink-0 px-4 py-2.5 text-sm font-medium transition-colors border-b-2",
+              "shrink-0 px-4 py-2.5 text-sm font-medium transition-all duration-200 border-b-2",
               activeTab === tab.id
-                ? "border-terracotta text-terracotta"
+                ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground",
             )}
           >

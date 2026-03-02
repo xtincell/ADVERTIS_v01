@@ -37,6 +37,17 @@ import type { SynthesePillarData } from "~/lib/types/pillar-data";
 import { parseAiGeneratedContent } from "~/lib/types/pillar-parsers";
 
 // ---------------------------------------------------------------------------
+// AI Usage Metadata — shared with cost tracker
+// ---------------------------------------------------------------------------
+
+export interface AIUsageMetadata {
+  model: string;
+  tokensIn: number;
+  tokensOut: number;
+  durationMs: number;
+}
+
+// ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -66,7 +77,7 @@ export async function generatePillarContent(
   options?: GenerationOptions,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<unknown> {
+): Promise<{ data: unknown; usage: AIUsageMetadata }> {
   let systemPrompt = getSystemPrompt(pillarType, options);
   if (currency) {
     systemPrompt = `${getCurrencyPromptInstruction(currency)}\n\n${systemPrompt}`;
@@ -81,6 +92,7 @@ export async function generatePillarContent(
     tagline,
   );
 
+  const start = Date.now();
   const result = await resilientGenerateText({
     label: `pillar-${pillarType}`,
     model: anthropic(DEFAULT_MODEL),
@@ -94,7 +106,15 @@ export async function generatePillarContent(
   if (errors?.length) {
     console.warn(`[AI Generation] Pillar ${pillarType} validation issues:`, errors);
   }
-  return data;
+  return {
+    data,
+    usage: {
+      model: DEFAULT_MODEL,
+      tokensIn: result.usage?.inputTokens ?? 0,
+      tokensOut: result.usage?.outputTokens ?? 0,
+      durationMs: Date.now() - start,
+    },
+  };
 }
 
 /**
@@ -109,7 +129,7 @@ export async function generateSyntheseContent(
   options?: GenerationOptions,
   tagline?: string | null,
   currency?: SupportedCurrency,
-): Promise<SynthesePillarData> {
+): Promise<{ data: SynthesePillarData; usage: AIUsageMetadata }> {
   let systemPrompt = getSystemPrompt("S", options);
   if (currency) {
     systemPrompt = `${getCurrencyPromptInstruction(currency)}\n\n${systemPrompt}`;
@@ -124,6 +144,7 @@ export async function generateSyntheseContent(
     tagline,
   );
 
+  const start = Date.now();
   const result = await resilientGenerateText({
     label: "pillar-S-synthese",
     model: anthropic(DEFAULT_MODEL),
@@ -137,7 +158,15 @@ export async function generateSyntheseContent(
   if (errors?.length) {
     console.warn("[AI Generation] Pillar S validation issues:", errors);
   }
-  return data;
+  return {
+    data,
+    usage: {
+      model: DEFAULT_MODEL,
+      tokensIn: result.usage?.inputTokens ?? 0,
+      tokensOut: result.usage?.outputTokens ?? 0,
+      durationMs: Date.now() - start,
+    },
+  };
 }
 
 // ---------------------------------------------------------------------------

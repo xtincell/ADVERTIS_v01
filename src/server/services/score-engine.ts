@@ -30,6 +30,7 @@
 
 import { db } from "~/server/db";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
+import { extractScoreVariables } from "./variable-extractor";
 import {
   getCoherenceBreakdown,
   type CoherenceBreakdown,
@@ -222,6 +223,13 @@ export async function recalculateAllScores(
     // ScoreSnapshot table might not exist yet (pre-migration) — don't crash
     console.warn("[ScoreEngine] Failed to create ScoreSnapshot — table may not exist yet");
   }
+
+  // Sync scores to BrandVariable registry (fire-and-forget)
+  void extractScoreVariables(strategyId, {
+    coherenceScore: coherenceBreakdown.total,
+    riskScore,
+    bmfScore,
+  });
 
   return {
     coherenceScore: coherenceBreakdown.total,

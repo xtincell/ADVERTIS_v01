@@ -86,7 +86,7 @@ export function SectionSynthese({
       return "bg-emerald-100 text-emerald-700";
     if (lower.includes("cours") || lower.includes("progress"))
       return "bg-amber-100 text-amber-700";
-    return "bg-gray-100 text-gray-600";
+    return "bg-muted text-muted-foreground";
   };
 
   return (
@@ -114,7 +114,7 @@ export function SectionSynthese({
 
         {/* Synthèse Executive — premium encart */}
         {sContent.syntheseExecutive && (
-          <div className="rounded-xl border-l-4 border-[#c45a3c]/40 bg-gradient-to-r from-[#c45a3c]/5 to-transparent px-6 py-5">
+          <div className="rounded-xl border-l-4 border-orange-500/40 bg-gradient-to-r from-orange-500/5 to-transparent px-6 py-5">
             <h3 className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               <FileText className="h-3.5 w-3.5" />
               Synthèse exécutive
@@ -129,8 +129,8 @@ export function SectionSynthese({
         {sContent.visionStrategique && (
           <div className="rounded-xl border bg-gradient-to-br from-muted/40 to-transparent p-5">
             <div className="mb-2 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#c45a3c]/10">
-                <Eye className="h-4 w-4 text-[#c45a3c]" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-500/10">
+                <Eye className="h-4 w-4 text-orange-500" />
               </div>
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Vision stratégique
@@ -360,7 +360,7 @@ export function SectionSynthese({
                     className="rounded-lg border p-4 transition-shadow hover:shadow-sm"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#c45a3c]/10 text-xs font-bold text-[#c45a3c]">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-xs font-bold text-orange-500">
                         {rec.priorite ?? i + 1}
                       </div>
                       <div className="flex-1 min-w-0">
