@@ -572,6 +572,149 @@ export const BUDGET_TIER_CONFIG: Record<BudgetTierType, {
 };
 
 // ============================================
+// PARAMETRIC BUDGET FORMULA — Coefficients αᵢ, βⱼ, γₖ
+// ============================================
+// Budget_poste_i = CA_visé × αᵢ(secteur) × βⱼ(maturité) × γₖ(environnement)
+// Budget_total = Σ Budget_poste_i
+// Marge_nette = CA_visé - Budget_total (si < 0 → modèle non viable)
+
+/** Budget cost post names (9 postes universels) */
+export const BUDGET_POSTS = [
+  "achats",       // Achats / matières premières
+  "salaires",     // Masse salariale
+  "loyer",        // Loyer & locatif
+  "comm",         // Communication & marketing
+  "transport",    // Transport & logistique
+  "energie",      // Énergie & fluides
+  "admin",        // Frais généraux & admin
+  "amortissement",// Amortissements
+  "provisions",   // Provisions & imprévus
+] as const;
+export type BudgetPost = (typeof BUDGET_POSTS)[number];
+
+export const BUDGET_POST_LABELS: Record<BudgetPost, string> = {
+  achats:        "Achats & matières premières",
+  salaires:      "Masse salariale",
+  loyer:         "Loyer & locatif",
+  comm:          "Communication & marketing",
+  transport:     "Transport & logistique",
+  energie:       "Énergie & fluides",
+  admin:         "Frais généraux & admin",
+  amortissement: "Amortissements",
+  provisions:    "Provisions & imprévus",
+};
+
+/**
+ * αᵢ — SECTOR COST COEFFICIENTS (% du CA par poste budgétaire)
+ * Chaque secteur a ses propres ratios structurels.
+ */
+export type SectorCostCoefficients = Record<BudgetPost, number>;
+
+export const SECTOR_ALPHA: Record<string, SectorCostCoefficients> = {
+  // Services intellectuels (consulting, b2b-saas, creative, education)
+  "consulting":    { achats: 0.02, salaires: 0.45, loyer: 0.07, comm: 0.10, transport: 0.04, energie: 0.02, admin: 0.04, amortissement: 0.03, provisions: 0.03 },
+  "b2b-saas":      { achats: 0.02, salaires: 0.50, loyer: 0.04, comm: 0.20, transport: 0.01, energie: 0.08, admin: 0.06, amortissement: 0.03, provisions: 0.03 },
+  "creative":      { achats: 0.05, salaires: 0.45, loyer: 0.06, comm: 0.12, transport: 0.03, energie: 0.02, admin: 0.04, amortissement: 0.03, provisions: 0.03 },
+  "education":     { achats: 0.05, salaires: 0.40, loyer: 0.08, comm: 0.12, transport: 0.03, energie: 0.04, admin: 0.05, amortissement: 0.04, provisions: 0.03 },
+  // Commerce & Retail
+  "retail":        { achats: 0.50, salaires: 0.15, loyer: 0.10, comm: 0.05, transport: 0.07, energie: 0.03, admin: 0.04, amortissement: 0.04, provisions: 0.03 },
+  "e-commerce":    { achats: 0.40, salaires: 0.18, loyer: 0.03, comm: 0.15, transport: 0.08, energie: 0.03, admin: 0.04, amortissement: 0.03, provisions: 0.03 },
+  "fashion":       { achats: 0.35, salaires: 0.18, loyer: 0.10, comm: 0.12, transport: 0.05, energie: 0.02, admin: 0.04, amortissement: 0.04, provisions: 0.03 },
+  "beauty":        { achats: 0.30, salaires: 0.18, loyer: 0.08, comm: 0.15, transport: 0.06, energie: 0.02, admin: 0.04, amortissement: 0.04, provisions: 0.03 },
+  // Restauration & Agroalimentaire
+  "food-bev":      { achats: 0.30, salaires: 0.30, loyer: 0.10, comm: 0.04, transport: 0.03, energie: 0.07, admin: 0.04, amortissement: 0.05, provisions: 0.04 },
+  "hospitality":   { achats: 0.25, salaires: 0.30, loyer: 0.12, comm: 0.06, transport: 0.03, energie: 0.08, admin: 0.04, amortissement: 0.05, provisions: 0.04 },
+  // Industrie & Ressources
+  "manufacturing": { achats: 0.40, salaires: 0.20, loyer: 0.06, comm: 0.03, transport: 0.08, energie: 0.10, admin: 0.04, amortissement: 0.15, provisions: 0.04 },
+  "mining":        { achats: 0.30, salaires: 0.20, loyer: 0.05, comm: 0.03, transport: 0.10, energie: 0.12, admin: 0.04, amortissement: 0.15, provisions: 0.05 },
+  "energy":        { achats: 0.25, salaires: 0.22, loyer: 0.05, comm: 0.04, transport: 0.06, energie: 0.08, admin: 0.04, amortissement: 0.18, provisions: 0.05 },
+  "construction":  { achats: 0.45, salaires: 0.22, loyer: 0.04, comm: 0.03, transport: 0.08, energie: 0.05, admin: 0.04, amortissement: 0.10, provisions: 0.05 },
+  "agriculture":   { achats: 0.35, salaires: 0.22, loyer: 0.04, comm: 0.03, transport: 0.10, energie: 0.06, admin: 0.04, amortissement: 0.08, provisions: 0.05 },
+  // FMCG
+  "fmcg":          { achats: 0.42, salaires: 0.12, loyer: 0.05, comm: 0.12, transport: 0.15, energie: 0.06, admin: 0.04, amortissement: 0.08, provisions: 0.03 },
+  // Finance & Tech
+  "fintech":       { achats: 0.03, salaires: 0.45, loyer: 0.05, comm: 0.18, transport: 0.02, energie: 0.06, admin: 0.05, amortissement: 0.04, provisions: 0.04 },
+  "banking":       { achats: 0.05, salaires: 0.35, loyer: 0.08, comm: 0.08, transport: 0.03, energie: 0.04, admin: 0.06, amortissement: 0.06, provisions: 0.05 },
+  "mobile-money":  { achats: 0.04, salaires: 0.40, loyer: 0.04, comm: 0.15, transport: 0.02, energie: 0.06, admin: 0.05, amortissement: 0.04, provisions: 0.04 },
+  // Télécoms & Infra
+  "telecom":       { achats: 0.15, salaires: 0.25, loyer: 0.06, comm: 0.15, transport: 0.04, energie: 0.08, admin: 0.05, amortissement: 0.12, provisions: 0.04 },
+  "logistics":     { achats: 0.15, salaires: 0.25, loyer: 0.06, comm: 0.04, transport: 0.20, energie: 0.08, admin: 0.04, amortissement: 0.10, provisions: 0.04 },
+  "maritime":      { achats: 0.20, salaires: 0.22, loyer: 0.05, comm: 0.03, transport: 0.15, energie: 0.10, admin: 0.04, amortissement: 0.12, provisions: 0.05 },
+  "real-estate":   { achats: 0.10, salaires: 0.18, loyer: 0.03, comm: 0.08, transport: 0.04, energie: 0.04, admin: 0.05, amortissement: 0.08, provisions: 0.04 },
+  // Santé & Bien-être
+  "health":        { achats: 0.20, salaires: 0.35, loyer: 0.08, comm: 0.06, transport: 0.03, energie: 0.05, admin: 0.05, amortissement: 0.06, provisions: 0.04 },
+  "wellness":      { achats: 0.15, salaires: 0.30, loyer: 0.10, comm: 0.10, transport: 0.03, energie: 0.04, admin: 0.04, amortissement: 0.05, provisions: 0.03 },
+  // Médias & Culture
+  "media":         { achats: 0.15, salaires: 0.35, loyer: 0.06, comm: 0.10, transport: 0.04, energie: 0.04, admin: 0.04, amortissement: 0.05, provisions: 0.03 },
+  "sports":        { achats: 0.15, salaires: 0.25, loyer: 0.08, comm: 0.15, transport: 0.06, energie: 0.04, admin: 0.04, amortissement: 0.05, provisions: 0.04 },
+  // Secteur public & ONG
+  "public":        { achats: 0.10, salaires: 0.40, loyer: 0.08, comm: 0.06, transport: 0.05, energie: 0.04, admin: 0.06, amortissement: 0.05, provisions: 0.04 },
+  "ngo":           { achats: 0.10, salaires: 0.40, loyer: 0.06, comm: 0.08, transport: 0.06, energie: 0.04, admin: 0.05, amortissement: 0.04, provisions: 0.04 },
+  // Fallback
+  "other":         { achats: 0.20, salaires: 0.30, loyer: 0.07, comm: 0.08, transport: 0.05, energie: 0.05, admin: 0.05, amortissement: 0.05, provisions: 0.04 },
+};
+
+/** Helper: get sector alpha coefficients, falling back to "other" */
+export function getSectorAlpha(sector: string | null | undefined): SectorCostCoefficients {
+  return SECTOR_ALPHA[sector ?? "other"] ?? SECTOR_ALPHA["other"]!;
+}
+
+/**
+ * βⱼ — MATURITY MULTIPLIERS per budget post
+ * Le stade de maturité déforme les ratios de base.
+ */
+export interface MaturityMultipliers {
+  comm: number;
+  salaires: number;
+  admin: number;
+  provisions: number;
+  achats: number;
+  loyer: number;
+  transport: number;
+  energie: number;
+  amortissement: number;
+}
+
+export const MATURITY_BETA: Record<string, MaturityMultipliers> = {
+  LAUNCH:  { comm: 2.0, salaires: 0.7, admin: 1.3, provisions: 1.5, achats: 0.8, loyer: 0.8, transport: 0.9, energie: 1.0, amortissement: 0.8 },
+  STARTUP: { comm: 1.5, salaires: 0.8, admin: 1.2, provisions: 1.3, achats: 0.9, loyer: 0.9, transport: 1.0, energie: 1.0, amortissement: 0.9 },
+  GROWTH:  { comm: 1.2, salaires: 1.2, admin: 1.0, provisions: 1.2, achats: 1.0, loyer: 1.0, transport: 1.0, energie: 1.0, amortissement: 1.0 },
+  MATURE:  { comm: 1.0, salaires: 1.0, admin: 1.0, provisions: 1.0, achats: 1.0, loyer: 1.0, transport: 1.0, energie: 1.0, amortissement: 1.0 },
+  DEFAULT: { comm: 1.0, salaires: 1.0, admin: 1.0, provisions: 1.0, achats: 1.0, loyer: 1.0, transport: 1.0, energie: 1.0, amortissement: 1.0 },
+};
+
+/** Helper: get maturity beta multipliers */
+export function getMaturityBeta(maturity: string | null | undefined): MaturityMultipliers {
+  return MATURITY_BETA[maturity ?? "DEFAULT"] ?? MATURITY_BETA["DEFAULT"]!;
+}
+
+/**
+ * γₖ — ENVIRONMENTAL CORRECTORS (West Africa / CEMAC / WAEMU)
+ * Facteurs structurels qui déforment les ratios par rapport aux références occidentales.
+ */
+export interface EnvironmentCorrector {
+  label: string;
+  factor: number;
+  posts: BudgetPost[];
+}
+
+export const ENVIRONMENT_GAMMA: Record<string, EnvironmentCorrector> = {
+  energieInstable:     { label: "Énergie instable (groupes, onduleurs, fuel)",      factor: 1.5, posts: ["energie"] },
+  logistiqueFragile:   { label: "Logistique sous-infrastructurée",                   factor: 1.4, posts: ["transport"] },
+  fiscaliteInformelle: { label: "Fiscalité formelle + informelle",                   factor: 1.2, posts: ["admin"] },
+  coutCapitalEleve:    { label: "Coût du capital élevé (taux CEMAC 8-15%)",          factor: 1.3, posts: ["amortissement", "provisions"] },
+  mainOeuvreRare:      { label: "Main d'œuvre qualifiée rare et sur-sollicitée",     factor: 1.3, posts: ["salaires"] },
+  digitalMoinsCher:    { label: "Digital moins cher (CPM/CPC/influence bas)",         factor: 0.7, posts: ["comm"] },
+  immobilierBas:       { label: "Immobilier bureau accessible",                      factor: 0.6, posts: ["loyer"] },
+};
+
+/** Default set of γ corrections for West Africa */
+export const DEFAULT_GAMMA_PROFILE = [
+  "energieInstable", "logistiqueFragile", "fiscaliteInformelle",
+  "coutCapitalEleve", "mainOeuvreRare", "digitalMoinsCher", "immobilierBas",
+] as const;
+
+// ============================================
 // PHASE 1 — VERTICAL DICTIONARY
 // ============================================
 
@@ -1205,3 +1348,301 @@ export const COMMISSION_RATES: Record<TalentLevel, number> = {
   EXPERT: 0.15,     // 15%
   LEGEND: 0.12,     // 12%
 };
+
+// =============================================================================
+// CRM PIPELINE CONSTANTS
+// =============================================================================
+
+export const PIPELINE_STAGES = [
+  "DECOUVERTE", "QUALIFICATION", "PROPOSITION", "NEGOCIATION", "GAGNE", "PERDU",
+] as const;
+export type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+export const PIPELINE_STAGE_LABELS: Record<PipelineStage, string> = {
+  DECOUVERTE: "Découverte",
+  QUALIFICATION: "Qualification",
+  PROPOSITION: "Proposition",
+  NEGOCIATION: "Négociation",
+  GAGNE: "Gagné",
+  PERDU: "Perdu",
+};
+
+export const PIPELINE_STAGE_COLORS: Record<PipelineStage, string> = {
+  DECOUVERTE: "text-sky-600 bg-sky-50 border-sky-200",
+  QUALIFICATION: "text-violet-600 bg-violet-50 border-violet-200",
+  PROPOSITION: "text-amber-600 bg-amber-50 border-amber-200",
+  NEGOCIATION: "text-orange-600 bg-orange-50 border-orange-200",
+  GAGNE: "text-emerald-600 bg-emerald-50 border-emerald-200",
+  PERDU: "text-red-600 bg-red-50 border-red-200",
+};
+
+/** Default probability per stage */
+export const PIPELINE_STAGE_PROBABILITY: Record<PipelineStage, number> = {
+  DECOUVERTE: 10,
+  QUALIFICATION: 30,
+  PROPOSITION: 50,
+  NEGOCIATION: 70,
+  GAGNE: 100,
+  PERDU: 0,
+};
+
+export const PIPELINE_VALID_TRANSITIONS: Record<PipelineStage, PipelineStage[]> = {
+  DECOUVERTE: ["QUALIFICATION", "PERDU"],
+  QUALIFICATION: ["PROPOSITION", "DECOUVERTE", "PERDU"],
+  PROPOSITION: ["NEGOCIATION", "QUALIFICATION", "PERDU"],
+  NEGOCIATION: ["GAGNE", "PROPOSITION", "PERDU"],
+  GAGNE: [],
+  PERDU: ["DECOUVERTE"],
+};
+
+export const DEAL_SOURCES = [
+  "referral", "inbound", "cold_outreach", "event", "partner", "upsell",
+] as const;
+export type DealSource = (typeof DEAL_SOURCES)[number];
+
+export const DEAL_SOURCE_LABELS: Record<DealSource, string> = {
+  referral: "Recommandation",
+  inbound: "Inbound",
+  cold_outreach: "Prospection",
+  event: "Événement",
+  partner: "Partenaire",
+  upsell: "Upsell",
+};
+
+// =============================================================================
+// AMBASSADOR PROGRAM (Phase 9 — Programme Apôtres)
+// =============================================================================
+
+export const AMBASSADOR_TIERS = [
+  "BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND",
+] as const;
+export type AmbassadorTier = (typeof AMBASSADOR_TIERS)[number];
+
+export const AMBASSADOR_TIER_LABELS: Record<AmbassadorTier, string> = {
+  BRONZE: "Bronze",
+  SILVER: "Argent",
+  GOLD: "Or",
+  PLATINUM: "Platine",
+  DIAMOND: "Diamant",
+};
+
+export const AMBASSADOR_TIER_COLORS: Record<AmbassadorTier, string> = {
+  BRONZE: "bg-orange-50 text-orange-700 border-orange-200",
+  SILVER: "bg-slate-50 text-slate-600 border-slate-200",
+  GOLD: "bg-amber-50 text-amber-700 border-amber-200",
+  PLATINUM: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  DIAMOND: "bg-violet-50 text-violet-700 border-violet-200",
+};
+
+/** Points required to reach each tier */
+export const AMBASSADOR_TIER_THRESHOLDS: Record<AmbassadorTier, number> = {
+  BRONZE: 0,
+  SILVER: 100,
+  GOLD: 500,
+  PLATINUM: 2000,
+  DIAMOND: 10000,
+};
+
+export const AMBASSADOR_STATUSES = [
+  "INVITED", "ACTIVE", "PAUSED", "CHURNED",
+] as const;
+export type AmbassadorStatus = (typeof AMBASSADOR_STATUSES)[number];
+
+export const AMBASSADOR_STATUS_LABELS: Record<AmbassadorStatus, string> = {
+  INVITED: "Invité",
+  ACTIVE: "Actif",
+  PAUSED: "En pause",
+  CHURNED: "Inactif",
+};
+
+// =============================================================================
+// PUBLICATIONS (Phase 9 — Editorial Calendar)
+// =============================================================================
+
+export const PUBLICATION_STATUSES = [
+  "IDEA", "DRAFT", "REVIEW", "APPROVED", "SCHEDULED", "PUBLISHED", "ARCHIVED",
+] as const;
+export type PublicationStatus = (typeof PUBLICATION_STATUSES)[number];
+
+export const PUBLICATION_STATUS_LABELS: Record<PublicationStatus, string> = {
+  IDEA: "Idée",
+  DRAFT: "Brouillon",
+  REVIEW: "En revue",
+  APPROVED: "Approuvé",
+  SCHEDULED: "Planifié",
+  PUBLISHED: "Publié",
+  ARCHIVED: "Archivé",
+};
+
+export const PUBLICATION_STATUS_COLORS: Record<PublicationStatus, string> = {
+  IDEA: "bg-slate-50 text-slate-600 border-slate-200",
+  DRAFT: "bg-amber-50 text-amber-700 border-amber-200",
+  REVIEW: "bg-blue-50 text-blue-700 border-blue-200",
+  APPROVED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  SCHEDULED: "bg-indigo-50 text-indigo-700 border-indigo-200",
+  PUBLISHED: "bg-green-50 text-green-700 border-green-200",
+  ARCHIVED: "bg-gray-50 text-gray-500 border-gray-200",
+};
+
+export const CONTENT_TYPES = [
+  "POST", "STORY", "REEL", "ARTICLE", "NEWSLETTER", "VIDEO", "PODCAST", "EVENT",
+] as const;
+export type ContentType = (typeof CONTENT_TYPES)[number];
+
+export const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  POST: "Post",
+  STORY: "Story",
+  REEL: "Reel",
+  ARTICLE: "Article",
+  NEWSLETTER: "Newsletter",
+  VIDEO: "Vidéo",
+  PODCAST: "Podcast",
+  EVENT: "Événement",
+};
+
+export const PUB_CHANNELS = [
+  "INSTAGRAM", "FACEBOOK", "LINKEDIN", "TWITTER", "TIKTOK", "YOUTUBE", "BLOG", "EMAIL",
+] as const;
+export type PubChannel = (typeof PUB_CHANNELS)[number];
+
+export const PUB_CHANNEL_LABELS: Record<PubChannel, string> = {
+  INSTAGRAM: "Instagram",
+  FACEBOOK: "Facebook",
+  LINKEDIN: "LinkedIn",
+  TWITTER: "X (Twitter)",
+  TIKTOK: "TikTok",
+  YOUTUBE: "YouTube",
+  BLOG: "Blog",
+  EMAIL: "Email",
+};
+
+export const PUB_CHANNEL_COLORS: Record<PubChannel, string> = {
+  INSTAGRAM: "#E4405F",
+  FACEBOOK: "#1877F2",
+  LINKEDIN: "#0A66C2",
+  TWITTER: "#000000",
+  TIKTOK: "#00F2EA",
+  YOUTUBE: "#FF0000",
+  BLOG: "#6366F1",
+  EMAIL: "#059669",
+};
+
+// =============================================================================
+// MESSAGING (Phase 9 — Messagerie)
+// =============================================================================
+
+export const CONVERSATION_TYPES = [
+  "DIRECT", "GROUP", "STRATEGY", "MISSION",
+] as const;
+export type ConversationType = (typeof CONVERSATION_TYPES)[number];
+
+export const MESSAGE_TYPES = [
+  "TEXT", "FILE", "SYSTEM", "ACTION",
+] as const;
+export type MessageType = (typeof MESSAGE_TYPES)[number];
+
+// =============================================================================
+// MESTOR AI (Phase 10 — AI Strategic Advisor)
+// =============================================================================
+
+export const MESTOR_ROLES = ["user", "assistant", "system"] as const;
+export type MestorRole = (typeof MESTOR_ROLES)[number];
+
+// =============================================================================
+// COHORT ANALYSIS (Phase 10 — Retention & LTV)
+// =============================================================================
+
+export const COHORT_PERIOD_TYPES = [
+  "WEEKLY", "MONTHLY", "QUARTERLY",
+] as const;
+export type CohortPeriodType = (typeof COHORT_PERIOD_TYPES)[number];
+
+// =============================================================================
+// ATTRIBUTION (Phase 10 — Channel Attribution)
+// =============================================================================
+
+export const ATTRIBUTION_MODELS = [
+  "FIRST_TOUCH", "LAST_TOUCH", "LINEAR", "TIME_DECAY", "POSITION",
+] as const;
+export type AttributionModel = (typeof ATTRIBUTION_MODELS)[number];
+
+export const ATTRIBUTION_MODEL_LABELS: Record<AttributionModel, string> = {
+  FIRST_TOUCH: "Premier contact",
+  LAST_TOUCH: "Dernier contact",
+  LINEAR: "Linéaire",
+  TIME_DECAY: "Décroissance temporelle",
+  POSITION: "Positionnel",
+};
+
+export const ATTRIBUTION_EVENT_TYPES = [
+  "IMPRESSION", "CLICK", "ENGAGEMENT", "CONVERSION", "REVENUE",
+] as const;
+export type AttributionEventType = (typeof ATTRIBUTION_EVENT_TYPES)[number];
+
+export const ATTRIBUTION_CHANNELS = [
+  "INSTAGRAM", "FACEBOOK", "GOOGLE_ADS", "LINKEDIN", "TIKTOK",
+  "YOUTUBE", "ORGANIC_SEARCH", "EMAIL", "EVENT", "REFERRAL",
+  "DIRECT", "INFLUENCER", "PR",
+] as const;
+export type AttributionChannel = (typeof ATTRIBUTION_CHANNELS)[number];
+
+export const ATTRIBUTION_CHANNEL_LABELS: Record<AttributionChannel, string> = {
+  INSTAGRAM: "Instagram",
+  FACEBOOK: "Facebook",
+  GOOGLE_ADS: "Google Ads",
+  LINKEDIN: "LinkedIn",
+  TIKTOK: "TikTok",
+  YOUTUBE: "YouTube",
+  ORGANIC_SEARCH: "Recherche organique",
+  EMAIL: "Email",
+  EVENT: "Événement",
+  REFERRAL: "Recommandation",
+  DIRECT: "Direct",
+  INFLUENCER: "Influenceur",
+  PR: "Relations presse",
+};
+
+export const ATTRIBUTION_CHANNEL_COLORS: Record<AttributionChannel, string> = {
+  INSTAGRAM: "#E4405F",
+  FACEBOOK: "#1877F2",
+  GOOGLE_ADS: "#4285F4",
+  LINKEDIN: "#0A66C2",
+  TIKTOK: "#00F2EA",
+  YOUTUBE: "#FF0000",
+  ORGANIC_SEARCH: "#34A853",
+  EMAIL: "#059669",
+  EVENT: "#F59E0B",
+  REFERRAL: "#8B5CF6",
+  DIRECT: "#6B7280",
+  INFLUENCER: "#EC4899",
+  PR: "#14B8A6",
+};
+
+// =============================================================================
+// BRAND VAULT (Phase 10 — Brand Asset Library)
+// =============================================================================
+
+export const ASSET_CATEGORIES = [
+  "LOGO", "TYPOGRAPHY", "COLOR_PALETTE", "GUIDELINE", "TEMPLATE",
+  "PHOTO", "VIDEO", "ILLUSTRATION", "ICON", "DOCUMENT", "OTHER",
+] as const;
+export type AssetCategory = (typeof ASSET_CATEGORIES)[number];
+
+export const ASSET_CATEGORY_LABELS: Record<AssetCategory, string> = {
+  LOGO: "Logo",
+  TYPOGRAPHY: "Typographie",
+  COLOR_PALETTE: "Palette couleurs",
+  GUIDELINE: "Charte graphique",
+  TEMPLATE: "Template",
+  PHOTO: "Photo",
+  VIDEO: "Vidéo",
+  ILLUSTRATION: "Illustration",
+  ICON: "Icône",
+  DOCUMENT: "Document",
+  OTHER: "Autre",
+};
+
+export const ASSET_STATUSES = [
+  "ACTIVE", "ARCHIVED", "DEPRECATED",
+] as const;
+export type AssetStatus = (typeof ASSET_STATUSES)[number];

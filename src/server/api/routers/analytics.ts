@@ -38,7 +38,7 @@ import type {
   RiskAuditResult,
   TrackAuditResult,
   SynthesePillarData,
-  ValeurPillarData,
+  ValeurPillarDataV2,
 } from "~/lib/types/pillar-schemas";
 import { SECTORS, PHASE_CONFIG } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
@@ -318,16 +318,16 @@ export const analyticsRouter = createTRPCRouter({
 
         const pillarV = s.pillars.find((p) => p.type === "V");
         if (pillarV?.status === "complete" && pillarV.content) {
-          const parsed = parsePillarContent<ValeurPillarData>("V", pillarV.content);
+          const parsed = parsePillarContent<ValeurPillarDataV2>("V", pillarV.content);
           if (parsed.success) {
-            const ue = parsed.data.unitEconomics;
-            if (ue && (ue.cac || ue.ltv || ue.ratio)) {
+            const d = parsed.data;
+            if (d.cac || d.ltv || d.ltvCacRatio) {
               unitEcon = {
-                cac: ue.cac,
-                ltv: ue.ltv,
-                ratio: ue.ratio,
-                pointMort: ue.pointMort,
-                marges: ue.marges,
+                cac: d.cac,
+                ltv: d.ltv,
+                ratio: d.ltvCacRatio,
+                pointMort: d.pointMort,
+                marges: d.marges,
               };
             }
           }
@@ -762,4 +762,47 @@ export const analyticsRouter = createTRPCRouter({
         bmfBreakdown,
       };
     }),
+
+  /**
+   * Flywheel operational KPIs for the enriched dashboard.
+   * Returns active missions count, talent count, active leads (draft strategies).
+   */
+  getFlywheelKpis: protectedProcedure.query(async ({ ctx }) => {
+    // Active missions (not closed/maintenance)
+    const activeMissions = await ctx.db.mission.count({
+      where: {
+        strategy: { userId: ctx.session.user.id },
+        status: { in: ["INTAKE", "INTELLIGENCE", "STAFFING", "IN_PROGRESS", "REVIEW"] },
+      },
+    });
+
+    // Total talent profiles in La Guilde
+    const totalTalents = await ctx.db.talentProfile.count();
+
+    // Active leads = strategies still in draft or generating phase
+    const activeLeads = await ctx.db.strategy.count({
+      where: {
+        userId: ctx.session.user.id,
+        status: { in: ["draft", "generating"] },
+      },
+    });
+
+    // Completed strategies this month (for monthly velocity)
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const completedThisMonth = await ctx.db.strategy.count({
+      where: {
+        userId: ctx.session.user.id,
+        status: "complete",
+        updatedAt: { gte: monthStart },
+      },
+    });
+
+    return {
+      activeMissions,
+      totalTalents,
+      activeLeads,
+      completedThisMonth,
+    };
+  }),
 });

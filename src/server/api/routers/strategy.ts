@@ -63,6 +63,8 @@ export const strategyRouter = createTRPCRouter({
         deliveryMode: z.string().optional(),
         inputMethod: z.string().optional(),
         currency: z.string().optional(),
+        annualBudget: z.number().int().positive().optional(),
+        targetRevenue: z.number().int().positive().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -78,6 +80,8 @@ export const strategyRouter = createTRPCRouter({
           deliveryMode: input.deliveryMode ?? null,
           inputMethod: input.inputMethod ?? null,
           currency: input.currency ?? "XOF",
+          annualBudget: input.annualBudget ?? null,
+          targetRevenue: input.targetRevenue ?? null,
           status: "draft",
           userId: ctx.session.user.id,
           pillars: {
@@ -182,6 +186,9 @@ export const strategyRouter = createTRPCRouter({
         description: z.string().optional(),
         interviewData: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.record(z.string(), z.unknown())])).optional(),
         currency: z.string().optional(),
+        deliveryMode: z.string().nullable().optional(),
+        annualBudget: z.number().int().positive().nullable().optional(),
+        targetRevenue: z.number().int().positive().nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

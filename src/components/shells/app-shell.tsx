@@ -12,6 +12,7 @@ import { Menu } from "lucide-react";
 import { cn } from "~/lib/utils";
 import { AppSidebar, type SidebarNavItem } from "./app-sidebar";
 import { BottomNav, type BottomNavItem } from "./bottom-nav";
+import { ViewAsSwitcher } from "./view-as-switcher";
 import { Button } from "~/components/ui/button";
 import {
   Sheet,
@@ -128,10 +129,11 @@ export function AppShell({
             </span>
           </div>
 
-          {/* Optional header slot (right side) */}
-          {headerSlot && (
-            <div className="flex-1 flex justify-end">{headerSlot}</div>
-          )}
+          {/* Right side: ViewAs switcher (admin) + optional header slot */}
+          <div className="flex-1 flex items-center justify-end gap-3">
+            {headerSlot}
+            <ViewAsSwitcher />
+          </div>
         </header>
 
         {/* ----------------------------------------------------------------- */}

@@ -3,21 +3,23 @@
 // =============================================================================
 //
 // Single entry point for recalculating ALL strategy scores. Orchestrates
-// the 3 mathematical calculators, persists results to DB, and creates
+// the 4 mathematical calculators, persists results to DB, and creates
 // ScoreSnapshot records for evolution tracking.
 //
 // PUBLIC API :
-//   6.1  recalculateAllScores() — Recomputes coherence + risk + BMF scores
+//   6.1  recalculateAllScores() — Recomputes coherence + risk + BMF + invest scores
 //
 // SCORE COMPONENTS :
 //   - Coherence (0-100) → Module 6A (coherence-calculator.ts)
 //   - Risk      (0-100) → Module 6B (risk-calculator.ts)
 //   - BMF       (0-100) → Module 6C (bmf-calculator.ts)
+//   - Invest    (0-100) → Module 6D (investment-calculator.ts)
 //
 // DEPENDENCIES :
 //   - Module 6A (coherence-calculator)
 //   - Module 6B (risk-calculator)
 //   - Module 6C (bmf-calculator)
+//   - Module 6D (investment-calculator)
 //   - lib/types/pillar-parsers → parsePillarContent()
 //   - Prisma: Strategy, Pillar, ScoreSnapshot
 //
@@ -43,7 +45,11 @@ import {
   calculateBrandMarketFit,
   type BmfBreakdown,
 } from "./bmf-calculator";
-import type { RiskAuditResult, TrackAuditResult } from "~/lib/types/pillar-schemas";
+import {
+  calculateInvestmentScore,
+  type InvestBreakdown,
+} from "./investment-calculator";
+import type { RiskAuditResult, TrackAuditResult, ImplementationData } from "~/lib/types/pillar-schemas";
 
 // ---------------------------------------------------------------------------
 // 6.0  Types
@@ -56,6 +62,8 @@ export interface AllScores {
   riskBreakdown: RiskBreakdown | null;
   bmfScore: number | null;
   bmfBreakdown: BmfBreakdown | null;
+  investScore: number | null;
+  investBreakdown: InvestBreakdown | null;
   /** Only present for child strategies in the brand tree */
   parentCoherenceScore?: number | null;
 }
@@ -69,7 +77,7 @@ export interface AllScores {
  *
  * 1. Loads strategy + all pillars
  * 2. Parses pillar content via Zod
- * 3. Computes coherence (5 components), risk (4 components), BMF (4 components)
+ * 3. Computes coherence (5), risk (4), BMF (4), invest (5) components
  * 4. Persists updated scores in DB
  * 5. Creates a ScoreSnapshot for evolution tracking
  *
@@ -158,13 +166,34 @@ export async function recalculateAllScores(
     }
   }
 
-  // --- 6.1.4  Persist Strategy.coherenceScore ---
+  // --- 6.1.4  Investment Score (only if I pillar is complete) ---
+  let investScore: number | null = null;
+  let investBreakdown: InvestBreakdown | null = null;
+  const iPillar = strategy.pillars.find((p) => p.type === "I");
+  if (iPillar?.status === "complete" && iPillar.content) {
+    const { data: iData } = parsePillarContent<ImplementationData>(
+      "I",
+      iPillar.content,
+    );
+    if (iData) {
+      investBreakdown = calculateInvestmentScore(
+        iData,
+        strategy.annualBudget,
+        strategy.targetRevenue,
+        strategy.sector,
+        strategy.maturityProfile,
+      );
+      investScore = investBreakdown.total;
+    }
+  }
+
+  // --- 6.1.5  Persist Strategy.coherenceScore ---
   await db.strategy.update({
     where: { id: strategyId },
     data: { coherenceScore: coherenceBreakdown.total },
   });
 
-  // --- 6.1.5  Persist riskScore inside R pillar content (overwrite AI snapshot) ---
+  // --- 6.1.6  Persist riskScore inside R pillar content (overwrite AI snapshot) ---
   if (riskScore !== null && rPillar) {
     const rContent =
       typeof rPillar.content === "object" && rPillar.content !== null
@@ -186,7 +215,7 @@ export async function recalculateAllScores(
     });
   }
 
-  // --- 6.1.6  Persist bmfScore inside T pillar content (overwrite AI snapshot) ---
+  // --- 6.1.7  Persist bmfScore inside T pillar content (overwrite AI snapshot) ---
   if (bmfScore !== null && tPillar) {
     const tContent =
       typeof tPillar.content === "object" && tPillar.content !== null
@@ -208,7 +237,29 @@ export async function recalculateAllScores(
     });
   }
 
-  // --- 6.1.7  Create ScoreSnapshot for evolution tracking ---
+  // --- 6.1.8  Persist investScore inside I pillar content ---
+  if (investScore !== null && iPillar) {
+    const iContent =
+      typeof iPillar.content === "object" && iPillar.content !== null
+        ? (iPillar.content as Record<string, unknown>)
+        : {};
+    const updatedIContent = {
+      ...iContent,
+      investScore,
+      investScoreFormula: investBreakdown
+        ? JSON.parse(JSON.stringify(investBreakdown))
+        : null,
+    };
+    await db.pillar.update({
+      where: { id: iPillar.id },
+      data: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        content: updatedIContent as any,
+      },
+    });
+  }
+
+  // --- 6.1.9  Create ScoreSnapshot for evolution tracking ---
   try {
     await db.scoreSnapshot.create({
       data: {
@@ -216,6 +267,7 @@ export async function recalculateAllScores(
         coherenceScore: coherenceBreakdown.total,
         riskScore,
         bmfScore,
+        investScore,
         trigger,
       },
     });
@@ -229,6 +281,7 @@ export async function recalculateAllScores(
     coherenceScore: coherenceBreakdown.total,
     riskScore,
     bmfScore,
+    investScore,
   });
 
   return {
@@ -238,6 +291,8 @@ export async function recalculateAllScores(
     riskBreakdown,
     bmfScore,
     bmfBreakdown,
+    investScore,
+    investBreakdown,
     parentCoherenceScore: coherenceBreakdown.parentChildAlignment ?? null,
   };
 }

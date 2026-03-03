@@ -27,7 +27,8 @@ import { getCurrencySymbol } from "~/lib/currency";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
-  ValeurPillarData,
+  ValeurPillarDataV2,
+  ValeurCoutItem,
   EngagementPillarData,
   RiskAuditResult,
   TrackAuditResult,
@@ -442,7 +443,9 @@ interface OracleResolved {
   riskScore: number;
   /** T.brandMarketFitScore → 0 */
   bmfScore: number;
-  /** I.valueArchitecture.unitEconomics.ratio → V.unitEconomics.ratio → "—" */
+  /** I.investScore → 0 */
+  investScore: number;
+  /** I.valueArchitecture.unitEconomics.ratio → V.ltvCacRatio → V.unitEconomics.ratio (V1 compat) → "—" */
   ltvCac: string;
   /** Radar chart scores for all 8 pillars */
   advertisScores: [number, number, number, number, number, number, number, number];
@@ -524,7 +527,7 @@ function resolveOracleData(
   meta: StrategyMeta,
   a: AuthenticitePillarData,
   d: DistinctionPillarData,
-  v: ValeurPillarData,
+  v: ValeurPillarDataV2,
   e: EngagementPillarData,
   r: RiskAuditResult,
   t: TrackAuditResult,
@@ -566,8 +569,11 @@ function resolveOracleData(
     ], 0, _sources, "coherenceScore"),
     riskScore: r.riskScore || 0,
     bmfScore: t.brandMarketFitScore || 0,
+    investScore: (impl as Record<string, unknown>).investScore as number || 0,
     ltvCac: firstOf<string>([
-      [impl.valueArchitecture?.unitEconomics?.ratio, "I"], [v.unitEconomics?.ratio, "V"],
+      [impl.valueArchitecture?.unitEconomics?.ratio, "I"],
+      [v.ltvCacRatio, "V"],
+      [(v as Record<string, unknown> as { unitEconomics?: { ratio?: string } }).unitEconomics?.ratio, "V"],
     ], "—", _sources, "ltvCac"),
     advertisScores: computeADVERTISScores(a, d, v, e, r, t, impl, s),
 
@@ -665,7 +671,7 @@ export function generateStrategyHTML(
 
   const parseA = parsePillarContent<AuthenticitePillarData>("A", aP?.content);
   const parseD = parsePillarContent<DistinctionPillarData>("D", dP?.content);
-  const parseV = parsePillarContent<ValeurPillarData>("V", vP?.content);
+  const parseV = parsePillarContent<ValeurPillarDataV2>("V", vP?.content);
   const parseE = parsePillarContent<EngagementPillarData>("E", eP?.content);
   const parseR = parsePillarContent<RiskAuditResult>("R", rP?.content);
   const parseT = parsePillarContent<TrackAuditResult>("T", tP?.content);
@@ -724,7 +730,7 @@ ${buildCSS(accent1, accent2)}
 </style>
 </head>
 <body>
-${buildSidebar(meta, sections, ctx.riskScore, ctx.bmfScore, ctx.coherenceScore, accent1, accent2, currency, options.parentBrand, options.childBrands)}
+${buildSidebar(meta, sections, ctx.riskScore, ctx.bmfScore, ctx.coherenceScore, ctx.investScore, accent1, accent2, currency, options.parentBrand, options.childBrands)}
 ${buildMobileNav(sections)}
 <main class="main">
 <div class="main-inner">
@@ -1264,6 +1270,7 @@ function buildSidebar(
   riskScore: number,
   bmfScore: number,
   coherence: number,
+  investScore: number,
   _accent1: string,
   _accent2: string,
   currency: string,
@@ -1280,7 +1287,7 @@ function buildSidebar(
     )
     .join("\n");
 
-  const totalBudget = "—";
+  const investDisplay = investScore > 0 ? String(investScore) : "—";
   const brandTreeHtml = buildBrandTree(parentBrand, meta.brandName, childBrands);
 
   return `<aside class="sidebar" id="sidebar">
@@ -1314,7 +1321,7 @@ function buildSidebar(
       <div class="score-label">Cohér.</div>
     </div>
     <div class="sidebar-score-pill">
-      <div class="score-val mono" style="color:var(--accent-1)">${totalBudget}</div>
+      <div class="score-val mono" style="color:${investScore > 0 ? scoreColor(investScore) : "var(--accent-1)"}">${investDisplay}</div>
       <div class="score-label">Invest.</div>
     </div>
   </div>
@@ -1348,7 +1355,7 @@ function buildMobileNav(
 function computeADVERTISScores(
   a: AuthenticitePillarData,
   d: DistinctionPillarData,
-  v: ValeurPillarData,
+  v: ValeurPillarDataV2,
   e: EngagementPillarData,
   r: RiskAuditResult,
   t: TrackAuditResult,
@@ -1381,11 +1388,16 @@ function computeADVERTISScores(
   ];
   const dScore = Math.round((dFields.filter(nonEmpty).length / dFields.length) * 100);
 
-  // V — Valeur
+  // V — Valeur (V2 flat fields with V1 backward compat)
+  const vAny = v as Record<string, unknown>;
   const vFields = [
-    v.productLadder, v.unitEconomics?.cac, v.unitEconomics?.ltv,
-    v.unitEconomics?.ratio, v.unitEconomics?.marges,
-    v.valeurMarque?.tangible, v.valeurClient?.fonctionnels,
+    v.productLadder, v.produitsCatalogue,
+    v.cac || (vAny.unitEconomics as { cac?: string })?.cac,
+    v.ltv || (vAny.unitEconomics as { ltv?: string })?.ltv,
+    v.ltvCacRatio || (vAny.unitEconomics as { ratio?: string })?.ratio,
+    v.marges || (vAny.unitEconomics as { marges?: string })?.marges,
+    v.valeurMarqueTangible,
+    v.valeurClientTangible,
   ];
   const vScore = Math.round((vFields.filter(nonEmpty).length / vFields.length) * 100);
 
@@ -2073,7 +2085,10 @@ function buildSectionD(d: DistinctionPillarData, imageUrl?: string): string {
 // V — Valeur
 // ---------------------------------------------------------------------------
 
-function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string): string {
+function buildSectionV(v: ValeurPillarDataV2, currency: string, imageUrl?: string): string {
+  // Backward compat: access V1 nested fields via untyped cast
+  const vAny = v as Record<string, unknown>;
+
   // Strip existing currency symbols/codes from price strings to avoid duplication
   const cleanPrice = (prix: string) => {
     return prix
@@ -2081,7 +2096,54 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
       .replace(/\s+/g, " ")
       .trim();
   };
-  // Product Ladder — safe access
+
+  // Helper to render a ValeurCoutItem[] table
+  const renderVCItems = (items: ValeurCoutItem[], title: string, accentVar: string): string => {
+    if (!items?.length) return "";
+    return `<div class="card" style="border-top:3px solid var(${accentVar});">
+      <div class="micro-text mb-2">${esc(title)}</div>
+      <ul style="list-style:none;">${items.map((it) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">
+        <span style="font-weight:600;">• ${esc(it.item)}</span>${it.montant ? ` — <span style="color:var(--accent-1);">${esc(it.montant)}</span>` : ""}${it.categorie ? ` <span style="font-size:0.85em;opacity:0.7;">(${esc(it.categorie)})</span>` : ""}
+      </li>`).join("")}</ul>
+    </div>`;
+  };
+
+  // V0: Catalogue produits/services
+  const catalogue = v.produitsCatalogue ?? [];
+  const catalogueHtml =
+    catalogue.length > 0
+      ? `<div class="sub-section">
+    <h3 class="sub-title">Catalogue Produits & Services</h3>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:var(--fs-small);">
+        <thead>
+          <tr style="background:var(--bg-surface);border-bottom:2px solid var(--accent-1);">
+            <th style="padding:10px 12px;text-align:left;font-weight:700;">Nom</th>
+            <th style="padding:10px 12px;text-align:left;">Cat.</th>
+            <th style="padding:10px 12px;text-align:right;">Prix</th>
+            <th style="padding:10px 12px;text-align:right;">Coût</th>
+            <th style="padding:10px 12px;text-align:right;">Marge</th>
+            <th style="padding:10px 12px;text-align:left;">Segment</th>
+            <th style="padding:10px 12px;text-align:center;">Phase</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${catalogue.map((p, i) => `<tr style="background:${i % 2 === 0 ? "var(--bg-card)" : "var(--bg-surface)"};border-bottom:1px solid rgba(255,255,255,0.06);">
+            <td style="padding:8px 12px;font-weight:600;">${esc(p.nom)}</td>
+            <td style="padding:8px 12px;text-transform:capitalize;">${esc(p.categorie)}</td>
+            <td style="padding:8px 12px;text-align:right;color:var(--accent-1);">${p.prix ? `${esc(cleanPrice(p.prix))} ${esc(currency)}` : "—"}</td>
+            <td style="padding:8px 12px;text-align:right;">${p.cout ? `${esc(cleanPrice(p.cout))} ${esc(currency)}` : "—"}</td>
+            <td style="padding:8px 12px;text-align:right;">${p.margeUnitaire ? esc(p.margeUnitaire) : "—"}</td>
+            <td style="padding:8px 12px;">${p.segmentCible ? esc(p.segmentCible) : "—"}</td>
+            <td style="padding:8px 12px;text-align:center;"><span style="background:rgba(255,255,255,0.08);padding:2px 8px;border-radius:4px;font-size:0.85em;">${esc(p.phaseLifecycle)}</span></td>
+          </tr>`).join("\n")}
+        </tbody>
+      </table>
+    </div>
+  </div>`
+      : "";
+
+  // Product Ladder — safe access (V2 with produitIds)
   const ladderHtml =
     (v.productLadder?.length ?? 0) > 0
       ? `<div class="sub-section">
@@ -2094,6 +2156,10 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
         <div class="ladder-price">${esc(cleanPrice(tier.prix))} ${esc(currency)}</div>
         <div class="ladder-target">${esc(tier.cible)}</div>
         <div class="ladder-desc">${esc(tier.description)}</div>
+        ${tier.produitIds?.length ? `<div style="margin-top:6px;font-size:0.8em;opacity:0.6;">Produits: ${tier.produitIds.map(id => {
+          const prod = catalogue.find(p => p.id === id);
+          return prod ? esc(prod.nom) : esc(id);
+        }).join(", ")}</div>` : ""}
       </div>`,
         )
         .join("\n")}
@@ -2101,52 +2167,114 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
   </div>`
       : "";
 
-  // Unit Economics — safe access
-  const ue = v.unitEconomics ?? { cac: "", ltv: "", ratio: "", pointMort: "", marges: "", notes: "" };
+  // Unit Economics — V2 flat fields with V1 backward compat
+  const ueOld = (vAny.unitEconomics ?? {}) as { cac?: string; ltv?: string; ratio?: string; pointMort?: string; marges?: string; notes?: string };
+  const ueCac = v.cac || ueOld.cac || "";
+  const ueLtv = v.ltv || ueOld.ltv || "";
+  const ueRatio = v.ltvCacRatio || ueOld.ratio || "";
+  const uePointMort = v.pointMort || ueOld.pointMort || "";
+  const ueMarges = v.marges || ueOld.marges || "";
+  const ueNotes = v.notesEconomics || ueOld.notes || "";
+  const ueMargeNette = v.margeNette || "";
+  const ueRoi = v.roiEstime || "";
+  const uePayback = v.paybackPeriod || "";
+
   const ueHtml =
-    ue.cac || ue.ltv
+    ueCac || ueLtv
       ? `<div class="sub-section">
     <h3 class="sub-title">Unit Economics</h3>
     <div class="ue-grid">
-      ${ue.cac ? `<div class="ue-cell"><div class="ue-val">${esc(ue.cac)}</div><div class="ue-label">CAC</div></div>` : ""}
-      ${ue.ltv ? `<div class="ue-cell"><div class="ue-val">${esc(ue.ltv)}</div><div class="ue-label">LTV</div></div>` : ""}
-      ${ue.ratio ? `<div class="ue-cell"><div class="ue-val">${esc(ue.ratio)}</div><div class="ue-label">LTV/CAC</div></div>` : ""}
-      ${ue.pointMort ? `<div class="ue-cell"><div class="ue-val">${esc(ue.pointMort)}</div><div class="ue-label">Point mort</div></div>` : ""}
-      ${ue.marges ? `<div class="ue-cell"><div class="ue-val">${esc(ue.marges)}</div><div class="ue-label">Marges</div></div>` : ""}
+      ${ueCac ? `<div class="ue-cell"><div class="ue-val">${esc(ueCac)}</div><div class="ue-label">CAC</div></div>` : ""}
+      ${ueLtv ? `<div class="ue-cell"><div class="ue-val">${esc(ueLtv)}</div><div class="ue-label">LTV</div></div>` : ""}
+      ${ueRatio ? `<div class="ue-cell"><div class="ue-val">${esc(ueRatio)}</div><div class="ue-label">LTV/CAC</div></div>` : ""}
+      ${uePointMort ? `<div class="ue-cell"><div class="ue-val">${esc(uePointMort)}</div><div class="ue-label">Point mort</div></div>` : ""}
+      ${ueMarges ? `<div class="ue-cell"><div class="ue-val">${esc(ueMarges)}</div><div class="ue-label">Marges</div></div>` : ""}
+      ${ueMargeNette ? `<div class="ue-cell"><div class="ue-val">${esc(ueMargeNette)}</div><div class="ue-label">Marge nette</div></div>` : ""}
+      ${ueRoi ? `<div class="ue-cell"><div class="ue-val">${esc(ueRoi)}</div><div class="ue-label">ROI estimé</div></div>` : ""}
+      ${uePayback ? `<div class="ue-cell"><div class="ue-val">${esc(uePayback)}</div><div class="ue-label">Payback</div></div>` : ""}
     </div>
-    ${ue.notes ? `<div class="card" style="margin-top:16px;"><div class="micro-text mb-2">Notes</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(ue.notes)}</p></div>` : ""}
+    ${v.dureeLTV ? `<div style="margin-top:8px;font-size:var(--fs-small);color:var(--text-secondary);">Durée LTV : ${v.dureeLTV} mois</div>` : ""}
+    ${ueNotes ? `<div class="card" style="margin-top:16px;"><div class="micro-text mb-2">Notes</div><p style="font-size:var(--fs-small);color:var(--text-secondary);line-height:1.7;">${esc(ueNotes)}</p></div>` : ""}
   </div>`
       : "";
 
-  // Value Brand — safe access
-  const brandVal = v.valeurMarque ?? { tangible: [], intangible: [] };
-  const brandValHtml =
-    (brandVal.tangible?.length ?? 0) > 0 || (brandVal.intangible?.length ?? 0) > 0
-      ? `<div class="sub-section">
+  // Value creation — V2 atomic items (4 quadrants: brand tangible/intangible, client tangible/intangible)
+  // Backward compat: fall back to V1 nested valeurMarque/valeurClient
+  const vmt = v.valeurMarqueTangible ?? [];
+  const vmi = v.valeurMarqueIntangible ?? [];
+  const vct = v.valeurClientTangible ?? [];
+  const vci = v.valeurClientIntangible ?? [];
+  const hasV2Value = vmt.length > 0 || vmi.length > 0 || vct.length > 0 || vci.length > 0;
+
+  // V1 backward compat for valeurMarque/valeurClient
+  const v1BrandVal = (vAny.valeurMarque ?? {}) as { tangible?: string[]; intangible?: string[] };
+  const v1ClientVal = (vAny.valeurClient ?? {}) as { fonctionnels?: string[]; emotionnels?: string[]; sociaux?: string[] };
+  const hasV1Value = (v1BrandVal.tangible?.length ?? 0) > 0 || (v1BrandVal.intangible?.length ?? 0) > 0 ||
+    (v1ClientVal.fonctionnels?.length ?? 0) > 0;
+
+  let brandValHtml = "";
+  if (hasV2Value) {
+    brandValHtml = `<div class="sub-section">
     <h3 class="sub-title">Création de valeur</h3>
     <div class="grid-2">
-      ${(brandVal.tangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Tangible</div><ul style="list-style:none;">${(brandVal.tangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
-      ${(brandVal.intangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Intangible</div><ul style="list-style:none;">${(brandVal.intangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${renderVCItems(vmt, "Valeur Marque — Tangible", "--accent-1")}
+      ${renderVCItems(vmi, "Valeur Marque — Intangible", "--accent-2")}
+      ${renderVCItems(vct, "Valeur Client — Tangible", "--accent-1")}
+      ${renderVCItems(vci, "Valeur Client — Intangible", "--accent-2")}
     </div>
-  </div>`
-      : "";
+  </div>`;
+  } else if (hasV1Value) {
+    // Fallback to V1 format
+    brandValHtml = `<div class="sub-section">
+    <h3 class="sub-title">Création de valeur</h3>
+    <div class="grid-2">
+      ${(v1BrandVal.tangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Tangible (marque)</div><ul style="list-style:none;">${(v1BrandVal.tangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(v1BrandVal.intangible?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Intangible (marque)</div><ul style="list-style:none;">${(v1BrandVal.intangible ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(v1ClientVal.fonctionnels?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-1);"><div class="micro-text mb-2">Valeur client — Fonctionnels</div><ul style="list-style:none;">${(v1ClientVal.fonctionnels ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+      ${(v1ClientVal.emotionnels?.length ?? 0) > 0 ? `<div class="card" style="border-top:3px solid var(--accent-2);"><div class="micro-text mb-2">Valeur client — Émotionnels</div><ul style="list-style:none;">${(v1ClientVal.emotionnels ?? []).map((t) => `<li style="font-size:var(--fs-small);padding:4px 0;color:var(--text-secondary);">• ${esc(t)}</li>`).join("")}</ul></div>` : ""}
+    </div>
+  </div>`;
+  }
 
-  // Cost structure — safe access
-  const cm = v.coutMarque ?? { capex: "", opex: "", coutsCaches: [] };
-  const costHtml =
-    cm.capex || cm.opex
-      ? `<div class="sub-section">
+  // Cost structure — V2 atomic items (4 quadrants: brand tangible/intangible, client tangible/intangible)
+  const cmt = v.coutMarqueTangible ?? [];
+  const cmi = v.coutMarqueIntangible ?? [];
+  const cct = v.coutClientTangible ?? [];
+  const cci = v.coutClientIntangible ?? [];
+  const hasV2Cost = cmt.length > 0 || cmi.length > 0 || cct.length > 0 || cci.length > 0;
+
+  // V1 backward compat for coutMarque/coutClient
+  const v1CoutMarque = (vAny.coutMarque ?? {}) as { capex?: string; opex?: string; coutsCaches?: string[] };
+  const v1CoutClient = (vAny.coutClient ?? {}) as { frictions?: Array<{ friction: string; solution: string }> };
+  const hasV1Cost = !!(v1CoutMarque.capex || v1CoutMarque.opex) || (v1CoutClient.frictions?.length ?? 0) > 0;
+
+  let costHtml = "";
+  if (hasV2Cost) {
+    costHtml = `<div class="sub-section">
     <h3 class="sub-title">Structure de coûts</h3>
     <div class="grid-2">
-      ${cm.capex ? `<div class="card"><div class="micro-text mb-2">CAPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(cm.capex)}</p></div>` : ""}
-      ${cm.opex ? `<div class="card"><div class="micro-text mb-2">OPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(cm.opex)}</p></div>` : ""}
+      ${renderVCItems(cmt, "Coût Marque — Tangible", "--accent-1")}
+      ${renderVCItems(cmi, "Coût Marque — Intangible", "--accent-2")}
+      ${renderVCItems(cct, "Coût Client — Tangible", "--accent-1")}
+      ${renderVCItems(cci, "Coût Client — Intangible", "--accent-2")}
     </div>
-  </div>`
-      : "";
+  </div>`;
+  } else if (hasV1Cost) {
+    // Fallback to V1 format
+    costHtml = `<div class="sub-section">
+    <h3 class="sub-title">Structure de coûts</h3>
+    <div class="grid-2">
+      ${v1CoutMarque.capex ? `<div class="card"><div class="micro-text mb-2">CAPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(v1CoutMarque.capex)}</p></div>` : ""}
+      ${v1CoutMarque.opex ? `<div class="card"><div class="micro-text mb-2">OPEX</div><p style="font-size:var(--fs-small);color:var(--text-secondary);">${esc(v1CoutMarque.opex)}</p></div>` : ""}
+    </div>
+    ${(v1CoutClient.frictions?.length ?? 0) > 0 ? `<div style="margin-top:16px;"><div class="micro-text mb-2">Frictions client</div>${(v1CoutClient.frictions ?? []).map((f) => `<div class="card" style="margin-bottom:8px;"><strong style="font-size:var(--fs-small);">${esc(f.friction)}</strong><p style="font-size:var(--fs-small);color:var(--text-secondary);margin-top:4px;">Solution: ${esc(f.solution)}</p></div>`).join("")}</div>` : ""}
+  </div>`;
+  }
 
-  const vParts = [ladderHtml, ueHtml, brandValHtml, costHtml];
+  const vParts = [catalogueHtml, ladderHtml, ueHtml, brandValHtml, costHtml];
   const vFallback = vParts.every(p => !p) ? emptyPillarFallback("V", [
-    { icon: "📦", label: "Product Ladder", desc: "Gamme de produits à structurer" },
+    { icon: "📦", label: "Catalogue", desc: "Produits et services à référencer" },
+    { icon: "🪜", label: "Product Ladder", desc: "Gamme de produits à structurer" },
     { icon: "📈", label: "Unit Economics", desc: "LTV, CAC et marges à calculer" },
     { icon: "💎", label: "Valeur de marque", desc: "Actifs tangibles et intangibles à évaluer" },
   ]) : "";
@@ -2158,9 +2286,10 @@ function buildSectionV(v: ValeurPillarData, currency: string, imageUrl?: string)
     <div class="section-hero-content">
       <div class="section-tag">V — Valeur</div>
       <h1>Proposition de valeur</h1>
-      <p class="section-summary">Product ladder, unit economics, création de valeur et structure de coûts.</p>
+      <p class="section-summary">Catalogue, product ladder, unit economics, création de valeur et structure de coûts.</p>
     </div>
   </div>
+  ${catalogueHtml}
   ${ladderHtml}
   ${ueHtml}
   ${brandValHtml}

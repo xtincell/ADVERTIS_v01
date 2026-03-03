@@ -32,7 +32,7 @@ import { PILLAR_TYPES } from "~/lib/constants";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
-  ValeurPillarData,
+  ValeurPillarDataV2,
   EngagementPillarData,
   RiskAuditResult,
   TrackAuditResult,
@@ -143,7 +143,7 @@ function calculateCrossPillarAlignment(
   const maxScore = 25;
   const aData = pillarMap.A as AuthenticitePillarData | undefined;
   const dData = pillarMap.D as DistinctionPillarData | undefined;
-  const vData = pillarMap.V as ValeurPillarData | undefined;
+  const vData = pillarMap.V as ValeurPillarDataV2 | undefined;
   const eData = pillarMap.E as EngagementPillarData | undefined;
 
   let checks = 0;
@@ -193,13 +193,13 @@ function calculateCrossPillarAlignment(
     passes++;
   }
 
-  // Check 5: V.unitEconomics.cac+ltv → E.kpis (economics guide KPIs)
+  // Check 5: V.cac+ltv → E.kpis (economics guide KPIs)
   checks++;
   if (
-    vData?.unitEconomics?.cac &&
-    vData.unitEconomics.cac.trim().length > 0 &&
-    vData?.unitEconomics?.ltv &&
-    vData.unitEconomics.ltv.trim().length > 0 &&
+    vData?.cac &&
+    (vData.cac as string).trim().length > 0 &&
+    vData?.ltv &&
+    (vData.ltv as string).trim().length > 0 &&
     eData?.kpis &&
     eData.kpis.length > 0
   ) {
@@ -217,7 +217,7 @@ function calculateCrossPillarAlignment(
     passes++;
   }
 
-  // Check 7: E.aarrr >= 3/5 → V.coutClient.frictions (funnel addresses frictions)
+  // Check 7: E.aarrr >= 3/5 → V.coutClientTangible (funnel addresses frictions)
   checks++;
   const aarrrFilled = [
     eData?.aarrr?.acquisition,
@@ -226,10 +226,11 @@ function calculateCrossPillarAlignment(
     eData?.aarrr?.revenue,
     eData?.aarrr?.referral,
   ].filter((v) => v && typeof v === "string" && v.trim().length > 0).length;
+  const coutClientArr = vData?.coutClientTangible as Array<{ item: string }> | undefined;
   if (
     aarrrFilled >= 3 &&
-    vData?.coutClient?.frictions &&
-    vData.coutClient.frictions.length > 0
+    coutClientArr &&
+    coutClientArr.length > 0
   ) {
     passes++;
   }

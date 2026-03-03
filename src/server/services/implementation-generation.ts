@@ -40,6 +40,7 @@ import { injectSpecialization, type SpecializationOptions } from "./prompt-helpe
 import { getCurrencyPromptInstruction, getCurrencySymbol } from "~/lib/currency";
 import { jsonrepair } from "jsonrepair";
 import type { AIUsageMetadata } from "./ai-generation";
+import { calculateParametricBudget, formatFormulaForPrompt } from "./budget-formula";
 
 // ---------------------------------------------------------------------------
 // JSON Rules (shared between passes)
@@ -100,6 +101,9 @@ export async function generateImplementationData(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  annualBudget?: number | null,
+  targetRevenue?: number | null,
+  maturity?: string | null,
 ): Promise<{ data: ImplementationData; usage: AIUsageMetadata }> {
   const overallStart = Date.now();
 
@@ -135,6 +139,9 @@ export async function generateImplementationData(
     specialization,
     tagline,
     currency,
+    annualBudget,
+    targetRevenue,
+    maturity,
   );
 
   // ── Pass 2b: Brand & operational sections ──
@@ -381,8 +388,37 @@ async function generatePass2a(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  annualBudget?: number | null,
+  targetRevenue?: number | null,
+  maturity?: string | null,
 ): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
   const pass1Summary = JSON.stringify(pass1Data).substring(0, 6000);
+
+  // --- Build parametric budget context for the prompt ---
+  const currencySymbol = getCurrencySymbol(currency ?? "XOF");
+  let budgetDirective = "";
+  if (annualBudget && annualBudget > 0) {
+    budgetDirective = `
+⚠️ BUDGET DE RÉFÉRENCE FOURNI PAR LE CLIENT : ${annualBudget.toLocaleString("fr-FR")} ${currencySymbol}
+UTILISE CE MONTANT comme enveloppeGlobale. NE L'INVENTE PAS.
+Ventile ce budget réel par poste et par phase.`;
+  } else {
+    budgetDirective = `
+⚠️ AUCUN BUDGET FOURNI PAR LE CLIENT.
+Indique clairement "ESTIMATION À VALIDER PAR LE CLIENT" dans enveloppeGlobale.`;
+  }
+
+  // Add parametric formula context if targetRevenue is available
+  let formulaContext = "";
+  if (targetRevenue && targetRevenue > 0) {
+    const formulaResult = calculateParametricBudget(targetRevenue, sector, maturity);
+    formulaContext = `
+
+FORMULE PARAMÉTRIQUE DE RÉFÉRENCE (Budget = CA × α × β × γ) :
+${formatFormulaForPrompt(formulaResult, currencySymbol)}
+
+Utilise ces ratios comme guide pour la ventilation par poste.`;
+  }
 
   const start2a = Date.now();
   const { text, usage: callUsage2a } = await resilientGenerateText({
@@ -396,6 +432,7 @@ Tu génères les sections campagnes et financières de l'implémentation.
 CONTEXTE :
 - Marque : ${brandName}${tagline ? `\n- Accroche : "${tagline}"` : ""}
 - Secteur : ${sector || "Non spécifié"}
+${budgetDirective}${formulaContext}
 
 DONNÉES STRATÉGIQUES DÉJÀ GÉNÉRÉES (Passe 1) :
 ${pass1Summary}

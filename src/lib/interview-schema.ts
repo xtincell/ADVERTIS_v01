@@ -1,7 +1,7 @@
 // =============================================================================
 // LIB L.2 — Interview Schema
 // =============================================================================
-// Defines the 26 Fiche de Marque variables across A-D-V-E input pillars.
+// Defines the 28 Fiche de Marque variables across A-D-V-E input pillars.
 // Only pillars A, D, V, E accept user input; R+T are AI-generated audits,
 // I generates reports, S is the cockpit. Priority variables correspond to
 // the original methodology's star indicators.
@@ -180,6 +180,16 @@ const PILLAR_D_VARIABLES: InterviewVariable[] = [
 
 const PILLAR_V_VARIABLES: InterviewVariable[] = [
   {
+    id: "V0",
+    label: "Catalogue Produits & Services",
+    description:
+      "Liste complete de tous vos produits et services : nom, prix de vente, cout de revient, categorie (produit/service), segment cible, phase de vie (lancement/croissance/maturite/declin).",
+    placeholder:
+      "Ex: Produit 1 - Abonnement Starter, 29 EUR/mois, cout 8 EUR, service, PME, croissance. Produit 2 - Pack Premium, 199 EUR/mois, cout 45 EUR, service, ETI, lancement...",
+    priority: true,
+    type: "textarea",
+  },
+  {
     id: "V1",
     label: "Product Ladder",
     description:
@@ -238,6 +248,26 @@ const PILLAR_V_VARIABLES: InterviewVariable[] = [
       "Ex: CAC : 150 EUR. LTV : 2 400 EUR (24 mois x 100 EUR). Marge brute : 75%. Ratio LTV/CAC : 16x...",
     priority: true,
     type: "textarea",
+  },
+  {
+    id: "V7",
+    label: "Budget Communication Annuel",
+    description:
+      "Budget annuel total alloue aux actions de communication et marketing. Ce montant servira de reference pour le plan d'implementation (Pilier I). Indiquez le montant reel prevu en devise locale. Le systeme le validera contre la formule parametrique (CA x coeff sectoriel x maturite x environnement).",
+    placeholder:
+      "Ex: 15000000 (en devise locale, sans espaces ni symboles).",
+    priority: true,
+    type: "number",
+  },
+  {
+    id: "V8",
+    label: "Chiffre d'Affaires Vise",
+    description:
+      "CA annuel cible (pas un souhait — le croisement de la capacite de production, du marche adressable, et de l'historique). Methode : mediane entre CA_capacite (bottom-up), CA_marche (TAM x SAM% x SOM%), et CA_historique (CA_N-1 x croissance).",
+    placeholder:
+      "Ex: 50000000 (en devise locale). Base de calcul pour tous les ratios financiers du systeme.",
+    priority: true,
+    type: "number",
   },
 ];
 

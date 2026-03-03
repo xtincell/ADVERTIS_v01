@@ -282,6 +282,9 @@ export async function POST(req: NextRequest) {
             { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
             strategy.tagline,
             currency,
+            (strategy as Record<string, unknown>).annualBudget as number | null ?? null,
+            (strategy as Record<string, unknown>).targetRevenue as number | null ?? null,
+            strategy.maturityProfile,
           );
 
           generatedContent = implResult;

@@ -16,7 +16,7 @@ import { SyntheseEditor } from "./synthese-editor";
 
 import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
 import type { DistinctionPillarData } from "~/lib/types/pillar-data";
-import type { ValeurPillarData } from "~/lib/types/pillar-data";
+import type { ValeurPillarDataV2 } from "~/lib/types/pillar-data";
 import type { EngagementPillarData } from "~/lib/types/pillar-data";
 import type { TrackAuditResult, RiskAuditResult, ImplementationData, SynthesePillarData } from "~/lib/types/pillar-schemas";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
@@ -57,7 +57,7 @@ export function StructuredPillarEditor({
       return <DistinctionEditor data={data} onChange={onChange} />;
     }
     case "V": {
-      const { data } = parsePillarContent<ValeurPillarData>("V", content);
+      const { data } = parsePillarContent<ValeurPillarDataV2>("V", content);
       return <ValeurEditor data={data} onChange={onChange} />;
     }
     case "E": {

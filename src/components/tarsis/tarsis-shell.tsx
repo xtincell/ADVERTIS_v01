@@ -20,6 +20,7 @@ import {
   SheetTrigger,
 } from "~/components/ui/sheet";
 import { PortalSwitcherMobile } from "~/components/shells/portal-switcher";
+import { ViewAsSwitcher } from "~/components/shells/view-as-switcher";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -74,6 +75,11 @@ export function TarsisShell({ children }: { children: React.ReactNode }) {
             <span className="text-sm font-medium text-muted-foreground">
               Intelligence Marché
             </span>
+          </div>
+
+          {/* ViewAs switcher (admin only) */}
+          <div className="flex-1 flex justify-end">
+            <ViewAsSwitcher />
           </div>
         </header>
 

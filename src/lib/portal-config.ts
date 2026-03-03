@@ -8,6 +8,7 @@ import type { UserRole } from "~/lib/constants";
 
 export interface PortalDefinition {
   id:
+    | "dashboard"
     | "impulsion"
     | "pilotis"
     | "glory"
@@ -15,7 +16,8 @@ export interface PortalDefinition {
     | "client"
     | "freelance"
     | "guilde"
-    | "serenite";
+    | "serenite"
+    | "brand-os";
   name: string;
   shortName: string;
   description: string;
@@ -29,6 +31,19 @@ export interface PortalDefinition {
 }
 
 export const PORTALS: PortalDefinition[] = [
+  {
+    id: "dashboard",
+    name: "Accueil",
+    shortName: "HUB",
+    description: "Vue d'ensemble",
+    href: "/dashboard",
+    color: "#6366F1",
+    bgClass: "bg-indigo-500/10",
+    textClass: "text-indigo-500",
+    borderClass: "border-indigo-500/30",
+    iconName: "LayoutGrid",
+    allowedRoles: ["ADMIN", "OPERATOR"],
+  },
   {
     id: "impulsion",
     name: "Impulsion",
@@ -133,10 +148,24 @@ export const PORTALS: PortalDefinition[] = [
     iconName: "Briefcase",
     allowedRoles: ["ADMIN", "FREELANCE"],
   },
+  {
+    id: "brand-os",
+    name: "Brand OS",
+    shortName: "BOS",
+    description: "OS de marque — Retainer",
+    href: "/os",
+    color: "#F59E0B",
+    bgClass: "bg-amber-500/10",
+    textClass: "text-amber-500",
+    borderClass: "border-amber-500/30",
+    iconName: "Atom",
+    allowedRoles: ["ADMIN", "OPERATOR", "CLIENT_RETAINER"],
+  },
 ];
 
 /** Route prefixes that belong to each portal (for detection). */
 const PORTAL_ROUTES: Record<PortalDefinition["id"], string[]> = {
+  dashboard: ["/dashboard"],
   impulsion: ["/impulsion"],
   pilotis: ["/pilotis"],
   glory: ["/glory"],
@@ -145,6 +174,7 @@ const PORTAL_ROUTES: Record<PortalDefinition["id"], string[]> = {
   serenite: ["/serenite"],
   client: ["/cockpit", "/oracle", "/my-documents", "/requests"],
   freelance: ["/my-missions", "/my-briefs", "/upload", "/profile", "/my-finances"],
+  "brand-os": ["/os"],
 };
 
 /** Detect which portal a pathname belongs to. */
@@ -155,6 +185,6 @@ export function detectPortal(pathname: string): PortalDefinition {
       return portal;
     }
   }
-  // Default to impulsion
+  // Default to dashboard (first portal)
   return PORTALS[0]!;
 }

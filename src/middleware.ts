@@ -43,6 +43,8 @@ const ROLE_ROUTES: Record<string, string[]> = {
   "/oracle": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
   "/my-documents": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
   "/requests": ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"],
+  // Brand OS (retainer portal)
+  "/os": ["ADMIN", "OPERATOR", "CLIENT_RETAINER"],
 };
 
 export async function middleware(req: NextRequest) {
@@ -95,5 +97,7 @@ export const config = {
     "/oracle/:path*",
     "/my-documents/:path*",
     "/requests/:path*",
+    // Brand OS
+    "/os/:path*",
   ],
 };

@@ -40,7 +40,7 @@ import type { ImplementationData } from "~/lib/types/implementation-data";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
-  ValeurPillarData,
+  ValeurPillarDataV2,
   EngagementPillarData,
   SynthesePillarData,
 } from "~/lib/types/pillar-data";
@@ -89,6 +89,10 @@ import { SectionBudgetOperationnel } from "./sections/section-budget-operationne
 import { SectionChrono } from "./sections/section-chrono";
 import { SectionMultiMarkets } from "./sections/section-multi-markets";
 import { SectionFunnelMapping } from "./sections/section-funnel-mapping";
+import { SectionBrandOSSetup } from "./sections/section-brand-os-setup";
+import { SectionOracleScores } from "./sections/section-oracle-scores";
+import { SectionFicheClient } from "./sections/section-fiche-client";
+import { SectionAARRRRoadmap } from "./sections/section-aarrr-roadmap";
 import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
 import { StrategyFeedbackModule } from "~/components/feedback/strategy-feedback-module";
 
@@ -139,6 +143,12 @@ export interface CockpitData {
   coherenceBreakdown?: CoherenceBreakdownData | null;
   riskBreakdown?: RiskBreakdownData | null;
   bmfBreakdown?: BmfBreakdownData | null;
+  /** Extra fields for Fiche Client card */
+  maturityProfile?: string | null;
+  deliveryMode?: string | null;
+  annualBudget?: number | null;
+  targetRevenue?: number | null;
+  createdAt?: Date | string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -185,7 +195,7 @@ export function CockpitContent({
   // ---------------------------------------------------------------------------
   const { data: aContent } = parsePillarContent<AuthenticitePillarData>("A", getPillar("A")?.content);
   const { data: dContent } = parsePillarContent<DistinctionPillarData>("D", getPillar("D")?.content);
-  const { data: vContent } = parsePillarContent<ValeurPillarData>("V", getPillar("V")?.content);
+  const { data: vContent } = parsePillarContent<ValeurPillarDataV2>("V", getPillar("V")?.content);
   const { data: eContent } = parsePillarContent<EngagementPillarData>("E", getPillar("E")?.content);
   const { data: rContent } = parsePillarContent<RiskAuditResult>("R", getPillar("R")?.content);
   const { data: tContent } = parsePillarContent<TrackAuditResult>("T", getPillar("T")?.content);
@@ -322,6 +332,38 @@ export function CockpitContent({
         )}
       </section>
 
+      {/* ── Fiche Client — Company profile card ── */}
+      {show("fiche-client") && (
+        <SectionFicheClient
+          brandName={data.brandName}
+          projectName={data.name}
+          sector={data.sector}
+          description={data.description}
+          phase={data.phase}
+          vertical={data.vertical}
+          maturityProfile={data.maturityProfile}
+          deliveryMode={data.deliveryMode}
+          currency={data.currency}
+          annualBudget={data.annualBudget}
+          targetRevenue={data.targetRevenue}
+          coherenceScore={coherenceScore}
+          createdAt={data.createdAt}
+        />
+      )}
+
+      {/* ── Oracle Sub-Scores — Granular per-pillar breakdown ── */}
+      {show("oracle-scores") && (
+        <SectionOracleScores
+          aContent={aContent}
+          dContent={dContent}
+          vContent={vContent}
+          eContent={eContent}
+          coherenceScore={coherenceScore ?? null}
+          riskScore={riskScore}
+          bmfScore={bmfScore}
+        />
+      )}
+
       {/* ═══════════════════════════════════════════════════════════════════
           NIVEAU 2+3 — Sections détaillées
           ═══════════════════════════════════════════════════════════════════ */}
@@ -364,6 +406,14 @@ export function CockpitContent({
           implContent={implContent}
           pillar={getPillar("E")}
           vertical={data.vertical}
+        />
+      )}
+
+      {/* ── AARRR Roadmap — 5 levers × 4 quarters grid ── */}
+      {show("aarrr-roadmap") && (
+        <SectionAARRRRoadmap
+          eContent={eContent}
+          implContent={implContent}
         />
       )}
 
@@ -520,6 +570,11 @@ export function CockpitContent({
       {/* ── Checklist Qualité ── */}
       {show("quality-checklist") && data.strategyId && (
         <SectionQualityChecklist strategyId={data.strategyId} />
+      )}
+
+      {/* ── Brand OS Setup ── */}
+      {show("brand-os-setup") && data.strategyId && !isPublic && (
+        <SectionBrandOSSetup strategyId={data.strategyId} />
       )}
 
       {/* ── Pillar S — Synthèse Stratégique ── */}

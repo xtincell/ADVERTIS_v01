@@ -144,6 +144,12 @@ export default function BrandCockpitPage(props: {
     coherenceBreakdown: breakdowns?.coherenceBreakdown ?? null,
     riskBreakdown: breakdowns?.riskBreakdown ?? null,
     bmfBreakdown: breakdowns?.bmfBreakdown ?? null,
+    // Fiche Client extra fields
+    maturityProfile: strategy.maturityProfile ?? null,
+    deliveryMode: strategy.deliveryMode ?? null,
+    annualBudget: (strategy as Record<string, unknown>).annualBudget as number ?? null,
+    targetRevenue: (strategy as Record<string, unknown>).targetRevenue as number ?? null,
+    createdAt: strategy.createdAt ?? null,
   };
 
   // Extract scores for triad
@@ -168,13 +174,14 @@ export default function BrandCockpitPage(props: {
         coherenceScore={strategy.coherenceScore}
         strategyId={strategyId}
         status={strategy.status}
+        deliveryMode={strategy.deliveryMode}
         onShare={() => setShowShareDialog(true)}
         onExport={() => setShowExportDialog(true)}
         onRefresh={() => recalcMutation.mutate({ strategyId })}
       />
 
       {/* Sticky tabs */}
-      <CockpitTabs activeTab={activeTab} onTabChange={setActiveTab} />
+      <CockpitTabs activeTab={activeTab} onTabChange={setActiveTab} deliveryMode={strategy.deliveryMode} />
 
       {/* Score triad */}
       <div className="py-4 stagger-children">

@@ -1,26 +1,28 @@
 // =============================================================================
 // COMPONENT C.K4 — Section Valeur
 // =============================================================================
-// Pillar V cockpit display: Value Architecture.
-// Props: vContent (ValeurPillarData), implContent, pillar, vertical.
-// Key features: product ladder (tiers with pricing), brand value (tangible /
-// intangible), client value (functional / emotional / social), client frictions,
-// cost structure (CAPEX, OPEX, hidden costs), unit economics (CAC, LTV, ratio,
-// break-even, margins). Falls back to implContent.valueArchitecture.
+// Pillar V cockpit display: Value Architecture (V2 flat format).
+// Props: vContent (ValeurPillarDataV2), implContent, pillar, vertical.
+// Key features: product catalogue (V0), product ladder, 4x value arrays
+// (brand/client tangible/intangible), 4x cost arrays, flat unit economics
+// (CAC, LTV, ratio, break-even, margins), derived metrics (margeNette,
+// roiEstime, paybackPeriod). Falls back to implContent.valueArchitecture.
 // =============================================================================
 
-// Section Valeur (Pillar V) — Product Ladder, Brand & Client Value, Costs, Unit Economics
+// Section Valeur (Pillar V) — Catalogue, Product Ladder, Value/Cost, Unit Economics
 
 import {
   TrendingUp,
   Zap,
   Heart,
   AlertTriangle,
+  Package,
+  Calculator,
 } from "lucide-react";
 
 import { PILLAR_CONFIG } from "~/lib/constants";
 import type { SupportedCurrency } from "~/lib/constants";
-import type { ValeurPillarData } from "~/lib/types/pillar-data";
+import type { ValeurPillarDataV2, ValeurCoutItem } from "~/lib/types/pillar-schemas";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { getCurrencySymbol } from "~/lib/currency";
 import {
@@ -42,6 +44,52 @@ interface PillarData {
 // Helper: check if a price string already contains a known currency symbol
 const CURRENCY_SYMBOLS_RE = /FCFA|XOF|XAF|EUR|USD|GHS|NGN|GH₵|₦|€|\$/i;
 
+// Helper: render a ValeurCoutItem array as a list
+function ValeurCoutItemList({
+  items,
+  icon,
+  color,
+}: {
+  items: ValeurCoutItem[];
+  icon: React.ReactNode;
+  color?: string;
+}) {
+  const filtered = items.filter((i) => i.item?.trim());
+  if (filtered.length === 0) return null;
+  return (
+    <div className="space-y-1.5">
+      {filtered.map((item, i) => (
+        <div key={i} className="flex items-start gap-2 pl-1 text-sm">
+          <span className="mt-0.5 shrink-0">{icon}</span>
+          <div className="flex-1">
+            <span className="text-foreground/80">{item.item}</span>
+            {item.montant && item.montant.trim() && (
+              <span className="ml-2 text-xs text-muted-foreground">
+                ({item.montant})
+              </span>
+            )}
+            {item.categorie && item.categorie.trim() && (
+              <span className="ml-1 inline-flex rounded-full border px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {item.categorie}
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Helper: check if a ValeurCoutItem array has displayable content
+function hasItems(arr: ValeurCoutItem[] | undefined): boolean {
+  return Array.isArray(arr) && arr.some((i) => i.item?.trim());
+}
+
+// Helper: check if a string has displayable content
+function hasVal(val: string | undefined): boolean {
+  return !!val && val.trim().length > 0;
+}
+
 export function SectionValeur({
   vContent,
   implContent,
@@ -49,7 +97,7 @@ export function SectionValeur({
   vertical,
   currency,
 }: {
-  vContent: ValeurPillarData;
+  vContent: ValeurPillarDataV2;
   implContent: ImplementationData;
   pillar?: PillarData | null;
   vertical?: string | null;
@@ -65,29 +113,87 @@ export function SectionValeur({
     return `${prix} ${currencySymbol}`;
   };
 
+  // Check if V2 data has any displayable content
+  const hasV2Data =
+    vContent?.produitsCatalogue?.length > 0 ||
+    vContent?.productLadder?.length > 0 ||
+    hasItems(vContent?.valeurMarqueTangible) ||
+    hasItems(vContent?.valeurMarqueIntangible) ||
+    hasItems(vContent?.valeurClientTangible) ||
+    hasItems(vContent?.valeurClientIntangible) ||
+    hasItems(vContent?.coutMarqueTangible) ||
+    hasItems(vContent?.coutMarqueIntangible) ||
+    hasItems(vContent?.coutClientTangible) ||
+    hasItems(vContent?.coutClientIntangible) ||
+    hasVal(vContent?.cac) ||
+    hasVal(vContent?.ltv);
+
   return (
     <CockpitSection
       icon={<TrendingUp className="h-5 w-5" />}
       pillarLetter="V"
       title="Architecture de Valeur"
-      subtitle="Valeur — Proposition de valeur, Pricing, Unit Economics"
+      subtitle="Valeur — Catalogue, Pricing, Unit Economics"
       color={color}
       updatedAt={pillar?.updatedAt}
       vertical={vertical}
     >
-      {vContent?.productLadder?.length ||
-      vContent?.valeurMarque?.tangible?.length ||
-      vContent?.valeurMarque?.intangible?.length ||
-      vContent?.valeurClient?.fonctionnels?.length ||
-      vContent?.valeurClient?.emotionnels?.length ||
-      vContent?.valeurClient?.sociaux?.length ||
-      vContent?.coutClient?.frictions?.length ||
-      vContent?.coutMarque?.capex ||
-      vContent?.coutMarque?.opex ||
-      vContent?.coutMarque?.coutsCaches?.length ||
-      vContent?.unitEconomics?.cac ||
-      vContent?.unitEconomics?.ltv ? (
+      {hasV2Data ? (
         <div className="space-y-5">
+          {/* ----------------------------------------------------------------
+              0. Catalogue Produits (V0)
+          ---------------------------------------------------------------- */}
+          {Array.isArray(vContent.produitsCatalogue) && vContent.produitsCatalogue.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Catalogue Produits & Services
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {vContent.produitsCatalogue.map((prod, i) => (
+                  <div key={prod.id || i} className="rounded-lg border p-3 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Package className="h-3.5 w-3.5 shrink-0" style={{ color }} />
+                        <span className="text-sm font-semibold">{prod.nom || `Produit ${i + 1}`}</span>
+                      </div>
+                      <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] capitalize">
+                        {prod.categorie}
+                      </span>
+                    </div>
+                    {prod.prix && (
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold"
+                          style={{ backgroundColor: `${color}20`, color }}
+                        >
+                          {annotatePrice(prod.prix)}
+                        </span>
+                        {prod.cout && (
+                          <span className="text-[10px] text-muted-foreground">
+                            Cout : {annotatePrice(prod.cout)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {prod.description && (
+                      <p className="text-xs text-foreground/80">{prod.description}</p>
+                    )}
+                    {prod.segmentCible && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Segment : {prod.segmentCible}
+                      </p>
+                    )}
+                    {prod.phaseLifecycle && (
+                      <span className="inline-flex rounded-full border px-1.5 py-0.5 text-[10px] text-muted-foreground capitalize">
+                        {prod.phaseLifecycle}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* ----------------------------------------------------------------
               1. Product Ladder
           ---------------------------------------------------------------- */}
@@ -118,6 +224,11 @@ export function SectionValeur({
                         Cible : {item.cible}
                       </p>
                     )}
+                    {item.produitIds?.length > 0 && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {item.produitIds.length} produit(s) lie(s)
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -125,102 +236,61 @@ export function SectionValeur({
           )}
 
           {/* ----------------------------------------------------------------
-              2. Valeur Marque — Tangible
+              2-3. Valeur Marque — Tangible & Intangible
           ---------------------------------------------------------------- */}
-          {Array.isArray(vContent.valeurMarque?.tangible) && vContent.valeurMarque.tangible.length > 0 && (
+          {(hasItems(vContent.valeurMarqueTangible) || hasItems(vContent.valeurMarqueIntangible)) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Valeur de marque — Tangible
+                Valeur de marque
               </p>
-              <div className="space-y-1.5">
-                {vContent.valeurMarque.tangible.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 pl-1 text-sm">
-                    <Zap className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color }} />
-                    <span className="text-foreground/80">{item}</span>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {hasItems(vContent.valeurMarqueTangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Tangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.valeurMarqueTangible}
+                      icon={<Zap className="h-3.5 w-3.5" style={{ color }} />}
+                    />
                   </div>
-                ))}
+                )}
+                {hasItems(vContent.valeurMarqueIntangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Intangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.valeurMarqueIntangible}
+                      icon={<Heart className="h-3.5 w-3.5" style={{ color }} />}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* ----------------------------------------------------------------
-              3. Valeur Marque — Intangible
+              4-5. Valeur Client — Tangible & Intangible
           ---------------------------------------------------------------- */}
-          {Array.isArray(vContent.valeurMarque?.intangible) && vContent.valeurMarque.intangible.length > 0 && (
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Valeur de marque — Intangible
-              </p>
-              <div className="space-y-1.5">
-                {vContent.valeurMarque.intangible.map((item, i) => (
-                  <div key={i} className="flex items-start gap-2 pl-1 text-sm">
-                    <Heart className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color }} />
-                    <span className="text-foreground/80">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ----------------------------------------------------------------
-              4-5-6. Valeur Client — Fonctionnels, Emotionnels, Sociaux
-          ---------------------------------------------------------------- */}
-          {(!!vContent.valeurClient?.fonctionnels?.length ||
-            !!vContent.valeurClient?.emotionnels?.length ||
-            !!vContent.valeurClient?.sociaux?.length) && (
+          {(hasItems(vContent.valeurClientTangible) || hasItems(vContent.valeurClientIntangible)) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Valeur client
               </p>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {/* Fonctionnels */}
-                {Array.isArray(vContent.valeurClient.fonctionnels) && vContent.valeurClient.fonctionnels.length > 0 && (
-                  <div className="rounded-lg border p-3">
-                    <p className="mb-1.5 text-xs font-semibold">
-                      <span className="mr-1">{"\u2699\uFE0F"}</span>Fonctionnels
-                    </p>
-                    <ul className="space-y-1">
-                      {vContent.valeurClient.fonctionnels.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {hasItems(vContent.valeurClientTangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Tangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.valeurClientTangible}
+                      icon={<Zap className="h-3.5 w-3.5 text-emerald-600" />}
+                    />
                   </div>
                 )}
-
-                {/* Emotionnels */}
-                {Array.isArray(vContent.valeurClient.emotionnels) && vContent.valeurClient.emotionnels.length > 0 && (
-                  <div className="rounded-lg border p-3">
-                    <p className="mb-1.5 text-xs font-semibold">
-                      <span className="mr-1">{"\u2764\uFE0F"}</span>Emotionnels
-                    </p>
-                    <ul className="space-y-1">
-                      {vContent.valeurClient.emotionnels.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Sociaux */}
-                {Array.isArray(vContent.valeurClient.sociaux) && vContent.valeurClient.sociaux.length > 0 && (
-                  <div className="rounded-lg border p-3">
-                    <p className="mb-1.5 text-xs font-semibold">
-                      <span className="mr-1">{"\uD83E\uDD1D"}</span>Sociaux
-                    </p>
-                    <ul className="space-y-1">
-                      {vContent.valeurClient.sociaux.map((item, i) => (
-                        <li key={i} className="flex items-start gap-2 text-xs text-foreground/80">
-                          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-muted-foreground/40" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
+                {hasItems(vContent.valeurClientIntangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Intangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.valeurClientIntangible}
+                      icon={<Heart className="h-3.5 w-3.5 text-emerald-600" />}
+                    />
                   </div>
                 )}
               </div>
@@ -228,76 +298,61 @@ export function SectionValeur({
           )}
 
           {/* ----------------------------------------------------------------
-              7. Co{u}t Client — Frictions
+              6-7. Cout Marque — Tangible & Intangible
           ---------------------------------------------------------------- */}
-          {Array.isArray(vContent.coutClient?.frictions) && vContent.coutClient.frictions.length > 0 && (
+          {(hasItems(vContent.coutMarqueTangible) || hasItems(vContent.coutMarqueIntangible)) && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Structure de couts marque
+              </p>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {hasItems(vContent.coutMarqueTangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Tangible (CAPEX/OPEX)</p>
+                    <ValeurCoutItemList
+                      items={vContent.coutMarqueTangible}
+                      icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+                    />
+                  </div>
+                )}
+                {hasItems(vContent.coutMarqueIntangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Intangible (couts caches)</p>
+                    <ValeurCoutItemList
+                      items={vContent.coutMarqueIntangible}
+                      icon={<AlertTriangle className="h-3.5 w-3.5 text-amber-500" />}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------------
+              8-9. Cout Client — Tangible & Intangible
+          ---------------------------------------------------------------- */}
+          {(hasItems(vContent.coutClientTangible) || hasItems(vContent.coutClientIntangible)) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Frictions client
               </p>
-              <div className="space-y-2">
-                {vContent.coutClient.frictions.map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 rounded-md border bg-muted/20 px-3 py-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">{item.friction}</p>
-                      {item.solution && (
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          <span className="font-semibold">Solution :</span> {item.solution}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ----------------------------------------------------------------
-              8. Co{u}t Marque — CAPEX, OPEX, Co{u}ts cach{e}s
-          ---------------------------------------------------------------- */}
-          {(vContent.coutMarque?.capex ||
-            vContent.coutMarque?.opex ||
-            (Array.isArray(vContent.coutMarque?.coutsCaches) && vContent.coutMarque.coutsCaches.length > 0)) && (
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Structure de co&ucirc;ts marque
-              </p>
-              <div className="space-y-3">
-                {/* CAPEX + OPEX MetricCards */}
-                {(vContent.coutMarque.capex || vContent.coutMarque.opex) && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {vContent.coutMarque.capex && (
-                      <MetricCard
-                        label="Investissements (CAPEX)"
-                        value={vContent.coutMarque.capex}
-                        description="Capital expenditure"
-                      />
-                    )}
-                    {vContent.coutMarque.opex && (
-                      <MetricCard
-                        label="Charges récurrentes (OPEX)"
-                        value={vContent.coutMarque.opex}
-                        description="Operational expenditure"
-                      />
-                    )}
-                  </div>
-                )}
-
-                {/* Couts caches */}
-                {Array.isArray(vContent.coutMarque.coutsCaches) && vContent.coutMarque.coutsCaches.length > 0 && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {hasItems(vContent.coutClientTangible) && (
                   <div>
-                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">
-                      Co&ucirc;ts cach&eacute;s
-                    </p>
-                    <div className="space-y-1.5">
-                      {vContent.coutMarque.coutsCaches.map((item, i) => (
-                        <div key={i} className="flex items-start gap-2 pl-1 text-sm">
-                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
-                          <span className="text-foreground/80">{item}</span>
-                        </div>
-                      ))}
-                    </div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Tangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.coutClientTangible}
+                      icon={<AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+                    />
+                  </div>
+                )}
+                {hasItems(vContent.coutClientIntangible) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold text-muted-foreground">Intangible</p>
+                    <ValeurCoutItemList
+                      items={vContent.coutClientIntangible}
+                      icon={<AlertTriangle className="h-3.5 w-3.5 text-red-500" />}
+                    />
                   </div>
                 )}
               </div>
@@ -305,61 +360,59 @@ export function SectionValeur({
           )}
 
           {/* ----------------------------------------------------------------
-              9. Unit Economics
+              10. Unit Economics
           ---------------------------------------------------------------- */}
-          {(vContent.unitEconomics?.cac ||
-            vContent.unitEconomics?.ltv ||
-            vContent.unitEconomics?.ratio ||
-            vContent.unitEconomics?.pointMort ||
-            vContent.unitEconomics?.marges) && (
+          {(hasVal(vContent.cac) ||
+            hasVal(vContent.ltv) ||
+            hasVal(vContent.ltvCacRatio) ||
+            hasVal(vContent.pointMort) ||
+            hasVal(vContent.marges)) && (
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Unit Economics
               </p>
               <div className="space-y-3">
                 {/* CAC, LTV, Ratio */}
-                {(vContent.unitEconomics.cac ||
-                  vContent.unitEconomics.ltv ||
-                  vContent.unitEconomics.ratio) && (
+                {(hasVal(vContent.cac) || hasVal(vContent.ltv) || hasVal(vContent.ltvCacRatio)) && (
                   <div className="grid gap-3 sm:grid-cols-3">
-                    {vContent.unitEconomics.cac && (
+                    {hasVal(vContent.cac) && (
                       <MetricCard
                         label="CAC"
-                        value={vContent.unitEconomics.cac}
-                        description={"Coût d\'acquisition client"}
+                        value={vContent.cac}
+                        description="Cout d'acquisition client"
                       />
                     )}
-                    {vContent.unitEconomics.ltv && (
+                    {hasVal(vContent.ltv) && (
                       <MetricCard
                         label="LTV"
-                        value={vContent.unitEconomics.ltv}
-                        description="Lifetime value"
+                        value={vContent.ltv}
+                        description={`Lifetime value${vContent.dureeLTV ? ` (${vContent.dureeLTV} mois)` : ""}`}
                       />
                     )}
-                    {vContent.unitEconomics.ratio && (
+                    {hasVal(vContent.ltvCacRatio) && (
                       <MetricCard
                         label="Ratio LTV/CAC"
-                        value={vContent.unitEconomics.ratio}
-                        description={"Rentabilité client"}
+                        value={vContent.ltvCacRatio}
+                        description="Rentabilite client"
                       />
                     )}
                   </div>
                 )}
 
                 {/* Point Mort + Marges */}
-                {(vContent.unitEconomics.pointMort || vContent.unitEconomics.marges) && (
+                {(hasVal(vContent.pointMort) || hasVal(vContent.marges)) && (
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {vContent.unitEconomics.pointMort && (
+                    {hasVal(vContent.pointMort) && (
                       <MetricCard
                         label="Point mort"
-                        value={vContent.unitEconomics.pointMort}
-                        description={"Seuil de rentabilité"}
+                        value={vContent.pointMort}
+                        description="Seuil de rentabilite"
                       />
                     )}
-                    {vContent.unitEconomics.marges && (
+                    {hasVal(vContent.marges) && (
                       <MetricCard
                         label="Marges"
-                        value={vContent.unitEconomics.marges}
+                        value={vContent.marges}
                         description="Structure de marges"
                       />
                     )}
@@ -367,10 +420,45 @@ export function SectionValeur({
                 )}
 
                 {/* Notes */}
-                {vContent.unitEconomics.notes && (
+                {hasVal(vContent.notesEconomics) && (
                   <p className="text-sm italic leading-relaxed text-foreground/80">
-                    {vContent.unitEconomics.notes}
+                    {vContent.notesEconomics}
                   </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------------
+              11. Derived Metrics
+          ---------------------------------------------------------------- */}
+          {(hasVal(vContent.margeNette) || hasVal(vContent.roiEstime) || hasVal(vContent.paybackPeriod)) && (
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                <Calculator className="mr-1 inline h-3.5 w-3.5" />
+                Metriques derivees
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                {hasVal(vContent.margeNette) && (
+                  <MetricCard
+                    label="Marge nette"
+                    value={vContent.margeNette}
+                    description="LTV - CAC"
+                  />
+                )}
+                {hasVal(vContent.roiEstime) && (
+                  <MetricCard
+                    label="ROI estime"
+                    value={vContent.roiEstime}
+                    description="(LTV-CAC)/CAC"
+                  />
+                )}
+                {hasVal(vContent.paybackPeriod) && (
+                  <MetricCard
+                    label="Payback period"
+                    value={vContent.paybackPeriod}
+                    description="CAC / (LTV/duree)"
+                  />
                 )}
               </div>
             </div>
@@ -438,7 +526,7 @@ export function SectionValeur({
                   <MetricCard
                     label="CAC"
                     value={implContent.valueArchitecture.unitEconomics.cac}
-                    description={"Coût d\'acquisition client"}
+                    description="Cout d'acquisition client"
                   />
                 )}
                 {implContent.valueArchitecture.unitEconomics.ltv && (
@@ -452,7 +540,7 @@ export function SectionValeur({
                   <MetricCard
                     label="Ratio LTV/CAC"
                     value={implContent.valueArchitecture.unitEconomics.ratio}
-                    description={"Rentabilité client"}
+                    description="Rentabilite client"
                   />
                 )}
               </div>

@@ -10,6 +10,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "~/server/auth";
 import AuthSessionProvider from "~/components/providers/session-provider";
+import { ViewAsProvider } from "~/components/providers/view-as-provider";
 import { RoleProvider } from "~/components/providers/role-provider";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { OfflineBanner } from "~/components/ui/offline-banner";
@@ -29,9 +30,11 @@ export default async function AuthLayout({
     <AuthSessionProvider>
       <TooltipProvider delayDuration={0}>
         <OfflineBanner />
-        <RoleProvider>
-          {children}
-        </RoleProvider>
+        <ViewAsProvider>
+          <RoleProvider>
+            {children}
+          </RoleProvider>
+        </ViewAsProvider>
       </TooltipProvider>
     </AuthSessionProvider>
   );

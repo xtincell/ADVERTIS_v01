@@ -19,6 +19,11 @@ import {
   Percent,
   Clock,
   ArrowRight,
+  Users,
+  Briefcase,
+  Target,
+  Sparkles,
+  TrendingUp,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -98,6 +103,14 @@ export default function GeneralDashboardPage() {
     isLoading: loadingFinance,
   } = api.serenite.dashboard.useQuery(undefined, {
     // Financial data is secondary — don't block the page
+    retry: 1,
+  });
+
+  const { data: userCounts } = api.users.countByRole.useQuery(undefined, {
+    retry: 1,
+  });
+
+  const { data: flywheel } = api.analytics.getFlywheelKpis.useQuery(undefined, {
     retry: 1,
   });
 
@@ -212,7 +225,49 @@ export default function GeneralDashboardPage() {
         completionRate={overview.completionRate}
       />
 
-      {/* ── 4. Portal quick-access ── */}
+      {/* ── 4. Flywheel Ops — operational velocity KPIs ── */}
+      {flywheel && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">
+            Flywheel Opérationnel
+          </h2>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <FlywheelCard
+              label="Leads actifs"
+              value={flywheel.activeLeads}
+              icon={Target}
+              color="#8B5CF6"
+              subtitle="stratégies en cours"
+              href="/impulsion"
+            />
+            <FlywheelCard
+              label="Projets"
+              value={flywheel.activeMissions}
+              icon={Briefcase}
+              color="#3B82F6"
+              subtitle="missions actives"
+              href="/pilotis"
+            />
+            <FlywheelCard
+              label="Talents Guilde"
+              value={flywheel.totalTalents}
+              icon={Sparkles}
+              color="#F59E0B"
+              subtitle="freelances"
+              href="/guilde"
+            />
+            <FlywheelCard
+              label="Livrés ce mois"
+              value={flywheel.completedThisMonth}
+              icon={TrendingUp}
+              color="#22C55E"
+              subtitle="stratégies finalisées"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* ── 5. Portal quick-access ── */}
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground">
           Portails
@@ -290,7 +345,35 @@ export default function GeneralDashboardPage() {
         </div>
       </section>
 
-      {/* ── 6. Recent activity ── */}
+      {/* ── 6. Users quick-access ── */}
+      {userCounts && (
+        <section className="space-y-2">
+          <h2 className="text-sm font-semibold text-muted-foreground">
+            Utilisateurs
+          </h2>
+          <button
+            onClick={() => router.push("/serenite/users")}
+            className="flex w-full items-center gap-4 rounded-xl border border-border p-4 text-left transition-all hover:shadow-md cursor-pointer group"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
+              <Users className="h-5 w-5 text-cyan-500" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium group-hover:text-cyan-500 transition-colors">
+                {userCounts.total} utilisateur{userCounts.total !== 1 ? "s" : ""}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {Object.entries(userCounts.counts)
+                  .map(([role, count]) => `${count} ${role.toLowerCase().replace("_", " ")}`)
+                  .join(" · ")}
+              </p>
+            </div>
+            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+          </button>
+        </section>
+      )}
+
+      {/* ── 7. Recent activity ── */}
       {overview.recentActivity && overview.recentActivity.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground">
@@ -328,6 +411,51 @@ export default function GeneralDashboardPage() {
       )}
     </div>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Flywheel card sub-component
+// ---------------------------------------------------------------------------
+function FlywheelCard({
+  label,
+  value,
+  icon: Icon,
+  color,
+  subtitle,
+  href,
+}: {
+  label: string;
+  value: number;
+  icon: LucideIcon;
+  color: string;
+  subtitle: string;
+  href?: string;
+}) {
+  const router = useRouter();
+  const content = (
+    <Card className="py-3 md:py-3 group transition-all hover:shadow-md cursor-pointer">
+      <CardContent className="flex items-start gap-3 px-4">
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${color}15` }}
+        >
+          <Icon className="h-4.5 w-4.5" style={{ color }} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[11px] text-muted-foreground truncate">{label}</p>
+          <p className="text-lg font-bold tabular-nums" style={{ color }}>
+            {value}
+          </p>
+          <p className="text-[10px] text-muted-foreground/60 truncate">{subtitle}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  if (href) {
+    return <div onClick={() => router.push(href)}>{content}</div>;
+  }
+  return content;
 }
 
 // ---------------------------------------------------------------------------

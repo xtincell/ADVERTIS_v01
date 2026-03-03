@@ -480,6 +480,7 @@ export async function regenerateAllPillars(
           trackData ?? null,
         );
 
+        const ficheStrategyExt = strategy as Record<string, unknown>;
         const implResult = await generateImplementationData(
           interviewData,
           riskResults,
@@ -490,16 +491,23 @@ export async function regenerateAllPillars(
           specialization,
           strategy.tagline,
           currency,
+          ficheStrategyExt.annualBudget as number | null ?? null,
+          ficheStrategyExt.targetRevenue as number | null ?? null,
+          strategy.maturityProfile,
         );
         generatedContent = implResult.data;
 
         // Recreate budget tiers from fresh Implementation data
         try {
           await db.budgetTier.deleteMany({ where: { strategyId } });
+          const strategyExt = strategy as Record<string, unknown>;
           const tiers = await generateBudgetTiers(
             generatedContent as ImplementationData,
             strategy.brandName,
             strategy.sector ?? "",
+            strategyExt.annualBudget as number | null ?? null,
+            strategyExt.targetRevenue as number | null ?? null,
+            strategy.maturityProfile,
           );
           await db.budgetTier.createMany({
             data: tiers.map((t) => ({ strategyId, ...t })),

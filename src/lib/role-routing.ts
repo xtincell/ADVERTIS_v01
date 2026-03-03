@@ -55,6 +55,9 @@ export const CLIENT_ROUTES = [
   "/requests",
 ];
 
+/** Routes accessible by ADMIN, OPERATOR, and CLIENT_RETAINER (Brand OS). */
+export const BRAND_OS_ROUTES = ["/os"];
+
 /** Full role→routes map for middleware. */
 export const ROLE_ROUTE_MAP: Record<string, string[]> = {
   // Operator-only paths
@@ -68,5 +71,9 @@ export const ROLE_ROUTE_MAP: Record<string, string[]> = {
   // Client paths (+ ADMIN preview)
   ...Object.fromEntries(
     CLIENT_ROUTES.map((r) => [r, ["ADMIN", "CLIENT_RETAINER", "CLIENT_STATIC"]])
+  ),
+  // Brand OS paths (retainer portal)
+  ...Object.fromEntries(
+    BRAND_OS_ROUTES.map((r) => [r, ["ADMIN", "OPERATOR", "CLIENT_RETAINER"]])
   ),
 };

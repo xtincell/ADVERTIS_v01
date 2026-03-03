@@ -273,45 +273,62 @@ Appuie-toi sur les insights du Pilier A pour garantir la cohérence.
 ${JSON_RULES}`,
 
   V: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.
-Tu génères le contenu structuré du Pilier V — Valeur.
+Tu génères le contenu structuré du Pilier V — Valeur (format v2 atomisé).
 
-Ton rôle est de définir la proposition de valeur, l'architecture de l'offre, et les métriques économiques.
+Ton rôle est de définir le catalogue produits/services, la proposition de valeur, l'architecture de l'offre, et les métriques économiques.
 
 FORMAT DE RÉPONSE OBLIGATOIRE (JSON strict) :
 {
-  "productLadder": [
-    { "tier": "Nom du niveau", "prix": "Fourchette de prix avec devise", "description": "Description de l'offre", "cible": "Persona visé" }
+  "produitsCatalogue": [
+    {
+      "id": "prod-001",
+      "nom": "Nom du produit ou service",
+      "prix": "Prix de vente avec devise",
+      "cout": "Coût de revient estimé",
+      "description": "Description concise",
+      "categorie": "produit",
+      "lienPromesse": "Lien avec la promesse de marque",
+      "margeUnitaire": "Marge en %",
+      "segmentCible": "Persona ou segment visé",
+      "phaseLifecycle": "growth",
+      "disponibilite": "Disponibilité actuelle",
+      "canalDistribution": "Canal principal de distribution",
+      "skuRef": "",
+      "images": [],
+      "variantes": [],
+      "bundles": [],
+      "dependencies": [],
+      "scoringInterne": 75
+    }
   ],
-  "valeurMarque": {
-    "tangible": ["Actif tangible 1", "Actif tangible 2"],
-    "intangible": ["Actif intangible 1", "Actif intangible 2"]
-  },
-  "valeurClient": {
-    "fonctionnels": ["Gain fonctionnel 1"],
-    "emotionnels": ["Gain émotionnel 1"],
-    "sociaux": ["Gain social 1"]
-  },
-  "coutMarque": {
-    "capex": "Investissements initiaux",
-    "opex": "Coûts opérationnels récurrents",
-    "coutsCaches": ["Coût caché 1"]
-  },
-  "coutClient": {
-    "frictions": [
-      { "friction": "Point de friction", "solution": "Solution proposée" }
-    ]
-  },
-  "unitEconomics": {
-    "cac": "Coût d'acquisition client estimé",
-    "ltv": "Valeur vie client estimée",
-    "ratio": "Ratio LTV/CAC",
-    "pointMort": "Estimation du point mort",
-    "marges": "Marges brutes estimées",
-    "notes": "Hypothèses et notes"
-  }
+  "productLadder": [
+    { "tier": "Nom du niveau", "prix": "Fourchette de prix", "description": "Description de l'offre", "cible": "Persona visé", "produitIds": ["prod-001"] }
+  ],
+  "valeurMarqueTangible": [{ "item": "Actif tangible marque", "montant": "", "categorie": "" }],
+  "valeurMarqueIntangible": [{ "item": "Actif intangible marque", "montant": "", "categorie": "" }],
+  "valeurClientTangible": [{ "item": "Gain tangible client", "montant": "", "categorie": "fonctionnel" }],
+  "valeurClientIntangible": [{ "item": "Gain intangible client", "montant": "", "categorie": "emotionnel" }],
+  "coutMarqueTangible": [{ "item": "Coût tangible marque", "montant": "", "categorie": "capex" }],
+  "coutMarqueIntangible": [{ "item": "Coût intangible/caché marque", "montant": "", "categorie": "" }],
+  "coutClientTangible": [{ "item": "Friction tangible client", "montant": "", "categorie": "friction" }],
+  "coutClientIntangible": [{ "item": "Friction intangible client", "montant": "", "categorie": "" }],
+  "cac": "Coût d'acquisition client estimé",
+  "ltv": "Valeur vie client estimée",
+  "ltvCacRatio": "Ratio LTV/CAC",
+  "pointMort": "Estimation du point mort",
+  "marges": "Marges brutes estimées",
+  "notesEconomics": "Hypothèses et notes",
+  "dureeLTV": 24
 }
 
-Génère 2-4 tiers, 2-3 frictions. Relie la valeur au positionnement des piliers précédents.
+Règles :
+- Génère 2-6 produits dans produitsCatalogue, chacun avec un id unique (prod-001, prod-002, etc.)
+- Génère 2-4 tiers dans productLadder, chaque tier référence des produitIds du catalogue
+- Génère 2+ items par variable valeur/coût (tangible et intangible)
+- Les catégories possibles pour valeurClient : "fonctionnel", "emotionnel", "social"
+- Les catégories possibles pour coutMarque : "capex", "opex", "cout_cache"
+- Les catégories possibles pour coutClient : "friction", "migration", "apprentissage"
+- Relie la valeur au positionnement des piliers précédents.
 ${JSON_RULES}`,
 
   E: `Tu es un expert en stratégie de marque utilisant la méthodologie ADVERTIS.

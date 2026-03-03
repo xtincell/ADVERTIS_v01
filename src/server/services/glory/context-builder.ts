@@ -117,20 +117,38 @@ function extractPillarD(content: unknown): string {
 
 function extractPillarV(content: unknown): string {
   const lines: string[] = [];
-  // Schema: productLadder, valeurMarque, valeurClient, coutMarque, coutClient, unitEconomics
+  // Schema V2: produitsCatalogue, productLadder, 8 atomic value/cost, 6 unit economics
+  const catalogue = safeGet(content, "produitsCatalogue");
   const productLadder = safeGet(content, "productLadder");
-  const valeurMarque = safeGet(content, "valeurMarque");
-  const valeurClient = safeGet(content, "valeurClient");
-  const coutMarque = safeGet(content, "coutMarque");
-  const coutClient = safeGet(content, "coutClient");
-  const unitEconomics = safeGet(content, "unitEconomics");
+  const valeurMarqueTangible = safeGet(content, "valeurMarqueTangible");
+  const valeurMarqueIntangible = safeGet(content, "valeurMarqueIntangible");
+  const valeurClientTangible = safeGet(content, "valeurClientTangible");
+  const valeurClientIntangible = safeGet(content, "valeurClientIntangible");
+  const coutMarqueTangible = safeGet(content, "coutMarqueTangible");
+  const coutMarqueIntangible = safeGet(content, "coutMarqueIntangible");
+  const coutClientTangible = safeGet(content, "coutClientTangible");
+  const coutClientIntangible = safeGet(content, "coutClientIntangible");
+  const cac = safeGet(content, "cac");
+  const ltv = safeGet(content, "ltv");
+  const ltvCacRatio = safeGet(content, "ltvCacRatio");
+  const pointMort = safeGet(content, "pointMort");
+  const marges = safeGet(content, "marges");
 
+  if (catalogue) lines.push(formatSection("Catalogue Produits & Services", catalogue));
   if (productLadder) lines.push(formatSection("Product Ladder / Pricing", productLadder));
-  if (valeurMarque) lines.push(formatSection("Valeur Marque", valeurMarque));
-  if (valeurClient) lines.push(formatSection("Valeur Client", valeurClient));
-  if (coutMarque) lines.push(formatSection("Coût Marque", coutMarque));
-  if (coutClient) lines.push(formatSection("Coût Client", coutClient));
-  if (unitEconomics) lines.push(formatSection("Unit Economics", unitEconomics));
+  if (valeurMarqueTangible) lines.push(formatSection("Valeur Marque Tangible", valeurMarqueTangible));
+  if (valeurMarqueIntangible) lines.push(formatSection("Valeur Marque Intangible", valeurMarqueIntangible));
+  if (valeurClientTangible) lines.push(formatSection("Valeur Client Tangible", valeurClientTangible));
+  if (valeurClientIntangible) lines.push(formatSection("Valeur Client Intangible", valeurClientIntangible));
+  if (coutMarqueTangible) lines.push(formatSection("Coût Marque Tangible", coutMarqueTangible));
+  if (coutMarqueIntangible) lines.push(formatSection("Coût Marque Intangible", coutMarqueIntangible));
+  if (coutClientTangible) lines.push(formatSection("Coût Client Tangible", coutClientTangible));
+  if (coutClientIntangible) lines.push(formatSection("Coût Client Intangible", coutClientIntangible));
+  if (cac) lines.push(formatSection("CAC", cac));
+  if (ltv) lines.push(formatSection("LTV", ltv));
+  if (ltvCacRatio) lines.push(formatSection("Ratio LTV/CAC", ltvCacRatio));
+  if (pointMort) lines.push(formatSection("Point Mort", pointMort));
+  if (marges) lines.push(formatSection("Marges", marges));
 
   return lines.join("");
 }

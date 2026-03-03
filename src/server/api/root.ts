@@ -57,6 +57,16 @@ import { guildeRouter } from "~/server/api/routers/guilde";
 import { sereniteRouter } from "~/server/api/routers/serenite";
 import { ecosystemRouter } from "~/server/api/routers/ecosystem";
 import { variableRouter } from "~/server/api/routers/variable";
+import { brandOSRouter } from "~/server/api/routers/brand-os";
+import { usersRouter } from "~/server/api/routers/users";
+import { crmRouter } from "~/server/api/routers/crm";
+import { ambassadorRouter } from "~/server/api/routers/ambassador";
+import { publicationRouter } from "~/server/api/routers/publication";
+import { messagingRouter } from "~/server/api/routers/messaging";
+import { mestorRouter } from "~/server/api/routers/mestor";
+import { cohortRouter } from "~/server/api/routers/cohort";
+import { attributionRouter } from "~/server/api/routers/attribution";
+import { brandVaultRouter } from "~/server/api/routers/brand-vault";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -88,6 +98,16 @@ export const appRouter = createTRPCRouter({
   serenite: sereniteRouter,
   ecosystem: ecosystemRouter,
   variable: variableRouter,
+  brandOS: brandOSRouter,
+  users: usersRouter,
+  crm: crmRouter,
+  ambassador: ambassadorRouter,
+  publication: publicationRouter,
+  messaging: messagingRouter,
+  mestor: mestorRouter,
+  cohort: cohortRouter,
+  attribution: attributionRouter,
+  brandVault: brandVaultRouter,
 });
 
 // export type definition of API

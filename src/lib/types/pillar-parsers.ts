@@ -10,7 +10,13 @@
 // Used by: cockpit, PDF export, editors, tRPC save handlers, AI pipeline.
 // =============================================================================
 
-import { PILLAR_SCHEMAS } from "./pillar-schemas";
+import {
+  PILLAR_SCHEMAS,
+  ValeurPillarSchema,
+  ValeurPillarSchemaV2,
+  type ValeurPillarData,
+  type ValeurPillarDataV2,
+} from "./pillar-schemas";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +72,193 @@ function getSchemaDefaults(schema: (typeof PILLAR_SCHEMAS)[string]): Record<stri
 }
 
 // ---------------------------------------------------------------------------
+// V1 → V2 migration (Pillar V atomisation)
+// ---------------------------------------------------------------------------
+
+/**
+ * Detect whether raw data uses the old V1 format (nested valeurMarque/coutMarque/etc.)
+ * vs the new V2 format (flat atomic variables).
+ */
+function isValeurV1Format(obj: Record<string, unknown>): boolean {
+  return (
+    "valeurMarque" in obj ||
+    "coutMarque" in obj ||
+    "coutClient" in obj ||
+    "unitEconomics" in obj
+  );
+}
+
+/**
+ * Lenient V1→V2 migration that works from raw untyped objects.
+ * Handles malformed fields (e.g. frictions as string instead of array)
+ * without requiring the V1 schema to validate first.
+ */
+function migrateRawV1(obj: Record<string, unknown>): ValeurPillarDataV2 {
+  const toItem = (s: string, categorie = "") => ({
+    item: s,
+    montant: "",
+    categorie,
+  });
+  const asStrArr = (val: unknown): string[] => {
+    if (Array.isArray(val)) return val.filter((v) => typeof v === "string");
+    return [];
+  };
+  const asObj = (val: unknown): Record<string, unknown> =>
+    val && typeof val === "object" && !Array.isArray(val)
+      ? (val as Record<string, unknown>)
+      : {};
+
+  const vm = asObj(obj.valeurMarque);
+  const vc = asObj(obj.valeurClient);
+  const cm = asObj(obj.coutMarque);
+  const cc = asObj(obj.coutClient);
+  const ue = asObj(obj.unitEconomics);
+  const pl = Array.isArray(obj.productLadder) ? obj.productLadder : [];
+
+  // Handle frictions: could be array of {friction,solution}, array of strings, or string
+  let frictionItems: { item: string; montant: string; categorie: string }[] = [];
+  const rawFrictions = cc.frictions;
+  if (Array.isArray(rawFrictions)) {
+    frictionItems = rawFrictions.map((f: unknown) => {
+      if (typeof f === "string") return toItem(f, "friction");
+      if (f && typeof f === "object") {
+        const fo = f as Record<string, unknown>;
+        const friction = String(fo.friction ?? "");
+        const solution = String(fo.solution ?? "");
+        return toItem(
+          solution ? `${friction} \u2192 ${solution}` : friction,
+          "friction",
+        );
+      }
+      return toItem("", "friction");
+    }).filter((i) => i.item.trim().length > 0);
+  } else if (typeof rawFrictions === "string" && rawFrictions.trim()) {
+    frictionItems = [toItem(rawFrictions, "friction")];
+  }
+
+  return {
+    produitsCatalogue: [],
+    productLadder: pl.map((t: unknown) => {
+      const to = asObj(t);
+      return {
+        tier: String(to.tier ?? ""),
+        prix: String(to.prix ?? ""),
+        description: String(to.description ?? ""),
+        cible: String(to.cible ?? ""),
+        produitIds: [],
+      };
+    }),
+    valeurMarqueTangible: asStrArr(vm.tangible).map((s) => toItem(s)),
+    valeurMarqueIntangible: asStrArr(vm.intangible).map((s) => toItem(s)),
+    valeurClientTangible: asStrArr(vc.fonctionnels).map((s) => toItem(s, "fonctionnel")),
+    valeurClientIntangible: [
+      ...asStrArr(vc.emotionnels).map((s) => toItem(s, "emotionnel")),
+      ...asStrArr(vc.sociaux).map((s) => toItem(s, "social")),
+    ],
+    coutMarqueTangible: [
+      ...(typeof cm.capex === "string" && cm.capex.trim() ? [toItem(cm.capex, "capex")] : []),
+      ...(typeof cm.opex === "string" && cm.opex.trim() ? [toItem(cm.opex, "opex")] : []),
+    ],
+    coutMarqueIntangible: asStrArr(cm.coutsCaches).map((s) => toItem(s, "cout_cache")),
+    coutClientTangible: frictionItems,
+    coutClientIntangible: [],
+    cac: typeof ue.cac === "string" ? ue.cac : "",
+    ltv: typeof ue.ltv === "string" ? ue.ltv : "",
+    ltvCacRatio: typeof ue.ratio === "string" ? ue.ratio : "",
+    pointMort: typeof ue.pointMort === "string" ? ue.pointMort : "",
+    marges: typeof ue.marges === "string" ? ue.marges : "",
+    notesEconomics: typeof ue.notes === "string" ? ue.notes : "",
+    dureeLTV: 24,
+    margeNette: "",
+    roiEstime: "",
+    paybackPeriod: "",
+  };
+}
+
+/**
+ * Migrate old V1 Valeur pillar data to V2 atomic format.
+ * Mapping:
+ *   valeurMarque.tangible[]     → valeurMarqueTangible[{item}]
+ *   valeurMarque.intangible[]   → valeurMarqueIntangible[{item}]
+ *   valeurClient.fonctionnels[] → valeurClientTangible[{item, categorie:"fonctionnel"}]
+ *   valeurClient.emotionnels[]  → valeurClientIntangible[{item, categorie:"emotionnel"}]
+ *   valeurClient.sociaux[]      → valeurClientIntangible[{item, categorie:"social"}]  (append)
+ *   coutMarque.capex            → coutMarqueTangible[{item, categorie:"capex"}]
+ *   coutMarque.opex             → coutMarqueTangible[{item, categorie:"opex"}]       (append)
+ *   coutMarque.coutsCaches[]    → coutMarqueIntangible[{item, categorie:"cout_cache"}]
+ *   coutClient.frictions[]      → coutClientTangible[{item:"friction → solution", categorie:"friction"}]
+ *   unitEconomics.*             → flat cac, ltv, ltvCacRatio, pointMort, marges, notesEconomics
+ */
+export function migrateValeurV1toV2(old: ValeurPillarData): ValeurPillarDataV2 {
+  const toItem = (s: string, categorie = "") => ({
+    item: s,
+    montant: "",
+    categorie,
+  });
+
+  return {
+    produitsCatalogue: [],
+
+    productLadder: (old.productLadder ?? []).map((t) => ({
+      tier: t.tier,
+      prix: t.prix,
+      description: t.description,
+      cible: t.cible,
+      produitIds: [],
+    })),
+
+    valeurMarqueTangible: (old.valeurMarque?.tangible ?? []).map((s) =>
+      toItem(s),
+    ),
+    valeurMarqueIntangible: (old.valeurMarque?.intangible ?? []).map((s) =>
+      toItem(s),
+    ),
+
+    valeurClientTangible: (old.valeurClient?.fonctionnels ?? []).map((s) =>
+      toItem(s, "fonctionnel"),
+    ),
+    valeurClientIntangible: [
+      ...(old.valeurClient?.emotionnels ?? []).map((s) =>
+        toItem(s, "emotionnel"),
+      ),
+      ...(old.valeurClient?.sociaux ?? []).map((s) => toItem(s, "social")),
+    ],
+
+    coutMarqueTangible: [
+      ...(old.coutMarque?.capex
+        ? [toItem(old.coutMarque.capex, "capex")]
+        : []),
+      ...(old.coutMarque?.opex ? [toItem(old.coutMarque.opex, "opex")] : []),
+    ].filter((i) => i.item.trim().length > 0),
+    coutMarqueIntangible: (old.coutMarque?.coutsCaches ?? []).map((s) =>
+      toItem(s, "cout_cache"),
+    ),
+
+    coutClientTangible: (old.coutClient?.frictions ?? []).map((f) =>
+      toItem(
+        f.solution
+          ? `${f.friction} \u2192 ${f.solution}`
+          : f.friction,
+        "friction",
+      ),
+    ),
+    coutClientIntangible: [],
+
+    cac: old.unitEconomics?.cac ?? "",
+    ltv: old.unitEconomics?.ltv ?? "",
+    ltvCacRatio: old.unitEconomics?.ratio ?? "",
+    pointMort: old.unitEconomics?.pointMort ?? "",
+    marges: old.unitEconomics?.marges ?? "",
+    notesEconomics: old.unitEconomics?.notes ?? "",
+    dureeLTV: 24,
+
+    margeNette: "",
+    roiEstime: "",
+    paybackPeriod: "",
+  };
+}
+
+// ---------------------------------------------------------------------------
 // 1. parsePillarContent — For consumers (cockpit, PDF, editors)
 // ---------------------------------------------------------------------------
 
@@ -115,6 +308,37 @@ export function parsePillarContent<T>(
         success: false,
         data: defaults as T,
         errors: ["Content is a legacy string, not structured JSON"],
+      };
+    }
+  }
+
+  // Auto-migrate V1 → V2 for Pillar V
+  if (
+    pillarType === "V" &&
+    resolved &&
+    typeof resolved === "object" &&
+    !Array.isArray(resolved)
+  ) {
+    const obj = resolved as Record<string, unknown>;
+    if (isValeurV1Format(obj)) {
+      // Try strict V1 parse first, then fallback to lenient raw migration
+      const oldResult = ValeurPillarSchema.safeParse(resolved);
+      const v1Data = oldResult.success
+        ? oldResult.data
+        : migrateRawV1(obj); // Lenient extraction from raw object
+      const migrated = oldResult.success
+        ? migrateValeurV1toV2(v1Data as ValeurPillarData)
+        : (v1Data as ValeurPillarDataV2);
+      // Re-validate through V2 schema
+      const v2Result = ValeurPillarSchemaV2.safeParse(migrated);
+      if (v2Result.success) {
+        return { success: true, data: v2Result.data as T };
+      }
+      // Even if V2 validation has issues, return migrated data
+      return {
+        success: false,
+        data: migrated as T,
+        errors: ["V1→V2 migration applied but V2 validation had issues"],
       };
     }
   }

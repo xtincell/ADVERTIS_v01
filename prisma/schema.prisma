@@ -31,6 +31,11 @@ model User {
     strategies    Strategy[]
     talentProfile TalentProfile?
 
+    // Wave 3/4 reverse relations
+    publications     Publication[]
+    brandAssets      BrandAsset[]
+    mestorThreads    MestorThread[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
@@ -107,6 +112,8 @@ model Strategy {
     vertical        String? // VERTICALS: FMCG, TECH, HEALTH_PUBLIC, etc.
     maturityProfile String? // MATURITY_PROFILES: MATURE, GROWTH, STARTUP, LAUNCH
     currency        String  @default("XOF") // ISO 4217: XOF, XAF, EUR, USD, GHS, NGN
+    annualBudget    Int? // Annual communication budget in local currency (user-provided, required before Pillar I)
+    targetRevenue   Int? // CA visé — target annual revenue in local currency (user-provided)
 
     // Relations
     userId        String
@@ -150,6 +157,26 @@ model Strategy {
 
     // === Variable Registry (Atomic Modularity) ===
     brandVariables       BrandVariable[]
+
+    // === Brand OS (Retainer Portal) ===
+    brandOSConfig        BrandOSConfig?
+    socialChannels       SocialChannel[]
+    superfanProfiles     SuperfanProfile[]
+    cultIndexSnapshots   CultIndexSnapshot[]
+    communitySnapshots   CommunitySnapshot[]
+    osActionItems        OSActionItem[]
+    osOpportunities      OSOpportunity[]
+
+    // === Phase 9: Wave 3 (Apôtres, Publications) ===
+    ambassadors          AmbassadorProgram[]
+    publications         Publication[]
+
+    // === Phase 10: Wave 4 (MESTOR, Cohorts, Attribution, Vault) ===
+    brandAssets           BrandAsset[]
+    mestorThreads         MestorThread[]
+    cohortSnapshots       CohortSnapshot[]
+    attributionEvents     AttributionEvent[]
+    conversations         Conversation[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
@@ -428,6 +455,7 @@ model ScoreSnapshot {
     coherenceScore Int
     riskScore      Int?
     bmfScore       Int?
+    investScore    Int? // Investment quality score (0-100)
     trigger        String // pillar_update, audit_review, fiche_review, manual, generation
     createdAt      DateTime @default(now())
 
@@ -1254,4 +1282,618 @@ model BrandVariableHistory {
     createdAt DateTime @default(now())
 
     @@index([variableId])
+}
+
+// ============================================
+// BRAND OS — Retainer Portal (Phase 7)
+// Living brand operating system with superfans at the center.
+// Cult Branding Atomique: engagement creation & piloting.
+// ============================================
+
+// Brand OS configuration per strategy (retainer client)
+model BrandOSConfig {
+    id              String   @id @default(cuid())
+    strategyId      String   @unique
+    strategy        Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    isActive        Boolean  @default(true)
+    theme           Json?    // { primaryColor, logoUrl, fontFamily } — white-label config
+    enabledViews    Json?    // string[] — which OS views are enabled: nucleus, pulse, touchpoints, etc.
+    refreshCadence  String   @default("DAILY") // HOURLY, DAILY, WEEKLY
+    lastRefreshedAt DateTime?
+
+    // Social API credentials (encrypted)
+    socialCredentials Json?  // { instagram: { accessToken, pageId }, facebook: {...}, ... }
+
+    // Cult Index weights (customisable per brand)
+    cultWeights     Json?    // { engagementDepth: 0.25, superfanVelocity: 0.20, ... }
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
+
+// Connected social media channel with metrics
+model SocialChannel {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    platform     String   // INSTAGRAM, FACEBOOK, TIKTOK, TWITTER, YOUTUBE, LINKEDIN
+    accountId    String?  // Platform-specific account/page ID
+    accountName  String?  // @handle or page name
+    isConnected  Boolean  @default(false)
+    category     String   @default("SOCIAL") // SOCIAL, OWNED, EARNED, PAID
+
+    // Latest metrics snapshot
+    followers       Int      @default(0)
+    engagementRate  Float    @default(0)
+    avgReach        Int      @default(0)
+    avgImpressions  Int      @default(0)
+    postFrequency   Float    @default(0) // posts per week
+    responseTime    Int?     // avg response time in minutes
+    sentimentScore  Float?   // -1 to 1
+
+    // Health status
+    healthStatus    String   @default("UNKNOWN") // HEALTHY, WARNING, CRITICAL, DORMANT, UNKNOWN
+    lastActivityAt  DateTime?
+    lastSyncAt      DateTime?
+    syncError       String?
+
+    // Daily metrics history (last 90 days stored as JSON)
+    metricsHistory  Json?    // Array<{ date, followers, engagement, reach, sentiment }>
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, platform])
+    @@index([strategyId])
+    @@index([platform])
+    @@index([healthStatus])
+}
+
+// Superfan profile — aggregated cross-platform identity
+model SuperfanProfile {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Identity
+    displayName  String
+    avatarUrl    String?
+    market       String?  // CM, CI, SN, GH, NG
+    city         String?
+
+    // Cross-platform handles
+    handles      Json?    // { instagram: "@...", twitter: "@...", tiktok: "@..." }
+
+    // Engagement metrics
+    segment         String   @default("FAN") // AUDIENCE, FOLLOWER, ENGAGED, FAN, SUPERFAN, EVANGELIST
+    engagementDepth Float    @default(0) // 0-100 composite depth score
+    totalInteractions Int    @default(0)
+    ugcCount        Int      @default(0)  // User-generated content about the brand
+    defenseCount    Int      @default(0)  // Times they defended the brand
+    shareCount      Int      @default(0)  // Times they shared brand content
+    purchaseCount   Int      @default(0)  // Known purchases (from CRM)
+    referralCount   Int      @default(0)  // People they brought to the brand
+
+    // Timeline
+    firstSeenAt     DateTime @default(now())
+    lastActiveAt    DateTime @default(now())
+    promotedAt      DateTime? // When they became a superfan
+
+    // Activity log (last 50 interactions)
+    activityLog     Json?    // Array<{ date, type, platform, content, sentiment }>
+
+    // Tags
+    tags            Json?    // string[] — "creator", "defender", "ambassador", "dormant"
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([segment])
+    @@index([engagementDepth])
+    @@index([market])
+}
+
+// Cult Index historical snapshots
+model CultIndexSnapshot {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Overall score
+    cultIndex    Float    // 0-100
+
+    // Component breakdown
+    engagementDepth   Float  @default(0) // 0-100
+    superfanVelocity  Float  @default(0) // 0-100
+    communityCohesion Float  @default(0) // 0-100
+    brandDefenseRate  Float  @default(0) // 0-100
+    ugcGenerationRate Float  @default(0) // 0-100
+    ritualAdoption    Float  @default(0) // 0-100
+    evangelismScore   Float  @default(0) // 0-100
+
+    // Context
+    superfanCount     Int    @default(0)
+    totalCommunity    Int    @default(0)
+    trigger           String @default("scheduled") // scheduled, manual, event
+
+    createdAt DateTime @default(now())
+
+    @@index([strategyId])
+    @@index([createdAt])
+}
+
+// Community health snapshots (daily/weekly)
+model CommunitySnapshot {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Health composite
+    healthScore     Float    // 0-100
+    growthRate      Float    @default(0) // % change in community size
+    retentionRate   Float    @default(0) // % of active members retained
+    activityRate    Float    @default(0) // % of community that interacted
+    sentimentAvg    Float    @default(0) // -1 to 1
+
+    // Volume metrics
+    totalMembers    Int      @default(0)
+    activeMembersD7 Int      @default(0) // Active in last 7 days
+    newMembers      Int      @default(0)
+    lostMembers     Int      @default(0)
+
+    // Conversation metrics
+    mentionCount    Int      @default(0)
+    conversationVol Int      @default(0)
+    avgResponseTime Int?     // minutes
+
+    // Topic analysis (AI-generated)
+    topTopics       Json?    // Array<{ topic, volume, sentiment, trend }>
+    topicClusters   Json?    // Semantic clusters
+
+    // Alerts
+    toxicityLevel   Float    @default(0) // 0-1
+    crisisSignals   Json?    // Array<{ type, severity, description }>
+
+    period          String   @default("DAILY") // DAILY, WEEKLY, MONTHLY
+    periodStart     DateTime
+    periodEnd       DateTime
+
+    createdAt DateTime @default(now())
+
+    @@index([strategyId])
+    @@index([periodStart])
+    @@index([strategyId, period])
+}
+
+// Action items in the Brand OS command center
+model OSActionItem {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    title        String
+    description  String?  @db.Text
+    category     String   // CONTENT, COMMUNITY, PAID, CRISIS, OPTIMIZATION, PARTNERSHIP
+    priority     String   @default("P1") // P0, P1, P2
+    status       String   @default("TODO") // TODO, IN_PROGRESS, DONE, DISMISSED
+    effort       String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+    impact       String   @default("MEDIUM") // LOW, MEDIUM, HIGH
+    channel      String?  // Which touchpoint/channel
+    deadline     DateTime?
+    assignedTo   String?  // userId or team name
+    source       String   @default("manual") // manual, ai_suggestion, signal, audit
+    sourceRef    String?  // ID of source signal/audit
+
+    completedAt  DateTime?
+    completedBy  String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([status])
+    @@index([priority])
+}
+
+// Detected opportunities for brand activation
+model OSOpportunity {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    title        String
+    description  String?  @db.Text
+    type         String   // TRENDING_TOPIC, COMPETITOR_GAP, CULTURAL_MOMENT, PARTNERSHIP, MEDIA_WINDOW, UGC_TRIGGER
+    source       String   @default("ai_detection") // ai_detection, manual, social_listening, google_trends
+    relevance    Float    @default(0) // 0-100 relevance to brand
+    timing       String   @default("THIS_WEEK") // NOW, THIS_WEEK, THIS_MONTH, THIS_QUARTER
+    estimatedROI String?  // LOW, MEDIUM, HIGH, VERY_HIGH
+    budgetNeeded Float?   // estimated budget in local currency
+    channels     Json?    // string[] — recommended channels
+    status       String   @default("NEW") // NEW, EVALUATED, ACTIVATED, EXPIRED, DISMISSED
+    expiresAt    DateTime?
+
+    // Trend data (for trending topics)
+    trendData    Json?    // { searchVolume, socialVolume, velocityChange }
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([type])
+    @@index([status])
+    @@index([timing])
+}
+
+// ============================================
+// CRM PIPELINE (Phase 8 — Commercial)
+// Deals/leads flowing through a sales pipeline.
+// ============================================
+
+model Deal {
+    id           String   @id @default(cuid())
+    userId       String   // Owner of the deal (ADMIN/OPERATOR)
+    strategyId   String?  // Optional link to an existing strategy
+    companyName  String   // Prospect company name
+    contactName  String?  // Contact person
+    contactEmail String?
+    contactPhone String?
+    stage        String   @default("DECOUVERTE") // PIPELINE_STAGES constant
+    amount       Float?   // Deal value in local currency
+    currency     String   @default("XOF")
+    probability  Int      @default(20) // 0-100 %
+    source       String?  // "referral", "inbound", "cold_outreach", "event", "partner"
+    sector       String?  // Same as strategy sectors
+    notes        String?  @db.Text
+    nextAction   String?  // Quick summary of next step
+    nextActionAt DateTime?
+    closedAt     DateTime?
+    lostReason   String?  // Only when stage = PERDU
+    tags         Json?    // string[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([userId])
+    @@index([stage])
+    @@index([strategyId])
+}
+
+// ============================================
+// AMBASSADOR PROGRAM (Phase 9 — Apôtres)
+// Brand ambassador / advocate tracking.
+// Links to SuperfanProfile for community layer.
+// ============================================
+
+model AmbassadorProgram {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Ambassador identity
+    displayName  String
+    email        String?
+    phone        String?
+    avatarUrl    String?
+    market       String?  // CM, CI, SN, GH, NG
+    city         String?
+
+    // Classification
+    tier         String   @default("BRONZE") // BRONZE, SILVER, GOLD, PLATINUM, DIAMOND
+    status       String   @default("ACTIVE") // INVITED, ACTIVE, PAUSED, CHURNED
+
+    // Performance tracking
+    referralCount    Int   @default(0) // People referred
+    contentCount     Int   @default(0) // UGC pieces created
+    eventCount       Int   @default(0) // Events attended/hosted
+    revenueGenerated Float @default(0) // Revenue attributed
+    engagementScore  Float @default(0) // 0-100 composite
+
+    // Rewards
+    pointsBalance    Int   @default(0)
+    totalPointsEarned Int  @default(0)
+    rewardsRedeemed  Int   @default(0)
+
+    // Social presence
+    handles      Json?    // { instagram: "@...", twitter: "@...", tiktok: "@..." }
+    audienceSize Int      @default(0) // Total audience across platforms
+
+    // Activity log
+    lastActiveAt DateTime @default(now())
+    joinedAt     DateTime @default(now())
+    notes        String?  @db.Text
+
+    // Link to superfan profile (optional)
+    superfanId   String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([tier])
+    @@index([status])
+    @@index([market])
+}
+
+// ============================================
+// PUBLICATIONS (Phase 9 — Editorial Calendar)
+// Content planned, drafted, and published across
+// channels. Feeds from GLORY editorial calendar.
+// ============================================
+
+model Publication {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    userId       String
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Content
+    title        String
+    body         String?  @db.Text
+    contentType  String   @default("POST") // POST, STORY, REEL, ARTICLE, NEWSLETTER, VIDEO, PODCAST, EVENT
+    format       String?  // image, video, carousel, text, link
+
+    // Channel & scheduling
+    channel      String   @default("INSTAGRAM") // INSTAGRAM, FACEBOOK, LINKEDIN, TWITTER, TIKTOK, YOUTUBE, BLOG, EMAIL
+    scheduledAt  DateTime?
+    publishedAt  DateTime?
+
+    // Status workflow
+    status       String   @default("IDEA") // IDEA, DRAFT, REVIEW, APPROVED, SCHEDULED, PUBLISHED, ARCHIVED
+
+    // Performance (post-publish)
+    reach        Int?
+    impressions  Int?
+    engagement   Int?
+    clicks       Int?
+    shares       Int?
+    saves        Int?
+
+    // AARRR alignment
+    aarrStage    String?  // acquisition, activation, retention, revenue, referral
+    campaignTag  String?  // Group publications by campaign
+
+    // Metadata
+    tags         Json?    // string[]
+    mediaUrls    Json?    // string[] — attached media
+    notes        String?  @db.Text
+    pillar       String?  // A, D, V, E pillar alignment
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([userId])
+    @@index([status])
+    @@index([channel])
+    @@index([scheduledAt])
+}
+
+// ============================================
+// MESSAGING (Phase 9 — Internal Conversations)
+// Threaded conversations between platform users.
+// ============================================
+
+model Conversation {
+    id           String   @id @default(cuid())
+    title        String?  // Optional title for group convos
+    type         String   @default("DIRECT") // DIRECT, GROUP, STRATEGY, MISSION
+    // Context links (optional)
+    strategyId   String?
+    strategy     Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+    missionId    String?
+
+    participants Json     // string[] of userIds
+    lastMessage  String?  @db.Text
+    lastMessageAt DateTime?
+    lastMessageBy String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    messages Message[]
+
+    @@index([strategyId])
+    @@index([missionId])
+    @@index([lastMessageAt])
+}
+
+model Message {
+    id             String   @id @default(cuid())
+    conversationId String
+    conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+    senderId     String   // userId
+    senderName   String   // Cached display name
+    body         String   @db.Text
+    type         String   @default("TEXT") // TEXT, FILE, SYSTEM, ACTION
+
+    // Optional rich content
+    attachments  Json?    // Array<{ name, url, type, size }>
+    metadata     Json?    // Extra context (e.g., action links)
+
+    readBy       Json?    // string[] of userIds who have read this
+    editedAt     DateTime?
+
+    createdAt DateTime @default(now())
+
+    @@index([conversationId])
+    @@index([senderId])
+    @@index([createdAt])
+}
+
+// ============================================
+// MESTOR AI (Phase 10 — AI Strategic Advisor)
+// Conversation threads with the AI copilot
+// scoped to a strategy for context-aware advice.
+// ============================================
+
+model MestorThread {
+    id           String   @id @default(cuid())
+    userId       String
+    user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    strategyId   String?
+    strategy     Strategy? @relation(fields: [strategyId], references: [id], onDelete: SetNull)
+    title        String   @default("Nouvelle conversation")
+    summary      String?  @db.Text // AI-generated summary of thread
+    messageCount Int      @default(0)
+    lastMessageAt DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    messages MestorMessage[]
+
+    @@index([userId])
+    @@index([strategyId])
+    @@index([lastMessageAt])
+}
+
+model MestorMessage {
+    id         String   @id @default(cuid())
+    threadId   String
+    thread     MestorThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+
+    role       String   // "user" | "assistant" | "system"
+    content    String   @db.Text
+    tokens     Int?     // Token usage for cost tracking
+
+    // Context references pulled by AI
+    contextRefs Json?   // Array<{ type: "pillar"|"score"|"signal", ref: string, snippet: string }>
+
+    createdAt DateTime @default(now())
+
+    @@index([threadId])
+    @@index([createdAt])
+}
+
+// ============================================
+// COHORT ANALYSIS (Phase 10 — Retention & LTV)
+// Superfan/customer cohort tracking by period.
+// ============================================
+
+model CohortSnapshot {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Cohort definition
+    cohortPeriod String   // "2024-W01", "2024-M01", "2024-Q1"
+    periodType   String   @default("MONTHLY") // WEEKLY, MONTHLY, QUARTERLY
+
+    // Acquisition
+    acquired     Int      @default(0) // New users/superfans in this cohort
+    source       String?  // acquisition channel
+
+    // Retention by period offset (0 = same period, 1 = next, etc.)
+    retentionCurve Json?  // number[] — retention % at each offset
+    // e.g. [100, 72, 55, 43, 38, 35] for months 0-5
+
+    // LTV evolution
+    avgLtv       Float    @default(0)
+    totalRevenue Float    @default(0)
+
+    // Engagement
+    avgEngagement Float   @default(0) // 0-100
+    churnCount    Int     @default(0)
+    churnRate     Float   @default(0) // 0-1
+
+    // Segment breakdown
+    segmentBreakdown Json? // Record<string, number> — { FAN: 10, SUPERFAN: 3 }
+
+    createdAt DateTime @default(now())
+
+    @@unique([strategyId, cohortPeriod, periodType])
+    @@index([strategyId])
+    @@index([cohortPeriod])
+}
+
+// ============================================
+// ATTRIBUTION (Phase 10 — Channel Attribution)
+// Multi-touch attribution for marketing channels.
+// ============================================
+
+model AttributionEvent {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Event identity
+    eventType    String   // IMPRESSION, CLICK, ENGAGEMENT, CONVERSION, REVENUE
+    channel      String   // INSTAGRAM, FACEBOOK, GOOGLE_ADS, ORGANIC, EMAIL, EVENT, etc.
+    touchpoint   String?  // Specific touchpoint within channel
+    campaignTag  String?  // Link to publication/campaign
+
+    // Attribution value
+    value        Float    @default(0) // Revenue or conversion value
+    weight       Float    @default(1) // Attribution weight (for multi-touch)
+    model        String   @default("LINEAR") // FIRST_TOUCH, LAST_TOUCH, LINEAR, TIME_DECAY, POSITION
+
+    // Context
+    sessionId    String?  // Group events in a user journey
+    superfanId   String?  // Link to superfan profile
+
+    // Metadata
+    metadata     Json?    // Extra event data
+
+    occurredAt   DateTime @default(now())
+    createdAt    DateTime @default(now())
+
+    @@index([strategyId])
+    @@index([channel])
+    @@index([eventType])
+    @@index([occurredAt])
+    @@index([campaignTag])
+}
+
+// ============================================
+// BRAND VAULT (Phase 10 — Brand Asset Library)
+// Centralized storage for brand assets: logos,
+// guidelines, templates, creative files.
+// ============================================
+
+model BrandAsset {
+    id           String   @id @default(cuid())
+    strategyId   String
+    strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    userId       String
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Asset identity
+    name         String
+    description  String?  @db.Text
+    category     String   @default("OTHER") // LOGO, TYPOGRAPHY, COLOR_PALETTE, GUIDELINE, TEMPLATE, PHOTO, VIDEO, ILLUSTRATION, ICON, DOCUMENT, OTHER
+    subcategory  String?  // e.g., "primary-logo", "horizontal", "dark-mode"
+
+    // File info
+    fileUrl      String
+    fileType     String   // image/png, application/pdf, video/mp4, etc.
+    fileSize     Int      @default(0) // bytes
+    thumbnailUrl String?
+
+    // Version tracking
+    version      Int      @default(1)
+    parentId     String?  // Previous version of this asset
+    isLatest     Boolean  @default(true)
+
+    // Metadata
+    tags         Json?    // string[]
+    dimensions   Json?    // { width: number, height: number } for images
+    colorProfile Json?    // { primary: "#hex", secondary: "#hex" }
+    usageRights  String?  // License / usage restrictions
+
+    // Status
+    status       String   @default("ACTIVE") // ACTIVE, ARCHIVED, DEPRECATED
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([category])
+    @@index([status])
+    @@index([userId])
 }

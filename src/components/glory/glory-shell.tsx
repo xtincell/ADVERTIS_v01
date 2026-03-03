@@ -25,6 +25,7 @@ import {
 } from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { PortalSwitcherMobile } from "~/components/shells/portal-switcher";
+import { ViewAsSwitcher } from "~/components/shells/view-as-switcher";
 
 // ---------------------------------------------------------------------------
 // Props
@@ -127,12 +128,13 @@ export function GloryShell({ children }: GloryShellProps) {
             <span className="font-bold text-lg">GLORY</span>
           </div>
 
-          {/* Strategy Selector (always visible in top bar) */}
-          <div className="flex-1 flex justify-end md:justify-start">
+          {/* Strategy Selector + ViewAs switcher */}
+          <div className="flex-1 flex items-center justify-end gap-3">
             <StrategySelector
               value={strategyId}
               onChange={handleStrategyChange}
             />
+            <ViewAsSwitcher />
           </div>
         </header>
 

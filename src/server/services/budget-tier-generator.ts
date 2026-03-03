@@ -35,6 +35,7 @@ import {
 } from "./anthropic-client";
 import { BUDGET_TIER_CONFIG } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
+import { calculateParametricBudget, formatFormulaForPrompt } from "./budget-formula";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,13 +63,46 @@ export async function generateBudgetTiers(
   implData: ImplementationData,
   brandName: string,
   sector: string,
+  annualBudget?: number | null,
+  targetRevenue?: number | null,
+  maturity?: string | null,
+  currency?: string,
 ): Promise<BudgetTierRow[]> {
   const context = buildBudgetContext(implData);
+  const currencySymbol = currency ?? "FCFA";
 
-  // If we have almost no data to work with, fall back to static tiers
-  if (!context.enveloppe && context.channels.length === 0) {
-    console.log("[Budget Tiers] No budget data available — using static defaults");
-    return staticFallback();
+  // If we have almost no data to work with, fall back to formula-based static tiers
+  if (!context.enveloppe && context.channels.length === 0 && !annualBudget) {
+    console.log("[Budget Tiers] No budget data available — using formula-calibrated fallback");
+    return staticFallback(annualBudget, targetRevenue, sector, maturity);
+  }
+
+  // Build parametric formula context for prompt calibration
+  let formulaCalibration = "";
+  const referenceBudget = annualBudget ?? 0;
+  if (targetRevenue && targetRevenue > 0) {
+    const formulaResult = calculateParametricBudget(targetRevenue, sector, maturity);
+    formulaCalibration = `
+FORMULE PARAMÉTRIQUE (Budget = CA × α × β × γ) :
+- Budget communication paramétrique : ${formulaResult.commBudget.toLocaleString("fr-FR")} ${currencySymbol}
+- Budget total charges : ${formulaResult.budgetTotal.toLocaleString("fr-FR")} ${currencySymbol}
+- Viabilité : ${formulaResult.viable ? "OUI" : "NON"}${formulaResult.fragile ? " ⚠ FRAGILE" : ""}
+
+IMPORTANT : Calibre les 5 paliers AUTOUR du budget client (${referenceBudget > 0 ? referenceBudget.toLocaleString("fr-FR") + " " + currencySymbol : "non fourni"}).
+- MICRO ≈ 10-20% du budget paramétrique communication
+- STARTER ≈ 30-50%
+- IMPACT ≈ 80-120% (le palier "optimal" autour du budget réel)
+- CAMPAIGN ≈ 150-200%
+- DOMINATION ≈ 250-400%`;
+  } else if (referenceBudget > 0) {
+    formulaCalibration = `
+BUDGET CLIENT : ${referenceBudget.toLocaleString("fr-FR")} ${currencySymbol}
+Calibre les 5 paliers AUTOUR de ce budget réel :
+- MICRO ≈ 10-20% du budget
+- STARTER ≈ 30-50%
+- IMPACT ≈ 80-120% (palier optimal)
+- CAMPAIGN ≈ 150-200%
+- DOMINATION ≈ 250-400%`;
   }
 
   try {
@@ -81,7 +115,8 @@ Ta tâche : générer 5 paliers budgétaires (MICRO, STARTER, IMPACT, CAMPAIGN, 
 PROFIL DE LA MARQUE :
 - Marque : ${brandName}
 - Secteur : ${sector || "Non spécifié"}
-- Enveloppe budgétaire de référence : ${context.enveloppe || "Non spécifiée"}
+- Enveloppe budgétaire de référence : ${context.enveloppe || (referenceBudget > 0 ? referenceBudget.toLocaleString("fr-FR") + " " + currencySymbol : "Non spécifiée")}
+${formulaCalibration}
 
 POSTES BUDGÉTAIRES IDENTIFIÉS :
 ${context.postes || "Aucun poste identifié"}
@@ -132,13 +167,13 @@ RÈGLES CRITIQUES :
     // Validate we got exactly 5 valid tiers
     if (tiers.length !== 5) {
       console.warn(`[Budget Tiers] AI returned ${tiers.length} tiers instead of 5 — using static fallback`);
-      return staticFallback();
+      return staticFallback(annualBudget, targetRevenue, sector, maturity);
     }
 
     return tiers;
   } catch (err) {
     console.error("[Budget Tiers] AI generation failed, using static fallback:", err);
-    return staticFallback();
+    return staticFallback(annualBudget, targetRevenue, sector, maturity);
   }
 }
 
@@ -268,7 +303,40 @@ function parseResponse(responseText: string): BudgetTierRow[] {
 // Static fallback (same as previous behavior)
 // ---------------------------------------------------------------------------
 
-function staticFallback(): BudgetTierRow[] {
+function staticFallback(
+  annualBudget?: number | null,
+  targetRevenue?: number | null,
+  sector?: string | null,
+  maturity?: string | null,
+): BudgetTierRow[] {
+  // If we have targetRevenue, calibrate tiers around the parametric comm budget
+  let referenceBudget = annualBudget ?? 0;
+  if (!referenceBudget && targetRevenue && targetRevenue > 0) {
+    const formula = calculateParametricBudget(targetRevenue, sector, maturity);
+    referenceBudget = formula.commBudget;
+  }
+
+  if (referenceBudget > 0) {
+    // Scale tiers proportionally around the reference budget
+    const TIER_SCALES: Record<string, { min: number; max: number; desc: string }> = {
+      MICRO:      { min: 0.05, max: 0.20, desc: "Présence minimale — organique et low-cost" },
+      STARTER:    { min: 0.20, max: 0.50, desc: "Premiers investissements paid — focus conversion" },
+      IMPACT:     { min: 0.50, max: 1.20, desc: "Budget optimal — mix média équilibré" },
+      CAMPAIGN:   { min: 1.20, max: 2.00, desc: "Couverture large — acquisition agressive" },
+      DOMINATION: { min: 2.00, max: 4.00, desc: "Leadership marché — always-on 360°" },
+    };
+
+    return Object.entries(TIER_SCALES).map(([tier, scale]) => ({
+      tier,
+      minBudget: Math.round(referenceBudget * scale.min),
+      maxBudget: Math.round(referenceBudget * scale.max),
+      channels: [],
+      kpis: [],
+      description: scale.desc,
+    }));
+  }
+
+  // Pure static fallback (no data at all)
   return Object.entries(BUDGET_TIER_CONFIG).map(([tier, config]) => ({
     tier,
     minBudget: config.minBudget,

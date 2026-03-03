@@ -75,8 +75,9 @@ const INTERVIEW_D = [
 ] as const;
 
 const INTERVIEW_V = [
-  "interview.V1", "interview.V2", "interview.V3",
+  "interview.V0", "interview.V1", "interview.V2", "interview.V3",
   "interview.V4", "interview.V5", "interview.V6",
+  "interview.V7", "interview.V8",
 ] as const;
 
 const INTERVIEW_E = [
@@ -97,8 +98,14 @@ const SECTIONS_D = [
 ] as const;
 
 const SECTIONS_V = [
-  "V.productLadder", "V.valeurMarque", "V.valeurClient",
-  "V.coutMarque", "V.coutClient", "V.unitEconomics",
+  "V.produitsCatalogue", "V.productLadder",
+  "V.valeurMarqueTangible", "V.valeurMarqueIntangible",
+  "V.valeurClientTangible", "V.valeurClientIntangible",
+  "V.coutMarqueTangible", "V.coutMarqueIntangible",
+  "V.coutClientTangible", "V.coutClientIntangible",
+  "V.cac", "V.ltv", "V.ltvCacRatio", "V.pointMort",
+  "V.marges", "V.notesEconomics", "V.dureeLTV",
+  "V.margeNette", "V.roiEstime", "V.paybackPeriod",
 ] as const;
 
 const SECTIONS_E = [
@@ -187,13 +194,16 @@ const INTERVIEW_DEFINITIONS: VariableDefinition[] = [
   { key: "interview.D6", label: "Identité Visuelle", category: "interview", pillarType: "D", interviewId: "D6", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Couleurs, direction photo, mood boards, typographies." },
   { key: "interview.D7", label: "Assets Linguistiques", category: "interview", pillarType: "D", interviewId: "D7", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Mantras, slogans, vocabulaire propriétaire." },
 
-  // ── Pillar V (Valeur) — 6 variables ──
+  // ── Pillar V (Valeur) — 9 variables ──
+  { key: "interview.V0", label: "Catalogue Produits & Services", category: "interview", pillarType: "V", interviewId: "V0", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Liste complète des produits et services avec méta-données." },
   { key: "interview.V1", label: "Product Ladder", category: "interview", pillarType: "V", interviewId: "V1", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Architecture de l'offre en tiers." },
   { key: "interview.V2", label: "Valeur pour la Marque", category: "interview", pillarType: "V", interviewId: "V2", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Actifs tangibles et intangibles de la marque." },
-  { key: "interview.V3", label: "Valeur pour le Client", category: "interview", pillarType: "V", interviewId: "V3", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Gains fonctionnels, émotionnels, sociaux." },
-  { key: "interview.V4", label: "Coût pour la Marque", category: "interview", pillarType: "V", interviewId: "V4", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "CAPEX, OPEX, coûts cachés." },
-  { key: "interview.V5", label: "Coût pour le Client", category: "interview", pillarType: "V", interviewId: "V5", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Frictions identifiées : coût, temps, migration, risques." },
+  { key: "interview.V3", label: "Valeur pour le Client", category: "interview", pillarType: "V", interviewId: "V3", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Gains tangibles et intangibles pour le client." },
+  { key: "interview.V4", label: "Coût pour la Marque", category: "interview", pillarType: "V", interviewId: "V4", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Coûts tangibles et intangibles pour la marque." },
+  { key: "interview.V5", label: "Coût pour le Client", category: "interview", pillarType: "V", interviewId: "V5", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Coûts tangibles et intangibles pour le client." },
   { key: "interview.V6", label: "Unit Economics", category: "interview", pillarType: "V", interviewId: "V6", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "CAC, LTV, marges, point mort, ratio LTV/CAC." },
+  { key: "interview.V7", label: "Budget Communication Annuel", category: "interview", pillarType: "V", interviewId: "V7", dependsOn: [], expectedSources: ["user_input"], description: "Budget annuel communication et marketing." },
+  { key: "interview.V8", label: "Chiffre d'Affaires Visé", category: "interview", pillarType: "V", interviewId: "V8", dependsOn: [], expectedSources: ["user_input"], description: "CA annuel cible pour les ratios financiers." },
 
   // ── Pillar E (Engagement) — 6 variables ──
   { key: "interview.E1", label: "Touchpoints", category: "interview", pillarType: "E", interviewId: "E1", dependsOn: [], expectedSources: ["user_input", "file_import"], description: "Points de contact physiques, digitaux et humains." },
@@ -232,16 +242,35 @@ const PILLAR_D_DEFINITIONS: VariableDefinition[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Pillar V section definitions (6)
+// Pillar V section definitions (20 — atomised)
 // ---------------------------------------------------------------------------
 
 const PILLAR_V_DEFINITIONS: VariableDefinition[] = [
-  { key: "V.productLadder", label: "Product Ladder (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "productLadder", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Architecture de l'offre en tiers avec prix." },
-  { key: "V.valeurMarque", label: "Valeur Marque (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurMarque", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Actifs tangibles et intangibles." },
-  { key: "V.valeurClient", label: "Valeur Client (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurClient", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Gains fonctionnels, émotionnels, sociaux." },
-  { key: "V.coutMarque", label: "Coût Marque (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutMarque", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "CAPEX, OPEX, coûts cachés." },
-  { key: "V.coutClient", label: "Coût Client (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutClient", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Frictions identifiées et solutions." },
-  { key: "V.unitEconomics", label: "Unit Economics (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "unitEconomics", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "CAC, LTV, ratio, point mort, marges." },
+  // V0 catalogue
+  { key: "V.produitsCatalogue", label: "Catalogue Produits & Services (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "produitsCatalogue", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Source de vérité : tous les produits/services de la marque avec méta-données." },
+  // Product Ladder
+  { key: "V.productLadder", label: "Product Ladder (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "productLadder", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Architecture de l'offre en tiers composée depuis V0." },
+  // 8 atomic value/cost variables
+  { key: "V.valeurMarqueTangible", label: "Valeur Marque Tangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurMarqueTangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Actifs tangibles de la marque (brevets, technologie, base clients)." },
+  { key: "V.valeurMarqueIntangible", label: "Valeur Marque Intangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurMarqueIntangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Actifs intangibles de la marque (réputation, savoir-faire, culture)." },
+  { key: "V.valeurClientTangible", label: "Valeur Client Tangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurClientTangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Gains tangibles pour le client (fonctionnels, mesurables)." },
+  { key: "V.valeurClientIntangible", label: "Valeur Client Intangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "valeurClientIntangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Gains intangibles pour le client (émotionnels, sociaux)." },
+  { key: "V.coutMarqueTangible", label: "Coût Marque Tangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutMarqueTangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Coûts tangibles de la marque (CAPEX, OPEX)." },
+  { key: "V.coutMarqueIntangible", label: "Coût Marque Intangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutMarqueIntangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Coûts intangibles/cachés de la marque." },
+  { key: "V.coutClientTangible", label: "Coût Client Tangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutClientTangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Coûts/frictions tangibles pour le client." },
+  { key: "V.coutClientIntangible", label: "Coût Client Intangible (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "coutClientIntangible", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit", "module"], description: "Coûts/frictions intangibles pour le client." },
+  // Atomic unit economics — base
+  { key: "V.cac", label: "CAC (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "cac", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Coût d'acquisition client." },
+  { key: "V.ltv", label: "LTV (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "ltv", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Valeur vie client." },
+  { key: "V.ltvCacRatio", label: "Ratio LTV/CAC (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "ltvCacRatio", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Ratio LTV/CAC (seuil sain >= 3x)." },
+  { key: "V.pointMort", label: "Point Mort (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "pointMort", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Estimation du point mort / seuil de rentabilité." },
+  { key: "V.marges", label: "Marges (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "marges", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Structure de marges brutes." },
+  { key: "V.notesEconomics", label: "Notes Economics (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "notesEconomics", dependsOn: DEPS_V, expectedSources: ["ai_generation", "manual_edit"], description: "Hypothèses et notes sur les unit economics." },
+  { key: "V.dureeLTV", label: "Durée LTV (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "dureeLTV", dependsOn: DEPS_V, expectedSources: ["user_input", "ai_generation"], description: "Durée de vie client en mois (défaut 24)." },
+  // Atomic unit economics — derived (auto-computed)
+  { key: "V.margeNette", label: "Marge Nette (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "margeNette", dependsOn: [...DEPS_V, "V.cac", "V.ltv"], expectedSources: ["module"], description: "LTV - CAC (calculé automatiquement)." },
+  { key: "V.roiEstime", label: "ROI Estimé (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "roiEstime", dependsOn: [...DEPS_V, "V.cac", "V.ltv"], expectedSources: ["module"], description: "((LTV-CAC)/CAC)*100 (calculé automatiquement)." },
+  { key: "V.paybackPeriod", label: "Payback Period (Pilier V)", category: "pillar", pillarType: "V", pillarSection: "paybackPeriod", dependsOn: [...DEPS_V, "V.cac", "V.ltv", "V.dureeLTV"], expectedSources: ["module"], description: "CAC / (LTV/dureeLTV) en mois (calculé automatiquement)." },
 ];
 
 // ---------------------------------------------------------------------------

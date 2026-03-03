@@ -99,7 +99,31 @@ const descriptor = {
 // Types
 // ---------------------------------------------------------------------------
 
+interface ValeurCoutItem {
+  item?: string;
+  montant?: string;
+  categorie?: string;
+}
+
 interface ValeurData {
+  // Atomic unit economics (V2)
+  cac?: string;
+  ltv?: string;
+  ltvCacRatio?: string;
+  pointMort?: string;
+  marges?: string;
+  notesEconomics?: string;
+  dureeLTV?: number;
+  // Derived
+  margeNette?: string;
+  roiEstime?: string;
+  paybackPeriod?: string;
+  // Atomic cost variables (V2)
+  coutMarqueTangible?: ValeurCoutItem[];
+  coutMarqueIntangible?: ValeurCoutItem[];
+  coutClientTangible?: ValeurCoutItem[];
+  coutClientIntangible?: ValeurCoutItem[];
+  // Legacy fallback fields (V1 — kept for backward compat during migration)
   unitEconomics?: {
     cac?: string;
     ltv?: string;
@@ -174,17 +198,14 @@ async function compute(input: WidgetInput): Promise<WidgetResult> {
       };
     }
 
-    const ue = vContent.unitEconomics;
-    const cm = vContent.coutMarque;
-    const cc = vContent.coutClient;
     const budget = iContent?.budgetAllocation;
 
-    // Unit economics
-    const cac = ue?.cac || "";
-    const ltv = ue?.ltv || "";
-    const existingRatio = ue?.ratio || "";
-    const pointMort = ue?.pointMort || "";
-    const marges = ue?.marges || "";
+    // Unit economics — prefer V2 flat fields, fallback to V1 nested
+    const cac = vContent.cac || vContent.unitEconomics?.cac || "";
+    const ltv = vContent.ltv || vContent.unitEconomics?.ltv || "";
+    const existingRatio = vContent.ltvCacRatio || vContent.unitEconomics?.ratio || "";
+    const pointMort = vContent.pointMort || vContent.unitEconomics?.pointMort || "";
+    const marges = vContent.marges || vContent.unitEconomics?.marges || "";
 
     // Try computing LTV/CAC ratio mathematically
     let ltvCacRatio = existingRatio;
@@ -195,11 +216,22 @@ async function compute(input: WidgetInput): Promise<WidgetResult> {
       ltvCacRatio = ratio.toFixed(1) + "x";
     }
 
-    // Cost structure
-    const capex = cm?.capex || "";
-    const opex = cm?.opex || "";
-    const hiddenCosts = cm?.coutsCaches?.filter((c) => c.trim().length > 0) ?? [];
-    const frictions = cc?.frictions ?? [];
+    // Cost structure — prefer V2 arrays, fallback to V1 nested
+    const capexItems = (vContent.coutMarqueTangible ?? []).filter((i) => i.item?.trim());
+    const capex = capexItems.find((i) => i.categorie === "capex")?.item || vContent.coutMarque?.capex || "";
+    const opex = capexItems.find((i) => i.categorie === "opex")?.item || vContent.coutMarque?.opex || "";
+    const hiddenCosts = (vContent.coutMarqueIntangible ?? [])
+      .map((i) => i.item || "")
+      .filter((c) => c.trim().length > 0);
+    if (hiddenCosts.length === 0) {
+      // V1 fallback
+      const legacy = vContent.coutMarque?.coutsCaches?.filter((c) => c.trim().length > 0) ?? [];
+      hiddenCosts.push(...legacy);
+    }
+    const frictionItems = (vContent.coutClientTangible ?? []).filter((i) => i.item?.trim());
+    const frictions = frictionItems.length > 0
+      ? frictionItems
+      : (vContent.coutClient?.frictions ?? []);
     const frictionCount = frictions.length;
 
     // Budget summary (from I pillar if available)

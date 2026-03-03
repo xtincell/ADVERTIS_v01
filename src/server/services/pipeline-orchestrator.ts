@@ -196,9 +196,15 @@ async function seedBudgetTiersIfNeeded(
 
     const strategy = await db.strategy.findUnique({
       where: { id: strategyId },
-      select: { brandName: true, sector: true },
+      select: { brandName: true, sector: true, maturityProfile: true },
     });
     if (!strategy) return;
+
+    // Read annualBudget and targetRevenue (added by Module 12 schema extension)
+    const strategyFull = await db.strategy.findUnique({
+      where: { id: strategyId },
+      select: { annualBudget: true, targetRevenue: true },
+    }) as { annualBudget?: number | null; targetRevenue?: number | null } | null;
 
     const { generateBudgetTiers } = await import("./budget-tier-generator");
     const implData = content as ImplementationData;
@@ -206,6 +212,9 @@ async function seedBudgetTiersIfNeeded(
       implData,
       strategy.brandName,
       strategy.sector ?? "",
+      strategyFull?.annualBudget,
+      strategyFull?.targetRevenue,
+      strategy.maturityProfile,
     );
     await db.budgetTier.createMany({
       data: tiers.map((t) => ({ strategyId, ...t })),

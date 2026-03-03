@@ -18,6 +18,7 @@ import {
   History,
   Home,
   LayoutDashboard,
+  CalendarDays,
   type LucideIcon,
 } from "lucide-react";
 import * as LucideIcons from "lucide-react";
@@ -122,6 +123,18 @@ export function GlorySidebar({ tools, strategyId }: GlorySidebarProps) {
         >
           <LayoutDashboard className="h-4 w-4" />
           <span>Dashboard</span>
+        </Link>
+        <Link
+          href={`/glory/publications${strategyQuery}`}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all duration-200",
+            pathname === "/glory/publications"
+              ? "bg-violet-500/20 text-white"
+              : "text-white/70 hover:bg-white/5 hover:text-white",
+          )}
+        >
+          <CalendarDays className="h-4 w-4" />
+          <span>Publications</span>
         </Link>
         <Link
           href={`/glory/history${strategyQuery}`}

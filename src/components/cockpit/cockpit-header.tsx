@@ -21,17 +21,24 @@ import {
   Edit,
   Trash2,
   Loader2,
+  Package,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "~/trpc/react";
+import { cn } from "~/lib/utils";
+import { DELIVERY_MODES, type DeliveryMode } from "~/lib/constants";
 import { Button } from "~/components/ui/button";
+import { Badge } from "~/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
 } from "~/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -45,6 +52,18 @@ import {
 } from "~/components/ui/alert-dialog";
 import { useLabel } from "~/components/hooks/use-label";
 
+const DELIVERY_LABELS: Record<string, string> = {
+  ONE_SHOT: "One-Shot",
+  PLACEMENT: "Placement",
+  RETAINER: "Retainer",
+};
+
+const DELIVERY_BADGE_STYLES: Record<string, string> = {
+  ONE_SHOT: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  PLACEMENT: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+  RETAINER: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+};
+
 interface CockpitHeaderProps {
   brandName: string;
   sector?: string | null;
@@ -52,6 +71,7 @@ interface CockpitHeaderProps {
   coherenceScore?: number | null;
   strategyId: string;
   status?: string;
+  deliveryMode?: string | null;
   onShare?: () => void;
   onExport?: () => void;
   onRefresh?: () => void;
@@ -64,6 +84,7 @@ export function CockpitHeader({
   coherenceScore,
   strategyId,
   status = "draft",
+  deliveryMode,
   onShare,
   onExport,
   onRefresh,
@@ -77,6 +98,16 @@ export function CockpitHeader({
 
   const meta = [sector, maturityProfile].filter(Boolean).join(" · ");
   const isArchived = status === "archived";
+
+  // ── Delivery mode mutation ──
+  const updateDeliveryMut = api.strategy.update.useMutation({
+    onSuccess: () => {
+      toast.success("Mode de livraison mis à jour");
+      void utils.strategy.getById.invalidate({ id: strategyId });
+      void utils.cockpit.getData.invalidate({ strategyId });
+    },
+    onError: () => toast.error("Erreur lors de la mise à jour"),
+  });
 
   // ── Mutations ──
 
@@ -144,6 +175,19 @@ export function CockpitHeader({
             )}
           </div>
 
+          {/* Delivery mode badge */}
+          {deliveryMode && DELIVERY_LABELS[deliveryMode] && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "shrink-0 text-[10px] px-1.5 py-0",
+                DELIVERY_BADGE_STYLES[deliveryMode] ?? "",
+              )}
+            >
+              {DELIVERY_LABELS[deliveryMode]}
+            </Badge>
+          )}
+
           {/* Score badge */}
           {coherenceScore != null && (
             <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-sm font-semibold text-primary">
@@ -200,6 +244,34 @@ export function CockpitHeader({
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
+              {/* Delivery mode sub-menu */}
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger>
+                  <Package className="mr-2 h-4 w-4" />
+                  Mode : {deliveryMode ? DELIVERY_LABELS[deliveryMode] ?? "—" : "Non défini"}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {DELIVERY_MODES.map((m) => (
+                    <DropdownMenuItem
+                      key={m}
+                      onClick={() =>
+                        updateDeliveryMut.mutate({
+                          id: strategyId,
+                          deliveryMode: m,
+                        })
+                      }
+                    >
+                      <Badge
+                        variant="outline"
+                        className={cn("text-[10px] px-1.5 py-0 mr-2", DELIVERY_BADGE_STYLES[m])}
+                      >
+                        {DELIVERY_LABELS[m]}
+                      </Badge>
+                      {m === deliveryMode && "✓"}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
               <DropdownMenuItem
                 onClick={() => router.push(`/impulsion/new?parentId=${strategyId}`)}
               >

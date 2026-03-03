@@ -52,7 +52,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
-import { MATURITY_PROFILES, MATURITY_CONFIG, type MaturityProfile, SUPPORTED_CURRENCIES, CURRENCY_CONFIG, type SupportedCurrency } from "~/lib/constants";
+import { MATURITY_PROFILES, MATURITY_CONFIG, type MaturityProfile, SUPPORTED_CURRENCIES, CURRENCY_CONFIG, type SupportedCurrency, DELIVERY_MODES, type DeliveryMode } from "~/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,6 +156,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
   const [inputMethod, setInputMethod] = useState<string | null>(null);
   const [maturityProfile, setMaturityProfile] = useState<MaturityProfile>("MATURE");
   const [currency, setCurrency] = useState<SupportedCurrency>("XOF");
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode | "">("ONE_SHOT");
 
   // tRPC — fetch strategies for parent selector
   const { data: strategies, isLoading: strategiesLoading } =
@@ -188,6 +189,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
     setInputMethod(null);
     setMaturityProfile("MATURE");
     setCurrency("XOF");
+    setDeliveryMode("ONE_SHOT");
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -208,6 +210,7 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
       inputMethod: inputMethod ?? undefined,
       maturityProfile,
       currency,
+      deliveryMode: deliveryMode || undefined,
     });
   }
 
@@ -318,6 +321,30 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
               })}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Delivery mode */}
+        <div className="space-y-2">
+          <Label>Mode de livraison</Label>
+          <Select value={deliveryMode} onValueChange={(v) => setDeliveryMode(v as DeliveryMode)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Choisir un mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {DELIVERY_MODES.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m === "ONE_SHOT" ? "One-Shot" : m === "PLACEMENT" ? "Placement" : "Retainer"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {deliveryMode === "RETAINER"
+              ? "Accompagnement continu — accès au Brand OS"
+              : deliveryMode === "PLACEMENT"
+                ? "Mission ponctuelle avec suivi"
+                : "Livraison unique sans suivi"}
+          </p>
         </div>
       </div>
     );

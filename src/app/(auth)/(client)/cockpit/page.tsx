@@ -7,14 +7,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Eye,
   AlertCircle,
   ChevronDown,
   Check,
+  Atom,
+  ArrowRight,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
+import { useRole } from "~/components/hooks/use-role";
 import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { CockpitContent } from "~/components/cockpit/cockpit-content";
 import type { CockpitData } from "~/components/cockpit/cockpit-content";
@@ -27,8 +31,12 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
+/** Roles that have access to the Brand OS portal. */
+const BRAND_OS_ROLES = ["ADMIN", "OPERATOR", "CLIENT_RETAINER"];
+
 export default function ClientHomePage() {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const { role } = useRole();
 
   // Step 1: Get the client's strategies
   const {
@@ -138,6 +146,27 @@ export default function ClientHomePage() {
           </DropdownMenu>
         )}
       </div>
+
+      {/* CTA → Brand OS (retainer users only) */}
+      {BRAND_OS_ROLES.includes(role) && (
+        <Link
+          href="/os"
+          className="group flex items-center gap-4 rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 transition-all hover:border-amber-500/40 hover:bg-amber-500/10"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+            <Atom className="h-5 w-5 text-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-600 dark:text-amber-400">
+              Brand OS
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Accédez au tableau de bord opérationnel de votre marque
+            </p>
+          </div>
+          <ArrowRight className="h-4 w-4 shrink-0 text-amber-500/60 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      )}
 
       {/* Cockpit content */}
       {cockpitData && (

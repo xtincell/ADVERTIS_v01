@@ -24,38 +24,48 @@ const DEFAULT_TABS: CockpitTab[] = [
   { id: "market", label: "Marché" },
   { id: "briefs", label: "Briefs" },
   { id: "quality", label: "Qualité" },
+  { id: "brand-os", label: "Brand OS" },
 ];
 
 /** Maps tab IDs to the cockpit section keys they should show */
 export const TAB_SECTION_MAP: Record<string, string[]> = {
-  overview: ["scores", "alerts", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables"],
-  strategy: ["authenticite", "distinction", "valeur", "synthese"],
-  operational: ["engagement", "implementation", "budget", "budget-operationnel", "widgets", "glory"],
+  overview: ["scores", "alerts", "oracle-scores", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables", "fiche-client"],
+  strategy: ["authenticite", "distinction", "valeur", "synthese", "oracle-scores", "aarrr-roadmap"],
+  operational: ["engagement", "implementation", "budget", "budget-operationnel", "widgets", "glory", "aarrr-roadmap"],
   creative: ["big-idea-kit", "creative-strategy", "funnel-mapping"],
   planning: ["chrono", "partners", "budget-operationnel"],
   signals: ["signals", "decisions", "veille"],
   market: ["risk", "track", "competitors", "opportunities", "multi-markets"],
   briefs: ["briefs", "livrables"],
   quality: ["quality-checklist"],
+  "brand-os": ["brand-os-setup"],
 };
 
 interface CockpitTabsProps {
   activeTab: string;
   onTabChange: (tabId: string) => void;
   tabs?: CockpitTab[];
+  /** When set, Brand OS tab is only visible for RETAINER mode */
+  deliveryMode?: string | null;
 }
 
 export function CockpitTabs({
   activeTab,
   onTabChange,
   tabs = DEFAULT_TABS,
+  deliveryMode,
 }: CockpitTabsProps) {
   const label = useLabel();
+
+  // Filter Brand OS tab: show only when deliveryMode is RETAINER
+  const visibleTabs = tabs.filter(
+    (t) => t.id !== "brand-os" || deliveryMode === "RETAINER",
+  );
 
   return (
     <div className="sticky top-[57px] z-30 border-b bg-background/80 backdrop-blur-xl">
       <div className="flex overflow-x-auto scrollbar-none">
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}

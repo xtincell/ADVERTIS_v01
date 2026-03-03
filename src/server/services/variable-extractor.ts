@@ -114,6 +114,7 @@ export async function extractScoreVariables(
     coherenceScore?: number | null;
     riskScore?: number | null;
     bmfScore?: number | null;
+    investScore?: number | null;
   },
 ): Promise<void> {
   const entries: BatchVariableEntry[] = [];
@@ -131,6 +132,9 @@ export async function extractScoreVariables(
   }
   if (scores.bmfScore != null) {
     entries.push({ key: "score.bmf", value: scores.bmfScore, options: opts });
+  }
+  if (scores.investScore != null) {
+    entries.push({ key: "score.invest", value: scores.investScore, options: opts });
   }
 
   if (entries.length > 0) {

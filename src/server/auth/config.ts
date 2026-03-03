@@ -102,11 +102,20 @@ export const authConfig = {
     strategy: "jwt",
   },
   callbacks: {
-    jwt: ({ token, user }) => {
+    jwt: async ({ token, user }) => {
       if (user) {
         token.id = user.id;
         token.company = user.company;
         token.role = user.role;
+      } else if (token.id) {
+        // Refresh role from DB so admin changes propagate without re-login
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
+        }
       }
       return token;
     },

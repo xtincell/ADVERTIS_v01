@@ -25,7 +25,8 @@ import type { PillarType } from "~/lib/constants";
 import type {
   AuthenticitePillarData,
   DistinctionPillarData,
-  ValeurPillarData,
+  ValeurPillarDataV2,
+  ValeurCoutItem,
   EngagementPillarData,
   RiskAuditResult,
   TrackAuditResult,
@@ -35,7 +36,7 @@ import type {
 import {
   AuthenticitePillarSchema,
   DistinctionPillarSchema,
-  ValeurPillarSchema,
+  ValeurPillarSchemaV2,
   EngagementPillarSchema,
   RiskAuditResultSchema,
   TrackAuditResultSchema,
@@ -319,12 +320,53 @@ function PreviewD({ data }: { data: DistinctionPillarData }) {
 }
 
 // ---------------------------------------------------------------------------
-// V — Valeur
+// V — Valeur (V2 flat format)
 // ---------------------------------------------------------------------------
 
-function PreviewV({ data }: { data: ValeurPillarData }) {
+function ItemList({ label, items }: { label: string; items: ValeurCoutItem[] }) {
+  const filtered = items?.filter((i) => i.item?.trim()) ?? [];
+  if (filtered.length === 0) return null;
+  return (
+    <div>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+        {label}
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {filtered.map((item, i) => (
+          <span
+            key={i}
+            className="inline-flex rounded-full border bg-background px-2.5 py-0.5 text-xs font-medium"
+          >
+            {item.item}
+            {item.montant?.trim() ? ` (${item.montant})` : ""}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PreviewV({ data }: { data: ValeurPillarDataV2 }) {
   return (
     <div className="space-y-4">
+      {/* Catalogue Produits V0 */}
+      {data.produitsCatalogue?.length > 0 && (
+        <ReadOnlySection title="Catalogue Produits & Services">
+          <div className="grid gap-2 sm:grid-cols-2">
+            {data.produitsCatalogue.map((prod, i) => (
+              <div key={prod.id || i} className="rounded border bg-background p-2 space-y-0.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">{prod.nom || `Produit ${i + 1}`}</span>
+                  <span className="rounded-full border px-2 py-0.5 text-[10px] capitalize">{prod.categorie}</span>
+                </div>
+                {prod.prix && <p className="text-xs font-medium text-primary">{prod.prix}</p>}
+                {prod.description && <p className="text-xs text-muted-foreground">{prod.description}</p>}
+              </div>
+            ))}
+          </div>
+        </ReadOnlySection>
+      )}
+
       {/* Product Ladder */}
       {data.productLadder?.length > 0 && (
         <ReadOnlySection title="Product Ladder">
@@ -346,60 +388,65 @@ function PreviewV({ data }: { data: ValeurPillarData }) {
       )}
 
       {/* Valeur marque */}
-      {(data.valeurMarque?.tangible?.length > 0 || data.valeurMarque?.intangible?.length > 0) && (
+      {(data.valeurMarqueTangible?.some((i) => i.item?.trim()) ||
+        data.valeurMarqueIntangible?.some((i) => i.item?.trim())) && (
         <ReadOnlySection title="Valeur de marque">
-          <TagList label="Tangible" items={data.valeurMarque.tangible} />
-          <TagList label="Intangible" items={data.valeurMarque.intangible} />
+          <ItemList label="Tangible" items={data.valeurMarqueTangible} />
+          <ItemList label="Intangible" items={data.valeurMarqueIntangible} />
         </ReadOnlySection>
       )}
 
       {/* Valeur client */}
-      {(data.valeurClient?.fonctionnels?.length > 0 ||
-        data.valeurClient?.emotionnels?.length > 0 ||
-        data.valeurClient?.sociaux?.length > 0) && (
+      {(data.valeurClientTangible?.some((i) => i.item?.trim()) ||
+        data.valeurClientIntangible?.some((i) => i.item?.trim())) && (
         <ReadOnlySection title="Valeur client">
-          <TagList label="Fonctionnels" items={data.valeurClient.fonctionnels} />
-          <TagList label="Emotionnels" items={data.valeurClient.emotionnels} />
-          <TagList label="Sociaux" items={data.valeurClient.sociaux} />
+          <ItemList label="Tangible" items={data.valeurClientTangible} />
+          <ItemList label="Intangible" items={data.valeurClientIntangible} />
         </ReadOnlySection>
       )}
 
-      {/* Couts */}
-      {(data.coutMarque?.capex || data.coutMarque?.opex || data.coutMarque?.coutsCaches?.length > 0) && (
+      {/* Couts marque */}
+      {(data.coutMarqueTangible?.some((i) => i.item?.trim()) ||
+        data.coutMarqueIntangible?.some((i) => i.item?.trim())) && (
         <ReadOnlySection title="Couts de marque">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <ReadOnlyField label="CAPEX" value={data.coutMarque.capex} />
-            <ReadOnlyField label="OPEX" value={data.coutMarque.opex} />
-          </div>
-          <TagList label="Couts caches" items={data.coutMarque.coutsCaches} />
+          <ItemList label="Tangible (CAPEX/OPEX)" items={data.coutMarqueTangible} />
+          <ItemList label="Intangible (couts caches)" items={data.coutMarqueIntangible} />
         </ReadOnlySection>
       )}
 
-      {/* Frictions */}
-      {data.coutClient?.frictions?.length > 0 && (
+      {/* Couts client */}
+      {(data.coutClientTangible?.some((i) => i.item?.trim()) ||
+        data.coutClientIntangible?.some((i) => i.item?.trim())) && (
         <ReadOnlySection title="Frictions client">
-          {data.coutClient.frictions.map((f, i) => (
-            <div key={i} className="rounded border bg-background p-2">
-              <p className="text-sm text-red-700">{f.friction}</p>
-              {f.solution && <p className="text-xs text-emerald-700 mt-0.5">Solution : {f.solution}</p>}
-            </div>
-          ))}
+          <ItemList label="Tangible" items={data.coutClientTangible} />
+          <ItemList label="Intangible" items={data.coutClientIntangible} />
         </ReadOnlySection>
       )}
 
       {/* Unit Economics */}
-      {(data.unitEconomics?.cac || data.unitEconomics?.ltv || data.unitEconomics?.ratio) && (
+      {(data.cac || data.ltv || data.ltvCacRatio) && (
         <ReadOnlySection title="Unit Economics">
           <div className="grid gap-2 sm:grid-cols-3">
-            <ReadOnlyField label="CAC" value={data.unitEconomics.cac} />
-            <ReadOnlyField label="LTV" value={data.unitEconomics.ltv} />
-            <ReadOnlyField label="Ratio LTV/CAC" value={data.unitEconomics.ratio} />
+            <ReadOnlyField label="CAC" value={data.cac} />
+            <ReadOnlyField label="LTV" value={data.ltv} />
+            <ReadOnlyField label="Ratio LTV/CAC" value={data.ltvCacRatio} />
           </div>
           <div className="grid gap-2 sm:grid-cols-2">
-            <ReadOnlyField label="Point mort" value={data.unitEconomics.pointMort} />
-            <ReadOnlyField label="Marges" value={data.unitEconomics.marges} />
+            <ReadOnlyField label="Point mort" value={data.pointMort} />
+            <ReadOnlyField label="Marges" value={data.marges} />
           </div>
-          <ReadOnlyField label="Notes" value={data.unitEconomics.notes} />
+          <ReadOnlyField label="Notes" value={data.notesEconomics} />
+        </ReadOnlySection>
+      )}
+
+      {/* Derived Metrics */}
+      {(data.margeNette || data.roiEstime || data.paybackPeriod) && (
+        <ReadOnlySection title="Metriques derivees">
+          <div className="grid gap-2 sm:grid-cols-3">
+            <ReadOnlyField label="Marge nette" value={data.margeNette} />
+            <ReadOnlyField label="ROI estime" value={data.roiEstime} />
+            <ReadOnlyField label="Payback period" value={data.paybackPeriod} />
+          </div>
         </ReadOnlySection>
       )}
     </div>
@@ -933,7 +980,7 @@ export function PillarContentPreview({ pillarType, content }: PillarContentPrevi
         return <PreviewD data={parsed} />;
       }
       case "V": {
-        const parsed = ValeurPillarSchema.parse(content);
+        const parsed = ValeurPillarSchemaV2.parse(content);
         return <PreviewV data={parsed} />;
       }
       case "E": {

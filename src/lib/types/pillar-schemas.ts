@@ -225,6 +225,106 @@ export const ValeurPillarSchema = z
 export type ValeurPillarData = z.infer<typeof ValeurPillarSchema>;
 
 // ---------------------------------------------------------------------------
+// Pilier V — Valeur v2 (atomised variables)
+// ---------------------------------------------------------------------------
+
+/** Product lifecycle phase */
+const PhaseLifecycleEnum = z
+  .enum(["launch", "growth", "mature", "decline"])
+  .catch("launch");
+
+/** V0 — Single product/service in the brand catalogue (source of truth) */
+export const ProduitServiceSchema = z.object({
+  // Core fields
+  id: z.string().default(""),
+  nom: z.string().default(""),
+  prix: z.string().default(""),
+  cout: z.string().default(""),
+  description: z.string().default(""),
+  categorie: z.enum(["produit", "service"]).catch("produit"),
+  lienPromesse: z.string().default(""),
+
+  // Extended fields
+  margeUnitaire: z.string().default(""),
+  segmentCible: z.string().default(""),
+  phaseLifecycle: PhaseLifecycleEnum,
+  disponibilite: z.string().default(""),
+  canalDistribution: z.string().default(""),
+
+  // Full catalogue fields
+  skuRef: z.string().default(""),
+  images: z.array(z.string()).default([]),
+  variantes: z.array(z.string()).default([]),
+  bundles: z.array(z.string()).default([]),
+  dependencies: z.array(z.string()).default([]),
+  scoringInterne: z.coerce.number().min(0).max(100).catch(0),
+});
+
+/** Atomic value/cost line item */
+export const ValeurCoutItemSchema = z.object({
+  item: z.string().default(""),
+  montant: z.string().default(""),
+  categorie: z.string().default(""),
+});
+
+/** Flex helper: tolerate a single object where an array is expected */
+const flexValeurCoutArray = z.preprocess(
+  (val) => {
+    if (Array.isArray(val)) return val;
+    if (val && typeof val === "object") return [val];
+    return [];
+  },
+  z.array(ValeurCoutItemSchema),
+).default([]);
+
+/** Product ladder tier with optional product references */
+const ProductLadderTierV2Schema = z.object({
+  tier: z.string().default(""),
+  prix: z.string().default(""),
+  description: z.string().default(""),
+  cible: z.string().default(""),
+  produitIds: z.array(z.string()).default([]),
+});
+
+export const ValeurPillarSchemaV2 = z
+  .object({
+    // V0: Full product/service catalogue
+    produitsCatalogue: z.array(ProduitServiceSchema).default([]),
+
+    // Product Ladder (composed from V0 references)
+    productLadder: z.array(ProductLadderTierV2Schema).default([]),
+
+    // 8 atomic value/cost variables
+    valeurMarqueTangible: flexValeurCoutArray,
+    valeurMarqueIntangible: flexValeurCoutArray,
+    valeurClientTangible: flexValeurCoutArray,
+    valeurClientIntangible: flexValeurCoutArray,
+    coutMarqueTangible: flexValeurCoutArray,
+    coutMarqueIntangible: flexValeurCoutArray,
+    coutClientTangible: flexValeurCoutArray,
+    coutClientIntangible: flexValeurCoutArray,
+
+    // Atomic unit economics — base (user/AI input)
+    cac: z.string().default(""),
+    ltv: z.string().default(""),
+    ltvCacRatio: z.string().default(""),
+    pointMort: z.string().default(""),
+    marges: z.string().default(""),
+    notesEconomics: z.string().default(""),
+    dureeLTV: z.coerce.number().default(24),
+
+    // Atomic unit economics — derived (auto-computed)
+    margeNette: z.string().default(""),
+    roiEstime: z.string().default(""),
+    paybackPeriod: z.string().default(""),
+  })
+  .strip();
+
+export type ValeurPillarDataV2 = z.infer<typeof ValeurPillarSchemaV2>;
+export type ProduitService = z.infer<typeof ProduitServiceSchema>;
+export type ValeurCoutItem = z.infer<typeof ValeurCoutItemSchema>;
+
+// ---------------------------------------------------------------------------
 // Pilier E — Engagement
 // ---------------------------------------------------------------------------
 
@@ -1023,7 +1123,7 @@ export type PillarData =
 export const PILLAR_SCHEMAS: Record<string, z.ZodType<any>> = {
   A: AuthenticitePillarSchema,
   D: DistinctionPillarSchema,
-  V: ValeurPillarSchema,
+  V: ValeurPillarSchemaV2,
   E: EngagementPillarSchema,
   R: RiskAuditResultSchema,
   T: TrackAuditResultSchema,
