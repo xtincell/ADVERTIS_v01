@@ -132,7 +132,7 @@ export default function BrandGeneratePage(props: {
     isError: isStrategyError,
     isLoading: isStrategyLoading,
   } = api.strategy.getById.useQuery(
-    { id: strategyId },
+    { strategyId },
     { enabled: !!strategyId, refetchInterval: isGenerating ? 3000 : false },
   );
 
@@ -353,7 +353,7 @@ export default function BrandGeneratePage(props: {
       setIsValidatingFiche(true);
       try {
         await validateFicheMutation.mutateAsync({
-          id: strategyId,
+          strategyId,
           interviewData: editedData,
         });
         await refetchStrategy();
@@ -416,7 +416,7 @@ export default function BrandGeneratePage(props: {
         } else {
           // Direct mapped variables (from freetext or other)
           await updateInterviewDataMutation.mutateAsync({
-            id: strategyId,
+            strategyId,
             data: result.mappedVariables,
           });
         }
@@ -446,7 +446,7 @@ export default function BrandGeneratePage(props: {
   const handleAdvanceToFicheReview = useCallback(async () => {
     try {
       await advancePhaseMutation.mutateAsync({
-        id: strategyId,
+        strategyId,
         targetPhase: "fiche-review",
       });
       await refetchStrategy();
@@ -604,7 +604,7 @@ export default function BrandGeneratePage(props: {
       setIsValidatingAudit(true);
       try {
         await validateAuditMutation.mutateAsync({
-          id: strategyId,
+          strategyId,
           riskAuditData: structuredClone(riskData),
           trackAuditData: structuredClone(trackData),
         });
@@ -729,7 +729,7 @@ export default function BrandGeneratePage(props: {
   const handleRevertPhase = useCallback(
     async (targetPhase: RevertablePhase) => {
       try {
-        await revertPhaseMutation.mutateAsync({ id: strategyId, targetPhase });
+        await revertPhaseMutation.mutateAsync({ strategyId, targetPhase });
         await refetchStrategy();
         toast.success(
           `Retour à la phase "${PHASE_CONFIG[targetPhase].title}"`,
@@ -869,6 +869,38 @@ export default function BrandGeneratePage(props: {
     !!inputMethod;
 
   // ---------------------------------------------------------------------------
+  // Phase mismatch auto-repair
+  // ---------------------------------------------------------------------------
+  // Detects when a pillar is complete but the pipeline phase didn't advance
+  // (e.g. onPillarGenerated failed silently). Automatically advances to the
+  // correct phase to unblock the user.
+
+  useEffect(() => {
+    if (isGenerating) return; // Don't interfere while generating
+
+    type AdvanceTarget = Exclude<Phase, "fiche">;
+    const PHASE_REPAIR_MAP: Record<string, { condition: boolean; target: AdvanceTarget }> = {
+      "audit-r": { condition: !!rComplete, target: "market-study" },
+      "audit-t": { condition: !!tComplete, target: "audit-review" },
+      "implementation": { condition: !!implComplete, target: "cockpit" },
+    };
+
+    const repair = PHASE_REPAIR_MAP[currentPhase];
+    if (!repair?.condition) return;
+
+    console.warn(
+      `[Pipeline] Phase mismatch detected: phase="${currentPhase}" but pillar already complete. Auto-advancing to "${repair.target}"`,
+    );
+
+    advancePhaseMutation
+      .mutateAsync({ strategyId, targetPhase: repair.target })
+      .then(() => refetchStrategy())
+      .catch((err) =>
+        console.error("[Pipeline] Phase auto-repair failed:", err),
+      );
+  }, [currentPhase, rComplete, tComplete, implComplete, isGenerating, strategyId, advancePhaseMutation, refetchStrategy]);
+
+  // ---------------------------------------------------------------------------
   // Render
   // ---------------------------------------------------------------------------
 
@@ -935,7 +967,7 @@ export default function BrandGeneratePage(props: {
             <CardDescription>
               {inputMethod === "import"
                 ? "Importez un document existant (PDF, DOCX, Excel) pour extraire les données"
-                : "Décrivez votre marque librement, l\'IA analysera le texte"}
+                : "Décrivez votre marque librement, l'IA analysera le texte"}
             </CardDescription>
           </CardHeader>
           <CardContent>

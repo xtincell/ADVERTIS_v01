@@ -23,9 +23,8 @@
 // =============================================================================
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import {
   calculateCoherenceScore,
   getCoherenceBreakdown,
@@ -124,21 +123,9 @@ export const analyticsRouter = createTRPCRouter({
    * Recalculate ALL scores for a strategy (coherence, risk, BMF) and persist them.
    * Returns full breakdowns for all 3 scores.
    */
-  recalculateScores: protectedProcedure
+  recalculateScores: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const scores = await recalculateAllScores(input.strategyId, "manual");
       return scores;
     }),
@@ -146,21 +133,9 @@ export const analyticsRouter = createTRPCRouter({
   /**
    * Backward-compatible alias for recalculateScores (returns only coherence).
    */
-  recalculateCoherence: protectedProcedure
+  recalculateCoherence: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const scores = await recalculateAllScores(input.strategyId, "manual");
       return {
         score: scores.coherenceScore,
@@ -171,7 +146,7 @@ export const analyticsRouter = createTRPCRouter({
   /**
    * Get score evolution history for a strategy.
    */
-  getScoreHistory: protectedProcedure
+  getScoreHistory: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -179,18 +154,6 @@ export const analyticsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const snapshots = await ctx.db.scoreSnapshot.findMany({
         where: { strategyId: input.strategyId },
         orderBy: { createdAt: "desc" },
@@ -686,19 +649,17 @@ export const analyticsRouter = createTRPCRouter({
    * Get score breakdowns for a strategy (read-only, no persistence).
    * Computes coherence, risk, and BMF breakdowns on-the-fly for display in cockpit tooltips.
    */
-  getBreakdowns: protectedProcedure
+  getBreakdowns: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // ctx.strategy already verified ownership; re-query with pillars included
       const strategy = await ctx.db.strategy.findUnique({
         where: { id: input.strategyId },
         include: { pillars: true },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
+      if (!strategy) {
+        throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
       }
 
       // Parse pillar data

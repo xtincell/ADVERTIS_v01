@@ -6,7 +6,19 @@
 "use client";
 
 import { useState } from "react";
-import { PipelineBoard } from "~/components/crm/pipeline-board";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const PipelineBoard = dynamic(
+  () => import("~/components/crm/pipeline-board").then((m) => ({ default: m.PipelineBoard })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
+);
 import { CreateDealDialog } from "~/components/crm/create-deal-dialog";
 
 export default function CRMPage() {

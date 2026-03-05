@@ -59,7 +59,7 @@ interface StrategyTreeProps {
 
 export function StrategyTree({ strategyId, className }: StrategyTreeProps) {
   const { data: tree, isLoading } = api.strategy.getTree.useQuery(
-    { id: strategyId },
+    { strategyId },
     { enabled: !!strategyId },
   );
 

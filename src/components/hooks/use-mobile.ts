@@ -1,31 +1,16 @@
 // ==========================================================================
-// HOOK H.3 — useMobile
-// Breakpoint detection for mobile-first responsive behavior.
+// HOOK H.3 — useMobile (thin re-export)
+// Delegates to the canonical useIsMobile from ~/hooks/use-media-query.
+// Kept for backward compatibility — new code should import from ~/hooks.
 // ==========================================================================
 
 "use client";
 
-import { useState, useEffect } from "react";
-
-const MOBILE_BREAKPOINT = 768;
+import { useIsMobile } from "~/hooks/use-media-query";
 
 /**
- * Hook: Returns true when viewport width < 768px.
- * Uses matchMedia for performance (no resize listener polling).
+ * @deprecated Use `useIsMobile` from `~/hooks` instead.
  */
 export function useMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-
-    // Set initial value
-    setIsMobile(mql.matches);
-
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
-  return isMobile;
+  return useIsMobile();
 }

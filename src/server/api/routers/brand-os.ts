@@ -6,8 +6,8 @@
 // =============================================================================
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound, throwForbidden } from "~/server/errors";
 import { calculateCultIndexForStrategy } from "~/server/services/cult-index-engine";
 import type { db as dbInstance } from "~/server/db";
 
@@ -32,7 +32,7 @@ async function verifyStrategyAccess(
     select: { id: true, brandName: true },
   });
   if (!strategy) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Stratégie introuvable." });
+    throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
   }
   return strategy;
 }
@@ -299,7 +299,7 @@ export const brandOSRouter = createTRPCRouter({
         include: { strategy: { select: { userId: true } } },
       });
       if (!action || action.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({ code: "NOT_FOUND" });
+        throwNotFound();
       }
       return ctx.db.oSActionItem.update({
         where: { id: input.id },
@@ -494,7 +494,7 @@ export const brandOSRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const user = ctx.session.user;
       if (user.role !== "ADMIN" && user.role !== "OPERATOR") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Réservé aux opérateurs." });
+        throwForbidden(AppErrors.FORBIDDEN);
       }
       await verifyStrategyAccess(ctx.db, input.strategyId, user);
 

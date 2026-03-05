@@ -1,5 +1,5 @@
 // ==========================================================================
-// PAGE P.0 — General Dashboard
+// PAGE P.0 — General Dashboard (v3)
 // Cross-portal agency overview: greeting, KPIs, portal access, financial
 // snapshot, alerts, and recent activity. Landing page for ADMIN/OPERATOR.
 // ==========================================================================
@@ -10,14 +10,12 @@ import { useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-  Loader2,
   AlertTriangle,
   RotateCcw,
   DollarSign,
   FileWarning,
   Receipt,
   Percent,
-  Clock,
   ArrowRight,
   Users,
   Briefcase,
@@ -30,7 +28,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { Card, CardContent } from "~/components/ui/card";
 import { AlertPanel } from "~/components/dashboard/alert-panel";
 import { AgencyKpiBar } from "~/components/dashboard/agency-kpi-bar";
 import { OnboardingHero } from "~/components/dashboard/onboarding-hero";
@@ -102,7 +100,6 @@ export default function GeneralDashboardPage() {
     data: finance,
     isLoading: loadingFinance,
   } = api.serenite.dashboard.useQuery(undefined, {
-    // Financial data is secondary — don't block the page
     retry: 1,
   });
 
@@ -131,24 +128,24 @@ export default function GeneralDashboardPage() {
   // ── Loading state ──
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 p-4 pb-24 md:p-6 stagger-children">
-        <div className="space-y-2">
-          <div className="h-7 w-48 shimmer rounded-md bg-muted" />
-          <div className="h-4 w-32 shimmer rounded-md bg-muted" />
+      <div className="flex flex-col gap-6 p-4 pb-24 md:p-8 stagger-children">
+        <div className="space-y-3">
+          <div className="h-9 w-56 shimmer rounded-lg bg-muted" />
+          <div className="h-4 w-40 shimmer rounded-md bg-muted" />
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 shimmer rounded-xl bg-muted" />
+            <div key={i} className="h-24 shimmer rounded-2xl bg-muted" />
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-28 shimmer rounded-xl bg-muted" />
+            <div key={i} className="h-32 shimmer rounded-2xl bg-muted" />
           ))}
         </div>
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-16 shimmer rounded-xl bg-muted" />
+            <div key={i} className="h-16 shimmer rounded-2xl bg-muted" />
           ))}
         </div>
       </div>
@@ -158,11 +155,18 @@ export default function GeneralDashboardPage() {
   // ── Error state ──
   if (errorOverview || !overview) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 py-20">
-        <AlertTriangle className="h-8 w-8 text-red-500" />
-        <p className="text-sm text-muted-foreground">
-          Impossible de charger le tableau de bord
-        </p>
+      <div className="flex flex-col items-center justify-center gap-5 py-24">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10">
+          <AlertTriangle className="h-7 w-7 text-destructive" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-sm font-medium">
+            Impossible de charger le tableau de bord
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Vérifiez votre connexion et réessayez.
+          </p>
+        </div>
         <Button
           variant="outline"
           size="sm"
@@ -198,14 +202,14 @@ export default function GeneralDashboardPage() {
     .join(" · ");
 
   return (
-    <div className="flex flex-col gap-5 p-4 pb-24 md:p-6 animate-page-enter">
-      {/* ── 1. Greeting ── */}
-      <div>
-        <h1 className="text-xl md:text-2xl font-semibold">
-          Bonjour{firstName ? ` ${firstName}` : ""}
+    <div className="flex flex-col gap-6 p-4 pb-24 md:p-8 animate-page-enter">
+      {/* ── 1. Hero greeting ── */}
+      <div className="space-y-1">
+        <h1 className="text-display-xl">
+          Bonjour{firstName ? ` ${firstName}` : ""} <span className="inline-block animate-wave origin-[70%_70%]">👋</span>
         </h1>
         <p className="text-sm text-muted-foreground capitalize">{todayLabel}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+        <p className="text-xs text-muted-foreground/70">{subtitle}</p>
       </div>
 
       {/* ── 2. Alert banner ── */}
@@ -225,13 +229,11 @@ export default function GeneralDashboardPage() {
         completionRate={overview.completionRate}
       />
 
-      {/* ── 4. Flywheel Ops — operational velocity KPIs ── */}
+      {/* ── 4. Flywheel Ops ── */}
       {flywheel && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            Flywheel Opérationnel
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <section className="space-y-3">
+          <SectionHeader>Flywheel Opérationnel</SectionHeader>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <FlywheelCard
               label="Leads actifs"
               value={flywheel.activeLeads}
@@ -268,38 +270,47 @@ export default function GeneralDashboardPage() {
       )}
 
       {/* ── 5. Portal quick-access ── */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground">
-          Portails
-        </h2>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <section className="space-y-3">
+        <SectionHeader>Portails</SectionHeader>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
           {OPERATOR_PORTALS.map((portal) => {
             const Icon = resolveIcon(portal.iconName);
             return (
               <button
                 key={portal.id}
                 onClick={() => router.push(portal.href)}
-                className="group flex flex-col items-start gap-2 rounded-xl border p-4 text-left transition-all hover:shadow-md cursor-pointer"
+                className="group relative flex flex-col items-start gap-3 rounded-2xl border bg-card p-5 text-left transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 cursor-pointer overflow-hidden"
                 style={{
-                  borderColor: `${portal.color}30`,
+                  borderColor: `${portal.color}20`,
                 }}
               >
+                {/* Subtle gradient background on hover */}
                 <div
-                  className="flex h-9 w-9 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: `${portal.color}15` }}
-                >
-                  <Icon
-                    className="h-4.5 w-4.5"
-                    style={{ color: portal.color }}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm font-medium group-hover:text-foreground transition-colors">
-                    {portal.name}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground line-clamp-1">
-                    {portal.description}
-                  </p>
+                  className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  style={{
+                    background: `linear-gradient(135deg, ${portal.color}08 0%, transparent 60%)`,
+                  }}
+                />
+                <div className="relative flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 items-center justify-center rounded-xl transition-shadow duration-200 group-hover:shadow-lg"
+                    style={{
+                      backgroundColor: `${portal.color}12`,
+                    }}
+                  >
+                    <Icon
+                      className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+                      style={{ color: portal.color }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold group-hover:text-foreground transition-colors font-[var(--font-display)]">
+                      {portal.name}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground line-clamp-1">
+                      {portal.description}
+                    </p>
+                  </div>
                 </div>
               </button>
             );
@@ -307,17 +318,16 @@ export default function GeneralDashboardPage() {
         </div>
       </section>
 
-      {/* ── 5. Financial snapshot ── */}
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground">
-          Finance
-        </h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {/* ── 6. Financial snapshot ── */}
+      <section className="space-y-3">
+        <SectionHeader>Finance</SectionHeader>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <FinanceCard
             label="Chiffre d'affaires"
             icon={DollarSign}
             value={finance ? `${formatCFA(finance.totalRevenue)} FCFA` : undefined}
             loading={loadingFinance}
+            color="#10B981"
           />
           <FinanceCard
             label="Impayés"
@@ -325,12 +335,14 @@ export default function GeneralDashboardPage() {
             value={finance ? `${formatCFA(finance.unpaidAmount)} FCFA` : undefined}
             loading={loadingFinance}
             alert={finance ? finance.unpaidAmount > 0 : false}
+            color="#F59E0B"
           />
           <FinanceCard
             label="Factures payées"
             icon={Receipt}
             value={finance ? String(finance.paidInvoicesCount) : undefined}
             loading={loadingFinance}
+            color="#3B82F6"
           />
           <FinanceCard
             label="Taux commission"
@@ -341,25 +353,24 @@ export default function GeneralDashboardPage() {
                 : undefined
             }
             loading={loadingFinance}
+            color="#8B5CF6"
           />
         </div>
       </section>
 
-      {/* ── 6. Users quick-access ── */}
+      {/* ── 7. Users quick-access ── */}
       {userCounts && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            Utilisateurs
-          </h2>
+        <section className="space-y-3">
+          <SectionHeader>Utilisateurs</SectionHeader>
           <button
             onClick={() => router.push("/serenite/users")}
-            className="flex w-full items-center gap-4 rounded-xl border border-border p-4 text-left transition-all hover:shadow-md cursor-pointer group"
+            className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-5 text-left transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 cursor-pointer group"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 shrink-0">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-cyan-500/10 shrink-0">
               <Users className="h-5 w-5 text-cyan-500" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium group-hover:text-cyan-500 transition-colors">
+              <p className="text-sm font-semibold group-hover:text-cyan-500 transition-colors font-[var(--font-display)]">
                 {userCounts.total} utilisateur{userCounts.total !== 1 ? "s" : ""}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -368,40 +379,47 @@ export default function GeneralDashboardPage() {
                   .join(" · ")}
               </p>
             </div>
-            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+            <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 shrink-0" />
           </button>
         </section>
       )}
 
-      {/* ── 7. Recent activity ── */}
+      {/* ── 8. Recent activity ── */}
       {overview.recentActivity && overview.recentActivity.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            Activité récente
-          </h2>
+        <section className="space-y-3">
+          <SectionHeader>Activité récente</SectionHeader>
           <Card>
-            <CardContent className="divide-y">
+            <CardContent className="divide-y divide-border/50">
               {overview.recentActivity.slice(0, 8).map((activity, i) => (
                 <button
                   key={`${activity.strategyId}-${i}`}
                   onClick={() =>
                     router.push(`/impulsion/brand/${activity.strategyId}`)
                   }
-                  className="flex w-full items-center justify-between gap-3 py-2.5 text-left group cursor-pointer first:pt-0 last:pb-0"
+                  className="flex w-full items-center justify-between gap-3 py-3 text-left group cursor-pointer first:pt-0 last:pb-0 transition-colors hover:bg-muted/30 -mx-2 px-2 rounded-lg"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate group-hover:text-indigo-500 transition-colors">
-                      {activity.brandName}
-                    </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {activity.action}
-                    </p>
+                  {/* Timeline dot */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      <div className="h-2 w-2 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
+                      {i < (overview.recentActivity?.length ?? 0) - 1 && (
+                        <div className="absolute top-3 left-1/2 -translate-x-1/2 w-px h-6 bg-border/40" />
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                        {activity.brandName}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {activity.action}
+                      </p>
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-[11px] text-muted-foreground">
+                    <span className="text-[11px] text-muted-foreground/60 tabular-nums">
                       {relativeTime(activity.updatedAt)}
                     </span>
-                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5" />
                   </div>
                 </button>
               ))}
@@ -410,6 +428,17 @@ export default function GeneralDashboardPage() {
         </section>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Section header
+// ---------------------------------------------------------------------------
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider font-[var(--font-display)]">
+      {children}
+    </h2>
   );
 }
 
@@ -432,30 +461,45 @@ function FlywheelCard({
   href?: string;
 }) {
   const router = useRouter();
-  const content = (
-    <Card className="py-3 md:py-3 group transition-all hover:shadow-md cursor-pointer">
-      <CardContent className="flex items-start gap-3 px-4">
+  return (
+    <Card
+      className="py-4 md:py-4 group transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 cursor-pointer overflow-hidden relative"
+      onClick={href ? () => router.push(href) : undefined}
+    >
+      {/* Subtle gradient bg */}
+      <div
+        className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+        style={{
+          background: `linear-gradient(135deg, ${color}08 0%, transparent 60%)`,
+        }}
+      />
+      <CardContent className="relative flex items-start gap-3 px-4">
         <div
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${color}15` }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-shadow duration-200 group-hover:shadow-lg"
+          style={{ backgroundColor: `${color}12` }}
         >
-          <Icon className="h-4.5 w-4.5" style={{ color }} />
+          <Icon
+            className="h-5 w-5 transition-transform duration-200 group-hover:scale-110"
+            style={{ color }}
+          />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] text-muted-foreground truncate">{label}</p>
-          <p className="text-lg font-bold tabular-nums" style={{ color }}>
+          <p className="text-[11px] text-muted-foreground truncate font-medium">
+            {label}
+          </p>
+          <p
+            className="text-xl font-bold tabular-nums font-[var(--font-display)]"
+            style={{ color }}
+          >
             {value}
           </p>
-          <p className="text-[10px] text-muted-foreground/60 truncate">{subtitle}</p>
+          <p className="text-[10px] text-muted-foreground/50 truncate">
+            {subtitle}
+          </p>
         </div>
       </CardContent>
     </Card>
   );
-
-  if (href) {
-    return <div onClick={() => router.push(href)}>{content}</div>;
-  }
-  return content;
 }
 
 // ---------------------------------------------------------------------------
@@ -467,26 +511,33 @@ function FinanceCard({
   value,
   loading,
   alert,
+  color = "#64748B",
 }: {
   label: string;
   icon: LucideIcon;
   value: string | undefined;
   loading: boolean;
   alert?: boolean;
+  color?: string;
 }) {
   return (
-    <Card className="py-3 md:py-3">
+    <Card className="py-4 md:py-4 transition-all duration-200 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5">
       <CardContent className="flex items-start gap-3 px-4">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
-          <Icon className="h-4 w-4 text-muted-foreground" />
+        <div
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+          style={{ backgroundColor: `${color}12` }}
+        >
+          <Icon className="h-4 w-4" style={{ color }} />
         </div>
         <div className="min-w-0">
-          <p className="text-[11px] text-muted-foreground truncate">{label}</p>
+          <p className="text-[11px] text-muted-foreground truncate font-medium">
+            {label}
+          </p>
           {loading ? (
-            <div className="h-5 w-16 shimmer rounded bg-muted mt-0.5" />
+            <div className="h-5 w-20 shimmer rounded-md bg-muted mt-1" />
           ) : (
             <p
-              className={`text-sm font-semibold truncate ${alert ? "text-amber-500" : ""}`}
+              className={`text-sm font-bold truncate tabular-nums ${alert ? "text-amber-500" : ""}`}
             >
               {value ?? "—"}
             </p>

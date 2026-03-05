@@ -66,6 +66,12 @@ export interface AllScores {
   investBreakdown: InvestBreakdown | null;
   /** Only present for child strategies in the brand tree */
   parentCoherenceScore?: number | null;
+  /** ARTEMIS global score (0-100) — composite of all frameworks */
+  artemisScore?: number | null;
+  /** Score per ARTEMIS layer */
+  artemisLayerScores?: Record<string, number> | null;
+  /** Quality gate results */
+  qualityGates?: Array<{ gateId: string; name: string; passed: boolean; score: number; details: string[]; blockers: string[] }> | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +290,51 @@ export async function recalculateAllScores(
     investScore,
   });
 
+  // --- 6.1.10  ARTEMIS Score (quality gates + layer scores) ---
+  let artemisScore: number | null = null;
+  let artemisLayerScores: Record<string, number> | null = null;
+  let qualityGates: AllScores["qualityGates"] = null;
+
+  try {
+    const { evaluateQualityGates } = await import("./quality-gates");
+    const gates = await evaluateQualityGates(strategyId);
+    qualityGates = gates;
+
+    // ARTEMIS score = weighted average of all gate scores
+    if (gates.length > 0) {
+      const totalGateScore = gates.reduce((sum, g) => sum + g.score, 0);
+      artemisScore = Math.round(totalGateScore / gates.length);
+    }
+
+    // Layer scores: % of fresh outputs per layer
+    const { getAllFrameworks } = await import("~/lib/framework-registry");
+    const allFw = getAllFrameworks();
+    const fwOutputs = await db.frameworkOutput.findMany({
+      where: { strategyId },
+      select: { frameworkId: true, isStale: true },
+    });
+    const outputLookup = new Map(fwOutputs.map((o) => [o.frameworkId, o]));
+
+    const layerGroups = new Map<string, { total: number; fresh: number }>();
+    for (const fw of allFw) {
+      if (!fw.hasImplementation) continue;
+      const entry = layerGroups.get(fw.layer) ?? { total: 0, fresh: 0 };
+      entry.total++;
+      const output = outputLookup.get(fw.id);
+      if (output && !output.isStale) entry.fresh++;
+      layerGroups.set(fw.layer, entry);
+    }
+
+    artemisLayerScores = {};
+    for (const [layer, counts] of layerGroups) {
+      artemisLayerScores[layer] = counts.total > 0
+        ? Math.round((counts.fresh / counts.total) * 100)
+        : 0;
+    }
+  } catch {
+    // Quality gates or framework registry not available — skip ARTEMIS scores
+  }
+
   return {
     coherenceScore: coherenceBreakdown.total,
     coherenceBreakdown,
@@ -294,5 +345,8 @@ export async function recalculateAllScores(
     investScore,
     investBreakdown,
     parentCoherenceScore: coherenceBreakdown.parentChildAlignment ?? null,
+    artemisScore,
+    artemisLayerScores,
+    qualityGates,
   };
 }

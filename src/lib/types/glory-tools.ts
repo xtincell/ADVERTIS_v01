@@ -18,7 +18,8 @@ export type GloryContextCategory =
   | "market"
   | "missions"
   | "signals"
-  | "visual-references";
+  | "visual-references"
+  | "frameworks";
 
 // ---------------------------------------------------------------------------
 // Field enrichment — returned by the field-enricher for smart forms

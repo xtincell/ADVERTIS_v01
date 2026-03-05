@@ -178,6 +178,11 @@ model Strategy {
     attributionEvents     AttributionEvent[]
     conversations         Conversation[]
 
+    // === ARTEMIS Framework System (Phase 7) ===
+    frameworkRuns          FrameworkRun[]
+    frameworkOutputs       FrameworkOutput[]
+    financialSnapshots     FinancialSnapshot[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -1896,4 +1901,78 @@ model BrandAsset {
     @@index([category])
     @@index([status])
     @@index([userId])
+}
+
+// ============================================
+// ARTEMIS FRAMEWORK SYSTEM (Phase 7)
+// Execution history and output storage for the 24 ARTEMIS frameworks
+// ============================================
+
+model FrameworkRun {
+    id            String   @id @default(cuid())
+    frameworkId   String // Framework identifier from registry (e.g., "FW-20", "FW-05")
+    status        String   @default("pending") // pending, running, complete, error
+    triggeredBy   String   @default("manual") // manual, auto, cascade, orchestrator
+    inputSnapshot Json? // Frozen input variables at execution time
+    outputData    Json? // Framework output data (matches Zod schema)
+    errorMessage  String?  @db.Text
+    durationMs    Int?
+
+    strategyId String
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+    userId     String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([frameworkId])
+    @@index([status])
+    @@index([strategyId, frameworkId])
+}
+
+model FrameworkOutput {
+    id          String  @id @default(cuid())
+    frameworkId String // Framework identifier (e.g., "FW-20", "FW-05")
+    version     Int     @default(1) // Incremented on each re-generation
+    data        Json // Parsed output data (matches framework Zod schema)
+    isStale     Boolean @default(false) // Marked stale when upstream variables change
+    staleReason String? // Human-readable reason for staleness
+    generatedBy String? // Module run ID or "manual"
+
+    strategyId String
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([strategyId, frameworkId]) // One active output per framework per strategy
+    @@index([strategyId])
+    @@index([frameworkId])
+    @@index([isStale])
+}
+
+// ---------------------------------------------------------------------------
+// Financial Snapshot — periodic financial health snapshots for FW-21
+// ---------------------------------------------------------------------------
+
+model FinancialSnapshot {
+    id             String @id @default(cuid())
+    healthScore    Float // Overall financial health 0-100
+    burnRate       Float? // Monthly burn rate (currency units)
+    runway         Float? // Estimated months of runway remaining
+    ltvCacRatio    Float? // LTV / CAC ratio
+    budgetUsed     Float? // Total budget consumed to date
+    budgetTotal    Float? // Total budget allocated
+    projectedRoi6  Float? // Projected ROI at 6 months (%)
+    projectedRoi12 Float? // Projected ROI at 12 months (%)
+    snapshotDate   DateTime @default(now())
+
+    strategyId String
+    strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    createdAt DateTime @default(now())
+
+    @@index([strategyId])
+    @@index([snapshotDate])
 }

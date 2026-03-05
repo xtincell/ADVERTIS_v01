@@ -10,6 +10,7 @@
 
 import { db } from "~/server/db";
 import type { GloryContextCategory } from "~/lib/types/glory-tools";
+import type { SuperfanStage } from "~/lib/types/frameworks/framework-descriptor";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -455,6 +456,202 @@ function formatSignals(signals: SignalRow[]): string {
 }
 
 // ---------------------------------------------------------------------------
+// ARTEMIS Framework context formatter
+// ---------------------------------------------------------------------------
+
+/** Map framework IDs to human labels for context output */
+const FRAMEWORK_LABELS: Record<string, string> = {
+  "FW-11": "Experience Architecture",
+  "FW-12": "Narrative Engineering",
+  "FW-13": "Value Exchange Design",
+  "FW-05": "Grammar Systems",
+  "FW-20": "Movement Architecture",
+  "FW-04": "Narrative Immersive",
+  "FW-21": "Value Capture Engine",
+  "FW-24": "Alliance Architecture",
+  "FW-18": "Internal Alignment",
+  "FW-22": "Creative Methodology",
+  "FW-23": "Execution Sequencing",
+  "FW-19": "Growth Mechanics",
+  "FW-15": "Cultural Expansion",
+  "FW-16": "Brand Architecture",
+  "FW-14": "Brand Evolution",
+  "FW-17": "Brand Defense",
+};
+
+/** Superfan stage labels (French) */
+const STAGE_LABELS: Record<string, string> = {
+  AUDIENCE: "Audience",
+  FOLLOWER: "Follower",
+  ENGAGED: "Engagé",
+  FAN: "Fan",
+  SUPERFAN: "Superfan",
+  EVANGELIST: "Évangéliste",
+};
+
+interface FrameworkOutputRow {
+  frameworkId: string;
+  data: unknown;
+  isStale: boolean;
+}
+
+function formatFrameworkContext(
+  outputs: FrameworkOutputRow[],
+  targetStage?: SuperfanStage,
+): string {
+  if (outputs.length === 0) return "";
+
+  const lines: string[] = ["## CONTEXTE ARTEMIS — Frameworks"];
+
+  if (targetStage) {
+    lines.push(
+      `Stade cible superfan : **${STAGE_LABELS[targetStage] ?? targetStage}**`,
+    );
+    lines.push("");
+  }
+
+  // Build a quick lookup
+  const outputMap = new Map<string, unknown>();
+  for (const o of outputs) {
+    outputMap.set(o.frameworkId, o.data);
+  }
+
+  // ── FW-11 Experience Architecture ──
+  const xaData = outputMap.get("FW-11") as Record<string, unknown> | undefined;
+  if (xaData) {
+    lines.push("### Architecture d'Expérience (FW-11)");
+    if (xaData.brandCoherenceScore != null) {
+      lines.push(`Score de cohérence : ${xaData.brandCoherenceScore}/100`);
+    }
+
+    // Extract target stage transition if available
+    if (targetStage && Array.isArray(xaData.transitionMap)) {
+      const transition = (xaData.transitionMap as Array<Record<string, unknown>>).find(
+        (t) => t.toStage === targetStage,
+      );
+      if (transition) {
+        lines.push(`Transition vers ${STAGE_LABELS[targetStage] ?? targetStage} :`);
+        if (transition.triggerCondition) lines.push(`  Déclencheur : ${transition.triggerCondition}`);
+        if (transition.emotionalShift) lines.push(`  Cible émotionnelle : ${transition.emotionalShift}`);
+        if (transition.keyExperience) lines.push(`  Expérience clé : ${transition.keyExperience}`);
+      }
+    }
+
+    // Moments of truth summary
+    if (Array.isArray(xaData.momentsDeTruth) && xaData.momentsDeTruth.length > 0) {
+      const mots = xaData.momentsDeTruth as Array<Record<string, unknown>>;
+      lines.push(`Moments de vérité : ${mots.map((m) => m.name).join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  // ── FW-12 Narrative Engineering ──
+  const xbData = outputMap.get("FW-12") as Record<string, unknown> | undefined;
+  if (xbData) {
+    lines.push("### Ingénierie Narrative (FW-12)");
+
+    // Target stage narrative arc
+    if (targetStage && Array.isArray(xbData.narrativeArc)) {
+      const arc = (xbData.narrativeArc as Array<Record<string, unknown>>).find(
+        (a) => a.stage === targetStage,
+      );
+      if (arc) {
+        lines.push(`Arc narratif [${STAGE_LABELS[targetStage] ?? targetStage}] :`);
+        if (arc.coreMessage) lines.push(`  Message central : ${arc.coreMessage}`);
+        if (arc.narrativeTone) lines.push(`  Ton : ${arc.narrativeTone}`);
+        if (arc.heroPosition) lines.push(`  Position du héros : ${arc.heroPosition}`);
+      }
+    }
+
+    // Vocabulary for target stage
+    if (targetStage && Array.isArray(xbData.vocabularyByStage)) {
+      const vocab = (xbData.vocabularyByStage as Array<Record<string, unknown>>).find(
+        (v) => v.stage === targetStage,
+      );
+      if (vocab) {
+        if (Array.isArray(vocab.mustUse)) lines.push(`Vocabulaire obligatoire : ${(vocab.mustUse as string[]).join(", ")}`);
+        if (Array.isArray(vocab.avoid)) lines.push(`Vocabulaire interdit : ${(vocab.avoid as string[]).join(", ")}`);
+        if (vocab.toneRegister) lines.push(`Registre de ton : ${vocab.toneRegister}`);
+      }
+    }
+
+    // Sacred texts summary
+    if (Array.isArray(xbData.sacredTexts) && xbData.sacredTexts.length > 0) {
+      const texts = xbData.sacredTexts as Array<Record<string, unknown>>;
+      lines.push(`Textes sacrés : ${texts.map((t) => `${t.name} (${t.type})`).join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  // ── FW-13 Value Exchange Design ──
+  const xcData = outputMap.get("FW-13") as Record<string, unknown> | undefined;
+  if (xcData) {
+    lines.push("### Design d'Échange de Valeur (FW-13)");
+
+    // Tier matching target stage
+    if (targetStage && Array.isArray(xcData.tierSegmentMap)) {
+      const tier = (xcData.tierSegmentMap as Array<Record<string, unknown>>).find(
+        (t) => t.stage === targetStage,
+      );
+      if (tier) {
+        if (tier.tierName) lines.push(`Tier : ${tier.tierName}`);
+        if (tier.valueProposition) lines.push(`Proposition de valeur : ${tier.valueProposition}`);
+        if (tier.pricingModel) lines.push(`Modèle tarifaire : ${tier.pricingModel}`);
+      }
+    }
+
+    // Belonging signals summary
+    if (Array.isArray(xcData.belongingSignals) && xcData.belongingSignals.length > 0) {
+      const signals = xcData.belongingSignals as Array<Record<string, unknown>>;
+      lines.push(`Signaux d'appartenance : ${signals.map((s) => s.signalName).join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  // ── FW-05 Grammar Systems ──
+  const gsData = outputMap.get("FW-05") as Record<string, unknown> | undefined;
+  if (gsData) {
+    lines.push("### Systèmes Grammaticaux (FW-05)");
+    if (gsData.conceptualGrammar) lines.push(`Grammaire conceptuelle : ${formatValue(gsData.conceptualGrammar)}`);
+    if (gsData.tripleAncrage) lines.push(`Triple ancrage : ${formatValue(gsData.tripleAncrage)}`);
+    if (Array.isArray(gsData.vocabularyAuthorized)) {
+      lines.push(`Vocabulaire autorisé : ${(gsData.vocabularyAuthorized as string[]).slice(0, 15).join(", ")}`);
+    }
+    if (Array.isArray(gsData.vocabularyForbidden)) {
+      lines.push(`Vocabulaire interdit : ${(gsData.vocabularyForbidden as string[]).slice(0, 15).join(", ")}`);
+    }
+    lines.push("");
+  }
+
+  // ── FW-20 Movement Architecture ──
+  const maData = outputMap.get("FW-20") as Record<string, unknown> | undefined;
+  if (maData) {
+    lines.push("### Architecture de Mouvement (FW-20)");
+    if (maData.prophecy) lines.push(`Prophétie : ${maData.prophecy}`);
+    if (maData.existentialEnemy) lines.push(`Ennemi existentiel : ${maData.existentialEnemy}`);
+    if (maData.doctrine) lines.push(`Doctrine : ${formatValue(maData.doctrine)}`);
+    lines.push("");
+  }
+
+  // ── Other frameworks — generic summary ──
+  const coveredIds = new Set(["FW-11", "FW-12", "FW-13", "FW-05", "FW-20"]);
+  for (const o of outputs) {
+    if (coveredIds.has(o.frameworkId)) continue;
+    if (o.isStale) continue; // skip stale secondary outputs
+
+    const label = FRAMEWORK_LABELS[o.frameworkId] ?? o.frameworkId;
+    lines.push(`### ${label} (${o.frameworkId})`);
+    // Compact summary of the framework data (truncated)
+    const json = JSON.stringify(o.data, null, 2);
+    const truncated = json.length > 600 ? json.substring(0, 600) + "…" : json;
+    lines.push(truncated);
+    lines.push("");
+  }
+
+  return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------------
 // Main export — buildStrategyContext
 // ---------------------------------------------------------------------------
 
@@ -493,8 +690,9 @@ export async function buildStrategyContext(
   const needsMarket = requiredContext.includes("market");
   const needsMissions = requiredContext.includes("missions");
   const needsSignals = requiredContext.includes("signals");
+  const needsFrameworks = requiredContext.includes("frameworks");
 
-  const [budgetTiers, competitors, opportunities, marketStudy, missions, signals] =
+  const [budgetTiers, competitors, opportunities, marketStudy, missions, signals, frameworkOutputs] =
     await Promise.all([
       needsBudgets
         ? db.budgetTier.findMany({
@@ -532,6 +730,17 @@ export async function buildStrategyContext(
             where: { strategyId, status: "active" },
             orderBy: { createdAt: "desc" },
             take: 15,
+          })
+        : Promise.resolve([]),
+      needsFrameworks
+        ? db.frameworkOutput.findMany({
+            where: { strategyId },
+            select: {
+              frameworkId: true,
+              data: true,
+              isStale: true,
+            },
+            orderBy: { updatedAt: "desc" },
           })
         : Promise.resolve([]),
     ]);
@@ -591,6 +800,18 @@ export async function buildStrategyContext(
 
   const signalSection = formatSignals(signals);
   if (signalSection) sections.push(signalSection);
+
+  // --- ARTEMIS Framework context ---
+  // Detect target superfan stage from strategy metadata (if available)
+  const targetStage = (strategy as Record<string, unknown>).targetSuperfanStage as
+    | SuperfanStage
+    | undefined;
+
+  const frameworkSection = formatFrameworkContext(
+    frameworkOutputs as FrameworkOutputRow[],
+    targetStage,
+  );
+  if (frameworkSection) sections.push(frameworkSection);
 
   // --- Validated creative references (favorite GLORY outputs) ---
   const favoriteOutputs = await db.gloryOutput.findMany({

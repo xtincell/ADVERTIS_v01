@@ -10,11 +10,9 @@
 //               bulkGenerate, regenerate, updateStatus, delete, getFreshness
 //   presets   — getAll, create, update, delete, seedDefaults
 //
-// Helpers:
-//   verifyStrategyOwnership — Shared ownership check
-//
 // Dependencies:
-//   ~/server/api/trpc                     — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc                     — createTRPCRouter, protectedProcedure, strategyProcedure
+//   ~/server/errors                       — AppErrors, throwNotFound
 //   ~/lib/types/phase2-schemas            — GenerateBriefSchema, GenerateFromPresetSchema,
 //                                           BulkGenerateSchema, UpdateTranslationSchema,
 //                                           CreatePresetSchema, UpdatePresetSchema
@@ -22,13 +20,13 @@
 //   ~/server/services/translation-generator — generateBrief, generateFromPreset,
 //                                           bulkGenerate, regenerateBrief
 //   ~/server/services/freshness-checker   — getStrategyFreshnessReport
-//   ~/server/db                           — Prisma client (for helper typing)
 // =============================================================================
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import {
   GenerateBriefSchema,
   GenerateFromPresetSchema,
@@ -38,7 +36,6 @@ import {
   UpdatePresetSchema,
 } from "~/lib/types/phase2-schemas";
 import { SYSTEM_PRESETS, BRIEF_TYPES } from "~/lib/constants";
-import { db as prismaDb } from "~/server/db";
 
 import {
   generateBrief,
@@ -49,28 +46,6 @@ import {
 import { getStrategyFreshnessReport } from "~/server/services/freshness-checker";
 
 // ---------------------------------------------------------------------------
-// Helper — verify strategy ownership
-// ---------------------------------------------------------------------------
-
-async function verifyStrategyOwnership(
-  db: typeof prismaDb,
-  strategyId: string,
-  userId: string,
-) {
-  const strategy = await db.strategy.findUnique({
-    where: { id: strategyId },
-    select: { id: true, userId: true },
-  });
-  if (!strategy || strategy.userId !== userId) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Stratégie non trouvée",
-    });
-  }
-  return strategy;
-}
-
-// ---------------------------------------------------------------------------
 // Documents sub-router
 // ---------------------------------------------------------------------------
 
@@ -78,7 +53,7 @@ const documentsRouter = createTRPCRouter({
   /**
    * Get all TranslationDocuments for a strategy, with optional filters.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(
       z.object({
         strategyId: z.string().min(1),
@@ -87,7 +62,7 @@ const documentsRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      // ctx.strategy already verified by strategyProcedure
 
       const where: Record<string, unknown> = { strategyId: input.strategyId };
       if (input.type) where.type = input.type;
@@ -128,10 +103,7 @@ const documentsRouter = createTRPCRouter({
         },
       });
       if (!doc || doc.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Document non trouvé",
-        });
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
       return doc;
     }),
@@ -139,10 +111,10 @@ const documentsRouter = createTRPCRouter({
   /**
    * Generate a single brief.
    */
-  generate: protectedProcedure
+  generate: strategyProcedure
     .input(GenerateBriefSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      // ctx.strategy already verified by strategyProcedure
 
       return generateBrief(
         input.strategyId,
@@ -155,10 +127,10 @@ const documentsRouter = createTRPCRouter({
   /**
    * Generate all briefs from a preset.
    */
-  generateFromPreset: protectedProcedure
+  generateFromPreset: strategyProcedure
     .input(GenerateFromPresetSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      // ctx.strategy already verified by strategyProcedure
 
       return generateFromPreset(
         input.strategyId,
@@ -170,10 +142,10 @@ const documentsRouter = createTRPCRouter({
   /**
    * Generate multiple briefs in parallel.
    */
-  bulkGenerate: protectedProcedure
+  bulkGenerate: strategyProcedure
     .input(BulkGenerateSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      // ctx.strategy already verified by strategyProcedure
 
       return bulkGenerate(
         input.strategyId,
@@ -190,12 +162,13 @@ const documentsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const doc = await ctx.db.translationDocument.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        include: {
+          strategy: { select: { userId: true } },
+        },
       });
-      if (!doc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Document non trouvé" });
+      if (!doc || doc.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, doc.strategyId, ctx.session.user.id);
 
       return regenerateBrief(input.id, ctx.session.user.id);
     }),
@@ -208,12 +181,13 @@ const documentsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const doc = await ctx.db.translationDocument.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        include: {
+          strategy: { select: { userId: true } },
+        },
       });
-      if (!doc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Document non trouvé" });
+      if (!doc || doc.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, doc.strategyId, ctx.session.user.id);
 
       const updateData: Record<string, unknown> = {};
       if (input.status) {
@@ -244,12 +218,13 @@ const documentsRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const doc = await ctx.db.translationDocument.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        include: {
+          strategy: { select: { userId: true } },
+        },
       });
-      if (!doc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Document non trouvé" });
+      if (!doc || doc.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, doc.strategyId, ctx.session.user.id);
 
       await ctx.db.translationDocument.delete({ where: { id: input.id } });
       return { success: true };
@@ -258,10 +233,10 @@ const documentsRouter = createTRPCRouter({
   /**
    * Get freshness report for a strategy's documents.
    */
-  getFreshness: protectedProcedure
+  getFreshness: strategyProcedure
     .input(z.object({ strategyId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      // ctx.strategy already verified by strategyProcedure
       return getStrategyFreshnessReport(input.strategyId);
     }),
 });
@@ -319,7 +294,7 @@ const presetsRouter = createTRPCRouter({
         where: { id: input.id },
       });
       if (!preset) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Preset non trouvé" });
+        throwNotFound("Preset introuvable");
       }
       if (preset.isSystem) {
         throw new TRPCError({
@@ -345,7 +320,7 @@ const presetsRouter = createTRPCRouter({
         where: { id: input.id },
       });
       if (!preset) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Preset non trouvé" });
+        throwNotFound("Preset introuvable");
       }
       if (preset.isSystem) {
         throw new TRPCError({

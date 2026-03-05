@@ -17,7 +17,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { getAllModules, getModule, getModulesForPillar, executeModule } from "~/server/services/modules";
 
 export const moduleRouter = createTRPCRouter({
@@ -85,7 +86,7 @@ export const moduleRouter = createTRPCRouter({
   /**
    * Get module run history for a strategy.
    */
-  getRuns: protectedProcedure
+  getRuns: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -94,19 +95,6 @@ export const moduleRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Verify strategy ownership
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const runs = await ctx.db.moduleRun.findMany({
         where: {
           strategyId: input.strategyId,
@@ -122,7 +110,7 @@ export const moduleRouter = createTRPCRouter({
   /**
    * Get the latest run for a specific module + strategy combination.
    */
-  getLatestRun: protectedProcedure
+  getLatestRun: strategyProcedure
     .input(
       z.object({
         moduleId: z.string(),
@@ -130,18 +118,6 @@ export const moduleRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const run = await ctx.db.moduleRun.findFirst({
         where: {
           moduleId: input.moduleId,

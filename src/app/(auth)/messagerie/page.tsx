@@ -5,23 +5,24 @@
 
 "use client";
 
-import { Suspense } from "react";
-import { Inbox } from "~/components/messaging/inbox";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const Inbox = dynamic(
+  () => import("~/components/messaging/inbox").then((m) => ({ default: m.Inbox })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center h-[60vh]">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
+);
 
 export default function MessageriePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="p-6 flex items-center justify-center h-[60vh]">
-          <div className="text-muted-foreground animate-pulse">
-            Chargement de la messagerie...
-          </div>
-        </div>
-      }
-    >
-      <div className="p-4 md:p-6 max-w-7xl mx-auto">
-        <Inbox />
-      </div>
-    </Suspense>
+    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <Inbox />
+    </div>
   );
 }

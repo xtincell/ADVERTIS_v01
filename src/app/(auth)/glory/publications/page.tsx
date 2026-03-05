@@ -7,7 +7,19 @@
 
 import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { PublicationCalendar } from "~/components/glory/publication-calendar";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
+
+const PublicationCalendar = dynamic(
+  () => import("~/components/glory/publication-calendar").then((m) => ({ default: m.PublicationCalendar })),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    ),
+  },
+);
 
 function PublicationsContent() {
   const searchParams = useSearchParams();

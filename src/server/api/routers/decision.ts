@@ -12,47 +12,21 @@
 //   defer         — Defer a decision
 //   delete        — Delete a decision
 //
-// Helpers:
-//   verifyStrategyOwnership — Shared ownership check
-//
 // Dependencies:
-//   ~/server/api/trpc          — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc          — createTRPCRouter, protectedProcedure, strategyProcedure
+//   ~/server/errors            — AppErrors, throwNotFound
 //   ~/lib/types/phase1-schemas — CreateDecisionSchema, UpdateDecisionSchema, ResolveDecisionSchema
-//   ~/server/db                — Prisma client (for helper typing)
 // =============================================================================
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import {
   CreateDecisionSchema,
   UpdateDecisionSchema,
   ResolveDecisionSchema,
 } from "~/lib/types/phase1-schemas";
-import { db as prismaDb } from "~/server/db";
-
-// ---------------------------------------------------------------------------
-// Helper — verify strategy ownership
-// ---------------------------------------------------------------------------
-
-async function verifyStrategyOwnership(
-  db: typeof prismaDb,
-  strategyId: string,
-  userId: string,
-) {
-  const strategy = await db.strategy.findUnique({
-    where: { id: strategyId },
-    select: { id: true, userId: true },
-  });
-  if (!strategy || strategy.userId !== userId) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Stratégie non trouvée",
-    });
-  }
-  return strategy;
-}
 
 // ---------------------------------------------------------------------------
 // Router
@@ -62,7 +36,7 @@ export const decisionRouter = createTRPCRouter({
   /**
    * Get all decisions for a strategy, sorted by priority ASC then createdAt DESC.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(
       z.object({
         strategyId: z.string().min(1),
@@ -71,8 +45,6 @@ export const decisionRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
       const where: Record<string, unknown> = { strategyId: input.strategyId };
       if (input.status) where.status = input.status;
       if (input.priority) where.priority = input.priority;
@@ -97,11 +69,9 @@ export const decisionRouter = createTRPCRouter({
   /**
    * Create a new decision.
    */
-  create: protectedProcedure
+  create: strategyProcedure
     .input(CreateDecisionSchema)
     .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
       return ctx.db.decision.create({
         data: {
           strategyId: input.strategyId,
@@ -135,15 +105,11 @@ export const decisionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const decision = await ctx.db.decision.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!decision) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Décision non trouvée",
-        });
+      if (!decision || decision.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DECISION_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, decision.strategyId, ctx.session.user.id);
 
       const { id, ...data } = input;
       return ctx.db.decision.update({
@@ -171,15 +137,11 @@ export const decisionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const decision = await ctx.db.decision.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!decision) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Décision non trouvée",
-        });
+      if (!decision || decision.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DECISION_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, decision.strategyId, ctx.session.user.id);
 
       return ctx.db.decision.update({
         where: { id: input.id },
@@ -211,15 +173,11 @@ export const decisionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const decision = await ctx.db.decision.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!decision) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Décision non trouvée",
-        });
+      if (!decision || decision.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DECISION_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, decision.strategyId, ctx.session.user.id);
 
       return ctx.db.decision.update({
         where: { id: input.id },
@@ -246,15 +204,11 @@ export const decisionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const decision = await ctx.db.decision.findUnique({
         where: { id: input.id },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!decision) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Décision non trouvée",
-        });
+      if (!decision || decision.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.DECISION_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, decision.strategyId, ctx.session.user.id);
 
       await ctx.db.decision.delete({ where: { id: input.id } });
       return { success: true };

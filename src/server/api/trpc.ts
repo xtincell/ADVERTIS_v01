@@ -41,6 +41,8 @@ import { ZodError } from "zod";
 
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
+import { AppErrors, throwNotFound } from "~/server/errors";
+import { normalizeRole } from "~/lib/roles";
 
 /**
  * 1. CONTEXT
@@ -175,9 +177,7 @@ export const protectedProcedure = t.procedure
 export function roleProtectedProcedure(allowedRoles: string[]) {
   return protectedProcedure.use(({ ctx, next }) => {
     const rawRole = ctx.session.user.role ?? "OPERATOR";
-    // Normalize legacy role values
-    const normalizedRole =
-      rawRole === "user" ? "OPERATOR" : rawRole === "admin" ? "ADMIN" : rawRole;
+    const normalizedRole = normalizeRole(rawRole);
 
     if (!allowedRoles.includes(normalizedRole)) {
       throw new TRPCError({
@@ -194,3 +194,53 @@ export function roleProtectedProcedure(allowedRoles: string[]) {
     });
   });
 }
+
+// normalizeRole is imported from ~/lib/roles and re-exported for backward compat
+export { normalizeRole } from "~/lib/roles";
+
+/**
+ * Strategy-scoped procedure — v3 ownership middleware.
+ *
+ * Expects input to contain `strategyId: string`.
+ * Automatically loads the strategy from DB and verifies ownership.
+ * Injects `ctx.strategy` for downstream use — no manual lookup needed.
+ *
+ * Replaces 64+ manual ownership checks across routers.
+ *
+ * @example
+ * // In a router:
+ * getDetails: strategyProcedure
+ *   .input(z.object({ strategyId: z.string() }))
+ *   .query(({ ctx }) => {
+ *     // ctx.strategy is guaranteed to exist and belong to the user
+ *     return ctx.strategy;
+ *   }),
+ */
+export const strategyProcedure = protectedProcedure.use(
+  async ({ ctx, getRawInput, next }) => {
+    const rawInput = await getRawInput();
+    const { strategyId } = rawInput as { strategyId?: string };
+
+    if (!strategyId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: AppErrors.INVALID_INPUT,
+      });
+    }
+
+    const strategy = await ctx.db.strategy.findUnique({
+      where: { id: strategyId },
+    });
+
+    if (!strategy || strategy.userId !== ctx.session.user.id) {
+      throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        strategy,
+      },
+    });
+  },
+);

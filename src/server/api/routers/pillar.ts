@@ -13,7 +13,7 @@
 //   restoreVersion  — Restore pillar content from a previous version
 //
 // Dependencies:
-//   ~/server/api/trpc                          — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc                          — createTRPCRouter, protectedProcedure, strategyProcedure
 //   ~/lib/types/pillar-parsers                 — validatePillarContent
 //   ~/server/services/widgets/compute-engine   — invalidateWidgetsForPillar, computeAllWidgets
 //   ~/server/services/score-engine             — recalculateAllScores
@@ -21,8 +21,8 @@
 // =============================================================================
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { validatePillarContent } from "~/lib/types/pillar-parsers";
 import { invalidateWidgetsForPillar, computeAllWidgets } from "~/server/services/widgets/compute-engine";
 import { recalculateAllScores } from "~/server/services/score-engine";
@@ -32,23 +32,11 @@ import { extractVariablesFromPillar } from "~/server/services/variable-extractor
 export const pillarRouter = createTRPCRouter({
   /**
    * Get all pillars for a strategy, ordered by `order`.
-   * Verifies the strategy belongs to the current user.
+   * Ownership verified by strategyProcedure middleware.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const pillars = await ctx.db.pillar.findMany({
         where: { strategyId: input.strategyId },
         orderBy: { order: "asc" },
@@ -72,10 +60,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!pillar || pillar.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Pilier non trouvé",
-        });
+        throwNotFound(AppErrors.PILLAR_NOT_FOUND);
       }
 
       return pillar;
@@ -105,10 +90,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!existing || existing.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Pilier non trouvé",
-        });
+        throwNotFound(AppErrors.PILLAR_NOT_FOUND);
       }
 
       // Soft validation: log warnings but still save (avoid data loss during edits)
@@ -175,22 +157,11 @@ export const pillarRouter = createTRPCRouter({
   /**
    * Get all stale pillars for a strategy.
    * Returns pillars where staleReason is not null.
+   * Ownership verified by strategyProcedure middleware.
    */
-  getStale: protectedProcedure
+  getStale: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       const stalePillars = await ctx.db.pillar.findMany({
         where: {
           strategyId: input.strategyId,
@@ -223,10 +194,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!existing || existing.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Pilier non trouvé",
-        });
+        throwNotFound(AppErrors.PILLAR_NOT_FOUND);
       }
 
       const pillar = await ctx.db.pillar.update({
@@ -263,10 +231,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!pillar || pillar.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Pilier non trouvé",
-        });
+        throwNotFound(AppErrors.PILLAR_NOT_FOUND);
       }
 
       const versions = await ctx.db.pillarVersion.findMany({
@@ -310,10 +275,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!pillar || pillar.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Pilier non trouvé",
-        });
+        throwNotFound(AppErrors.PILLAR_NOT_FOUND);
       }
 
       const targetVersion = await ctx.db.pillarVersion.findUnique({
@@ -321,10 +283,7 @@ export const pillarRouter = createTRPCRouter({
       });
 
       if (!targetVersion || targetVersion.pillarId !== input.pillarId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Version non trouvée",
-        });
+        throwNotFound("Version introuvable");
       }
 
       // Snapshot current content before restoring

@@ -24,7 +24,8 @@
 //   getChildren       — Get direct children of a strategy
 //
 // Dependencies:
-//   ~/server/api/trpc          — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc          — createTRPCRouter, protectedProcedure, strategyProcedure
+//   ~/server/errors            — AppErrors, throwNotFound
 //   ~/lib/constants            — PILLAR_TYPES, PILLAR_CONFIG
 //   ~/server/services/score-engine — recalculateAllScores
 //   ~/server/services/pipeline-orchestrator — validatePhaseTransition, validatePhaseReversion
@@ -34,7 +35,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { PILLAR_TYPES, PILLAR_CONFIG, SUPPORTED_CURRENCIES } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
 import { recalculateAllScores } from "~/server/services/score-engine";
@@ -148,13 +150,14 @@ export const strategyRouter = createTRPCRouter({
 
   /**
    * Get a single strategy by ID with all pillars ordered by `order`.
-   * Verifies ownership.
+   * Ownership verified by strategyProcedure middleware.
    */
-  getById: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  getById: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // ctx.strategy proves ownership; re-fetch with pillars included
       const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         include: {
           pillars: {
             orderBy: { order: "asc" },
@@ -162,23 +165,20 @@ export const strategyRouter = createTRPCRouter({
         },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
+      if (!strategy) {
+        throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
       }
 
       return strategy;
     }),
 
   /**
-   * Update strategy fields. Verifies ownership.
+   * Update strategy fields. Ownership verified by strategyProcedure middleware.
    */
-  update: protectedProcedure
+  update: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         name: z.string().min(1).optional(),
         brandName: z.string().min(1).optional(),
         tagline: z.string().optional(),
@@ -192,18 +192,8 @@ export const strategyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      const { id, ...rawData } = input;
+      // ctx.strategy proves ownership — no manual check needed
+      const { strategyId, ...rawData } = input;
 
       // Filter out undefined fields to prevent Prisma from overwriting
       // existing values with null when only some fields are updated.
@@ -222,7 +212,7 @@ export const strategyRouter = createTRPCRouter({
       }
 
       const strategy = await ctx.db.strategy.update({
-        where: { id },
+        where: { id: strategyId },
         data,
         include: {
           pillars: {
@@ -243,8 +233,8 @@ export const strategyRouter = createTRPCRouter({
             options: { source: "user_input" as const, changedBy: ctx.session.user.id },
           }));
         if (entries.length > 0) {
-          void setVariablesBatch(id, entries);
-          void propagateStaleness(id, entries.map((e) => e.key));
+          void setVariablesBatch(strategyId, entries);
+          void propagateStaleness(strategyId, entries.map((e) => e.key));
         }
       }
 
@@ -252,24 +242,14 @@ export const strategyRouter = createTRPCRouter({
     }),
 
   /**
-   * Delete a strategy (cascade deletes pillars). Verifies ownership.
+   * Delete a strategy (cascade deletes pillars). Ownership verified by strategyProcedure middleware.
    */
-  delete: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  delete: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
+      // ctx.strategy proves ownership — no manual check needed
       await ctx.db.strategy.delete({
-        where: { id: input.id },
+        where: { id: input.strategyId },
       });
 
       return { success: true };
@@ -278,13 +258,14 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Duplicate a strategy and all its pillars.
    * Appends " (copie)" to the name and resets status to "draft".
-   * Verifies ownership of the source strategy.
+   * Ownership verified by strategyProcedure middleware.
    */
-  duplicate: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  duplicate: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      // ctx.strategy proves ownership; re-fetch with pillars for duplication
       const source = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         include: {
           pillars: {
             orderBy: { order: "asc" },
@@ -292,11 +273,8 @@ export const strategyRouter = createTRPCRouter({
         },
       });
 
-      if (!source || source.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
+      if (!source) {
+        throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
       }
 
       const duplicate = await ctx.db.strategy.create({
@@ -332,24 +310,14 @@ export const strategyRouter = createTRPCRouter({
     }),
 
   /**
-   * Archive a strategy. Verifies ownership.
+   * Archive a strategy. Ownership verified by strategyProcedure middleware.
    */
-  archive: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  archive: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
+      // ctx.strategy proves ownership — no manual check needed
       const strategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: { status: "archived" },
       });
 
@@ -357,24 +325,14 @@ export const strategyRouter = createTRPCRouter({
     }),
 
   /**
-   * Unarchive a strategy (set status back to "draft"). Verifies ownership.
+   * Unarchive a strategy (set status back to "draft"). Ownership verified by strategyProcedure middleware.
    */
-  unarchive: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  unarchive: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
+      // ctx.strategy proves ownership — no manual check needed
       const strategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: { status: "draft" },
       });
 
@@ -382,13 +340,13 @@ export const strategyRouter = createTRPCRouter({
     }),
 
   /**
-   * Update the interviewData JSON field. Verifies ownership.
+   * Update the interviewData JSON field. Ownership verified by strategyProcedure middleware.
    * Values are trimmed strings keyed by variable IDs (e.g. A1, D3).
    */
-  updateInterviewData: protectedProcedure
+  updateInterviewData: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         data: z.record(
           z.string().regex(/^[A-Z]\d{1,2}$/, "Clé de variable invalide"),
           z.string().max(10000, "La réponse ne doit pas dépasser 10 000 caractères").transform((v) => v.trim()),
@@ -396,19 +354,9 @@ export const strategyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!existing || existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
+      // ctx.strategy proves ownership — no manual check needed
       const strategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: { interviewData: input.data },
       });
 
@@ -421,8 +369,8 @@ export const strategyRouter = createTRPCRouter({
           options: { source: "user_input" as const, changedBy: ctx.session.user.id },
         }));
       if (entries.length > 0) {
-        void setVariablesBatch(input.id, entries);
-        void propagateStaleness(input.id, entries.map((e) => e.key));
+        void setVariablesBatch(input.strategyId, entries);
+        void propagateStaleness(input.strategyId, entries.map((e) => e.key));
       }
 
       return strategy;
@@ -431,8 +379,9 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Confirm file import: merge mapped variables into interviewData.
    * Updates the ImportedFile status to "confirmed".
+   * Ownership verified by strategyProcedure middleware.
    */
-  confirmImport: protectedProcedure
+  confirmImport: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -441,17 +390,7 @@ export const strategyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify strategy ownership
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy proves ownership — no manual check needed
 
       // Verify imported file belongs to this strategy
       const importedFile = await ctx.db.importedFile.findUnique({
@@ -466,7 +405,7 @@ export const strategyRouter = createTRPCRouter({
       }
 
       // Merge confirmed data into existing interviewData
-      const existingData = (strategy.interviewData as Record<string, string>) ?? {};
+      const existingData = (ctx.strategy.interviewData as Record<string, string>) ?? {};
       const mergedData = { ...existingData, ...input.confirmedData };
 
       // Update strategy and imported file
@@ -505,11 +444,12 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Advance the strategy to the next phase.
    * Validates that the transition is allowed.
+   * Ownership verified by strategyProcedure middleware.
    */
-  advancePhase: protectedProcedure
+  advancePhase: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         targetPhase: z.enum([
           "fiche-review",
           "audit-r",
@@ -523,19 +463,8 @@ export const strategyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      // Validate phase transition via pipeline orchestrator
-      const transition = validatePhaseTransition(strategy.phase, input.targetPhase);
+      // ctx.strategy proves ownership — use it directly for phase validation
+      const transition = validatePhaseTransition(ctx.strategy.phase, input.targetPhase);
       if (!transition.valid) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -544,7 +473,7 @@ export const strategyRouter = createTRPCRouter({
       }
 
       const updatedStrategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: {
           phase: input.targetPhase,
           status: input.targetPhase === "complete" ? "complete" : "generating",
@@ -558,11 +487,12 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Revert the strategy to a previous phase.
    * Data from later phases is PRESERVED (not deleted).
+   * Ownership verified by strategyProcedure middleware.
    */
-  revertPhase: protectedProcedure
+  revertPhase: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         targetPhase: z.enum([
           "fiche",
           "fiche-review",
@@ -576,19 +506,8 @@ export const strategyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      // Validate phase reversion via pipeline orchestrator
-      const reversion = validatePhaseReversion(strategy.phase, input.targetPhase);
+      // ctx.strategy proves ownership — use it directly for phase validation
+      const reversion = validatePhaseReversion(ctx.strategy.phase, input.targetPhase);
       if (!reversion.valid) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -597,7 +516,7 @@ export const strategyRouter = createTRPCRouter({
       }
 
       const updatedStrategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: {
           phase: input.targetPhase,
           status: "generating",
@@ -610,35 +529,26 @@ export const strategyRouter = createTRPCRouter({
 
   /**
    * Validate the fiche review: save edited A-D-V-E interview data and advance to audit-r.
+   * Ownership verified by strategyProcedure middleware.
    */
-  validateFicheReview: protectedProcedure
+  validateFicheReview: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         interviewData: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.record(z.string(), z.unknown())])),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      if (strategy.phase !== "fiche-review") {
+      // ctx.strategy proves ownership — use it directly for phase check
+      if (ctx.strategy.phase !== "fiche-review") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `La stratégie doit être en phase "fiche-review" pour valider la fiche. Phase actuelle : "${strategy.phase}"`,
+          message: `La stratégie doit être en phase "fiche-review" pour valider la fiche. Phase actuelle : "${ctx.strategy.phase}"`,
         });
       }
 
       const updatedStrategy = await ctx.db.strategy.update({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         data: {
           interviewData: input.interviewData as never,
           phase: "audit-r",
@@ -648,7 +558,7 @@ export const strategyRouter = createTRPCRouter({
       });
 
       // Recalculate scores after fiche review validation
-      void recalculateAllScores(input.id, "fiche_review");
+      void recalculateAllScores(input.strategyId, "fiche_review");
 
       // Sync review data to BrandVariable registry (fire-and-forget)
       if (input.interviewData && typeof input.interviewData === "object") {
@@ -662,8 +572,8 @@ export const strategyRouter = createTRPCRouter({
             options: { source: "user_input" as const, changedBy: ctx.session.user.id },
           }));
         if (reviewEntries.length > 0) {
-          void setVariablesBatch(input.id, reviewEntries);
-          void propagateStaleness(input.id, reviewEntries.map((e) => e.key));
+          void setVariablesBatch(input.strategyId, reviewEntries);
+          void propagateStaleness(input.strategyId, reviewEntries.map((e) => e.key));
         }
       }
 
@@ -673,18 +583,20 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Validate the audit review: save edited R+T data and advance to implementation phase.
    * Called when the user finishes reviewing/editing the audit results.
+   * Ownership verified by strategyProcedure middleware.
    */
-  validateAuditReview: protectedProcedure
+  validateAuditReview: strategyProcedure
     .input(
       z.object({
-        id: z.string(),
+        strategyId: z.string(),
         riskAuditData: z.record(z.string(), z.unknown()),
         trackAuditData: z.record(z.string(), z.unknown()),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // ctx.strategy proves ownership; re-fetch with pillars for R/T lookup
       const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         include: {
           pillars: {
             orderBy: { order: "asc" },
@@ -692,11 +604,8 @@ export const strategyRouter = createTRPCRouter({
         },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
+      if (!strategy) {
+        throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
       }
 
       // Verify we're in the right phase
@@ -721,7 +630,7 @@ export const strategyRouter = createTRPCRouter({
       // Update both pillars and advance phase in a transaction
       const [updatedStrategy] = await ctx.db.$transaction([
         ctx.db.strategy.update({
-          where: { id: input.id },
+          where: { id: input.strategyId },
           data: {
             phase: "implementation",
             status: "generating",
@@ -743,7 +652,7 @@ export const strategyRouter = createTRPCRouter({
       ]);
 
       // Recalculate scores after audit review validation
-      void recalculateAllScores(input.id, "audit_review");
+      void recalculateAllScores(input.strategyId, "audit_review");
 
       return updatedStrategy;
     }),
@@ -806,12 +715,14 @@ export const strategyRouter = createTRPCRouter({
   /**
    * Get the full strategy tree starting from a root strategy.
    * Returns nested children up to 3 levels deep.
+   * Ownership verified by strategyProcedure middleware.
    */
-  getTree: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  getTree: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
+      // ctx.strategy proves ownership; re-fetch with nested children includes
       const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
+        where: { id: input.strategyId },
         include: {
           pillars: {
             select: { id: true, type: true, status: true },
@@ -847,11 +758,8 @@ export const strategyRouter = createTRPCRouter({
         },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
+      if (!strategy) {
+        throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
       }
 
       return strategy;
@@ -917,24 +825,14 @@ export const strategyRouter = createTRPCRouter({
 
   /**
    * Get direct children of a strategy.
+   * Ownership verified by strategyProcedure middleware.
    */
-  getChildren: protectedProcedure
-    .input(z.object({ id: z.string() }))
+  getChildren: strategyProcedure
+    .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.id },
-        select: { id: true, userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
+      // ctx.strategy proves ownership — no manual check needed
       return ctx.db.strategy.findMany({
-        where: { parentId: input.id },
+        where: { parentId: input.strategyId },
         include: {
           pillars: {
             select: { id: true, type: true, status: true },

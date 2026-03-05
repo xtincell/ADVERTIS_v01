@@ -17,6 +17,7 @@ import {
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { Badge } from "~/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { PageHeader } from "~/components/ui/page-header";
 import { INVOICE_STATUS_LABELS, type InvoiceStatus } from "~/lib/constants";
 
@@ -38,7 +39,7 @@ export default function SereniteDashboardPage() {
   const fmt = (n: number) => n.toLocaleString("fr-FR");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8 animate-page-enter">
       <PageHeader
         title="Sérénité — Finance"
         description="Vue d'ensemble financière de l'agence"
@@ -47,43 +48,51 @@ export default function SereniteDashboardPage() {
       />
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-xl border bg-white p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <DollarSign className="h-4 w-4 text-green-600" />
-            Revenus encaissés
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{fmt(data?.totalRevenue ?? 0)}</div>
-          <div className="text-xs text-muted-foreground">XAF • {data?.paidInvoicesCount ?? 0} factures</div>
-        </div>
-        <div className="rounded-xl border bg-white p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <FileText className="h-4 w-4 text-orange-500" />
-            Factures impayées
-          </div>
-          <div className="text-2xl font-bold tabular-nums text-orange-600">{fmt(data?.unpaidAmount ?? 0)}</div>
-          <div className="text-xs text-muted-foreground">XAF en attente</div>
-        </div>
-        <div className="rounded-xl border bg-white p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <Shield className="h-4 w-4 text-blue-600" />
-            Escrow séquestré
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{fmt(data?.escrowHeld ?? 0)}</div>
-          <div className="text-xs text-muted-foreground">XAF en séquestre</div>
-        </div>
-        <div className="rounded-xl border bg-white p-5">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <TrendingUp className="h-4 w-4 text-purple-600" />
-            Commission moyenne
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{((data?.avgCommissionRate ?? 0) * 100).toFixed(1)}%</div>
-          <div className="text-xs text-muted-foreground">Taux moyen • {fmt(data?.totalCommissions ?? 0)} XAF total</div>
-        </div>
+      <div className="grid gap-4 md:grid-cols-4 stagger-children">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <DollarSign className="h-4 w-4 text-emerald-600" />
+              Revenus encaissés
+            </div>
+            <div className="text-2xl font-bold tabular-nums">{fmt(data?.totalRevenue ?? 0)}</div>
+            <div className="text-xs text-muted-foreground">XAF • {data?.paidInvoicesCount ?? 0} factures</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <FileText className="h-4 w-4 text-orange-500" />
+              Factures impayées
+            </div>
+            <div className="text-2xl font-bold tabular-nums text-orange-600">{fmt(data?.unpaidAmount ?? 0)}</div>
+            <div className="text-xs text-muted-foreground">XAF en attente</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <Shield className="h-4 w-4 text-blue-600" />
+              Escrow séquestré
+            </div>
+            <div className="text-2xl font-bold tabular-nums">{fmt(data?.escrowHeld ?? 0)}</div>
+            <div className="text-xs text-muted-foreground">XAF en séquestre</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <TrendingUp className="h-4 w-4 text-purple-600" />
+              Commission moyenne
+            </div>
+            <div className="text-2xl font-bold tabular-nums">{((data?.avgCommissionRate ?? 0) * 100).toFixed(1)}%</div>
+            <div className="text-xs text-muted-foreground">Taux moyen • {fmt(data?.totalCommissions ?? 0)} XAF total</div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Quick links */}
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3 stagger-children">
         {[
           { href: "/serenite/invoices", label: "Gestion factures", icon: FileText, desc: "Créer, suivre et gérer les factures" },
           { href: "/serenite/contracts", label: "Contrats", icon: Shield, desc: "NDA, prestations, cessions de droits" },
@@ -92,7 +101,7 @@ export default function SereniteDashboardPage() {
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-xl border bg-white p-4 hover:border-blue-300 transition-colors group"
+            className="rounded-xl border bg-card p-4 transition-all hover:border-blue-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)] group"
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -110,45 +119,53 @@ export default function SereniteDashboardPage() {
 
       {/* Invoice breakdown */}
       {data?.invoicesByStatus && data.invoicesByStatus.length > 0 && (
-        <div className="rounded-xl border bg-white p-5">
-          <h2 className="font-semibold mb-4">Répartition par statut</h2>
-          <div className="grid gap-3 md:grid-cols-3">
-            {data.invoicesByStatus.map((g) => (
-              <div key={g.status} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {INVOICE_STATUS_LABELS[g.status as InvoiceStatus] ?? g.status}
-                  </Badge>
-                  <span className="text-sm">{g.count} factures</span>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Répartition par statut</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-3">
+              {data.invoicesByStatus.map((g) => (
+                <div key={g.status} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {INVOICE_STATUS_LABELS[g.status as InvoiceStatus] ?? g.status}
+                    </Badge>
+                    <span className="text-sm">{g.count} factures</span>
+                  </div>
+                  <span className="font-medium tabular-nums text-sm">{fmt(g.total)} XAF</span>
                 </div>
-                <span className="font-medium tabular-nums text-sm">{fmt(g.total)} XAF</span>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Recent invoices */}
       {data?.recentInvoices && data.recentInvoices.length > 0 && (
-        <div className="rounded-xl border bg-white p-5">
-          <h2 className="font-semibold mb-4">Factures récentes</h2>
-          <div className="space-y-2">
-            {data.recentInvoices.map((inv) => (
-              <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/20">
-                <div>
-                  <div className="font-medium text-sm">{inv.refNumber}</div>
-                  <div className="text-xs text-muted-foreground">{inv.type} • {new Date(inv.createdAt).toLocaleDateString("fr-FR")}</div>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Factures récentes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {data.recentInvoices.map((inv) => (
+                <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/20 transition-colors">
+                  <div>
+                    <div className="font-medium text-sm">{inv.refNumber}</div>
+                    <div className="text-xs text-muted-foreground">{inv.type} • {new Date(inv.createdAt).toLocaleDateString("fr-FR")}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-medium tabular-nums text-sm">{fmt(inv.total)} XAF</div>
+                    <Badge variant="outline" className="text-xs">
+                      {INVOICE_STATUS_LABELS[inv.status as InvoiceStatus] ?? inv.status}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-medium tabular-nums text-sm">{fmt(inv.total)} XAF</div>
-                  <Badge variant="outline" className="text-xs">
-                    {INVOICE_STATUS_LABELS[inv.status as InvoiceStatus] ?? inv.status}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

@@ -13,22 +13,19 @@
 //   getMutationHistory  — Get mutation history for a signal
 //   bulkCreateFromAudit — Bulk-create signals from T and R audit data
 //
-// Helpers:
-//   verifyStrategyOwnership — Shared ownership check
-//
 // Dependencies:
-//   ~/server/api/trpc            — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc            — createTRPCRouter, protectedProcedure, strategyProcedure
+//   ~/server/errors              — AppErrors, throwNotFound
 //   ~/lib/types/phase1-schemas   — CreateSignalSchema, MutateSignalSchema
 //   ~/server/services/signal-engine — createSignal, mutateSignal, getSignalsByStrategy, etc.
 //   ~/lib/types/pillar-parsers   — parsePillarContent
 //   ~/lib/types/pillar-schemas   — TrackAuditResult, RiskAuditResult
-//   ~/server/db                  — Prisma client (for helper typing)
 // =============================================================================
 
 import { z } from "zod";
-import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import {
   CreateSignalSchema,
   MutateSignalSchema,
@@ -44,29 +41,6 @@ import {
 } from "~/server/services/signal-engine";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type { TrackAuditResult, RiskAuditResult } from "~/lib/types/pillar-schemas";
-import { db as prismaDb } from "~/server/db";
-
-// ---------------------------------------------------------------------------
-// Helper — verify strategy ownership
-// ---------------------------------------------------------------------------
-
-async function verifyStrategyOwnership(
-  db: typeof prismaDb,
-  strategyId: string,
-  userId: string,
-) {
-  const strategy = await db.strategy.findUnique({
-    where: { id: strategyId },
-    select: { id: true, userId: true },
-  });
-  if (!strategy || strategy.userId !== userId) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Stratégie non trouvée",
-    });
-  }
-  return strategy;
-}
 
 // ---------------------------------------------------------------------------
 // Router
@@ -76,7 +50,7 @@ export const signalRouter = createTRPCRouter({
   /**
    * Get all signals for a strategy, with optional filters.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(
       z.object({
         strategyId: z.string().min(1),
@@ -85,9 +59,7 @@ export const signalRouter = createTRPCRouter({
         status: z.string().optional(),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
+    .query(async ({ input }) => {
       return getSignalsByStrategy(input.strategyId, {
         layer: input.layer,
         pillar: input.pillar,
@@ -98,27 +70,23 @@ export const signalRouter = createTRPCRouter({
   /**
    * Get signals for a specific pillar.
    */
-  getByPillar: protectedProcedure
+  getByPillar: strategyProcedure
     .input(
       z.object({
         strategyId: z.string().min(1),
         pillar: z.string().min(1),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
+    .query(async ({ input }) => {
       return getSignalsByPillar(input.strategyId, input.pillar);
     }),
 
   /**
    * Create a new signal.
    */
-  create: protectedProcedure
+  create: strategyProcedure
     .input(CreateSignalSchema)
-    .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
+    .mutation(async ({ input }) => {
       const { strategyId, ...data } = input;
       return createSignal(strategyId, data);
     }),
@@ -132,15 +100,11 @@ export const signalRouter = createTRPCRouter({
       // Verify signal ownership through its strategy
       const signal = await ctx.db.signal.findUnique({
         where: { id: input.signalId },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!signal) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Signal non trouvé",
-        });
+      if (!signal || signal.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.SIGNAL_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, signal.strategyId, ctx.session.user.id);
 
       return mutateSignal(
         input.signalId,
@@ -158,15 +122,11 @@ export const signalRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const signal = await ctx.db.signal.findUnique({
         where: { id: input.signalId },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!signal) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Signal non trouvé",
-        });
+      if (!signal || signal.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.SIGNAL_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, signal.strategyId, ctx.session.user.id);
 
       await deleteSignal(input.signalId);
       return { success: true };
@@ -180,15 +140,11 @@ export const signalRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const signal = await ctx.db.signal.findUnique({
         where: { id: input.signalId },
-        select: { strategyId: true },
+        select: { strategy: { select: { userId: true } } },
       });
-      if (!signal) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Signal non trouvé",
-        });
+      if (!signal || signal.strategy.userId !== ctx.session.user.id) {
+        throwNotFound(AppErrors.SIGNAL_NOT_FOUND);
       }
-      await verifyStrategyOwnership(ctx.db, signal.strategyId, ctx.session.user.id);
 
       return getMutationHistory(input.signalId);
     }),
@@ -197,11 +153,9 @@ export const signalRouter = createTRPCRouter({
    * Bulk-create signals from T and R audit data.
    * Parses existing pillar content and extracts signals.
    */
-  bulkCreateFromAudit: protectedProcedure
+  bulkCreateFromAudit: strategyProcedure
     .input(z.object({ strategyId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
       // Load T and R pillar content
       const pillars = await ctx.db.pillar.findMany({
         where: {

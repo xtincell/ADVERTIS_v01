@@ -18,27 +18,18 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { REPORT_TYPES } from "~/lib/constants";
 
 export const documentRouter = createTRPCRouter({
   /**
    * Get all documents for a strategy. Verifies ownership.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       const documents = await ctx.db.document.findMany({
         where: { strategyId: input.strategyId },
@@ -64,10 +55,7 @@ export const documentRouter = createTRPCRouter({
       });
 
       if (!document || document.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Document non trouvé",
-        });
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
 
       return document;
@@ -77,20 +65,10 @@ export const documentRouter = createTRPCRouter({
    * Get document generation status for a strategy.
    * Returns a lightweight summary of all documents.
    */
-  getStatus: protectedProcedure
+  getStatus: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       const documents = await ctx.db.document.findMany({
         where: { strategyId: input.strategyId },
@@ -131,10 +109,7 @@ export const documentRouter = createTRPCRouter({
       });
 
       if (!document || document.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Document non trouvé",
-        });
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
 
       if (document.status !== "complete") {
@@ -191,10 +166,7 @@ export const documentRouter = createTRPCRouter({
       });
 
       if (!document || document.strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Document non trouvé",
-        });
+        throwNotFound(AppErrors.DOCUMENT_NOT_FOUND);
       }
 
       await ctx.db.document.delete({
