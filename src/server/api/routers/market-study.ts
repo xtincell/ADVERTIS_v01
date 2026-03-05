@@ -24,7 +24,8 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { getAvailableDataSources } from "~/server/services/market-study/collection-orchestrator";
 import { synthesizeMarketStudy } from "~/server/services/market-study/synthesis";
 import type { ManualDataStore, ManualDataEntry } from "~/lib/types/market-study";
@@ -33,21 +34,10 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Get the market study for a strategy. Returns null if none exists.
    */
-  getByStrategy: protectedProcedure
+  getByStrategy: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .query(async ({ ctx, input }) => {
-      // Verify strategy ownership
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       const marketStudy = await ctx.db.marketStudy.findUnique({
         where: { strategyId: input.strategyId },
@@ -59,20 +49,10 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Create a market study record for a strategy (if not exists).
    */
-  create: protectedProcedure
+  create: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       // Check if already exists
       const existing = await ctx.db.marketStudy.findUnique({
@@ -101,7 +81,7 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Add a manual data entry (internal data, external report, or interview notes).
    */
-  addManualData: protectedProcedure
+  addManualData: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -112,17 +92,7 @@ export const marketStudyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       // Ensure market study exists
       let marketStudy = await ctx.db.marketStudy.findUnique({
@@ -167,7 +137,7 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Remove a manual data entry by ID.
    */
-  removeManualData: protectedProcedure
+  removeManualData: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -175,27 +145,14 @@ export const marketStudyRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       const marketStudy = await ctx.db.marketStudy.findUnique({
         where: { strategyId: input.strategyId },
       });
 
       if (!marketStudy) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Étude de marché non trouvée",
-        });
+        throwNotFound(AppErrors.MARKET_STUDY_NOT_FOUND);
       }
 
       const currentData = (marketStudy.manualData as ManualDataStore | null) ?? {
@@ -221,20 +178,10 @@ export const marketStudyRouter = createTRPCRouter({
    * Auto-creates MarketStudy record if it doesn't exist yet,
    * enabling synthesis even without prior data collection (pure AI estimation).
    */
-  synthesize: protectedProcedure
+  synthesize: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       // Auto-create MarketStudy if it doesn't exist (enables synthesis without prior collection)
       const existing = await ctx.db.marketStudy.findUnique({
@@ -265,24 +212,15 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Skip the market study phase and advance directly to audit-t.
    */
-  skip: protectedProcedure
+  skip: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-      });
+      // ctx.strategy already verified by strategyProcedure
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      if (strategy.phase !== "market-study") {
+      if (ctx.strategy.phase !== "market-study") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `La stratégie doit être en phase "market-study" pour sauter l'étude. Phase actuelle : "${strategy.phase}"`,
+          message: `La stratégie doit être en phase "market-study" pour sauter l'étude. Phase actuelle : "${ctx.strategy.phase}"`,
         });
       }
 
@@ -322,19 +260,10 @@ export const marketStudyRouter = createTRPCRouter({
    * Complete the market study standalone (does NOT advance the pipeline phase).
    * Used from the dedicated /strategy/[id]/market-study page.
    */
-  completeStandalone: protectedProcedure
+  completeStandalone: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      // ctx.strategy already verified by strategyProcedure
 
       // Mark study as complete but don't change pipeline phase
       const marketStudy = await ctx.db.marketStudy.findUnique({
@@ -342,10 +271,7 @@ export const marketStudyRouter = createTRPCRouter({
       });
 
       if (!marketStudy) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Étude de marché non trouvée",
-        });
+        throwNotFound(AppErrors.MARKET_STUDY_NOT_FOUND);
       }
 
       const updated = await ctx.db.marketStudy.update({
@@ -359,24 +285,15 @@ export const marketStudyRouter = createTRPCRouter({
   /**
    * Complete the market study and advance to audit-t.
    */
-  complete: protectedProcedure
+  complete: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-      });
+      // ctx.strategy already verified by strategyProcedure
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      if (strategy.phase !== "market-study") {
+      if (ctx.strategy.phase !== "market-study") {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: `La stratégie doit être en phase "market-study" pour valider l'étude. Phase actuelle : "${strategy.phase}"`,
+          message: `La stratégie doit être en phase "market-study" pour valider l'étude. Phase actuelle : "${ctx.strategy.phase}"`,
         });
       }
 

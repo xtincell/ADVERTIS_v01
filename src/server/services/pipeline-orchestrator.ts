@@ -40,12 +40,16 @@ const POST_GENERATION_PHASE: Partial<Record<string, Phase>> = {
 /**
  * Called after a pillar is successfully generated and saved to the DB.
  * Handles everything that should happen post-generation:
- *   1. Clear staleness flag
- *   2. Recalculate strategy scores
- *   3. Advance phase (if applicable)
+ *   1. Advance phase (CRITICAL — done first, never fire-and-forget)
+ *   2. Clear staleness flag
+ *   3. Recalculate strategy scores
  *   4. Run pillar-specific side-effects
  *   5. Check legacy "all complete" flag
  *   6. Auto-compute cockpit widgets
+ *
+ * Phase advancement is the most important step and runs first.
+ * All other side-effects are isolated so a failure in one doesn't
+ * block the pipeline progression.
  */
 export async function onPillarGenerated(
   strategyId: string,
@@ -53,54 +57,91 @@ export async function onPillarGenerated(
   pillarType: string,
   generatedContent: unknown,
 ): Promise<void> {
-  // 1. Clear staleness
-  void clearPillarStaleness(pillarId);
-
-  // 2. Recalculate scores (fire-and-forget)
-  void recalculateAllScores(strategyId, "generation");
-
-  // 2b. Extract BrandVariables from generated content (fire-and-forget)
-  void extractVariablesFromPillar(strategyId, pillarType, generatedContent, "system");
-
-  // 3. Phase advancement
+  // 1. Phase advancement — CRITICAL, must run first and succeed
   const nextPhase = POST_GENERATION_PHASE[pillarType];
   if (nextPhase) {
-    await db.strategy.update({
-      where: { id: strategyId },
-      data: {
-        phase: nextPhase,
-        status: nextPhase === "complete" ? "complete" : "generating",
-      },
-    });
+    try {
+      await db.strategy.update({
+        where: { id: strategyId },
+        data: {
+          phase: nextPhase,
+          status: nextPhase === "complete" ? "complete" : "generating",
+        },
+      });
+    } catch (error) {
+      console.error(
+        `[PipelineOrchestrator] CRITICAL: Phase advancement to "${nextPhase}" failed for strategy ${strategyId}:`,
+        error,
+      );
+      // Re-throw — phase advancement failure is critical
+      throw error;
+    }
+  }
+
+  // --- Below this point, all operations are non-critical side-effects ---
+  // Each is wrapped in its own try/catch so a failure in one doesn't
+  // crash the orchestration or prevent the "complete" event from sending.
+
+  // 2. Clear staleness
+  try {
+    void clearPillarStaleness(pillarId);
+  } catch (error) {
+    console.error("[PipelineOrchestrator] clearPillarStaleness failed:", error);
+  }
+
+  // 3. Recalculate scores (fire-and-forget)
+  try {
+    void recalculateAllScores(strategyId, "generation");
+  } catch (error) {
+    console.error("[PipelineOrchestrator] recalculateAllScores failed:", error);
+  }
+
+  // 3b. Extract BrandVariables from generated content (fire-and-forget)
+  try {
+    void extractVariablesFromPillar(strategyId, pillarType, generatedContent, "system");
+  } catch (error) {
+    console.error("[PipelineOrchestrator] extractVariablesFromPillar failed:", error);
   }
 
   // 4. Pillar-specific side-effects
-  if (pillarType === "T") {
-    void syncTrackToMarketContext(
-      strategyId,
-      generatedContent as TrackAuditResult,
-    );
-  }
+  try {
+    if (pillarType === "T") {
+      void syncTrackToMarketContext(
+        strategyId,
+        generatedContent as TrackAuditResult,
+      );
+    }
 
-  if (pillarType === "I") {
-    await seedBudgetTiersIfNeeded(strategyId, generatedContent);
+    if (pillarType === "I") {
+      await seedBudgetTiersIfNeeded(strategyId, generatedContent);
+    }
+  } catch (error) {
+    console.error("[PipelineOrchestrator] Pillar-specific side-effects failed:", error);
   }
 
   // 5. Legacy: mark strategy complete if every pillar is done
-  const allPillars = await db.pillar.findMany({
-    where: { strategyId },
-    select: { status: true },
-  });
-
-  if (allPillars.every((p) => p.status === "complete")) {
-    await db.strategy.update({
-      where: { id: strategyId },
-      data: { status: "complete", generatedAt: new Date() },
+  try {
+    const allPillars = await db.pillar.findMany({
+      where: { strategyId },
+      select: { status: true },
     });
+
+    if (allPillars.every((p) => p.status === "complete")) {
+      await db.strategy.update({
+        where: { id: strategyId },
+        data: { status: "complete", generatedAt: new Date() },
+      });
+    }
+  } catch (error) {
+    console.error("[PipelineOrchestrator] Legacy completion check failed:", error);
   }
 
   // 6. Auto-compute cockpit widgets (fire-and-forget)
-  void computeAllWidgets(strategyId);
+  try {
+    void computeAllWidgets(strategyId);
+  } catch (error) {
+    console.error("[PipelineOrchestrator] computeAllWidgets failed:", error);
+  }
 }
 
 // ---------------------------------------------------------------------------

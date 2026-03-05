@@ -20,13 +20,13 @@ export default function GloryPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 animate-page-enter">
         <div className="flex items-center gap-3">
           <Sparkles className="h-7 w-7 text-violet-500" />
           <Skeleton className="h-8 w-48" />
         </div>
         <Skeleton className="h-4 w-96" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
           {Array.from({ length: 9 }).map((_, i) => (
             <Skeleton key={i} className="h-36 w-full rounded-lg" />
           ))}

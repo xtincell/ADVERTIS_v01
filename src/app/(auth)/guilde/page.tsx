@@ -9,12 +9,13 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Search, Filter, ChevronDown } from "lucide-react";
+import { Users, Search } from "lucide-react";
 import { CreateTalentDialog } from "~/components/guilde/create-talent-dialog";
 import { api } from "~/trpc/react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
+import { Card } from "~/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -55,7 +56,7 @@ export default function GuildeDirectoryPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
+    <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8 animate-page-enter">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-2">
@@ -63,7 +64,7 @@ export default function GuildeDirectoryPage() {
             <Users className="h-5 w-5 text-emerald-600" />
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">La Guilde</h1>
+            <h1 className="text-display-lg">La Guilde</h1>
             <p className="text-sm text-muted-foreground">
               Répertoire des talents — {data?.total ?? 0} profils
             </p>
@@ -137,7 +138,7 @@ export default function GuildeDirectoryPage() {
         <>
           {/* Desktop Table */}
           <div className="hidden md:block">
-            <div className="rounded-xl border bg-white overflow-hidden">
+            <Card className="overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
@@ -193,11 +194,11 @@ export default function GuildeDirectoryPage() {
                   })}
                 </tbody>
               </table>
-            </div>
+            </Card>
           </div>
 
           {/* Mobile Cards */}
-          <div className="md:hidden grid gap-3">
+          <div className="md:hidden grid gap-3 stagger-children">
             {data?.items.map((talent) => {
               const lvl = talent.level as TalentLevel;
               const cfg = TALENT_LEVEL_CONFIG[lvl];
@@ -205,7 +206,7 @@ export default function GuildeDirectoryPage() {
                 <Link
                   key={talent.id}
                   href={`/guilde/${talent.userId}`}
-                  className="block rounded-xl border bg-white p-4 hover:border-emerald-300 transition-colors"
+                  className="block rounded-xl border bg-card p-4 transition-all hover:border-emerald-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-md)]"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>

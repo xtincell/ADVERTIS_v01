@@ -23,6 +23,7 @@
 //   marketStudy   — T.16 Market study lifecycle
 //   glory         — T.17 GLORY operational tools
 //   variable      — T.18 BrandVariable registry CRUD + exploration
+//   framework     — T.19 ARTEMIS framework system
 //
 // Exports:
 //   appRouter    — Combined tRPC router
@@ -67,6 +68,7 @@ import { mestorRouter } from "~/server/api/routers/mestor";
 import { cohortRouter } from "~/server/api/routers/cohort";
 import { attributionRouter } from "~/server/api/routers/attribution";
 import { brandVaultRouter } from "~/server/api/routers/brand-vault";
+import { frameworkRouter } from "~/server/api/routers/framework";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -108,6 +110,7 @@ export const appRouter = createTRPCRouter({
   cohort: cohortRouter,
   attribution: attributionRouter,
   brandVault: brandVaultRouter,
+  framework: frameworkRouter,
 });
 
 // export type definition of API

@@ -170,7 +170,7 @@ function parseNumeric(val: string | undefined): number | null {
   if (!val || val.trim().length === 0) return null;
   // Remove common currency symbols and spaces
   const cleaned = val
-    .replace(/[^\d.,\-]/g, "")
+    .replace(/[^\d.,-]/g, "")
     .replace(/\s/g, "")
     .replace(",", ".");
   const num = parseFloat(cleaned);

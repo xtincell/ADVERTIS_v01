@@ -6,6 +6,12 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
+  // React Compiler (v16) — auto-memoization of all components
+  reactCompiler: true,
+  // Turbopack FS cache — persist compiler artifacts across restarts
+  experimental: {
+    turbopackFileSystemCacheForDev: true,
+  },
   async rewrites() {
     return [
       {

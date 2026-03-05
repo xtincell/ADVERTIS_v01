@@ -49,7 +49,7 @@ export default function BrandMarketStudyPage(props: {
     isLoading: isStrategyLoading,
     isError: isStrategyError,
   } = api.strategy.getById.useQuery(
-    { id: strategyId },
+    { strategyId },
     { enabled: !!strategyId },
   );
 

@@ -16,7 +16,8 @@
 //   backfill         — Extract BrandVariables from existing data (admin)
 //
 // Dependencies:
-//   ~/server/api/trpc           — createTRPCRouter, protectedProcedure
+//   ~/server/api/trpc           — createTRPCRouter, protectedProcedure, strategyProcedure
+//   ~/server/errors             — AppErrors, throwNotFound
 //   ~/server/services/variable-store     — CRUD operations
 //   ~/server/services/variable-extractor — extraction utilities
 //   ~/server/services/pillar-materializer — materialization
@@ -27,7 +28,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import {
   getVariable,
   getVariables,
@@ -47,27 +49,6 @@ import {
 } from "~/lib/variable-registry";
 
 // ---------------------------------------------------------------------------
-// Helper: verify strategy ownership
-// ---------------------------------------------------------------------------
-
-async function verifyOwnership(
-  db: { strategy: { findUnique: (args: { where: { id: string }; select: { userId: true } }) => Promise<{ userId: string } | null> } },
-  strategyId: string,
-  userId: string,
-) {
-  const strategy = await db.strategy.findUnique({
-    where: { id: strategyId },
-    select: { userId: true },
-  });
-  if (!strategy || strategy.userId !== userId) {
-    throw new TRPCError({
-      code: "NOT_FOUND",
-      message: "Stratégie non trouvée",
-    });
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Router
 // ---------------------------------------------------------------------------
 
@@ -76,7 +57,7 @@ export const variableRouter = createTRPCRouter({
    * List all BrandVariables for a strategy.
    * Optional filters: category, staleOnly, pillarType.
    */
-  list: protectedProcedure
+  list: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -85,9 +66,7 @@ export const variableRouter = createTRPCRouter({
         pillarType: z.string().optional(),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
+    .query(async ({ input }) => {
       if (input.staleOnly) {
         return getStaleVariables(input.strategyId);
       }
@@ -110,13 +89,12 @@ export const variableRouter = createTRPCRouter({
   /**
    * Get a single variable by key.
    */
-  get: protectedProcedure
+  get: strategyProcedure
     .input(z.object({ strategyId: z.string(), key: z.string() }))
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+    .query(async ({ input }) => {
       const variable = await getVariable(input.strategyId, input.key);
       if (!variable) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Variable non trouvée" });
+        throwNotFound(AppErrors.VARIABLE_NOT_FOUND);
       }
       return variable;
     }),
@@ -124,27 +102,25 @@ export const variableRouter = createTRPCRouter({
   /**
    * Get all variables for a pillar type.
    */
-  getByPillar: protectedProcedure
+  getByPillar: strategyProcedure
     .input(z.object({ strategyId: z.string(), pillarType: z.string() }))
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+    .query(async ({ input }) => {
       return getVariablesByPillar(input.strategyId, input.pillarType);
     }),
 
   /**
    * Get all stale variables.
    */
-  getStale: protectedProcedure
+  getStale: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+    .query(async ({ input }) => {
       return getStaleVariables(input.strategyId);
     }),
 
   /**
    * Get version history for a variable.
    */
-  getHistory: protectedProcedure
+  getHistory: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -152,18 +128,16 @@ export const variableRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(20),
       }),
     )
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+    .query(async ({ input }) => {
       return getHistory(input.strategyId, input.key, input.limit);
     }),
 
   /**
    * Get summary stats for a strategy's variables.
    */
-  getStats: protectedProcedure
+  getStats: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+    .query(async ({ input }) => {
       return getVariableStats(input.strategyId);
     }),
 
@@ -192,7 +166,7 @@ export const variableRouter = createTRPCRouter({
    * Manually update a single variable.
    * Creates history snapshot + propagates staleness downstream.
    */
-  update: protectedProcedure
+  update: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -202,8 +176,6 @@ export const variableRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
       // Validate that key exists in registry
       const def = getVariableDefinition(input.key);
       if (!def) {
@@ -228,10 +200,9 @@ export const variableRouter = createTRPCRouter({
   /**
    * Reconstruct a pillar's content from its BrandVariables and persist to DB.
    */
-  materialize: protectedProcedure
+  materialize: strategyProcedure
     .input(z.object({ strategyId: z.string(), pillarType: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
       return materializeAndPersist(
         input.strategyId,
         input.pillarType,
@@ -243,11 +214,9 @@ export const variableRouter = createTRPCRouter({
    * Backfill: Extract BrandVariables from an existing strategy's data.
    * Admin-level operation for migrating existing strategies.
    */
-  backfill: protectedProcedure
+  backfill: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      await verifyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
-
+    .mutation(async ({ input }) => {
       // Lazy import to avoid circular dependencies
       const { backfillStrategy } = await import(
         "~/server/services/variable-backfill"

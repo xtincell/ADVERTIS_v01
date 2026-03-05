@@ -20,7 +20,8 @@
 
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 import { getAllTools, getToolsByLayer } from "~/server/services/glory/registry";
 import { generateGloryOutput } from "~/server/services/glory/generation";
 import { enrichFields } from "~/server/services/glory/field-enricher";
@@ -59,7 +60,7 @@ export const gloryRouter = createTRPCRouter({
   /**
    * Generate AI output for a GLORY tool.
    */
-  generate: protectedProcedure
+  generate: strategyProcedure
     .input(
       z.object({
         toolSlug: z.string(),
@@ -70,19 +71,6 @@ export const gloryRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Verify strategy ownership
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       try {
         const result = await generateGloryOutput({
           toolSlug: input.toolSlug,
@@ -234,7 +222,7 @@ export const gloryRouter = createTRPCRouter({
    * Get field enrichment data for a GLORY tool form.
    * Returns suggestions, default values, dynamic options per field.
    */
-  getFieldEnrichment: protectedProcedure
+  getFieldEnrichment: strategyProcedure
     .input(
       z.object({
         toolSlug: z.string(),
@@ -242,19 +230,6 @@ export const gloryRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Verify strategy ownership
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        select: { userId: true },
-      });
-
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       return enrichFields(input.toolSlug, input.strategyId, ctx.db);
     }),
 

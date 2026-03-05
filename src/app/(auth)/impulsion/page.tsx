@@ -122,7 +122,7 @@ export default function OperatorDashboardPage() {
     <div className="flex flex-col gap-4 p-4 pb-24 md:p-6 animate-page-enter">
       {/* 1. Greeting */}
       <div>
-        <h1 className="text-xl md:text-2xl font-semibold">
+        <h1 className="text-display-lg">
           Bonjour{firstName ? ` ${firstName}` : ""} {"👋"}
         </h1>
         <p className="text-sm text-muted-foreground">{subtitle}</p>

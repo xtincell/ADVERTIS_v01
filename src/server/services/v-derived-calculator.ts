@@ -15,7 +15,7 @@ import type { ValeurPillarDataV2 } from "~/lib/types/pillar-schemas";
 function parseNumeric(val: string | undefined): number | null {
   if (!val || val.trim().length === 0) return null;
   const cleaned = val
-    .replace(/[^\d.,\-]/g, "")
+    .replace(/[^\d.,-]/g, "")
     .replace(/\s/g, "")
     .replace(",", ".");
   const num = parseFloat(cleaned);

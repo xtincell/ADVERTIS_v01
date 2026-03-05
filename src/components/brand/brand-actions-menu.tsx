@@ -133,20 +133,20 @@ export function BrandActionsMenu({
 
   function handleDuplicate(e: React.MouseEvent) {
     e.stopPropagation();
-    duplicateMut.mutate({ id: strategyId });
+    duplicateMut.mutate({ strategyId });
   }
 
   function handleArchiveToggle(e: React.MouseEvent) {
     e.stopPropagation();
     if (isArchived) {
-      unarchiveMut.mutate({ id: strategyId });
+      unarchiveMut.mutate({ strategyId });
     } else {
       setShowArchiveDialog(true);
     }
   }
 
   function confirmArchive() {
-    archiveMut.mutate({ id: strategyId });
+    archiveMut.mutate({ strategyId });
     setShowArchiveDialog(false);
   }
 
@@ -156,7 +156,7 @@ export function BrandActionsMenu({
   }
 
   function confirmDelete() {
-    deleteMut.mutate({ id: strategyId });
+    deleteMut.mutate({ strategyId });
     setShowDeleteDialog(false);
   }
 

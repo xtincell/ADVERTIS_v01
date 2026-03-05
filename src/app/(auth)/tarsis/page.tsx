@@ -157,10 +157,10 @@ export default function TarsisHubPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 animate-page-enter">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+        <h1 className="text-display-lg flex items-center gap-2">
           <Radar className="h-6 w-6 text-cyan-600" />
           TARSIS
         </h1>
@@ -170,7 +170,7 @@ export default function TarsisHubPage() {
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 stagger-children">
         <div className="rounded-xl border bg-card p-4 text-center">
           <p className="text-2xl font-bold">{aggregates.avg}</p>
           <p className="text-[11px] text-muted-foreground uppercase tracking-wide">

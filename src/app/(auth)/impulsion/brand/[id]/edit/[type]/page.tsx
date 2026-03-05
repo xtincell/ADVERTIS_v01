@@ -1,5 +1,5 @@
 // ==========================================================================
-// PAGE P.7 — Adaptive Pillar Editor Route
+// PAGE P.7 — Adaptive Pillar Editor Route (v3)
 // Renders the correct pillar editor inside a mobile full-screen wrapper or
 // a desktop slide-over panel depending on viewport width.
 // Route: /impulsion/brand/[id]/edit/[type]  (type = A | D | V | E | R | T | I | S)
@@ -7,12 +7,10 @@
 
 "use client";
 
-import { use, useState, useEffect, useRef, useCallback } from "react";
+import { use, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle } from "lucide-react";
-import { toast } from "sonner";
+import { AlertTriangle, Save } from "lucide-react";
 
-import { api } from "~/trpc/react";
 import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { PILLAR_CONFIG } from "~/lib/constants";
 import type { PillarType } from "~/lib/constants";
@@ -22,6 +20,8 @@ import { EditorSlideOver } from "~/components/editors/editor-slide-over";
 import { StructuredPillarEditor } from "~/components/pillar-editors";
 import { Button } from "~/components/ui/button";
 import { Textarea } from "~/components/ui/textarea";
+import { Badge } from "~/components/ui/badge";
+import { usePillarForm } from "~/hooks/use-pillar-form";
 
 // ---------------------------------------------------------------------------
 // Page
@@ -38,99 +38,26 @@ export default function PillarEditorAdaptivePage(props: {
   const router = useRouter();
   const isMobile = useMobile();
 
-  // ── Local editor state ──
-  const [content, setContent] = useState<unknown>(null);
-  const [rawContent, setRawContent] = useState("");
-  const [isStructured, setIsStructured] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const initializedRef = useRef(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ── Data fetching ──
+  // ── All state managed by usePillarForm ──
   const {
-    data: strategy,
+    content,
+    rawContent,
+    isStructured,
     isLoading,
     isError,
-    refetch,
-  } = api.cockpit.getData.useQuery(
-    { strategyId },
-    { enabled: !!strategyId },
-  );
+    isSaving,
+    isDirty,
+    strategy,
+    pillar,
+    handleStructuredChange,
+    handleRawChange,
+    handleSave,
+  } = usePillarForm({ strategyId, pillarType });
 
-  const pillar = strategy?.pillars.find(
-    (p) => p.type === pillarType,
-  );
-
-  // ── Update mutation ──
-  const updatePillar = api.pillar.update.useMutation({
-    onSuccess: () => {
-      setIsSaving(false);
-      toast.success("Contenu sauvegardé.");
-      void refetch();
-    },
-    onError: () => {
-      setIsSaving(false);
-      toast.error("Erreur lors de la sauvegarde.");
-    },
-  });
-
-  // ── Initialize content from pillar data ──
-  useEffect(() => {
-    if (pillar && !initializedRef.current) {
-      if (pillar.content && typeof pillar.content === "object") {
-        setContent(pillar.content);
-        setRawContent(JSON.stringify(pillar.content, null, 2));
-        setIsStructured(true);
-      } else {
-        setRawContent(
-          typeof pillar.content === "string" ? pillar.content : "",
-        );
-        setIsStructured(false);
-      }
-      initializedRef.current = true;
-    }
-  }, [pillar]);
-
-  // ── Cleanup debounce on unmount ──
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
-
-  // ── Handlers ──
+  // ── Navigation ──
   const handleBack = useCallback(() => {
     router.push(`/impulsion/brand/${strategyId}`);
   }, [router, strategyId]);
-
-  const handleSave = useCallback(() => {
-    if (!pillar) return;
-    setIsSaving(true);
-
-    const contentToSave = isStructured && content != null ? content : rawContent;
-
-    updatePillar.mutate({
-      id: pillar.id,
-      content: contentToSave as Record<string, unknown>,
-      status: "complete",
-    });
-  }, [pillar, isStructured, content, rawContent, updatePillar]);
-
-  const handleStructuredChange = useCallback((newData: unknown) => {
-    setContent(newData);
-    setRawContent(JSON.stringify(newData, null, 2));
-  }, []);
-
-  const handleRawChange = useCallback((value: string) => {
-    setRawContent(value);
-    // Try to keep structured state in sync when editing raw JSON
-    try {
-      const parsed: unknown = JSON.parse(value);
-      setContent(parsed);
-    } catch {
-      // raw text — not valid JSON
-    }
-  }, []);
 
   // ── Loading ──
   if (isLoading) {
@@ -154,15 +81,32 @@ export default function PillarEditorAdaptivePage(props: {
     );
   }
 
-  // ── Build title ──
+  // ── Title ──
   const title = config
     ? `${pillarType} — ${config.title}`
     : `Éditeur ${pillarType}`;
 
+  // ── Save bar (shows dirty state) ──
+  const saveBar = isDirty ? (
+    <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t bg-background/95 backdrop-blur-sm px-4 py-3">
+      <Badge variant="warning" className="text-xs">
+        Modifications non sauvegardées
+      </Badge>
+      <Button
+        size="sm"
+        variant="gradient"
+        onClick={handleSave}
+        loading={isSaving}
+      >
+        <Save className="mr-1.5 h-3.5 w-3.5" />
+        {isSaving ? "Sauvegarde..." : "Sauvegarder"}
+      </Button>
+    </div>
+  ) : null;
+
   // ── Editor content ──
   const editorContent = (
     <div className="space-y-4">
-      {/* Structured form editor for A, D, V, E, T */}
       {isStructured && content != null ? (
         <>
           <StructuredPillarEditor
@@ -170,8 +114,8 @@ export default function PillarEditorAdaptivePage(props: {
             content={content}
             onChange={handleStructuredChange}
           />
-          {/* Fallback raw JSON for pillar types without a dedicated editor */}
-          {!["A", "D", "V", "E", "T"].includes(pillarType) && (
+          {/* Raw JSON fallback for types without a dedicated structured editor */}
+          {!["A", "D", "V", "E", "T", "R", "I", "S"].includes(pillarType) && (
             <Textarea
               value={rawContent}
               onChange={(e) => handleRawChange(e.target.value)}
@@ -181,7 +125,6 @@ export default function PillarEditorAdaptivePage(props: {
           )}
         </>
       ) : (
-        /* Raw textarea for legacy / unstructured content */
         <Textarea
           value={rawContent}
           onChange={(e) => handleRawChange(e.target.value)}
@@ -189,6 +132,7 @@ export default function PillarEditorAdaptivePage(props: {
           className="min-h-[400px] resize-y font-mono text-sm leading-relaxed"
         />
       )}
+      {saveBar}
     </div>
   );
 
@@ -206,7 +150,6 @@ export default function PillarEditorAdaptivePage(props: {
     );
   }
 
-  // Desktop: render as slide-over (always open, closing navigates back)
   return (
     <EditorSlideOver
       open={true}

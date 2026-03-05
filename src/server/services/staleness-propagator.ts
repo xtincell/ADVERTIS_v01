@@ -3,7 +3,7 @@
 // =============================================================================
 // When a BrandVariable changes, cascades staleness to all downstream dependents
 // via BFS traversal of the dependency graph. Also bridges to the existing
-// Pillar.staleReason system for backward compatibility.
+// Pillar.staleReason system and FrameworkOutput.isStale for backward compatibility.
 //
 // Public API:
 //   propagateStaleness(strategyId, changedKeys)
@@ -21,6 +21,7 @@
 // =============================================================================
 
 import { getDependents, getVariableDefinition } from "~/lib/variable-registry";
+import { getAllFrameworks } from "~/lib/framework-registry";
 import { markStale } from "./variable-store";
 import { markPillarStale, propagateToTranslationDocs } from "./stale-detector";
 import { db } from "~/server/db";
@@ -118,5 +119,123 @@ export async function propagateStaleness(
     );
   }
 
+  // Bridge: mark FrameworkOutput records as stale for framework-category variables
+  if (markedStale.length > 0) {
+    await propagateToFrameworkOutputs(strategyId, markedStale).catch(() => {
+      // Non-critical — don't crash propagation
+    });
+  }
+
   return { markedStale };
+}
+
+// ---------------------------------------------------------------------------
+// Auto-trigger cascade (Phase 12.5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Optionally re-execute frameworks whose outputs became stale.
+ * This is an opt-in feature controlled by BrandOSConfig.
+ *
+ * Called after propagateStaleness() when auto-trigger is enabled.
+ *
+ * @param strategyId - Strategy ID
+ * @param userId - User who triggered the change (for audit)
+ * @param staleKeys - Keys that were marked stale
+ */
+export async function autoTriggerStaleFrameworks(
+  strategyId: string,
+  userId: string,
+  staleKeys: string[],
+): Promise<{ reExecuted: string[] }> {
+  if (staleKeys.length === 0) return { reExecuted: [] };
+
+  // Build reverse map: variable key → framework ID
+  const varToFramework = new Map<string, string>();
+  for (const fw of getAllFrameworks()) {
+    for (const outputVar of fw.outputVariables) {
+      varToFramework.set(outputVar, fw.id);
+    }
+  }
+
+  // Collect unique framework IDs that have stale output variables
+  const staleFrameworkIds = new Set<string>();
+  for (const key of staleKeys) {
+    const fwId = varToFramework.get(key);
+    if (fwId) staleFrameworkIds.add(fwId);
+  }
+
+  if (staleFrameworkIds.size === 0) return { reExecuted: [] };
+
+  // Lazy import to avoid circular dependencies
+  const { executeFramework } = await import("./framework-executor");
+
+  const reExecuted: string[] = [];
+  for (const fwId of staleFrameworkIds) {
+    try {
+      const result = await executeFramework(fwId, strategyId, userId);
+      if (result.success) {
+        reExecuted.push(fwId);
+      }
+    } catch {
+      // Non-critical — log and continue
+      console.warn(`[AutoTrigger] Failed to re-execute ${fwId}`);
+    }
+  }
+
+  return { reExecuted };
+}
+
+// ---------------------------------------------------------------------------
+// Framework Output staleness bridge
+// ---------------------------------------------------------------------------
+
+/**
+ * When framework output variables are marked stale, find the corresponding
+ * FrameworkOutput records and mark them as stale too.
+ *
+ * This maps variable keys (e.g., "MA.prophecy") to framework IDs (e.g., "FW-20")
+ * using the framework registry's outputVariables declarations.
+ */
+async function propagateToFrameworkOutputs(
+  strategyId: string,
+  staleKeys: string[],
+): Promise<void> {
+  // Build reverse map: variable key → framework ID
+  const varToFramework = new Map<string, string>();
+  for (const fw of getAllFrameworks()) {
+    for (const outputVar of fw.outputVariables) {
+      varToFramework.set(outputVar, fw.id);
+    }
+  }
+
+  // Collect unique framework IDs that have stale output variables
+  const staleFrameworkIds = new Set<string>();
+  for (const key of staleKeys) {
+    const fwId = varToFramework.get(key);
+    if (fwId) staleFrameworkIds.add(fwId);
+  }
+
+  if (staleFrameworkIds.size === 0) return;
+
+  // Build reason from stale keys
+  const staleLabels = staleKeys
+    .filter((k) => varToFramework.has(k))
+    .map((k) => getVariableDefinition(k)?.label ?? k)
+    .slice(0, 3)
+    .join(", ");
+  const reason = `Variables framework modifiées : ${staleLabels}${staleKeys.length > 3 ? ` (+${staleKeys.length - 3})` : ""}`;
+
+  // Update FrameworkOutput records
+  await db.frameworkOutput.updateMany({
+    where: {
+      strategyId,
+      frameworkId: { in: Array.from(staleFrameworkIds) },
+      isStale: false,
+    },
+    data: {
+      isStale: true,
+      staleReason: reason,
+    },
+  });
 }

@@ -27,9 +27,10 @@ import bcrypt from "bcryptjs";
 
 import {
   createTRPCRouter,
-  protectedProcedure,
   publicProcedure,
+  strategyProcedure,
 } from "~/server/api/trpc";
+import { AppErrors, throwNotFound } from "~/server/errors";
 
 async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
@@ -47,11 +48,12 @@ export const cockpitRouter = createTRPCRouter({
    * Get cockpit data for a strategy (authenticated owner).
    * Returns all pillar content + documents + strategy metadata.
    */
-  getData: protectedProcedure
+  getData: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx }) => {
+      // ctx.strategy is ownership-verified; re-query with includes
       const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
+        where: { id: ctx.strategy.id },
         include: {
           pillars: { orderBy: { order: "asc" } },
           documents: { orderBy: { createdAt: "asc" } },
@@ -67,12 +69,7 @@ export const cockpitRouter = createTRPCRouter({
         },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
+      if (!strategy) throwNotFound(AppErrors.STRATEGY_NOT_FOUND);
 
       return strategy;
     }),
@@ -80,7 +77,7 @@ export const cockpitRouter = createTRPCRouter({
   /**
    * Create a shareable cockpit link with password protection.
    */
-  createShare: protectedProcedure
+  createShare: strategyProcedure
     .input(
       z.object({
         strategyId: z.string(),
@@ -88,23 +85,16 @@ export const cockpitRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        include: { cockpitShare: true },
+      // ctx.strategy is ownership-verified; load cockpitShare relation
+      const existing = await ctx.db.cockpitShare.findUnique({
+        where: { strategyId: ctx.strategy.id },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
       // If share already exists, update it
-      if (strategy.cockpitShare) {
+      if (existing) {
         const hashedPassword = await hashPassword(input.password);
         const share = await ctx.db.cockpitShare.update({
-          where: { id: strategy.cockpitShare.id },
+          where: { id: existing.id },
           data: {
             password: hashedPassword,
             isActive: true,
@@ -126,7 +116,7 @@ export const cockpitRouter = createTRPCRouter({
         data: {
           slug,
           password: hashedPassword,
-          strategyId: input.strategyId,
+          strategyId: ctx.strategy.id,
         },
       });
 
@@ -140,30 +130,20 @@ export const cockpitRouter = createTRPCRouter({
   /**
    * Disable cockpit sharing.
    */
-  disableShare: protectedProcedure
+  disableShare: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        include: { cockpitShare: true },
+    .mutation(async ({ ctx }) => {
+      // ctx.strategy is ownership-verified
+      const share = await ctx.db.cockpitShare.findUnique({
+        where: { strategyId: ctx.strategy.id },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      if (!strategy.cockpitShare) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Aucun partage trouvé",
-        });
+      if (!share) {
+        throwNotFound("Aucun partage trouvé");
       }
 
       await ctx.db.cockpitShare.update({
-        where: { id: strategy.cockpitShare.id },
+        where: { id: share.id },
         data: { isActive: false },
       });
 
@@ -173,30 +153,20 @@ export const cockpitRouter = createTRPCRouter({
   /**
    * Re-enable cockpit sharing.
    */
-  enableShare: protectedProcedure
+  enableShare: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        include: { cockpitShare: true },
+    .mutation(async ({ ctx }) => {
+      // ctx.strategy is ownership-verified
+      const share = await ctx.db.cockpitShare.findUnique({
+        where: { strategyId: ctx.strategy.id },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      if (!strategy.cockpitShare) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Aucun partage trouvé",
-        });
+      if (!share) {
+        throwNotFound("Aucun partage trouvé");
       }
 
       await ctx.db.cockpitShare.update({
-        where: { id: strategy.cockpitShare.id },
+        where: { id: share.id },
         data: { isActive: true },
       });
 
@@ -206,31 +176,21 @@ export const cockpitRouter = createTRPCRouter({
   /**
    * Get share status for a strategy.
    */
-  getShareStatus: protectedProcedure
+  getShareStatus: strategyProcedure
     .input(z.object({ strategyId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const strategy = await ctx.db.strategy.findUnique({
-        where: { id: input.strategyId },
-        include: {
-          cockpitShare: {
-            select: {
-              slug: true,
-              isActive: true,
-              viewCount: true,
-              createdAt: true,
-            },
-          },
+    .query(async ({ ctx }) => {
+      // ctx.strategy is ownership-verified; query cockpitShare
+      const share = await ctx.db.cockpitShare.findUnique({
+        where: { strategyId: ctx.strategy.id },
+        select: {
+          slug: true,
+          isActive: true,
+          viewCount: true,
+          createdAt: true,
         },
       });
 
-      if (!strategy || strategy.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Stratégie non trouvée",
-        });
-      }
-
-      return strategy.cockpitShare ?? null;
+      return share ?? null;
     }),
 
   /**
@@ -268,10 +228,7 @@ export const cockpitRouter = createTRPCRouter({
       });
 
       if (!share || !share.isActive) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Cockpit non trouvé ou désactivé",
-        });
+        throwNotFound("Cockpit non trouvé ou désactivé");
       }
 
       // Verify password
@@ -279,7 +236,7 @@ export const cockpitRouter = createTRPCRouter({
       if (!valid) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "Mot de passe incorrect",
+          message: AppErrors.UNAUTHORIZED,
         });
       }
 

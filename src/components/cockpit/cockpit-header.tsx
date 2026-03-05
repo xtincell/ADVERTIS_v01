@@ -103,7 +103,7 @@ export function CockpitHeader({
   const updateDeliveryMut = api.strategy.update.useMutation({
     onSuccess: () => {
       toast.success("Mode de livraison mis à jour");
-      void utils.strategy.getById.invalidate({ id: strategyId });
+      void utils.strategy.getById.invalidate({ strategyId });
       void utils.cockpit.getData.invalidate({ strategyId });
     },
     onError: () => toast.error("Erreur lors de la mise à jour"),
@@ -256,7 +256,7 @@ export function CockpitHeader({
                       key={m}
                       onClick={() =>
                         updateDeliveryMut.mutate({
-                          id: strategyId,
+                          strategyId,
                           deliveryMode: m,
                         })
                       }
@@ -279,7 +279,7 @@ export function CockpitHeader({
                 Créer sous-marque
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => duplicateMut.mutate({ id: strategyId })}
+                onClick={() => duplicateMut.mutate({ strategyId })}
                 disabled={duplicateMut.isPending}
               >
                 <Copy className="mr-2 h-4 w-4" />
@@ -288,7 +288,7 @@ export function CockpitHeader({
               <DropdownMenuItem
                 onClick={() => {
                   if (isArchived) {
-                    unarchiveMut.mutate({ id: strategyId });
+                    unarchiveMut.mutate({ strategyId });
                   } else {
                     setShowArchiveDialog(true);
                   }
@@ -335,7 +335,7 @@ export function CockpitHeader({
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                archiveMut.mutate({ id: strategyId });
+                archiveMut.mutate({ strategyId });
                 setShowArchiveDialog(false);
               }}
             >
@@ -362,7 +362,7 @@ export function CockpitHeader({
             <AlertDialogAction
               variant="destructive"
               onClick={() => {
-                deleteMut.mutate({ id: strategyId });
+                deleteMut.mutate({ strategyId });
                 setShowDeleteDialog(false);
               }}
             >

@@ -1,25 +1,69 @@
 // ==========================================================================
 // C.E0 — Pillar Editors Index
 // Dynamic editor loader by pillar type.
+// Uses next/dynamic for code splitting — only the active editor is loaded.
 // ==========================================================================
 
 "use client";
 
-import { AuthenticiteEditor } from "./authenticite-editor";
-import { DistinctionEditor } from "./distinction-editor";
-import { ValeurEditor } from "./valeur-editor";
-import { EngagementEditor } from "./engagement-editor";
-import { TrackEditor } from "./track-editor";
-import { RiskEditor } from "./risk-editor";
-import { ImplementationEditor } from "./implementation-editor";
-import { SyntheseEditor } from "./synthese-editor";
+import dynamic from "next/dynamic";
+import { Loader2 } from "lucide-react";
 
 import type { AuthenticitePillarData } from "~/lib/types/pillar-data";
 import type { DistinctionPillarData } from "~/lib/types/pillar-data";
 import type { ValeurPillarDataV2 } from "~/lib/types/pillar-data";
 import type { EngagementPillarData } from "~/lib/types/pillar-data";
-import type { TrackAuditResult, RiskAuditResult, ImplementationData, SynthesePillarData } from "~/lib/types/pillar-schemas";
+import type {
+  TrackAuditResult,
+  RiskAuditResult,
+  ImplementationData,
+  SynthesePillarData,
+} from "~/lib/types/pillar-schemas";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
+
+// ---------------------------------------------------------------------------
+// Lazy-loaded editors — each ~200-600 lines, only one rendered at a time.
+// next/dynamic requires object literal options (no shared variable).
+// ---------------------------------------------------------------------------
+
+const EditorSpinner = () => (
+  <div className="flex items-center justify-center py-12">
+    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+  </div>
+);
+
+const AuthenticiteEditor = dynamic(
+  () => import("./authenticite-editor").then((m) => ({ default: m.AuthenticiteEditor })),
+  { loading: EditorSpinner },
+);
+const DistinctionEditor = dynamic(
+  () => import("./distinction-editor").then((m) => ({ default: m.DistinctionEditor })),
+  { loading: EditorSpinner },
+);
+const ValeurEditor = dynamic(
+  () => import("./valeur-editor").then((m) => ({ default: m.ValeurEditor })),
+  { loading: EditorSpinner },
+);
+const EngagementEditor = dynamic(
+  () => import("./engagement-editor").then((m) => ({ default: m.EngagementEditor })),
+  { loading: EditorSpinner },
+);
+const TrackEditor = dynamic(
+  () => import("./track-editor").then((m) => ({ default: m.TrackEditor })),
+  { loading: EditorSpinner },
+);
+const RiskEditor = dynamic(
+  () => import("./risk-editor").then((m) => ({ default: m.RiskEditor })),
+  { loading: EditorSpinner },
+);
+const ImplementationEditor = dynamic(
+  () => import("./implementation-editor").then((m) => ({ default: m.ImplementationEditor })),
+  { loading: EditorSpinner },
+);
+const SyntheseEditor = dynamic(
+  () => import("./synthese-editor").then((m) => ({ default: m.SyntheseEditor })),
+  { loading: EditorSpinner },
+);
 
 // ---------------------------------------------------------------------------
 // Dispatcher — picks the right editor for structured pillar content
@@ -49,11 +93,17 @@ export function StructuredPillarEditor({
 
   switch (pillarType) {
     case "A": {
-      const { data } = parsePillarContent<AuthenticitePillarData>("A", content);
+      const { data } = parsePillarContent<AuthenticitePillarData>(
+        "A",
+        content,
+      );
       return <AuthenticiteEditor data={data} onChange={onChange} />;
     }
     case "D": {
-      const { data } = parsePillarContent<DistinctionPillarData>("D", content);
+      const { data } = parsePillarContent<DistinctionPillarData>(
+        "D",
+        content,
+      );
       return <DistinctionEditor data={data} onChange={onChange} />;
     }
     case "V": {
@@ -61,7 +111,10 @@ export function StructuredPillarEditor({
       return <ValeurEditor data={data} onChange={onChange} />;
     }
     case "E": {
-      const { data } = parsePillarContent<EngagementPillarData>("E", content);
+      const { data } = parsePillarContent<EngagementPillarData>(
+        "E",
+        content,
+      );
       return <EngagementEditor data={data} onChange={onChange} />;
     }
     case "T": {

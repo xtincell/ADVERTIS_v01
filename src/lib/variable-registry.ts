@@ -1,10 +1,10 @@
 // =============================================================================
 // LIB L.10 — Variable Definition Registry
 // =============================================================================
-// Static registry of all ~103 brand variable definitions with metadata and
+// Static registry of all ~187 brand variable definitions with metadata and
 // dependency graph. Each variable key maps to a definition that describes:
-//   - category (interview | pillar | score)
-//   - pillar type (A-S)
+//   - category (interview | pillar | score | framework)
+//   - pillar type (A-S) or framework prefix (MA, GS, etc.)
 //   - upstream dependencies (dependsOn)
 //   - expected data sources
 //
@@ -27,7 +27,7 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export type VariableCategory = "interview" | "pillar" | "score";
+export type VariableCategory = "interview" | "pillar" | "score" | "framework";
 
 export type VariableSource =
   | "user_input"
@@ -36,7 +36,8 @@ export type VariableSource =
   | "module"
   | "debrief"
   | "score_engine"
-  | "manual_edit";
+  | "manual_edit"
+  | "framework";
 
 export interface VariableDefinition {
   /** Unique key: "interview.A1", "A.identite", "score.coherence" */
@@ -144,6 +145,97 @@ const SECTIONS_S = [
   "S.campaignsSummary", "S.activationSummary", "S.kpiDashboard",
 ] as const;
 
+// ARTEMIS pillar extensions (stored in pillar content, produced by frameworks)
+const SECTIONS_A_ARTEMIS = [
+  "A.prophecy", "A.enemy", "A.doctrine", "A.livingMythology",
+] as const;
+
+const SECTIONS_D_ARTEMIS = [
+  "D.sacredObjects", "D.proofPoints", "D.symboles",
+] as const;
+
+const SECTIONS_E_ARTEMIS = [
+  "E.sacredCalendar", "E.commandments", "E.ritesDePassage", "E.sacraments",
+] as const;
+
+// Framework output variables (stored in FrameworkOutput, produced by framework modules)
+const SECTIONS_MA = [
+  "MA.prophecy", "MA.existentialEnemy", "MA.doctrine",
+  "MA.sacredArtifacts", "MA.livingMythology",
+] as const;
+
+const SECTIONS_GS = [
+  "GS.conceptualGrammar", "GS.iconographicGrammar", "GS.transconceptGrammar",
+  "GS.tripleAncrage", "GS.vocabularyAuthorized", "GS.vocabularyForbidden",
+] as const;
+
+const SECTIONS_B = [
+  "B.budgetVentile", "B.margeNette", "B.viabilite",
+] as const;
+
+const SECTIONS_XA = [
+  "XA.transitionMap", "XA.emotionalArc", "XA.momentsDeTruth",
+  "XA.frictionMap", "XA.brandCoherenceScore",
+] as const;
+
+const SECTIONS_XB = [
+  "XB.narrativeArc", "XB.sacredTexts", "XB.vocabularyByStage", "XB.storyBank",
+] as const;
+
+const SECTIONS_NI = [
+  "NI.northStar", "NI.architectureNarrative", "NI.spatialMap",
+  "NI.questSystem", "NI.npcSystem", "NI.diegeticSponsoring",
+] as const;
+
+const SECTIONS_XC = [
+  "XC.tierSegmentMap", "XC.transactionRituals", "XC.belongingSignals",
+  "XC.exclusivityGradient", "XC.reciprocityMechanics", "XC.monetizationMap",
+] as const;
+
+const SECTIONS_VC = [
+  "VC.revenueModel", "VC.pricingMechanics", "VC.revenueScenarios",
+  "VC.communityMonetization", "VC.revenueMixTarget",
+] as const;
+
+const SECTIONS_AA = [
+  "AA.partnerTaxonomy", "AA.partnerPackages", "AA.negotiationProtocol",
+  "AA.narrativeIntegration", "AA.mutualValueMatrix",
+] as const;
+
+const SECTIONS_IA = [
+  "IA.internalization", "IA.internalRituals", "IA.clergyMapping",
+  "IA.brandCultureFit",
+] as const;
+
+const SECTIONS_CM = [
+  "CM.methodRegistry", "CM.methodToolMapping",
+] as const;
+
+const SECTIONS_ES = [
+  "ES.activeSequence", "ES.timeline", "ES.goNoGoGates", "ES.resourceAllocation",
+] as const;
+
+const SECTIONS_GM = [
+  "GM.growthEngine", "GM.flywheel", "GM.scalingBreakpoints",
+  "GM.expansionMatrix", "GM.communityMonetization",
+] as const;
+
+const SECTIONS_CE = [
+  "CE.culturalTransposition", "CE.localLegitimacy", "CE.federalism",
+] as const;
+
+const SECTIONS_BA = [
+  "BA.architectureModel", "BA.inheritanceRules", "BA.crossBrandCultIndex",
+] as const;
+
+const SECTIONS_BE = [
+  "BE.identityCore", "BE.driftDetection", "BE.lifecycleStage",
+] as const;
+
+const SECTIONS_BD = [
+  "BD.threatMap", "BD.communityDefense", "BD.crisisNarrative", "BD.enemyAsFuel",
+] as const;
+
 // ---------------------------------------------------------------------------
 // Dependency groups — what each pillar level depends on
 // ---------------------------------------------------------------------------
@@ -170,6 +262,31 @@ const DEPS_S: string[] = [
   ...SECTIONS_A, ...SECTIONS_D, ...SECTIONS_V, ...SECTIONS_E,
   ...SECTIONS_R, ...SECTIONS_T, ...SECTIONS_I,
 ];
+
+// ── ARTEMIS dependency groups ──────────────────────────────────────────────
+// ARTEMIS pillar extension deps: base pillar deps + existing pillar sections
+const DEPS_A_ARTEMIS: string[] = [...DEPS_A, ...SECTIONS_A];
+const DEPS_D_ARTEMIS: string[] = [...DEPS_D, ...SECTIONS_D, ...SECTIONS_MA];
+const DEPS_E_ARTEMIS: string[] = [...DEPS_E, ...SECTIONS_E];
+
+// Framework output deps: based on each framework's inputVariables
+const DEPS_MA: string[] = ["A.identite", "A.herosJourney", "A.valeurs", "D.positionnement"];
+const DEPS_GS: string[] = ["A.identite", "A.valeurs", "A.doctrine", "MA.sacredArtifacts", "D.identiteVisuelle"];
+const DEPS_FW_B: string[] = ["V.cac", "V.ltv", "V.marges"];
+const DEPS_XA: string[] = ["A.identite", "D.personas", "D.identiteVisuelle", "D.tonDeVoix", "E.touchpoints", "E.rituels", "MA.sacredArtifacts"];
+const DEPS_XB: string[] = ["A.herosJourney", "A.livingMythology", "D.assetsLinguistiques", "D.tonDeVoix", "MA.prophecy", "MA.existentialEnemy", "MA.doctrine", "GS.vocabularyAuthorized", "XA.transitionMap"];
+const DEPS_NI: string[] = ["D.identiteVisuelle", "D.assetsLinguistiques", "GS.vocabularyAuthorized", "GS.vocabularyForbidden"];
+const DEPS_XC: string[] = ["V.produitsCatalogue", "V.productLadder", "V.valeurClientTangible", "V.valeurClientIntangible", "E.gamification", "XA.transitionMap", "XB.narrativeArc", "MA.sacredArtifacts"];
+const DEPS_VC: string[] = ["V.productLadder", "V.cac", "V.ltv", "XC.tierSegmentMap", "XC.monetizationMap"];
+const DEPS_AA: string[] = ["MA.prophecy", "MA.doctrine", "GS.transconceptGrammar", "VC.revenueModel"];
+const DEPS_IA: string[] = ["A.valeurs", "A.hierarchieCommunautaire", "E.rituels"];
+const DEPS_CM: string[] = [];
+const DEPS_ES: string[] = [...SECTIONS_A, ...SECTIONS_D, ...SECTIONS_V, ...SECTIONS_E];
+const DEPS_GM: string[] = ["VC.revenueModel"];
+const DEPS_CE: string[] = ["MA.doctrine", ...SECTIONS_A, ...SECTIONS_D, ...SECTIONS_V, ...SECTIONS_E];
+const DEPS_BA: string[] = [];
+const DEPS_BE: string[] = [];
+const DEPS_BD: string[] = ["MA.existentialEnemy", "MA.doctrine"];
 
 // ---------------------------------------------------------------------------
 // Interview variable definitions (26)
@@ -395,6 +512,177 @@ const SCORE_DEFINITIONS: VariableDefinition[] = [
 ];
 
 // ---------------------------------------------------------------------------
+// ARTEMIS pillar extension definitions (11)
+// ---------------------------------------------------------------------------
+// Stored in pillar content JSON but produced by framework modules.
+
+const PILLAR_A_ARTEMIS_DEFINITIONS: VariableDefinition[] = [
+  { key: "A.prophecy", label: "Prophecy (Pilier A)", category: "pillar", pillarType: "A", pillarSection: "prophecy", dependsOn: DEPS_A_ARTEMIS, expectedSources: ["module"], description: "Vision du monde transformé quand le mouvement gagne." },
+  { key: "A.enemy", label: "Ennemi Existentiel (Pilier A)", category: "pillar", pillarType: "A", pillarSection: "enemy", dependsOn: DEPS_A_ARTEMIS, expectedSources: ["module"], description: "Force à combattre : manifestations, enjeu, comment vaincre." },
+  { key: "A.doctrine", label: "Doctrine (Pilier A)", category: "pillar", pillarType: "A", pillarSection: "doctrine", dependsOn: DEPS_A_ARTEMIS, expectedSources: ["module"], description: "Dogmes, principes et pratiques du mouvement." },
+  { key: "A.livingMythology", label: "Mythologie Vivante (Pilier A)", category: "pillar", pillarType: "A", pillarSection: "livingMythology", dependsOn: DEPS_A_ARTEMIS, expectedSources: ["module"], description: "Canon extensible : mythe fondateur, chapitres, règles d'extension." },
+];
+
+const PILLAR_D_ARTEMIS_DEFINITIONS: VariableDefinition[] = [
+  { key: "D.sacredObjects", label: "Objets Sacrés (Pilier D)", category: "pillar", pillarType: "D", pillarSection: "sacredObjects", dependsOn: DEPS_D_ARTEMIS, expectedSources: ["module"], description: "Artefacts symboliques distincts du catalogue." },
+  { key: "D.proofPoints", label: "Proof Points (Pilier D)", category: "pillar", pillarType: "D", pillarSection: "proofPoints", dependsOn: DEPS_D_ARTEMIS, expectedSources: ["module"], description: "Preuves quantifiées, certifications, témoignages." },
+  { key: "D.symboles", label: "Symboles (Pilier D)", category: "pillar", pillarType: "D", pillarSection: "symboles", dependsOn: DEPS_D_ARTEMIS, expectedSources: ["module"], description: "Symboles de marque avec significations et contextes d'usage." },
+];
+
+const PILLAR_E_ARTEMIS_DEFINITIONS: VariableDefinition[] = [
+  { key: "E.sacredCalendar", label: "Calendrier Sacré (Pilier E)", category: "pillar", pillarType: "E", pillarSection: "sacredCalendar", dependsOn: DEPS_E_ARTEMIS, expectedSources: ["module"], description: "Moments propriétaires de la marque." },
+  { key: "E.commandments", label: "Commandements (Pilier E)", category: "pillar", pillarType: "E", pillarSection: "commandments", dependsOn: DEPS_E_ARTEMIS, expectedSources: ["module"], description: "10 règles structurées de la communauté." },
+  { key: "E.ritesDePassage", label: "Rites de Passage (Pilier E)", category: "pillar", pillarType: "E", pillarSection: "ritesDePassage", dependsOn: DEPS_E_ARTEMIS, expectedSources: ["module"], description: "5 stades avec rituel d'entrée, symboles de statut, récompenses." },
+  { key: "E.sacraments", label: "Sacrements (Pilier E)", category: "pillar", pillarType: "E", pillarSection: "sacraments", dependsOn: DEPS_E_ARTEMIS, expectedSources: ["module"], description: "AARRR reformulé en rituels : Trigger → Action → Reward." },
+];
+
+// ---------------------------------------------------------------------------
+// Framework output definitions (73)
+// ---------------------------------------------------------------------------
+// Stored in FrameworkOutput records, produced by ARTEMIS framework modules.
+
+// FW-20 Movement Architecture (5)
+const FW_MA_DEFINITIONS: VariableDefinition[] = [
+  { key: "MA.prophecy", label: "Prophecy (FW-20)", category: "framework", pillarType: "MA", pillarSection: "prophecy", dependsOn: DEPS_MA, expectedSources: ["module"], description: "Vision du monde transformé quand le mouvement gagne." },
+  { key: "MA.existentialEnemy", label: "Ennemi Existentiel (FW-20)", category: "framework", pillarType: "MA", pillarSection: "existentialEnemy", dependsOn: DEPS_MA, expectedSources: ["module"], description: "Force à combattre : manifestations et dimension morale." },
+  { key: "MA.doctrine", label: "Doctrine (FW-20)", category: "framework", pillarType: "MA", pillarSection: "doctrine", dependsOn: DEPS_MA, expectedSources: ["module"], description: "Dogmes contre-intuitifs, principes, pratiques du mouvement." },
+  { key: "MA.sacredArtifacts", label: "Artefacts Sacrés (FW-20)", category: "framework", pillarType: "MA", pillarSection: "sacredArtifacts", dependsOn: DEPS_MA, expectedSources: ["module"], description: "Objets symboliques avec stade superfan et signal social." },
+  { key: "MA.livingMythology", label: "Mythologie Vivante (FW-20)", category: "framework", pillarType: "MA", pillarSection: "livingMythology", dependsOn: DEPS_MA, expectedSources: ["module"], description: "Canon extensible avec règles de contribution et capture." },
+];
+
+// FW-05 Grammar Systems (6)
+const FW_GS_DEFINITIONS: VariableDefinition[] = [
+  { key: "GS.conceptualGrammar", label: "Grammaire Conceptuelle (FW-05)", category: "framework", pillarType: "GS", pillarSection: "conceptualGrammar", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Symboles conceptuels et matrice de proximité." },
+  { key: "GS.iconographicGrammar", label: "Grammaire Iconographique (FW-05)", category: "framework", pillarType: "GS", pillarSection: "iconographicGrammar", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Textures, patterns, couleurs, matériaux autorisés." },
+  { key: "GS.transconceptGrammar", label: "Grammaire Transconcept (FW-05)", category: "framework", pillarType: "GS", pillarSection: "transconceptGrammar", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Mappings inter-sensoriels et règles de traduction." },
+  { key: "GS.tripleAncrage", label: "Triple Ancrage C×F×P (FW-05)", category: "framework", pillarType: "GS", pillarSection: "tripleAncrage", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Scores Cognitif × Fonctionnel × Psycho-social par touchpoint." },
+  { key: "GS.vocabularyAuthorized", label: "Vocabulaire Autorisé (FW-05)", category: "framework", pillarType: "GS", pillarSection: "vocabularyAuthorized", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Termes approuvés pour la communication de marque." },
+  { key: "GS.vocabularyForbidden", label: "Vocabulaire Interdit (FW-05)", category: "framework", pillarType: "GS", pillarSection: "vocabularyForbidden", dependsOn: DEPS_GS, expectedSources: ["module"], description: "Termes interdits dans la communication de marque." },
+];
+
+// FW-03 Parametric Budget (3)
+const FW_B_DEFINITIONS: VariableDefinition[] = [
+  { key: "B.budgetVentile", label: "Budget Ventilé (FW-03)", category: "framework", pillarType: "B", pillarSection: "budgetVentile", dependsOn: DEPS_FW_B, expectedSources: ["module"], description: "Budget décomposé par poste selon formule paramétrique." },
+  { key: "B.margeNette", label: "Marge Nette Budget (FW-03)", category: "framework", pillarType: "B", pillarSection: "margeNette", dependsOn: DEPS_FW_B, expectedSources: ["module"], description: "Marge nette après allocation budgétaire." },
+  { key: "B.viabilite", label: "Viabilité (FW-03)", category: "framework", pillarType: "B", pillarSection: "viabilite", dependsOn: DEPS_FW_B, expectedSources: ["module"], description: "Score de viabilité budgétaire." },
+];
+
+// FW-11 Experience Architecture (5)
+const FW_XA_DEFINITIONS: VariableDefinition[] = [
+  { key: "XA.transitionMap", label: "Carte des Transitions (FW-11)", category: "framework", pillarType: "XA", pillarSection: "transitionMap", dependsOn: DEPS_XA, expectedSources: ["module"], description: "5 transitions AUDIENCE→EVANGELIST avec triggers et expériences." },
+  { key: "XA.emotionalArc", label: "Arc Émotionnel (FW-11)", category: "framework", pillarType: "XA", pillarSection: "emotionalArc", dependsOn: DEPS_XA, expectedSources: ["module"], description: "Trajectoire émotionnelle par stade superfan." },
+  { key: "XA.momentsDeTruth", label: "Moments de Vérité (FW-11)", category: "framework", pillarType: "XA", pillarSection: "momentsDeTruth", dependsOn: DEPS_XA, expectedSources: ["module"], description: "Moments clés où l'expérience fait ou défait la conversion." },
+  { key: "XA.frictionMap", label: "Carte des Frictions (FW-11)", category: "framework", pillarType: "XA", pillarSection: "frictionMap", dependsOn: DEPS_XA, expectedSources: ["module"], description: "Points de friction par transition avec solutions." },
+  { key: "XA.brandCoherenceScore", label: "Score Cohérence Marque (FW-11)", category: "framework", pillarType: "XA", pillarSection: "brandCoherenceScore", dependsOn: DEPS_XA, expectedSources: ["module"], description: "Score de cohérence de l'expérience de marque 0-100." },
+];
+
+// FW-12 Narrative Engineering (4)
+const FW_XB_DEFINITIONS: VariableDefinition[] = [
+  { key: "XB.narrativeArc", label: "Arc Narratif (FW-12)", category: "framework", pillarType: "XB", pillarSection: "narrativeArc", dependsOn: DEPS_XB, expectedSources: ["module"], description: "5 arcs narratifs par stade superfan." },
+  { key: "XB.sacredTexts", label: "Textes Sacrés (FW-12)", category: "framework", pillarType: "XB", pillarSection: "sacredTexts", dependsOn: DEPS_XB, expectedSources: ["module"], description: "Textes canoniques de la marque." },
+  { key: "XB.vocabularyByStage", label: "Vocabulaire par Stade (FW-12)", category: "framework", pillarType: "XB", pillarSection: "vocabularyByStage", dependsOn: DEPS_XB, expectedSources: ["module"], description: "Registre lexical adapté par stade superfan." },
+  { key: "XB.storyBank", label: "Banque d'Histoires (FW-12)", category: "framework", pillarType: "XB", pillarSection: "storyBank", dependsOn: DEPS_XB, expectedSources: ["module"], description: "Bibliothèque d'histoires prêtes à l'emploi." },
+];
+
+// FW-04 Narrative Immersive (6)
+const FW_NI_DEFINITIONS: VariableDefinition[] = [
+  { key: "NI.northStar", label: "North Star (FW-04)", category: "framework", pillarType: "NI", pillarSection: "northStar", dependsOn: DEPS_NI, expectedSources: ["module"], description: "6 mots-clés ADN + charte de cohérence multimodale." },
+  { key: "NI.architectureNarrative", label: "Architecture Narrative (FW-04)", category: "framework", pillarType: "NI", pillarSection: "architectureNarrative", dependsOn: DEPS_NI, expectedSources: ["module"], description: "Mythe fondateur + système de factions." },
+  { key: "NI.spatialMap", label: "Carte Spatiale (FW-04)", category: "framework", pillarType: "NI", pillarSection: "spatialMap", dependsOn: DEPS_NI, expectedSources: ["module"], description: "Zones narratives avec flux et transitions." },
+  { key: "NI.questSystem", label: "Système de Quêtes (FW-04)", category: "framework", pillarType: "NI", pillarSection: "questSystem", dependsOn: DEPS_NI, expectedSources: ["module"], description: "Quêtes principales, secondaires et cachées." },
+  { key: "NI.npcSystem", label: "Système NPC (FW-04)", category: "framework", pillarType: "NI", pillarSection: "npcSystem", dependsOn: DEPS_NI, expectedSources: ["module"], description: "Personnages non-joueurs avec scripts et réactions." },
+  { key: "NI.diegeticSponsoring", label: "Sponsoring Diégétique (FW-04)", category: "framework", pillarType: "NI", pillarSection: "diegeticSponsoring", dependsOn: DEPS_NI, expectedSources: ["module"], description: "Intégration narrative des sponsors dans l'univers." },
+];
+
+// FW-13 Value Exchange Design (6)
+const FW_XC_DEFINITIONS: VariableDefinition[] = [
+  { key: "XC.tierSegmentMap", label: "Carte Tiers×Segments (FW-13)", category: "framework", pillarType: "XC", pillarSection: "tierSegmentMap", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Mapping tiers produit × segments superfan." },
+  { key: "XC.transactionRituals", label: "Rituels de Transaction (FW-13)", category: "framework", pillarType: "XC", pillarSection: "transactionRituals", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Transactions reformulées en rituels d'appartenance." },
+  { key: "XC.belongingSignals", label: "Signaux d'Appartenance (FW-13)", category: "framework", pillarType: "XC", pillarSection: "belongingSignals", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Marqueurs d'identité par stade superfan." },
+  { key: "XC.exclusivityGradient", label: "Gradient d'Exclusivité (FW-13)", category: "framework", pillarType: "XC", pillarSection: "exclusivityGradient", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Niveaux d'accès exclusif par stade." },
+  { key: "XC.reciprocityMechanics", label: "Mécaniques de Réciprocité (FW-13)", category: "framework", pillarType: "XC", pillarSection: "reciprocityMechanics", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Systèmes d'échange de valeur réciproque." },
+  { key: "XC.monetizationMap", label: "Carte de Monétisation (FW-13)", category: "framework", pillarType: "XC", pillarSection: "monetizationMap", dependsOn: DEPS_XC, expectedSources: ["module"], description: "Stratégie de monétisation par segment et canal." },
+];
+
+// FW-21 Value Capture Engine (5)
+const FW_VC_DEFINITIONS: VariableDefinition[] = [
+  { key: "VC.revenueModel", label: "Modèle de Revenus (FW-21)", category: "framework", pillarType: "VC", pillarSection: "revenueModel", dependsOn: DEPS_VC, expectedSources: ["module"], description: "Architecture des flux de revenus." },
+  { key: "VC.pricingMechanics", label: "Mécaniques de Pricing (FW-21)", category: "framework", pillarType: "VC", pillarSection: "pricingMechanics", dependsOn: DEPS_VC, expectedSources: ["module"], description: "Stratégies de tarification par segment." },
+  { key: "VC.revenueScenarios", label: "Scénarios de Revenus (FW-21)", category: "framework", pillarType: "VC", pillarSection: "revenueScenarios", dependsOn: DEPS_VC, expectedSources: ["module"], description: "Projections pessimiste/base/optimiste." },
+  { key: "VC.communityMonetization", label: "Monétisation Communautaire (FW-21)", category: "framework", pillarType: "VC", pillarSection: "communityMonetization", dependsOn: DEPS_VC, expectedSources: ["module"], description: "Revenus issus de la communauté superfan." },
+  { key: "VC.revenueMixTarget", label: "Mix Revenus Cible (FW-21)", category: "framework", pillarType: "VC", pillarSection: "revenueMixTarget", dependsOn: DEPS_VC, expectedSources: ["module"], description: "Répartition cible des sources de revenus." },
+];
+
+// FW-24 Alliance Architecture (5)
+const FW_AA_DEFINITIONS: VariableDefinition[] = [
+  { key: "AA.partnerTaxonomy", label: "Taxonomie Partenaires (FW-24)", category: "framework", pillarType: "AA", pillarSection: "partnerTaxonomy", dependsOn: DEPS_AA, expectedSources: ["module"], description: "Classification des partenaires par niveau d'intégration." },
+  { key: "AA.partnerPackages", label: "Packages Partenaires (FW-24)", category: "framework", pillarType: "AA", pillarSection: "partnerPackages", dependsOn: DEPS_AA, expectedSources: ["module"], description: "Offres de partenariat structurées par niveau." },
+  { key: "AA.negotiationProtocol", label: "Protocole de Négociation (FW-24)", category: "framework", pillarType: "AA", pillarSection: "negotiationProtocol", dependsOn: DEPS_AA, expectedSources: ["module"], description: "Processus de négociation et critères d'évaluation." },
+  { key: "AA.narrativeIntegration", label: "Intégration Narrative (FW-24)", category: "framework", pillarType: "AA", pillarSection: "narrativeIntegration", dependsOn: DEPS_AA, expectedSources: ["module"], description: "Comment les partenaires s'intègrent dans l'univers narratif." },
+  { key: "AA.mutualValueMatrix", label: "Matrice Valeur Mutuelle (FW-24)", category: "framework", pillarType: "AA", pillarSection: "mutualValueMatrix", dependsOn: DEPS_AA, expectedSources: ["module"], description: "Évaluation de la valeur échangée avec chaque partenaire." },
+];
+
+// FW-18 Internal Alignment (4)
+const FW_IA_DEFINITIONS: VariableDefinition[] = [
+  { key: "IA.internalization", label: "Internalisation (FW-18)", category: "framework", pillarType: "IA", pillarSection: "internalization", dependsOn: DEPS_IA, expectedSources: ["module"], description: "Valeurs en action : comment l'équipe vit la marque." },
+  { key: "IA.internalRituals", label: "Rituels Internes (FW-18)", category: "framework", pillarType: "IA", pillarSection: "internalRituals", dependsOn: DEPS_IA, expectedSources: ["module"], description: "Rituels d'équipe alignés avec l'identité de marque." },
+  { key: "IA.clergyMapping", label: "Cartographie Clergé (FW-18)", category: "framework", pillarType: "IA", pillarSection: "clergyMapping", dependsOn: DEPS_IA, expectedSources: ["module"], description: "Mapping des rôles internes au système communautaire." },
+  { key: "IA.brandCultureFit", label: "Brand Culture Fit (FW-18)", category: "framework", pillarType: "IA", pillarSection: "brandCultureFit", dependsOn: DEPS_IA, expectedSources: ["module"], description: "Score d'adéquation culture interne / marque." },
+];
+
+// FW-22 Creative Methodology (2)
+const FW_CM_DEFINITIONS: VariableDefinition[] = [
+  { key: "CM.methodRegistry", label: "Registre Méthodes (FW-22)", category: "framework", pillarType: "CM", pillarSection: "methodRegistry", dependsOn: DEPS_CM, expectedSources: ["module"], description: "Catalogue des méthodes créatives disponibles." },
+  { key: "CM.methodToolMapping", label: "Mapping Méthodes→Outils (FW-22)", category: "framework", pillarType: "CM", pillarSection: "methodToolMapping", dependsOn: DEPS_CM, expectedSources: ["module"], description: "Lien entre méthodes créatives et outils GLORY." },
+];
+
+// FW-23 Execution Sequencing (4)
+const FW_ES_DEFINITIONS: VariableDefinition[] = [
+  { key: "ES.activeSequence", label: "Séquence Active (FW-23)", category: "framework", pillarType: "ES", pillarSection: "activeSequence", dependsOn: DEPS_ES, expectedSources: ["module"], description: "Template de séquençage actuellement actif." },
+  { key: "ES.timeline", label: "Timeline (FW-23)", category: "framework", pillarType: "ES", pillarSection: "timeline", dependsOn: DEPS_ES, expectedSources: ["module"], description: "Ligne de temps avec phases et jalons." },
+  { key: "ES.goNoGoGates", label: "Gates Go/No-Go (FW-23)", category: "framework", pillarType: "ES", pillarSection: "goNoGoGates", dependsOn: DEPS_ES, expectedSources: ["module"], description: "Points de décision avec critères de passage." },
+  { key: "ES.resourceAllocation", label: "Allocation Ressources (FW-23)", category: "framework", pillarType: "ES", pillarSection: "resourceAllocation", dependsOn: DEPS_ES, expectedSources: ["module"], description: "Répartition des ressources par phase." },
+];
+
+// FW-19 Growth Mechanics (5)
+const FW_GM_DEFINITIONS: VariableDefinition[] = [
+  { key: "GM.growthEngine", label: "Moteur de Croissance (FW-19)", category: "framework", pillarType: "GM", pillarSection: "growthEngine", dependsOn: DEPS_GM, expectedSources: ["module"], description: "Type de croissance (viral/sticky/paid) avec coefficients." },
+  { key: "GM.flywheel", label: "Flywheel (FW-19)", category: "framework", pillarType: "GM", pillarSection: "flywheel", dependsOn: DEPS_GM, expectedSources: ["module"], description: "Boucle de croissance auto-alimentée." },
+  { key: "GM.scalingBreakpoints", label: "Points de Rupture (FW-19)", category: "framework", pillarType: "GM", pillarSection: "scalingBreakpoints", dependsOn: DEPS_GM, expectedSources: ["module"], description: "Seuils où le modèle de croissance change." },
+  { key: "GM.expansionMatrix", label: "Matrice d'Expansion (FW-19)", category: "framework", pillarType: "GM", pillarSection: "expansionMatrix", dependsOn: DEPS_GM, expectedSources: ["module"], description: "Matrice Ansoff : produits × marchés existants/nouveaux." },
+  { key: "GM.communityMonetization", label: "Monétisation Communauté (FW-19)", category: "framework", pillarType: "GM", pillarSection: "communityMonetization", dependsOn: DEPS_GM, expectedSources: ["module"], description: "Modèles de revenus issus de la communauté." },
+];
+
+// FW-15 Cultural Expansion (3)
+const FW_CE_DEFINITIONS: VariableDefinition[] = [
+  { key: "CE.culturalTransposition", label: "Transposition Culturelle (FW-15)", category: "framework", pillarType: "CE", pillarSection: "culturalTransposition", dependsOn: DEPS_CE, expectedSources: ["module"], description: "Matrice universels/adaptables/locaux pour nouveaux marchés." },
+  { key: "CE.localLegitimacy", label: "Légitimité Locale (FW-15)", category: "framework", pillarType: "CE", pillarSection: "localLegitimacy", dependsOn: DEPS_CE, expectedSources: ["module"], description: "Stratégie d'ancrage local par marché." },
+  { key: "CE.federalism", label: "Fédéralisme (FW-15)", category: "framework", pillarType: "CE", pillarSection: "federalism", dependsOn: DEPS_CE, expectedSources: ["module"], description: "Gouvernance centralisée vs locale par marché." },
+];
+
+// FW-16 Brand Architecture (3)
+const FW_BA_DEFINITIONS: VariableDefinition[] = [
+  { key: "BA.architectureModel", label: "Modèle d'Architecture (FW-16)", category: "framework", pillarType: "BA", pillarSection: "architectureModel", dependsOn: DEPS_BA, expectedSources: ["module"], description: "Type d'architecture de marque et implications." },
+  { key: "BA.inheritanceRules", label: "Règles d'Héritage (FW-16)", category: "framework", pillarType: "BA", pillarSection: "inheritanceRules", dependsOn: DEPS_BA, expectedSources: ["module"], description: "Règles d'héritage de variables parent→enfant." },
+  { key: "BA.crossBrandCultIndex", label: "Cult Index Transversal (FW-16)", category: "framework", pillarType: "BA", pillarSection: "crossBrandCultIndex", dependsOn: DEPS_BA, expectedSources: ["module"], description: "Score Cult Index consolidé multi-marques." },
+];
+
+// FW-14 Brand Evolution (3)
+const FW_BE_DEFINITIONS: VariableDefinition[] = [
+  { key: "BE.identityCore", label: "Noyau Identitaire (FW-14)", category: "framework", pillarType: "BE", pillarSection: "identityCore", dependsOn: DEPS_BE, expectedSources: ["module"], description: "Éléments immuables vs mutables de l'identité." },
+  { key: "BE.driftDetection", label: "Détection de Dérive (FW-14)", category: "framework", pillarType: "BE", pillarSection: "driftDetection", dependsOn: DEPS_BE, expectedSources: ["module"], description: "Indicateurs de dérive identitaire." },
+  { key: "BE.lifecycleStage", label: "Stade de Cycle de Vie (FW-14)", category: "framework", pillarType: "BE", pillarSection: "lifecycleStage", dependsOn: DEPS_BE, expectedSources: ["module"], description: "Phase actuelle : LAUNCH→GROWTH→MATURITY→DECLINE→REVITALIZATION." },
+];
+
+// FW-17 Brand Defense (4)
+const FW_BD_DEFINITIONS: VariableDefinition[] = [
+  { key: "BD.threatMap", label: "Carte des Menaces (FW-17)", category: "framework", pillarType: "BD", pillarSection: "threatMap", dependsOn: DEPS_BD, expectedSources: ["module"], description: "Cartographie des menaces par type et sévérité." },
+  { key: "BD.communityDefense", label: "Défense Communautaire (FW-17)", category: "framework", pillarType: "BD", pillarSection: "communityDefense", dependsOn: DEPS_BD, expectedSources: ["module"], description: "Capacité de la communauté à défendre la marque." },
+  { key: "BD.crisisNarrative", label: "Narratif de Crise (FW-17)", category: "framework", pillarType: "BD", pillarSection: "crisisNarrative", dependsOn: DEPS_BD, expectedSources: ["module"], description: "Récits préparés pour situations de crise." },
+  { key: "BD.enemyAsFuel", label: "Ennemi comme Carburant (FW-17)", category: "framework", pillarType: "BD", pillarSection: "enemyAsFuel", dependsOn: DEPS_BD, expectedSources: ["module"], description: "Transformer les attaques en énergie communautaire." },
+];
+
+// ---------------------------------------------------------------------------
 // Combined definitions array — THE SINGLE SOURCE OF TRUTH
 // ---------------------------------------------------------------------------
 
@@ -409,9 +697,31 @@ export const VARIABLE_DEFINITIONS: VariableDefinition[] = [
   ...PILLAR_I_DEFINITIONS,
   ...PILLAR_S_DEFINITIONS,
   ...SCORE_DEFINITIONS,
+  // ARTEMIS pillar extensions (11)
+  ...PILLAR_A_ARTEMIS_DEFINITIONS,
+  ...PILLAR_D_ARTEMIS_DEFINITIONS,
+  ...PILLAR_E_ARTEMIS_DEFINITIONS,
+  // ARTEMIS framework outputs (73)
+  ...FW_MA_DEFINITIONS,
+  ...FW_GS_DEFINITIONS,
+  ...FW_B_DEFINITIONS,
+  ...FW_XA_DEFINITIONS,
+  ...FW_XB_DEFINITIONS,
+  ...FW_NI_DEFINITIONS,
+  ...FW_XC_DEFINITIONS,
+  ...FW_VC_DEFINITIONS,
+  ...FW_AA_DEFINITIONS,
+  ...FW_IA_DEFINITIONS,
+  ...FW_CM_DEFINITIONS,
+  ...FW_ES_DEFINITIONS,
+  ...FW_GM_DEFINITIONS,
+  ...FW_CE_DEFINITIONS,
+  ...FW_BA_DEFINITIONS,
+  ...FW_BE_DEFINITIONS,
+  ...FW_BD_DEFINITIONS,
 ];
 
-/** All variable keys (103 total) */
+/** All variable keys (187 total: 103 base + 11 ARTEMIS pillar + 73 framework) */
 export const ALL_VARIABLE_KEYS: string[] = VARIABLE_DEFINITIONS.map((d) => d.key);
 
 // ---------------------------------------------------------------------------
@@ -514,14 +824,32 @@ export function getDependents(key: string): string[] {
  */
 export function getSectionKeysForPillar(pillarType: string): string[] {
   switch (pillarType) {
-    case "A": return [...SECTIONS_A];
-    case "D": return [...SECTIONS_D];
+    case "A": return [...SECTIONS_A, ...SECTIONS_A_ARTEMIS];
+    case "D": return [...SECTIONS_D, ...SECTIONS_D_ARTEMIS];
     case "V": return [...SECTIONS_V];
-    case "E": return [...SECTIONS_E];
+    case "E": return [...SECTIONS_E, ...SECTIONS_E_ARTEMIS];
     case "R": return [...SECTIONS_R];
     case "T": return [...SECTIONS_T];
     case "I": return [...SECTIONS_I];
     case "S": return [...SECTIONS_S];
+    // Framework output prefixes
+    case "MA": return [...SECTIONS_MA];
+    case "GS": return [...SECTIONS_GS];
+    case "B": return [...SECTIONS_B];
+    case "XA": return [...SECTIONS_XA];
+    case "XB": return [...SECTIONS_XB];
+    case "NI": return [...SECTIONS_NI];
+    case "XC": return [...SECTIONS_XC];
+    case "VC": return [...SECTIONS_VC];
+    case "AA": return [...SECTIONS_AA];
+    case "IA": return [...SECTIONS_IA];
+    case "CM": return [...SECTIONS_CM];
+    case "ES": return [...SECTIONS_ES];
+    case "GM": return [...SECTIONS_GM];
+    case "CE": return [...SECTIONS_CE];
+    case "BA": return [...SECTIONS_BA];
+    case "BE": return [...SECTIONS_BE];
+    case "BD": return [...SECTIONS_BD];
     default: return [];
   }
 }

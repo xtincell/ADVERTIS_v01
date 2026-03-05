@@ -17,7 +17,11 @@ import { Briefcase } from "lucide-react";
 
 import { useMobile } from "~/components/hooks/use-mobile";
 import { MissionListMobile } from "~/components/missions/mission-list-mobile";
-import { MissionBoard } from "~/components/ops/mission-board";
+import dynamic from "next/dynamic";
+const MissionBoard = dynamic(
+  () => import("~/components/ops/mission-board").then((m) => ({ default: m.MissionBoard })),
+  { ssr: false },
+);
 import { CreateMissionDialog } from "~/components/missions/create-mission-dialog";
 
 // ---------------------------------------------------------------------------
@@ -44,12 +48,12 @@ export default function MissionsPage() {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 pb-24 md:p-6">
+    <div className="flex flex-col gap-4 p-4 pb-24 md:p-6 animate-page-enter">
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Briefcase className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-semibold">Missions</h1>
+          <h1 className="text-display-lg">Missions</h1>
         </div>
         <CreateMissionDialog />
       </div>

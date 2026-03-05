@@ -102,13 +102,13 @@ export default function ClientHomePage() {
   // Render white-labeled cockpit
   // ---------------------------------------------------------------------------
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6 animate-page-enter">
       {/* Header with optional strategy switcher */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Eye className="h-5 w-5 text-primary" />
           <div>
-            <h1 className="text-xl font-semibold">
+            <h1 className="text-display-lg">
               {selectedStrategy.brandName}
             </h1>
             <p className="text-sm text-muted-foreground">Votre marque</p>
