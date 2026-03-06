@@ -90,6 +90,7 @@ import { SectionChrono } from "./sections/section-chrono";
 import { SectionMultiMarkets } from "./sections/section-multi-markets";
 import { SectionFunnelMapping } from "./sections/section-funnel-mapping";
 import { SectionBrandOSSetup } from "./sections/section-brand-os-setup";
+import { SectionMetrics } from "./sections/section-metrics";
 import { SectionOracleScores } from "./sections/section-oracle-scores";
 import { SectionFicheClient } from "./sections/section-fiche-client";
 import { SectionAARRRRoadmap } from "./sections/section-aarrr-roadmap";
@@ -455,6 +456,11 @@ export function CockpitContent({
       {/* ── Competitive Landscape ── */}
       {show("competitors") && data.strategyId && !isPublic && (
         <SectionCompetitors strategyId={data.strategyId} />
+      )}
+
+      {/* ── Metric Thresholds & KPIs ── */}
+      {show("metrics") && data.strategyId && !isPublic && (
+        <SectionMetrics strategyId={data.strategyId} />
       )}
 
       {/* ── Opportunity Calendar ── */}

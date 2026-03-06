@@ -444,6 +444,102 @@ const crossBrandRouter = createTRPCRouter({
 });
 
 // ---------------------------------------------------------------------------
+// MetricThreshold sub-router — KPI tracking & alerting
+// ---------------------------------------------------------------------------
+
+const metricThresholdsRouter = createTRPCRouter({
+  /**
+   * Get all metric thresholds for a strategy.
+   */
+  getByStrategy: protectedProcedure
+    .input(z.object({ strategyId: z.string().min(1) }))
+    .query(async ({ ctx, input }) => {
+      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+      return ctx.db.metricThreshold.findMany({
+        where: { strategyId: input.strategyId },
+        orderBy: [{ pillar: "asc" }, { metricKey: "asc" }],
+      });
+    }),
+
+  /**
+   * Upsert a metric threshold (insert or update on @@unique([strategyId, metricKey])).
+   */
+  upsert: protectedProcedure
+    .input(
+      z.object({
+        strategyId: z.string().min(1),
+        pillar: z.string().min(1),
+        metricKey: z.string().min(1),
+        metricLabel: z.string().min(1),
+        currentValue: z.number().default(0),
+        targetValue: z.number().default(0),
+        alertMin: z.number().optional().nullable(),
+        alertMax: z.number().optional().nullable(),
+        unit: z.string().default("%"),
+        cadence: z.string().default("MONTHLY"),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await verifyStrategyOwnership(ctx.db, input.strategyId, ctx.session.user.id);
+
+      return ctx.db.metricThreshold.upsert({
+        where: {
+          strategyId_metricKey: {
+            strategyId: input.strategyId,
+            metricKey: input.metricKey,
+          },
+        },
+        create: {
+          strategyId: input.strategyId,
+          pillar: input.pillar,
+          metricKey: input.metricKey,
+          metricLabel: input.metricLabel,
+          currentValue: input.currentValue,
+          targetValue: input.targetValue,
+          alertMin: input.alertMin ?? null,
+          alertMax: input.alertMax ?? null,
+          unit: input.unit,
+          cadence: input.cadence,
+          lastUpdated: new Date(),
+        },
+        update: {
+          pillar: input.pillar,
+          metricLabel: input.metricLabel,
+          currentValue: input.currentValue,
+          targetValue: input.targetValue,
+          alertMin: input.alertMin,
+          alertMax: input.alertMax,
+          unit: input.unit,
+          cadence: input.cadence,
+          lastUpdated: new Date(),
+        },
+      });
+    }),
+
+  /**
+   * Delete a metric threshold.
+   */
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const metric = await ctx.db.metricThreshold.findUnique({
+        where: { id: input.id },
+        select: { strategyId: true },
+      });
+      if (!metric) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Seuil de métrique non trouvé",
+        });
+      }
+      await verifyStrategyOwnership(ctx.db, metric.strategyId, ctx.session.user.id);
+
+      await ctx.db.metricThreshold.delete({ where: { id: input.id } });
+      return { success: true };
+    }),
+});
+
+// ---------------------------------------------------------------------------
 // Main market-context router (combines sub-routers)
 // ---------------------------------------------------------------------------
 
@@ -452,4 +548,5 @@ export const marketContextRouter = createTRPCRouter({
   opportunities: opportunitiesRouter,
   budgetTiers: budgetTiersRouter,
   crossBrand: crossBrandRouter,
+  metricThresholds: metricThresholdsRouter,
 });

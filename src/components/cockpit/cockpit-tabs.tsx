@@ -35,7 +35,7 @@ export const TAB_SECTION_MAP: Record<string, string[]> = {
   creative: ["big-idea-kit", "creative-strategy", "funnel-mapping"],
   planning: ["chrono", "partners", "budget-operationnel"],
   signals: ["signals", "decisions", "veille"],
-  market: ["risk", "track", "competitors", "opportunities", "multi-markets"],
+  market: ["risk", "track", "competitors", "opportunities", "metrics", "multi-markets"],
   briefs: ["briefs", "livrables"],
   quality: ["quality-checklist"],
   "brand-os": ["brand-os-setup"],

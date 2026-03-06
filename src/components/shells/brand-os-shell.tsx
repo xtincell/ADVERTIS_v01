@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   Crown,
   FolderOpen,
+  Settings,
 } from "lucide-react";
 import { AppShell } from "./app-shell";
 import type { SidebarNavItem } from "./app-sidebar";
@@ -43,6 +44,7 @@ const SECONDARY_ITEMS: SidebarNavItem[] = [
   { href: "/os/glory-feed", label: "Glory Feed", icon: Sparkles },
   { href: "/os/risk-radar", label: "Risk Radar", icon: ShieldAlert },
   { href: "/os/bridge", label: "Bridge", icon: LayoutDashboard },
+  { href: "/os/settings", label: "Paramètres", icon: Settings },
 ];
 
 const BOTTOM_NAV_ITEMS: BottomNavItem[] = [
