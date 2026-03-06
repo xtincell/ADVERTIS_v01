@@ -93,7 +93,9 @@
       "Bash(npx next --version)",
       "Bash(npx eslint src/)",
       "Bash(npx eslint src/app/\\\\\\(auth\\\\\\)/impulsion/brand/[id]/generate/page.tsx src/server/services/pipeline-orchestrator.ts)",
-      "Bash(wmic process where \"name like ''%git%''\" get processid,name,commandline)"
+      "Bash(wmic process where \"name like ''%git%''\" get processid,name,commandline)",
+      "Bash(powershell.exe -NoProfile -Command 'Get-Process | Where-Object {$_.ProcessName -match \"\"git\"\"} | Select-Object Id, ProcessName | Format-Table -AutoSize')",
+      "Bash(powershell.exe -NoProfile -Command 'Stop-Process -Id 49228,76148 -Force')"
     ]
   }
 }
