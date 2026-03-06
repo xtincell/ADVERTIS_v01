@@ -30,8 +30,8 @@ const DEFAULT_TABS: CockpitTab[] = [
 /** Maps tab IDs to the cockpit section keys they should show */
 export const TAB_SECTION_MAP: Record<string, string[]> = {
   overview: ["scores", "alerts", "oracle-scores", "synthese", "authenticite", "distinction", "valeur", "engagement", "livrables", "fiche-client"],
-  strategy: ["authenticite", "distinction", "valeur", "synthese", "oracle-scores", "aarrr-roadmap"],
-  operational: ["engagement", "implementation", "budget", "budget-operationnel", "widgets", "glory", "aarrr-roadmap"],
+  strategy: ["authenticite", "distinction", "valeur", "synthese", "oracle-scores", "aarrr-roadmap", "action-simulator"],
+  operational: ["engagement", "implementation", "budget", "budget-operationnel", "widgets", "glory", "aarrr-roadmap", "action-simulator"],
   creative: ["big-idea-kit", "creative-strategy", "funnel-mapping"],
   planning: ["chrono", "partners", "budget-operationnel"],
   signals: ["signals", "decisions", "veille"],

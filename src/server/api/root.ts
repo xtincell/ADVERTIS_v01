@@ -24,6 +24,7 @@
 //   glory         — T.17 GLORY operational tools
 //   variable      — T.18 BrandVariable registry CRUD + exploration
 //   framework     — T.19 ARTEMIS framework system
+//   campaign      — T.20 360° Campaign Ops (14 sub-routers)
 //
 // Exports:
 //   appRouter    — Combined tRPC router
@@ -69,6 +70,7 @@ import { cohortRouter } from "~/server/api/routers/cohort";
 import { attributionRouter } from "~/server/api/routers/attribution";
 import { brandVaultRouter } from "~/server/api/routers/brand-vault";
 import { frameworkRouter } from "~/server/api/routers/framework";
+import { campaignRouter } from "~/server/api/routers/campaign";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -111,6 +113,7 @@ export const appRouter = createTRPCRouter({
   attribution: attributionRouter,
   brandVault: brandVaultRouter,
   framework: frameworkRouter,
+  campaign: campaignRouter,
 });
 
 // export type definition of API

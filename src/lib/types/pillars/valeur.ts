@@ -97,6 +97,85 @@ export const ProduitServiceSchema = z.object({
   bundles: z.array(z.string()).default([]),
   dependencies: z.array(z.string()).default([]),
   scoringInterne: z.coerce.number().min(0).max(100).catch(0),
+
+  // ---- Marketing Levers (Phase ML) ----
+
+  /** Psychological levers mapped to this product/service */
+  leviersPsychologiques: z
+    .array(
+      z.object({
+        levier: z.string().default(""),
+        intensite: z.coerce.number().min(0).max(10).catch(0),
+        description: z.string().default(""),
+      }),
+    )
+    .default([]),
+
+  /** Maslow pyramid mapping */
+  maslowMapping: z
+    .array(
+      z.object({
+        niveau: z.string().default(""),
+        pertinence: z.coerce.number().min(0).max(10).catch(0),
+        justification: z.string().default(""),
+      }),
+    )
+    .default([]),
+
+  /** Nano Banana prompt for AI image generation in lieu of photo */
+  nanoBananaPrompt: z
+    .object({
+      prompt: z.string().default(""),
+      style: z.string().default("luxe-raffine"),
+      mood: z.string().default(""),
+      colorDirection: z.string().default(""),
+      application: z.string().default("product-hero"),
+      aspectRatio: z.string().default("1:1"),
+    })
+    .default({}),
+
+  /** Perceived price elasticity (0 = rigid demand, 10 = ultra elastic) */
+  elasticitePercue: z.coerce.number().min(0).max(10).catch(5),
+
+  /** Monthly seasonality profile */
+  saisonalite: z
+    .array(
+      z.object({
+        mois: z.coerce.number().min(1).max(12).catch(1),
+        profil: z
+          .enum(["PEAK", "HIGH", "NORMAL", "LOW", "OFF"])
+          .catch("NORMAL"),
+        coefficient: z.coerce.number().catch(1.0),
+      }),
+    )
+    .default([]),
+
+  /** Cannibalization risk with other SKUs */
+  cannibalisationRisque: z
+    .array(
+      z.object({
+        skuRef: z.string().default(""),
+        risque: z.coerce.number().min(0).max(100).catch(0),
+        description: z.string().default(""),
+      }),
+    )
+    .default([]),
+
+  /** Emotional score (0-100) aggregating lever intensities + Maslow */
+  scoreEmotionnelADVE: z.coerce.number().min(0).max(100).catch(0),
+
+  /** Regulatory constraint flags */
+  contraintesReglementaires: z.array(z.string()).default([]),
+
+  /** Mix Marketing 4P description */
+  mixMarketing: z
+    .object({
+      produit: z.string().default(""),
+      prix: z.string().default(""),
+      place: z.string().default(""),
+      promotion: z.string().default(""),
+    })
+    .default({}),
 });
 
 /** Atomic value/cost line item */

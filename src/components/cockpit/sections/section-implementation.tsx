@@ -177,7 +177,7 @@ export function SectionImplementation({
           icon={<Megaphone className="h-5 w-5" />}
           pillarLetter="I"
           title="Plan de Campagnes"
-          subtitle="Calendrier annuel, Templates, Activation"
+          subtitle="Chaque campagne est une combinaison harmonisee d'actions marketing coordonnees"
           color={COLOR}
         >
           <div className="space-y-5">

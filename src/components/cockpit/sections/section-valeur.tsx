@@ -11,6 +11,9 @@
 
 // Section Valeur (Pillar V) — Catalogue, Product Ladder, Value/Cost, Unit Economics
 
+"use client";
+
+import { useState } from "react";
 import {
   TrendingUp,
   Zap,
@@ -18,11 +21,12 @@ import {
   AlertTriangle,
   Package,
   Calculator,
+  Eye,
 } from "lucide-react";
 
 import { PILLAR_CONFIG } from "~/lib/constants";
 import type { SupportedCurrency } from "~/lib/constants";
-import type { ValeurPillarDataV2, ValeurCoutItem } from "~/lib/types/pillar-schemas";
+import type { ValeurPillarDataV2, ValeurCoutItem, ProduitService } from "~/lib/types/pillar-schemas";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { getCurrencySymbol } from "~/lib/currency";
 import {
@@ -31,6 +35,7 @@ import {
   MetricCard,
   PillarContentDisplay,
 } from "../cockpit-shared";
+import { ProductSheetEnhanced } from "../product-sheet-enhanced";
 
 interface PillarData {
   type: string;
@@ -103,6 +108,9 @@ export function SectionValeur({
   vertical?: string | null;
   currency?: SupportedCurrency;
 }) {
+  const [selectedProduct, setSelectedProduct] = useState<ProduitService | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+
   const color = PILLAR_CONFIG.V.color;
   const currencySymbol = getCurrencySymbol(currency ?? "XOF");
 
@@ -150,15 +158,26 @@ export function SectionValeur({
               </p>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {vContent.produitsCatalogue.map((prod, i) => (
-                  <div key={prod.id || i} className="rounded-lg border p-3 space-y-1">
+                  <button
+                    key={prod.id || i}
+                    type="button"
+                    className="rounded-lg border p-3 space-y-1 text-left hover:border-amber-400/50 hover:bg-amber-50/5 transition-all cursor-pointer group"
+                    onClick={() => {
+                      setSelectedProduct(prod);
+                      setSheetOpen(true);
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Package className="h-3.5 w-3.5 shrink-0" style={{ color }} />
                         <span className="text-sm font-semibold">{prod.nom || `Produit ${i + 1}`}</span>
                       </div>
-                      <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] capitalize">
-                        {prod.categorie}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="inline-flex rounded-full border px-2 py-0.5 text-[10px] capitalize">
+                          {prod.categorie}
+                        </span>
+                        <Eye className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
                     {prod.prix && (
                       <div className="flex items-center gap-2">
@@ -178,17 +197,29 @@ export function SectionValeur({
                     {prod.description && (
                       <p className="text-xs text-foreground/80">{prod.description}</p>
                     )}
-                    {prod.segmentCible && (
-                      <p className="text-[11px] text-muted-foreground">
-                        Segment : {prod.segmentCible}
-                      </p>
-                    )}
-                    {prod.phaseLifecycle && (
-                      <span className="inline-flex rounded-full border px-1.5 py-0.5 text-[10px] text-muted-foreground capitalize">
-                        {prod.phaseLifecycle}
-                      </span>
-                    )}
-                  </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {prod.segmentCible && (
+                        <span className="text-[11px] text-muted-foreground">
+                          Segment : {prod.segmentCible}
+                        </span>
+                      )}
+                      {prod.phaseLifecycle && (
+                        <span className="inline-flex rounded-full border px-1.5 py-0.5 text-[10px] text-muted-foreground capitalize">
+                          {prod.phaseLifecycle}
+                        </span>
+                      )}
+                      {prod.scoreEmotionnelADVE > 0 && (
+                        <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold bg-purple-50 text-purple-600 dark:bg-purple-500/10">
+                          ADVE {prod.scoreEmotionnelADVE}
+                        </span>
+                      )}
+                      {prod.leviersPsychologiques?.length > 0 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          {prod.leviersPsychologiques.length} levier(s)
+                        </span>
+                      )}
+                    </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -558,6 +589,14 @@ export function SectionValeur({
         ---------------------------------------------------------------- */
         <PillarContentDisplay pillar={pillar} />
       )}
+
+      {/* Product Detail Sheet */}
+      <ProductSheetEnhanced
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        product={selectedProduct}
+        currency={currencySymbol}
+      />
     </CockpitSection>
   );
 }

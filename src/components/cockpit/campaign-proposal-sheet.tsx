@@ -784,6 +784,18 @@ export function CampaignProposalSheet({
         </SheetHeader>
 
         <div className="space-y-6 p-4">
+          {/* ── 0. Composition de la Campagne ── */}
+          <div className="rounded-lg border-l-4 bg-muted/20 px-4 py-3" style={{ borderColor: COLOR }}>
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+              Composition de la Campagne
+            </p>
+            <p className="text-xs text-foreground/70 leading-relaxed">
+              Une campagne est une <span className="font-semibold">combinaison harmonisee d&apos;actions marketing</span> coordonnees
+              dans le temps et l&apos;espace pour atteindre un objectif precis. Chaque action contribue a un ou
+              plusieurs etages du funnel AARRR.
+            </p>
+          </div>
+
           {/* ── 1. Budget comparatif ── */}
           <Section
             icon={<DollarSign className="h-4 w-4" style={{ color: COLOR }} />}

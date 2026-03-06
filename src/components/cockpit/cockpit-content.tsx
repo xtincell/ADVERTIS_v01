@@ -94,6 +94,7 @@ import { SectionMetrics } from "./sections/section-metrics";
 import { SectionOracleScores } from "./sections/section-oracle-scores";
 import { SectionFicheClient } from "./sections/section-fiche-client";
 import { SectionAARRRRoadmap } from "./sections/section-aarrr-roadmap";
+import { SectionActionSimulator } from "./sections/section-action-simulator";
 import { AuditSuggestionsPanel } from "~/components/strategy/audit-review/audit-suggestions-panel";
 import { StrategyFeedbackModule } from "~/components/feedback/strategy-feedback-module";
 
@@ -517,6 +518,11 @@ export function CockpitContent({
             onComplete={onRefresh}
           />
         </CockpitSection>
+      )}
+
+      {/* ── Simulateur d'Actions Marketing ── */}
+      {show("action-simulator") && data.strategyId && !isPublic && (
+        <SectionActionSimulator strategyId={data.strategyId} />
       )}
 
       {/* ── Pillar I — Implementation (Roadmap, Campaigns, Budget, Team, Launch, Playbook) ── */}

@@ -183,6 +183,9 @@ model Strategy {
     frameworkOutputs       FrameworkOutput[]
     financialSnapshots     FinancialSnapshot[]
 
+    // === Campaign Manager (360° Campaign Ops) ===
+    campaigns              Campaign[]
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
@@ -1975,4 +1978,549 @@ model FinancialSnapshot {
 
     @@index([strategyId])
     @@index([snapshotDate])
+}
+
+// ============================================
+// CAMPAIGN MANAGER (360° Campaign Ops)
+// Full campaign lifecycle: brief → planning → production → live → post-campaign
+// ATL / BTL / TTL actions, executions, amplifications, team, budget, approvals
+// ============================================
+
+model Campaign {
+    id              String    @id @default(cuid())
+    strategyId      String
+    strategy        Strategy  @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+    // Identity
+    name            String
+    code            String?           // Internal ref: "CAMP-2026-001"
+    description     String?   @db.Text
+    campaignType    String            // LAUNCH, RECURRING, EVENT, ACTIVATION, INSTITUTIONAL, TACTICAL
+    status          String    @default("BRIEF_DRAFT") // Campaign state machine (12 states)
+    priority        String    @default("P1") // P0, P1, P2
+
+    // Strategic Context
+    bigIdea         String?   @db.Text
+    axeCreatif      String?   @db.Text
+    pisteCreative   String?   @db.Text
+    insight         String?   @db.Text // Consumer/market insight
+    promesse        String?   @db.Text // Brand promise for this campaign
+    targetAudience  Json?              // { primary: {...}, secondary: {...} }
+    positioning     String?   @db.Text
+
+    // Timeline
+    briefDate       DateTime?
+    startDate       DateTime?
+    endDate         DateTime?
+    launchDate      DateTime?
+
+    // Budget
+    totalBudget     Float?
+    budgetAllocated Float     @default(0)
+    budgetSpent     Float     @default(0)
+    currency        String    @default("XAF")
+
+    // Categorization
+    funnelStage     String?            // AWARENESS, CONSIDERATION, CONVERSION, LOYALTY, ADVOCACY
+    markets         Json?              // string[] market codes: ["CM", "CI", "SN"]
+    channels        Json?              // string[] summary of all channels
+    tags            Json?              // string[] freeform tags
+
+    // Versioning & Templates
+    version         Int       @default(1)
+    isTemplate      Boolean   @default(false)
+    templateId      String?            // Source template if duplicated
+    parentCampaignId String?           // Multi-market parent reference
+    parentCampaign  Campaign? @relation("CampaignVariants", fields: [parentCampaignId], references: [id], onDelete: SetNull)
+    variants        Campaign[] @relation("CampaignVariants")
+
+    // Approval
+    briefApprovedBy   String?
+    briefApprovedAt   DateTime?
+    clientApprovedBy  String?
+    clientApprovedAt  DateTime?
+
+    // KPIs & Results
+    kpiTargets      Json?    // Array<{ name, target, unit }>
+    kpiResults      Json?    // Array<{ name, actual, unit, variance }>
+    roiTarget       Float?
+    roiActual       Float?
+    postCampaignSummary String? @db.Text
+
+    // Links to existing models
+    bigIdeaKitId    String?
+    createdBy       String
+
+    // Relations
+    actions         CampaignAction[]
+    teamMembers     CampaignTeamMember[]
+    executions      CampaignExecution[]
+    amplifications  CampaignAmplification[]
+    milestones      CampaignMilestone[]
+    budgetLines     CampaignBudgetLine[]
+    approvals       CampaignApproval[]
+    assets          CampaignAsset[]
+    briefs          CampaignBrief[]
+    reports         CampaignReport[]
+    dependencies    CampaignDependency[] @relation("CampaignDepSource")
+    dependedOnBy    CampaignDependency[] @relation("CampaignDepTarget")
+    missions        CampaignMission[]
+    publications    CampaignPublication[]
+    signals         CampaignSignal[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([strategyId])
+    @@index([status])
+    @@index([campaignType])
+    @@index([startDate])
+    @@index([createdBy])
+    @@index([isTemplate])
+    @@index([parentCampaignId])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Action — ATL / BTL / TTL actions
+// ---------------------------------------------------------------------------
+
+model CampaignAction {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    name            String
+    description     String?   @db.Text
+    actionLine      String    // ATL, BTL, TTL
+    actionType      String    // ATL: TV, RADIO, CINEMA, PRESSE, AFFICHAGE, OOH
+                              // BTL: PLV, STREET_MARKETING, EVENEMENTIEL, SAMPLING, MERCHANDISING, SPONSORING, DIRECT_MAIL
+                              // TTL: DIGITAL, SOCIAL_MEDIA, CRM, EMAILING, SEO, SEA, DISPLAY, INFLUENCER, CONTENT_MARKETING
+    channel         String?
+    status          String    @default("PLANNED") // PLANNED, BRIEFED, IN_PRODUCTION, READY, ACTIVE, COMPLETED, CANCELLED
+
+    startDate       DateTime?
+    endDate         DateTime?
+
+    budgetAllocated Float     @default(0)
+    budgetSpent     Float     @default(0)
+    currency        String    @default("XAF")
+
+    vendorId        String?   // TalentProfile or external
+    vendorName      String?
+    vendorBrief     String?   @db.Text
+
+    kpiTargets      Json?     // Array<{ name, target, unit }>
+    kpiResults      Json?     // Array<{ name, actual, unit }>
+    specs           Json?     // Action-type-specific data
+    notes           String?   @db.Text
+
+    // ---- Simulator fields (Phase ML) ----
+    aarrStage                 String?   // acquisition, activation, retention, revenue, referral
+    coutUnitaire              Float?    // Cost per unit (CPM/CPC/CPL/CPA)
+    uniteCosting              String?   // CPM, CPC, CPL, CPA, FLAT
+    rendementDecroissant      Float?    // Diminishing returns coefficient (0-1)
+    sovTarget                 Float?    // Share of Voice target (0-100)
+    contraintesReglementaires Json?     // Array<string> — regulatory flag IDs
+    delaiMinimumJours         Int?      // Minimum lead time in days
+
+    executions      CampaignExecution[]
+    amplifications  CampaignAmplification[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([actionLine])
+    @@index([actionType])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Execution — Physical / digital productions
+// Production tracking: DEVIS → BAT → EN_PRODUCTION → LIVRAISON → INSTALLE → TERMINE
+// ---------------------------------------------------------------------------
+
+model CampaignExecution {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    actionId        String?
+    action          CampaignAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
+
+    name            String
+    executionType   String    // OOH, POINT_DE_CONTACT, DECLINAISON, PLV, PACKAGING, PRINT, VIDEO_PROD, PHOTO_PROD, WEB_DEV, APP_DEV, SIGNAGE, STAND, VEHICULE_WRAP
+    format          String?   // e.g., "4x3", "A4", "30s", "1920x1080"
+    quantity        Int       @default(1)
+
+    status          String    @default("DEVIS") // DEVIS, BAT, EN_PRODUCTION, LIVRAISON, INSTALLE, TERMINE
+    devisAmount     Float?
+    devisApprovedAt DateTime?
+    batFileUrl      String?
+    batApprovedAt   DateTime?
+    deliveryDate    DateTime?
+    installDate     DateTime?
+
+    vendorId        String?
+    vendorName      String?
+
+    location        String?
+    geoCoordinates  Json?     // { lat, lng }
+    city            String?
+    market          String?   // CM, CI, SN
+
+    unitCost        Float?
+    totalCost       Float?
+    currency        String    @default("XAF")
+
+    specs           Json?     // { material, finishing, weight, duration, ... }
+    notes           String?   @db.Text
+    fileUrls        Json?     // string[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([actionId])
+    @@index([executionType])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Amplification — Media buying (TV spots, radio, digital ads, etc.)
+// ---------------------------------------------------------------------------
+
+model CampaignAmplification {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    actionId        String?
+    action          CampaignAction? @relation(fields: [actionId], references: [id], onDelete: SetNull)
+
+    name            String
+    mediaType       String    // TV_SPOT, RADIO_SPOT, PRESSE_INSERTION, DIGITAL_AD, SOCIAL_AD, OOH_BUY, CINEMA_SPOT, PROGRAMMATIC, NATIVE_AD, PODCAST_AD, INFLUENCER_POST
+    platform        String?   // "Meta", "Google", "TF1", "RFI"
+    format          String?   // "30s", "15s", "banner 728x90", "story"
+    placement       String?   // "prime time", "news break", "feed", "search"
+
+    flightStart     DateTime?
+    flightEnd       DateTime?
+    frequency       Int?      // Number of insertions/rotations
+    grp             Float?    // Gross Rating Points
+
+    mediaCost       Float     @default(0)
+    productionCost  Float     @default(0)
+    agencyFee       Float     @default(0)
+    totalCost       Float     @default(0)
+    currency        String    @default("XAF")
+    cpm             Float?    // Cost per mille
+    cpc             Float?    // Cost per click
+    cpv             Float?    // Cost per view
+
+    impressions     Int?
+    reach           Int?
+    clicks          Int?
+    views           Int?
+    conversions     Int?
+    engagements     Int?
+    ctr             Float?    // Click-through rate
+    vtr             Float?    // View-through rate
+    conversionRate  Float?
+
+    regieId         String?   // Partner ID for media régie
+    regieName       String?
+    orderNumber     String?   // Insertion order reference
+    status          String    @default("PLANNED") // PLANNED, BOOKED, CONFIRMED, LIVE, COMPLETED, CANCELLED
+
+    notes           String?   @db.Text
+    creativeUrls    Json?     // string[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([actionId])
+    @@index([mediaType])
+    @@index([status])
+    @@index([flightStart])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Team Member — Internal users, freelancers, external vendors
+// ---------------------------------------------------------------------------
+
+model CampaignTeamMember {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    userId          String?   // Internal user
+    talentProfileId String?   // TalentProfile for freelancers
+    externalName    String?   // External providers without account
+    externalEmail   String?
+    externalCompany String?
+
+    role            String    // CAMPAIGN_DIRECTOR, CREATIVE_DIRECTOR, ART_DIRECTOR, COPYWRITER, STRATEGIST, MEDIA_PLANNER, MEDIA_BUYER, PRODUCER, DEVELOPER, COMMUNITY_MANAGER, PROJECT_MANAGER, CLIENT_LEAD, EXTERNAL_VENDOR
+    responsibility  String?   @db.Text
+    isLead          Boolean   @default(false)
+    allocation      Float?    // % time allocation (0-100)
+    dayRate         Float?
+    estimatedDays   Float?
+    actualDays      Float?
+
+    status          String    @default("ASSIGNED") // ASSIGNED, ACTIVE, COMPLETED, RELEASED
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([userId])
+    @@index([talentProfileId])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Milestone — Timeline with gate reviews
+// ---------------------------------------------------------------------------
+
+model CampaignMilestone {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    title           String
+    description     String?
+    dueDate         DateTime
+    completedDate   DateTime?
+    status          String    @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED, OVERDUE, SKIPPED
+    isGateReview    Boolean   @default(false) // Blocks campaign progression
+    assignedTo      String?   // userId
+    phase           String?   // Maps to campaign status phase
+    dependencies    Json?     // string[] milestone IDs
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([dueDate])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Budget Line — Category-based budget tracking
+// ---------------------------------------------------------------------------
+
+model CampaignBudgetLine {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    category        String    // PRODUCTION, MEDIA, TALENT, LOGISTICS, TECHNOLOGY, LEGAL, CONTINGENCY, AGENCY_FEE
+    subcategory     String?
+    label           String
+    budgetAllocated Float     @default(0)
+    budgetCommitted Float     @default(0) // POs issued
+    budgetSpent     Float     @default(0) // Invoiced / paid
+    currency        String    @default("XAF")
+    notes           String?
+
+    invoiceId       String?
+    invoiceItemId   String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([category])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Approval — Brief/creative/BAT/media plan approval workflow
+// ---------------------------------------------------------------------------
+
+model CampaignApproval {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    approvalType    String    // BRIEF, CREATIVE_CONCEPT, KEY_VISUAL, COPY, BAT, MEDIA_PLAN, BUDGET, FINAL_DELIVERY, LAUNCH
+    title           String
+    description     String?   @db.Text
+    status          String    @default("PENDING") // PENDING, APPROVED, REJECTED, REVISION_REQUESTED
+    requestedBy     String    // userId
+    requestedAt     DateTime  @default(now())
+    approvedBy      String?
+    approvedAt      DateTime?
+    rejectionReason String?   @db.Text
+    revisionNotes   String?   @db.Text
+    round           Int       @default(1) // Increments on rejection
+    attachmentUrls  Json?     // string[]
+    deadline        DateTime?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([approvalType])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Asset — Creative assets with versioning
+// ---------------------------------------------------------------------------
+
+model CampaignAsset {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    name            String
+    assetType       String    // KEY_VISUAL, VIDEO, AUDIO, PRINT, DIGITAL_BANNER, SOCIAL_POST, PACKAGING, PLV, DOCUMENT, SCRIPT, STORYBOARD, MOODBOARD
+    fileUrl         String
+    fileType        String    // mime type
+    fileSize        Int       @default(0)
+    thumbnailUrl    String?
+
+    version         Int       @default(1)
+    parentId        String?   // Previous version
+
+    status          String    @default("DRAFT") // DRAFT, REVIEW, APPROVED, FINAL, ARCHIVED
+    approvedBy      String?
+    approvedAt      DateTime?
+
+    dimensions      Json?     // { width, height }
+    duration        Int?      // seconds for video/audio
+    specs           Json?
+    tags            Json?     // string[]
+
+    gloryOutputId   String?   // Generated from GLORY
+    brandAssetId    String?   // Published to Brand Vault
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([assetType])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Brief — Creative/media/vendor briefs
+// ---------------------------------------------------------------------------
+
+model CampaignBrief {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    briefType       String    // CREATIVE, MEDIA, PRODUCTION, VENDOR, EVENT, DIGITAL, RP
+    title           String
+    content         Json      // Structured brief content
+    status          String    @default("DRAFT") // DRAFT, SENT, ACKNOWLEDGED, IN_PROGRESS, COMPLETED
+    recipientType   String?   // INTERNAL, FREELANCE, VENDOR, MEDIA_REP
+    recipientId     String?   // userId or partnerId
+    recipientName   String?
+    sentAt          DateTime?
+    acknowledgedAt  DateTime?
+    completedAt     DateTime?
+
+    gloryOutputId   String?   // Generated via GLORY
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([briefType])
+    @@index([status])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Report — Status, performance, ROI, post-campaign analysis
+// ---------------------------------------------------------------------------
+
+model CampaignReport {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+    reportType      String    // WEEKLY_STATUS, MONTHLY_STATUS, MID_CAMPAIGN, POST_CAMPAIGN, ROI_ANALYSIS, MEDIA_PERFORMANCE, CREATIVE_PERFORMANCE
+    title           String
+    content         Json      // Structured report data
+    summary         String?   @db.Text
+    period          Json?     // { start: Date, end: Date }
+    metrics         Json?     // Aggregated metrics snapshot
+
+    aiInsights      Json?     // Array<{ insight, recommendation, confidence }>
+    generatedBy     String    @default("manual") // manual, ai, system
+
+    status          String    @default("DRAFT") // DRAFT, PUBLISHED, ARCHIVED
+    publishedAt     DateTime?
+    publishedBy     String?
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([campaignId])
+    @@index([reportType])
+}
+
+// ---------------------------------------------------------------------------
+// Campaign Junction Tables — Links to existing models
+// ---------------------------------------------------------------------------
+
+model CampaignMission {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    missionId       String
+    role            String?   // How this mission serves the campaign
+    notes           String?
+
+    createdAt DateTime @default(now())
+
+    @@unique([campaignId, missionId])
+    @@index([campaignId])
+    @@index([missionId])
+}
+
+model CampaignPublication {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    publicationId   String
+    notes           String?
+
+    createdAt DateTime @default(now())
+
+    @@unique([campaignId, publicationId])
+    @@index([campaignId])
+    @@index([publicationId])
+}
+
+model CampaignSignal {
+    id              String    @id @default(cuid())
+    campaignId      String
+    campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+    signalId        String
+    impact          String?   // How this signal affects the campaign
+
+    createdAt DateTime @default(now())
+
+    @@unique([campaignId, signalId])
+    @@index([campaignId])
+    @@index([signalId])
+}
+
+model CampaignDependency {
+    id              String    @id @default(cuid())
+    sourceCampaignId String
+    sourceCampaign  Campaign  @relation("CampaignDepSource", fields: [sourceCampaignId], references: [id], onDelete: Cascade)
+    targetCampaignId String
+    targetCampaign  Campaign  @relation("CampaignDepTarget", fields: [targetCampaignId], references: [id], onDelete: Cascade)
+    dependencyType  String    // BLOCKS, REQUIRES, FOLLOWS, PARALLEL
+    notes           String?
+
+    createdAt DateTime @default(now())
+
+    @@unique([sourceCampaignId, targetCampaignId])
+    @@index([sourceCampaignId])
+    @@index([targetCampaignId])
 }

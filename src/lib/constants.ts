@@ -1646,3 +1646,396 @@ export const ASSET_STATUSES = [
   "ACTIVE", "ARCHIVED", "DEPRECATED",
 ] as const;
 export type AssetStatus = (typeof ASSET_STATUSES)[number];
+
+// =============================================================================
+// CAMPAIGN MANAGER (360° Campaign Ops)
+// =============================================================================
+
+// ── Campaign Status Machine ──
+export const CAMPAIGN_STATUSES = [
+  "BRIEF_DRAFT", "BRIEF_VALIDATED", "PLANNING", "CREATIVE_DEV",
+  "PRODUCTION", "PRE_PRODUCTION", "APPROVAL", "READY_TO_LAUNCH",
+  "LIVE", "POST_CAMPAIGN", "ARCHIVED", "CANCELLED",
+] as const;
+export type CampaignStatus = (typeof CAMPAIGN_STATUSES)[number];
+
+export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
+  BRIEF_DRAFT: "Brouillon Brief",
+  BRIEF_VALIDATED: "Brief Validé",
+  PLANNING: "Planification",
+  CREATIVE_DEV: "Développement Créatif",
+  PRODUCTION: "Production",
+  PRE_PRODUCTION: "Pré-Production",
+  APPROVAL: "Validation Client",
+  READY_TO_LAUNCH: "Prêt au Lancement",
+  LIVE: "En Cours",
+  POST_CAMPAIGN: "Post-Campagne",
+  ARCHIVED: "Archivée",
+  CANCELLED: "Annulée",
+};
+
+export const CAMPAIGN_STATUS_COLORS: Record<CampaignStatus, string> = {
+  BRIEF_DRAFT: "text-gray-600 bg-gray-50 border-gray-200",
+  BRIEF_VALIDATED: "text-blue-600 bg-blue-50 border-blue-200",
+  PLANNING: "text-indigo-600 bg-indigo-50 border-indigo-200",
+  CREATIVE_DEV: "text-purple-600 bg-purple-50 border-purple-200",
+  PRODUCTION: "text-orange-600 bg-orange-50 border-orange-200",
+  PRE_PRODUCTION: "text-amber-600 bg-amber-50 border-amber-200",
+  APPROVAL: "text-yellow-600 bg-yellow-50 border-yellow-200",
+  READY_TO_LAUNCH: "text-lime-600 bg-lime-50 border-lime-200",
+  LIVE: "text-green-600 bg-green-50 border-green-200",
+  POST_CAMPAIGN: "text-teal-600 bg-teal-50 border-teal-200",
+  ARCHIVED: "text-slate-600 bg-slate-50 border-slate-200",
+  CANCELLED: "text-red-600 bg-red-50 border-red-200",
+};
+
+export const CAMPAIGN_VALID_TRANSITIONS: Record<CampaignStatus, CampaignStatus[]> = {
+  BRIEF_DRAFT: ["BRIEF_VALIDATED", "CANCELLED"],
+  BRIEF_VALIDATED: ["PLANNING", "BRIEF_DRAFT", "CANCELLED"],
+  PLANNING: ["CREATIVE_DEV", "BRIEF_VALIDATED", "CANCELLED"],
+  CREATIVE_DEV: ["PRODUCTION", "PLANNING", "CANCELLED"],
+  PRODUCTION: ["PRE_PRODUCTION", "CREATIVE_DEV", "CANCELLED"],
+  PRE_PRODUCTION: ["APPROVAL", "PRODUCTION"],
+  APPROVAL: ["READY_TO_LAUNCH", "CREATIVE_DEV", "PRODUCTION"],
+  READY_TO_LAUNCH: ["LIVE", "APPROVAL"],
+  LIVE: ["POST_CAMPAIGN"],
+  POST_CAMPAIGN: ["ARCHIVED"],
+  ARCHIVED: [],
+  CANCELLED: ["BRIEF_DRAFT"],
+};
+
+// ── Campaign Types ──
+export const CAMPAIGN_TYPES = [
+  "LAUNCH", "RECURRING", "EVENT", "ACTIVATION", "INSTITUTIONAL", "TACTICAL",
+] as const;
+export type CampaignType = (typeof CAMPAIGN_TYPES)[number];
+
+export const CAMPAIGN_TYPE_LABELS: Record<CampaignType, string> = {
+  LAUNCH: "Lancement",
+  RECURRING: "Récurrente",
+  EVENT: "Événementielle",
+  ACTIVATION: "Activation",
+  INSTITUTIONAL: "Institutionnelle",
+  TACTICAL: "Tactique",
+};
+
+export const CAMPAIGN_TYPE_COLORS: Record<CampaignType, string> = {
+  LAUNCH: "text-emerald-700 bg-emerald-50 border-emerald-200",
+  RECURRING: "text-blue-700 bg-blue-50 border-blue-200",
+  EVENT: "text-purple-700 bg-purple-50 border-purple-200",
+  ACTIVATION: "text-orange-700 bg-orange-50 border-orange-200",
+  INSTITUTIONAL: "text-slate-700 bg-slate-50 border-slate-200",
+  TACTICAL: "text-amber-700 bg-amber-50 border-amber-200",
+};
+
+// ── Action Lines (ATL / BTL / TTL) ──
+export const ACTION_LINES = ["ATL", "BTL", "TTL"] as const;
+export type ActionLine = (typeof ACTION_LINES)[number];
+
+export const ACTION_LINE_LABELS: Record<ActionLine, string> = {
+  ATL: "Above The Line",
+  BTL: "Below The Line",
+  TTL: "Through The Line",
+};
+
+export const ATL_TYPES = [
+  "TV", "RADIO", "CINEMA", "PRESSE", "AFFICHAGE", "OOH",
+] as const;
+export type ATLType = (typeof ATL_TYPES)[number];
+
+export const ATL_TYPE_LABELS: Record<ATLType, string> = {
+  TV: "Télévision",
+  RADIO: "Radio",
+  CINEMA: "Cinéma",
+  PRESSE: "Presse",
+  AFFICHAGE: "Affichage",
+  OOH: "Out Of Home",
+};
+
+export const BTL_TYPES = [
+  "PLV", "STREET_MARKETING", "EVENEMENTIEL", "SAMPLING", "MERCHANDISING", "SPONSORING", "DIRECT_MAIL",
+] as const;
+export type BTLType = (typeof BTL_TYPES)[number];
+
+export const BTL_TYPE_LABELS: Record<BTLType, string> = {
+  PLV: "PLV",
+  STREET_MARKETING: "Street Marketing",
+  EVENEMENTIEL: "Événementiel",
+  SAMPLING: "Sampling",
+  MERCHANDISING: "Merchandising",
+  SPONSORING: "Sponsoring",
+  DIRECT_MAIL: "Mailing Direct",
+};
+
+export const TTL_TYPES = [
+  "DIGITAL", "SOCIAL_MEDIA", "CRM", "EMAILING", "SEO", "SEA", "DISPLAY", "INFLUENCER", "CONTENT_MARKETING",
+] as const;
+export type TTLType = (typeof TTL_TYPES)[number];
+
+export const TTL_TYPE_LABELS: Record<TTLType, string> = {
+  DIGITAL: "Digital",
+  SOCIAL_MEDIA: "Réseaux Sociaux",
+  CRM: "CRM",
+  EMAILING: "Emailing",
+  SEO: "SEO",
+  SEA: "SEA",
+  DISPLAY: "Display",
+  INFLUENCER: "Influenceur",
+  CONTENT_MARKETING: "Content Marketing",
+};
+
+// ── Action Statuses ──
+export const CAMPAIGN_ACTION_STATUSES = [
+  "PLANNED", "BRIEFED", "IN_PRODUCTION", "READY", "ACTIVE", "COMPLETED", "CANCELLED",
+] as const;
+export type CampaignActionStatus = (typeof CAMPAIGN_ACTION_STATUSES)[number];
+
+export const CAMPAIGN_ACTION_STATUS_LABELS: Record<CampaignActionStatus, string> = {
+  PLANNED: "Planifié",
+  BRIEFED: "Briefé",
+  IN_PRODUCTION: "En Production",
+  READY: "Prêt",
+  ACTIVE: "Actif",
+  COMPLETED: "Terminé",
+  CANCELLED: "Annulé",
+};
+
+// ── Execution Types ──
+export const EXECUTION_TYPES = [
+  "OOH", "POINT_DE_CONTACT", "DECLINAISON", "PLV", "PACKAGING",
+  "PRINT", "VIDEO_PROD", "PHOTO_PROD", "WEB_DEV", "APP_DEV",
+  "SIGNAGE", "STAND", "VEHICULE_WRAP",
+] as const;
+export type ExecutionType = (typeof EXECUTION_TYPES)[number];
+
+export const EXECUTION_TYPE_LABELS: Record<ExecutionType, string> = {
+  OOH: "Out Of Home",
+  POINT_DE_CONTACT: "Point de Contact",
+  DECLINAISON: "Déclinaison",
+  PLV: "PLV",
+  PACKAGING: "Packaging",
+  PRINT: "Print",
+  VIDEO_PROD: "Production Vidéo",
+  PHOTO_PROD: "Production Photo",
+  WEB_DEV: "Développement Web",
+  APP_DEV: "Développement App",
+  SIGNAGE: "Signalétique",
+  STAND: "Stand",
+  VEHICULE_WRAP: "Habillage Véhicule",
+};
+
+// ── Execution Statuses (production pipeline) ──
+export const EXECUTION_STATUSES = [
+  "DEVIS", "BAT", "EN_PRODUCTION", "LIVRAISON", "INSTALLE", "TERMINE",
+] as const;
+export type ExecutionStatus = (typeof EXECUTION_STATUSES)[number];
+
+export const EXECUTION_STATUS_LABELS: Record<ExecutionStatus, string> = {
+  DEVIS: "Devis",
+  BAT: "BAT",
+  EN_PRODUCTION: "En Production",
+  LIVRAISON: "Livraison",
+  INSTALLE: "Installé",
+  TERMINE: "Terminé",
+};
+
+export const EXECUTION_VALID_TRANSITIONS: Record<ExecutionStatus, ExecutionStatus[]> = {
+  DEVIS: ["BAT"],
+  BAT: ["EN_PRODUCTION", "DEVIS"],
+  EN_PRODUCTION: ["LIVRAISON", "BAT"],
+  LIVRAISON: ["INSTALLE", "TERMINE"],
+  INSTALLE: ["TERMINE"],
+  TERMINE: [],
+};
+
+export const EXECUTION_STATUS_COLORS: Record<ExecutionStatus, string> = {
+  DEVIS: "text-slate-500",
+  BAT: "text-blue-500",
+  EN_PRODUCTION: "text-amber-500",
+  LIVRAISON: "text-indigo-500",
+  INSTALLE: "text-emerald-500",
+  TERMINE: "text-green-600",
+};
+
+// ── Amplification Media Types ──
+export const AMPLIFICATION_MEDIA_TYPES = [
+  "TV_SPOT", "RADIO_SPOT", "PRESSE_INSERTION", "DIGITAL_AD", "SOCIAL_AD",
+  "OOH_BUY", "CINEMA_SPOT", "PROGRAMMATIC", "NATIVE_AD", "PODCAST_AD", "INFLUENCER_POST",
+] as const;
+export type AmplificationMediaType = (typeof AMPLIFICATION_MEDIA_TYPES)[number];
+
+export const AMPLIFICATION_MEDIA_TYPE_LABELS: Record<AmplificationMediaType, string> = {
+  TV_SPOT: "Spot TV",
+  RADIO_SPOT: "Spot Radio",
+  PRESSE_INSERTION: "Insertion Presse",
+  DIGITAL_AD: "Publicité Digitale",
+  SOCIAL_AD: "Social Ads",
+  OOH_BUY: "Achat OOH",
+  CINEMA_SPOT: "Spot Cinéma",
+  PROGRAMMATIC: "Programmatique",
+  NATIVE_AD: "Native Ad",
+  PODCAST_AD: "Podcast Ad",
+  INFLUENCER_POST: "Post Influenceur",
+};
+
+export const AMPLIFICATION_STATUSES = [
+  "PLANNED", "BOOKED", "CONFIRMED", "LIVE", "COMPLETED", "CANCELLED",
+] as const;
+export type AmplificationStatus = (typeof AMPLIFICATION_STATUSES)[number];
+
+export const AMPLIFICATION_STATUS_LABELS: Record<AmplificationStatus, string> = {
+  PLANNED: "Planifié",
+  BOOKED: "Réservé",
+  CONFIRMED: "Confirmé",
+  LIVE: "En cours",
+  COMPLETED: "Terminé",
+  CANCELLED: "Annulé",
+};
+
+export const AMPLIFICATION_STATUS_COLORS: Record<AmplificationStatus, string> = {
+  PLANNED: "text-slate-500",
+  BOOKED: "text-blue-500",
+  CONFIRMED: "text-indigo-500",
+  LIVE: "text-emerald-500",
+  COMPLETED: "text-green-600",
+  CANCELLED: "text-red-500",
+};
+
+// ── Campaign Budget Categories ──
+export const CAMPAIGN_BUDGET_CATEGORIES = [
+  "PRODUCTION", "MEDIA", "TALENT", "LOGISTICS", "TECHNOLOGY", "LEGAL", "CONTINGENCY", "AGENCY_FEE",
+] as const;
+export type CampaignBudgetCategory = (typeof CAMPAIGN_BUDGET_CATEGORIES)[number];
+
+export const CAMPAIGN_BUDGET_CATEGORY_LABELS: Record<CampaignBudgetCategory, string> = {
+  PRODUCTION: "Production",
+  MEDIA: "Média",
+  TALENT: "Talent",
+  LOGISTICS: "Logistique",
+  TECHNOLOGY: "Technologie",
+  LEGAL: "Juridique",
+  CONTINGENCY: "Contingence",
+  AGENCY_FEE: "Honoraires Agence",
+};
+
+// ── Campaign Approval Types ──
+export const CAMPAIGN_APPROVAL_TYPES = [
+  "BRIEF", "CREATIVE_CONCEPT", "KEY_VISUAL", "COPY", "BAT", "MEDIA_PLAN", "BUDGET", "FINAL_DELIVERY", "LAUNCH",
+] as const;
+export type CampaignApprovalType = (typeof CAMPAIGN_APPROVAL_TYPES)[number];
+
+export const CAMPAIGN_APPROVAL_TYPE_LABELS: Record<CampaignApprovalType, string> = {
+  BRIEF: "Brief",
+  CREATIVE_CONCEPT: "Concept Créatif",
+  KEY_VISUAL: "Key Visual",
+  COPY: "Copie / Texte",
+  BAT: "Bon à Tirer",
+  MEDIA_PLAN: "Plan Média",
+  BUDGET: "Budget",
+  FINAL_DELIVERY: "Livraison Finale",
+  LAUNCH: "Lancement",
+};
+
+export const CAMPAIGN_APPROVAL_STATUSES = [
+  "PENDING", "APPROVED", "REJECTED", "REVISION_REQUESTED",
+] as const;
+export type CampaignApprovalStatus = (typeof CAMPAIGN_APPROVAL_STATUSES)[number];
+
+// ── Campaign Team Roles ──
+export const CAMPAIGN_TEAM_ROLES = [
+  "CAMPAIGN_DIRECTOR", "CREATIVE_DIRECTOR", "ART_DIRECTOR", "COPYWRITER",
+  "STRATEGIST", "MEDIA_PLANNER", "MEDIA_BUYER", "PRODUCER", "DEVELOPER",
+  "COMMUNITY_MANAGER", "PROJECT_MANAGER", "CLIENT_LEAD", "EXTERNAL_VENDOR",
+] as const;
+export type CampaignTeamRole = (typeof CAMPAIGN_TEAM_ROLES)[number];
+
+export const CAMPAIGN_TEAM_ROLE_LABELS: Record<CampaignTeamRole, string> = {
+  CAMPAIGN_DIRECTOR: "Directeur de Campagne",
+  CREATIVE_DIRECTOR: "Directeur de Création",
+  ART_DIRECTOR: "Directeur Artistique",
+  COPYWRITER: "Concepteur-Rédacteur",
+  STRATEGIST: "Stratège",
+  MEDIA_PLANNER: "Média Planner",
+  MEDIA_BUYER: "Acheteur Média",
+  PRODUCER: "Producteur",
+  DEVELOPER: "Développeur",
+  COMMUNITY_MANAGER: "Community Manager",
+  PROJECT_MANAGER: "Chef de Projet",
+  CLIENT_LEAD: "Responsable Client",
+  EXTERNAL_VENDOR: "Prestataire Externe",
+};
+
+// ── Campaign Brief Types ──
+export const CAMPAIGN_BRIEF_TYPES = [
+  "CREATIVE", "MEDIA", "PRODUCTION", "VENDOR", "EVENT", "DIGITAL", "RP",
+] as const;
+export type CampaignBriefType = (typeof CAMPAIGN_BRIEF_TYPES)[number];
+
+export const CAMPAIGN_BRIEF_TYPE_LABELS: Record<CampaignBriefType, string> = {
+  CREATIVE: "Brief Créatif",
+  MEDIA: "Brief Média",
+  PRODUCTION: "Brief Production",
+  VENDOR: "Brief Prestataire",
+  EVENT: "Brief Événementiel",
+  DIGITAL: "Brief Digital",
+  RP: "Brief Relations Presse",
+};
+
+// ── Campaign Report Types ──
+export const CAMPAIGN_REPORT_TYPES = [
+  "WEEKLY_STATUS", "MONTHLY_STATUS", "MID_CAMPAIGN", "POST_CAMPAIGN",
+  "ROI_ANALYSIS", "MEDIA_PERFORMANCE", "CREATIVE_PERFORMANCE",
+] as const;
+export type CampaignReportType = (typeof CAMPAIGN_REPORT_TYPES)[number];
+
+export const CAMPAIGN_REPORT_TYPE_LABELS: Record<CampaignReportType, string> = {
+  WEEKLY_STATUS: "Rapport Hebdomadaire",
+  MONTHLY_STATUS: "Rapport Mensuel",
+  MID_CAMPAIGN: "Bilan Mi-Campagne",
+  POST_CAMPAIGN: "Bilan Post-Campagne",
+  ROI_ANALYSIS: "Analyse ROI",
+  MEDIA_PERFORMANCE: "Performance Média",
+  CREATIVE_PERFORMANCE: "Performance Créative",
+};
+
+// ── Campaign Asset Types ──
+export const CAMPAIGN_ASSET_TYPES = [
+  "KEY_VISUAL", "VIDEO", "AUDIO", "PRINT", "DIGITAL_BANNER", "SOCIAL_POST",
+  "PACKAGING", "PLV", "DOCUMENT", "SCRIPT", "STORYBOARD", "MOODBOARD",
+] as const;
+export type CampaignAssetType = (typeof CAMPAIGN_ASSET_TYPES)[number];
+
+export const CAMPAIGN_ASSET_TYPE_LABELS: Record<CampaignAssetType, string> = {
+  KEY_VISUAL: "Key Visual",
+  VIDEO: "Vidéo",
+  AUDIO: "Audio",
+  PRINT: "Print",
+  DIGITAL_BANNER: "Bannière Digitale",
+  SOCIAL_POST: "Post Social",
+  PACKAGING: "Packaging",
+  PLV: "PLV",
+  DOCUMENT: "Document",
+  SCRIPT: "Script",
+  STORYBOARD: "Storyboard",
+  MOODBOARD: "Moodboard",
+};
+
+// ── Funnel Stages ──
+export const FUNNEL_STAGES = [
+  "AWARENESS", "CONSIDERATION", "CONVERSION", "LOYALTY", "ADVOCACY",
+] as const;
+export type FunnelStage = (typeof FUNNEL_STAGES)[number];
+
+export const FUNNEL_STAGE_LABELS: Record<FunnelStage, string> = {
+  AWARENESS: "Notoriété",
+  CONSIDERATION: "Considération",
+  CONVERSION: "Conversion",
+  LOYALTY: "Fidélisation",
+  ADVOCACY: "Advocacy",
+};
+
+// ── Campaign Dependency Types ──
+export const CAMPAIGN_DEPENDENCY_TYPES = [
+  "BLOCKS", "REQUIRES", "FOLLOWS", "PARALLEL",
+] as const;
+export type CampaignDependencyType = (typeof CAMPAIGN_DEPENDENCY_TYPES)[number];

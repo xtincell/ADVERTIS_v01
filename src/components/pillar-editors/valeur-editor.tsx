@@ -61,6 +61,15 @@ export function ValeurEditor({ data, onChange }: Props) {
             bundles: [],
             dependencies: [],
             scoringInterne: 0,
+            leviersPsychologiques: [],
+            maslowMapping: [],
+            nanoBananaPrompt: { prompt: "", style: "luxe-raffine", mood: "", colorDirection: "", application: "product-hero", aspectRatio: "1:1" },
+            elasticitePercue: 5,
+            saisonalite: [],
+            cannibalisationRisque: [],
+            scoreEmotionnelADVE: 0,
+            contraintesReglementaires: [],
+            mixMarketing: { produit: "", prix: "", place: "", promotion: "" },
           }}
         />
       </section>
