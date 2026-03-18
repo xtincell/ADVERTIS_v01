@@ -20,22 +20,29 @@ const PipelineBoard = dynamic(
   },
 );
 import { CreateDealDialog } from "~/components/crm/create-deal-dialog";
+import { DealDetailDrawer } from "~/components/crm/deal-detail-drawer";
 
 export default function CRMPage() {
   const [showCreate, setShowCreate] = useState(false);
+  const [selectedDealId, setSelectedDealId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6 animate-page-enter">
       <PipelineBoard
         onCreateDeal={() => setShowCreate(true)}
-        onSelectDeal={(id) => {
-          // TODO: open deal detail drawer
-          console.log("Select deal:", id);
-        }}
+        onSelectDeal={(id) => setSelectedDealId(id)}
       />
 
       {showCreate && (
         <CreateDealDialog onClose={() => setShowCreate(false)} />
+      )}
+
+      {selectedDealId && (
+        <DealDetailDrawer
+          dealId={selectedDealId}
+          open={!!selectedDealId}
+          onClose={() => setSelectedDealId(null)}
+        />
       )}
     </div>
   );

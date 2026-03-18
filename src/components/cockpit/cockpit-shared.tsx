@@ -150,6 +150,15 @@ export interface BmfBreakdownData {
   total: number;
 }
 
+export interface InvestBreakdownData {
+  budgetRealism: number;
+  allocationQuality: number;
+  roiProjections: number;
+  channelCoverage: number;
+  phaseBalance: number;
+  total: number;
+}
+
 function BreakdownRow({ label, value, max }: { label: string; value: number; max: number }) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
@@ -173,8 +182,8 @@ export function ScoreBreakdownTooltip({
   breakdown,
   children,
 }: {
-  type: "coherence" | "risk" | "bmf";
-  breakdown: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | null;
+  type: "coherence" | "risk" | "bmf" | "invest";
+  breakdown: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | InvestBreakdownData | null;
   children: React.ReactNode;
 }) {
   if (!breakdown) return <>{children}</>;
@@ -202,6 +211,15 @@ export function ScoreBreakdownTooltip({
       { label: "Balance SWOT", value: b.globalSwotBalance, max: 20 },
       { label: "Couverture mitigations", value: b.mitigationCoverage, max: 10 },
     );
+  } else if (type === "invest") {
+    const b = breakdown as InvestBreakdownData;
+    rows.push(
+      { label: "Réalisme budget", value: b.budgetRealism, max: 30 },
+      { label: "Qualité allocation", value: b.allocationQuality, max: 25 },
+      { label: "Projections ROI", value: b.roiProjections, max: 20 },
+      { label: "Couverture canaux", value: b.channelCoverage, max: 15 },
+      { label: "Équilibre phases", value: b.phaseBalance, max: 10 },
+    );
   } else {
     const b = breakdown as BmfBreakdownData;
     rows.push(
@@ -212,17 +230,20 @@ export function ScoreBreakdownTooltip({
     );
   }
 
+  const titles: Record<string, string> = {
+    coherence: "Décomposition Cohérence",
+    risk: "Décomposition Risque",
+    bmf: "Décomposition BMF",
+    invest: "Décomposition Investissement",
+  };
+
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent side="bottom" className="w-[260px] p-3 space-y-1.5">
           <p className="text-[10px] font-bold uppercase tracking-wider text-background/60 mb-2">
-            {type === "coherence"
-              ? "Décomposition Cohérence"
-              : type === "risk"
-                ? "Décomposition Risque"
-                : "Décomposition BMF"}
+            {titles[type]}
           </p>
           {rows.map((r) => (
             <BreakdownRow key={r.label} {...r} />
@@ -253,8 +274,8 @@ export function ScoreCircleWithEvolution({
   sublabel?: string;
   size?: "sm" | "md" | "lg";
   invertForRisk?: boolean;
-  breakdownType?: "coherence" | "risk" | "bmf";
-  breakdown?: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | null;
+  breakdownType?: "coherence" | "risk" | "bmf" | "invest";
+  breakdown?: CoherenceBreakdownData | RiskBreakdownData | BmfBreakdownData | InvestBreakdownData | null;
 }) {
   const delta = previousScore != null ? score - previousScore : null;
 

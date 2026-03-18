@@ -17,6 +17,7 @@ import { useCallback, useMemo, useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "~/lib/utils";
+import { formatCompact } from "~/lib/currency";
 import { Button } from "~/components/ui/button";
 import {
   Card,
@@ -202,18 +203,7 @@ function isFlat(obj: Record<string, unknown>): boolean {
   );
 }
 
-/** Format a currency number */
-function formatCurrency(value: number): string {
-  // Detect likely unit based on magnitude
-  if (value >= 1_000_000) {
-    return new Intl.NumberFormat("fr-FR", {
-      notation: "compact",
-      compactDisplay: "short",
-      maximumFractionDigits: 1,
-    }).format(value);
-  }
-  return new Intl.NumberFormat("fr-FR").format(value);
-}
+// formatCurrency → replaced by centralized formatCompact from ~/lib/currency
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // VARIANT TYPE HELPER
@@ -718,7 +708,7 @@ function ScoreBar({ value, label }: { value: number; label?: string }) {
 function CurrencyValue({ value }: { value: number }) {
   return (
     <span className="text-sm font-semibold tabular-nums text-foreground">
-      {formatCurrency(value)}
+      {formatCompact(value)}
     </span>
   );
 }

@@ -89,6 +89,7 @@ const TOTAL_PILLAR_TYPES = 7;
  */
 export async function evaluateQualityGates(
   strategyId: string,
+  enforce = false,
 ): Promise<QualityGateResult[]> {
   // ── Pre-fetch shared data ───────────────────────────────────────────
   const allFrameworks = getAllFrameworks();
@@ -128,7 +129,20 @@ export async function evaluateQualityGates(
     [gate1, gate2, gate3, gate4],
   );
 
-  return [gate1, gate2, gate3, gate4, gate5];
+  const gates = [gate1, gate2, gate3, gate4, gate5];
+
+  // P2-05: Optional enforcement — throw if any critical gate fails
+  if (enforce) {
+    const failedCritical = gates.filter(g => !g.passed && g.score < 30);
+    if (failedCritical.length > 0) {
+      throw new Error(
+        `Quality gates bloquants non atteints : ${failedCritical.map(g => g.name).join(", ")}. ` +
+        `Scores : ${failedCritical.map(g => `${g.name}=${g.score}`).join(", ")}`
+      );
+    }
+  }
+
+  return gates;
 }
 
 // ---------------------------------------------------------------------------

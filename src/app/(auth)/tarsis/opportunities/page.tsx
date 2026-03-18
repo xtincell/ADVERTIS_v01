@@ -15,10 +15,32 @@ import {
   Globe2,
   Swords,
   Building2,
+  Plus,
+  Loader2,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { StrategySelector } from "~/components/shared/strategy-selector";
 import { EmptyState } from "~/components/ui/empty-state";
 import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { PageHeader } from "~/components/ui/page-header";
@@ -157,6 +179,71 @@ export default function TarsisOpportunitiesPage() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [impactFilter, setImpactFilter] = useState<string>("all");
 
+  // Create opportunity dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newStrategyId, setNewStrategyId] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
+  const [newType, setNewType] = useState<string>("");
+  const [newImpact, setNewImpact] = useState<string>("");
+  const [newChannels, setNewChannels] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+
+  const utils = api.useUtils();
+
+  const createMutation = api.marketContext.opportunities.create.useMutation({
+    onSuccess: () => {
+      toast.success("Opportunité créée avec succès");
+      void utils.marketContext.crossBrand.getAll.invalidate();
+      setCreateOpen(false);
+      resetCreateForm();
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Erreur lors de la création");
+    },
+  });
+
+  const deleteMutation = api.marketContext.opportunities.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Opportunité supprimée");
+      void utils.marketContext.crossBrand.getAll.invalidate();
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Erreur lors de la suppression");
+    },
+  });
+
+  function resetCreateForm() {
+    setNewStrategyId(null);
+    setNewTitle("");
+    setNewStartDate("");
+    setNewEndDate("");
+    setNewType("");
+    setNewImpact("");
+    setNewChannels("");
+    setNewNotes("");
+  }
+
+  function handleCreate() {
+    if (!newStrategyId || !newTitle || !newStartDate || !newType || !newImpact) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    createMutation.mutate({
+      strategyId: newStrategyId,
+      title: newTitle,
+      startDate: new Date(newStartDate),
+      endDate: newEndDate ? new Date(newEndDate) : undefined,
+      type: newType as "SEASONAL" | "CULTURAL" | "COMPETITIVE" | "INTERNAL",
+      impact: newImpact as "LOW" | "MEDIUM" | "HIGH",
+      channels: newChannels
+        ? newChannels.split(",").map((c) => c.trim()).filter(Boolean)
+        : undefined,
+      notes: newNotes || undefined,
+    });
+  }
+
   // Flatten & enrich
   const { allOpportunities, brandList } = useMemo(() => {
     if (!data?.opportunities) return { allOpportunities: [] as Opportunity[], brandList: [] as string[] };
@@ -228,12 +315,117 @@ export default function TarsisOpportunitiesPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <PageHeader
-        title="Calendrier des Opportunités"
-        description="Timeline cross-marques des fenêtres d'opportunité marché"
-        backHref="/tarsis"
-        backLabel="Retour au tableau Tarsis"
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader
+          title="Calendrier des Opportunités"
+          description="Timeline cross-marques des fenêtres d'opportunité marché"
+          backHref="/tarsis"
+          backLabel="Retour au tableau Tarsis"
+        />
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="shrink-0">
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter une opportunité
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Nouvelle opportunité</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label>Stratégie *</Label>
+                <StrategySelector
+                  value={newStrategyId}
+                  onChange={setNewStrategyId}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Titre *</Label>
+                <Input
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  placeholder="Nom de l'opportunité"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Date de début *</Label>
+                  <Input
+                    type="date"
+                    value={newStartDate}
+                    onChange={(e) => setNewStartDate(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Date de fin</Label>
+                  <Input
+                    type="date"
+                    value={newEndDate}
+                    onChange={(e) => setNewEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Type *</Label>
+                  <Select value={newType} onValueChange={setNewType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="SEASONAL">Saisonnier</SelectItem>
+                      <SelectItem value="CULTURAL">Culturel</SelectItem>
+                      <SelectItem value="COMPETITIVE">Compétitif</SelectItem>
+                      <SelectItem value="INTERNAL">Interne</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Impact *</Label>
+                  <Select value={newImpact} onValueChange={setNewImpact}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LOW">Faible</SelectItem>
+                      <SelectItem value="MEDIUM">Moyen</SelectItem>
+                      <SelectItem value="HIGH">Élevé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Canaux (séparés par des virgules)</Label>
+                <Input
+                  value={newChannels}
+                  onChange={(e) => setNewChannels(e.target.value)}
+                  placeholder="SEO, SEA, Social..."
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Notes</Label>
+                <Textarea
+                  value={newNotes}
+                  onChange={(e) => setNewNotes(e.target.value)}
+                  placeholder="Notes additionnelles..."
+                  rows={3}
+                />
+              </div>
+              <Button
+                onClick={handleCreate}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Créer l&apos;opportunité
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -435,6 +627,17 @@ export default function TarsisOpportunitiesPage() {
                     </span>
                   </div>
                 </div>
+
+                {/* Delete */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-muted-foreground hover:text-red-500"
+                  disabled={deleteMutation.isPending}
+                  onClick={() => deleteMutation.mutate({ id: o.id })}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </div>

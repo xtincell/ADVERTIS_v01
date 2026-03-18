@@ -152,9 +152,10 @@ export default function BrandCockpitPage(props: {
     createdAt: strategy.createdAt ?? null,
   };
 
-  // Extract scores for triad
+  // Extract scores for quad (coherence + risk + bmf + invest)
   const rPillar = strategy.pillars.find((p) => p.type === "R");
   const tPillar = strategy.pillars.find((p) => p.type === "T");
+  const iPillar = strategy.pillars.find((p) => p.type === "I");
   const riskScore =
     rPillar?.content && typeof rPillar.content === "object"
       ? ((rPillar.content as Record<string, unknown>).riskScore as number) ?? null
@@ -162,6 +163,10 @@ export default function BrandCockpitPage(props: {
   const bmfScore =
     tPillar?.content && typeof tPillar.content === "object"
       ? ((tPillar.content as Record<string, unknown>).brandMarketFitScore as number) ?? null
+      : null;
+  const investScore =
+    iPillar?.content && typeof iPillar.content === "object"
+      ? ((iPillar.content as Record<string, unknown>).investScore as number) ?? null
       : null;
 
   return (
@@ -183,15 +188,17 @@ export default function BrandCockpitPage(props: {
       {/* Sticky tabs */}
       <CockpitTabs activeTab={activeTab} onTabChange={setActiveTab} deliveryMode={strategy.deliveryMode} />
 
-      {/* Score triad */}
+      {/* Score quad */}
       <div className="py-4 stagger-children">
         <ScoreTriad
           coherence={strategy.coherenceScore}
           risk={riskScore}
           bmf={bmfScore}
+          invest={investScore}
           coherenceBreakdown={breakdowns?.coherenceBreakdown}
           riskBreakdown={breakdowns?.riskBreakdown}
           bmfBreakdown={breakdowns?.bmfBreakdown}
+          investBreakdown={breakdowns?.investBreakdown}
         />
       </div>
 

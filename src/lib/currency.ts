@@ -129,3 +129,58 @@ export function parseCurrencyString(value: string): number | null {
   const num = parseFloat(cleaned);
   return isNaN(num) ? null : num;
 }
+
+// =============================================================================
+// Dashboard formatters — centralized compact display utilities
+// =============================================================================
+
+/**
+ * Format compact pour dashboards (1.2M, 500K, 1 234).
+ * Utilise le symbole de devise si fourni.
+ * @example formatCompact(5_500_000)        → "5.5M"
+ * @example formatCompact(500_000, "XOF")   → "500K FCFA"
+ * @example formatCompact(1_200_000_000)    → "1.2Mrd"
+ */
+export function formatCompact(
+  value: number,
+  currency?: SupportedCurrency,
+): string {
+  const symbol = currency ? getCurrencySymbol(currency) : "";
+  const suffix = symbol ? ` ${symbol}` : "";
+
+  if (Math.abs(value) >= 1_000_000_000)
+    return `${(value / 1_000_000_000).toFixed(1)}Mrd${suffix}`;
+  if (Math.abs(value) >= 1_000_000)
+    return `${(value / 1_000_000).toFixed(1)}M${suffix}`;
+  if (Math.abs(value) >= 1_000)
+    return `${(value / 1_000).toFixed(0)}K${suffix}`;
+  return `${value}${suffix}`;
+}
+
+/**
+ * Format pourcentage standardisé.
+ * @example formatPercent(85.678)     → "86%"
+ * @example formatPercent(85.678, 1)  → "85.7%"
+ */
+export function formatPercent(value: number, decimals = 0): string {
+  return `${value.toFixed(decimals)}%`;
+}
+
+/**
+ * Format score (0-100) avec fallback em-dash pour null/undefined.
+ * @example formatScore(85)        → "85"
+ * @example formatScore(null)      → "—"
+ * @example formatScore(undefined) → "—"
+ */
+export function formatScore(value: number | null | undefined): string {
+  return value != null ? String(Math.round(value)) : "\u2014";
+}
+
+/**
+ * Format entier avec séparateur de milliers (locale fr-FR).
+ * @example formatCount(1234567) → "1 234 567"
+ * @example formatCount(500)     → "500"
+ */
+export function formatCount(value: number): string {
+  return new Intl.NumberFormat("fr-FR").format(Math.round(value));
+}

@@ -17,7 +17,7 @@ export default function PublicLayout({
         className="relative hidden items-center justify-center overflow-hidden lg:flex lg:w-1/2"
         style={{
           background:
-            "linear-gradient(145deg, oklch(0.14 0.04 163) 0%, oklch(0.18 0.06 163) 35%, oklch(0.13 0.03 170) 65%, oklch(0.10 0.02 163) 100%)",
+            "linear-gradient(145deg, oklch(0.14 0.04 34) 0%, oklch(0.18 0.06 34) 35%, oklch(0.13 0.03 25) 65%, oklch(0.10 0.02 34) 100%)",
         }}
       >
         {/* ── Animated glow orbs ── */}
@@ -25,7 +25,7 @@ export default function PublicLayout({
           className="absolute -left-24 -top-24 h-[500px] w-[500px] rounded-full opacity-30 blur-[120px]"
           style={{
             background:
-              "radial-gradient(circle, oklch(0.68 0.20 163 / 60%) 0%, transparent 70%)",
+              "radial-gradient(circle, oklch(0.63 0.22 34 / 60%) 0%, transparent 70%)",
             animation: "float 8s ease-in-out infinite",
           }}
         />
@@ -51,7 +51,7 @@ export default function PublicLayout({
           className="absolute left-[12%] top-[18%] h-20 w-20 rotate-12 rounded-2xl border border-white/[0.06] opacity-60"
           style={{
             background:
-              "linear-gradient(135deg, oklch(0.68 0.20 163 / 8%) 0%, transparent 100%)",
+              "linear-gradient(135deg, oklch(0.63 0.22 34 / 8%) 0%, transparent 100%)",
             animation: "float 7s ease-in-out infinite 1s",
           }}
         />
@@ -74,7 +74,7 @@ export default function PublicLayout({
         <div
           className="absolute right-[10%] top-[35%] h-6 w-6 rounded-full border border-white/[0.06] opacity-50"
           style={{
-            background: "oklch(0.68 0.20 163 / 12%)",
+            background: "oklch(0.63 0.22 34 / 12%)",
             animation: "float 6s ease-in-out infinite 2s",
           }}
         />
@@ -103,7 +103,7 @@ export default function PublicLayout({
               className="absolute -inset-4 rounded-full opacity-40 blur-xl"
               style={{
                 background:
-                  "radial-gradient(circle, oklch(0.68 0.20 163 / 30%) 0%, transparent 70%)",
+                  "radial-gradient(circle, oklch(0.63 0.22 34 / 30%) 0%, transparent 70%)",
               }}
             />
             <AdvertisMonogram size={72} variant="white" />
@@ -114,7 +114,7 @@ export default function PublicLayout({
             className="text-4xl font-extrabold tracking-tight font-[var(--font-display)]"
             style={{
               background:
-                "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, oklch(0.82 0.14 163) 100%)",
+                "linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 50%, oklch(0.78 0.15 34) 100%)",
               WebkitBackgroundClip: "text",
               WebkitTextFillColor: "transparent",
               backgroundClip: "text",
@@ -133,13 +133,13 @@ export default function PublicLayout({
             <div className="h-px w-12 bg-gradient-to-r from-transparent to-white/20" />
             <div
               className="h-1.5 w-1.5 rounded-full"
-              style={{ background: "oklch(0.68 0.20 163 / 50%)" }}
+              style={{ background: "oklch(0.63 0.22 34 / 50%)" }}
             />
             <div
               className="h-px w-16"
               style={{
                 background:
-                  "linear-gradient(90deg, oklch(0.68 0.20 163 / 30%), oklch(0.62 0.25 12 / 30%))",
+                  "linear-gradient(90deg, oklch(0.63 0.22 34 / 30%), oklch(0.62 0.25 12 / 30%))",
               }}
             />
             <div
@@ -163,7 +163,7 @@ export default function PublicLayout({
           className="h-full w-px"
           style={{
             background:
-              "linear-gradient(180deg, transparent 0%, oklch(0.68 0.20 163 / 20%) 25%, oklch(0.62 0.25 12 / 15%) 50%, oklch(0.68 0.20 163 / 20%) 75%, transparent 100%)",
+              "linear-gradient(180deg, transparent 0%, oklch(0.63 0.22 34 / 20%) 25%, oklch(0.62 0.25 12 / 15%) 50%, oklch(0.63 0.22 34 / 20%) 75%, transparent 100%)",
           }}
         />
       </div>

@@ -169,15 +169,29 @@ function buildSingleOutputText(data: unknown): string {
 // 4.2  Format user inputs for the prompt
 // ---------------------------------------------------------------------------
 
+/**
+ * P0-04: Sanitize user input before embedding in AI prompts.
+ * Strips instruction-like patterns that could hijack the generation.
+ */
+function sanitizePromptInput(value: string): string {
+  return value
+    .replace(/ignore\s+(all\s+)?(previous\s+)?instructions?/gi, "[filtered]")
+    .replace(/you\s+are\s+now/gi, "[filtered]")
+    .replace(/system\s*:/gi, "[filtered]")
+    .replace(/assistant\s*:/gi, "[filtered]")
+    .replace(/<\/?system>/gi, "[filtered]")
+    .replace(/<\/?instruction>/gi, "[filtered]");
+}
+
 function formatUserInputs(inputs: Record<string, unknown>): string {
   const lines: string[] = [];
   for (const [key, value] of Object.entries(inputs)) {
     if (value === undefined || value === null || value === "") continue;
     const displayKey = key.replace(/([A-Z])/g, " $1").replace(/^./, (s) => s.toUpperCase());
     if (typeof value === "object") {
-      lines.push(`- **${displayKey}** : ${JSON.stringify(value)}`);
+      lines.push(`- **${displayKey}** : ${sanitizePromptInput(JSON.stringify(value))}`);
     } else {
-      lines.push(`- **${displayKey}** : ${String(value)}`);
+      lines.push(`- **${displayKey}** : ${sanitizePromptInput(String(value))}`);
     }
   }
   return lines.join("\n");
@@ -354,7 +368,9 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
     dependencyWarning, // Pipeline dependency warning (empty if all deps met)
     "",
     "# INPUTS DE L'UTILISATEUR",
+    "<user_inputs>",
     formattedInputs,
+    "</user_inputs>",
     "",
     "Génère maintenant le résultat demandé en respectant le format JSON spécifié.",
     variantInstruction,
@@ -481,6 +497,15 @@ export async function generateGloryOutput(opts: GenerateOpts): Promise<GenerateR
   let savedId: string | undefined;
 
   if (opts.save && tool.persistable) {
+    // P1-08: Validate output data before persisting
+    if (!outputData || typeof outputData !== "object" || Object.keys(outputData as Record<string, unknown>).length === 0) {
+      console.warn(`[GLORY] Invalid output data for tool ${opts.toolSlug}, skipping persist`);
+      return { outputData, outputText };
+    }
+    if (!getToolBySlug(opts.toolSlug)) {
+      console.warn(`[GLORY] Unknown toolSlug "${opts.toolSlug}", skipping persist`);
+      return { outputData, outputText };
+    }
     const autoTitle =
       opts.title ?? `${tool.shortName} — ${strategy.brandName}`;
 

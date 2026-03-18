@@ -37,7 +37,7 @@ import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure, strategyProcedure } from "~/server/api/trpc";
 import { AppErrors, throwNotFound } from "~/server/errors";
-import { PILLAR_TYPES, PILLAR_CONFIG, SUPPORTED_CURRENCIES } from "~/lib/constants";
+import { PILLAR_TYPES, PILLAR_CONFIG, SUPPORTED_CURRENCIES, AVAILABLE_MODELS, AI_PHASES } from "~/lib/constants";
 import type { Phase } from "~/lib/constants";
 import { recalculateAllScores } from "~/server/services/score-engine";
 import {
@@ -65,6 +65,7 @@ export const strategyRouter = createTRPCRouter({
         deliveryMode: z.string().optional(),
         inputMethod: z.string().optional(),
         currency: z.string().optional(),
+        country: z.string().length(2).optional(),
         annualBudget: z.number().int().positive().optional(),
         targetRevenue: z.number().int().positive().optional(),
       }),
@@ -82,6 +83,7 @@ export const strategyRouter = createTRPCRouter({
           deliveryMode: input.deliveryMode ?? null,
           inputMethod: input.inputMethod ?? null,
           currency: input.currency ?? "XOF",
+          country: input.country ?? null,
           annualBudget: input.annualBudget ?? null,
           targetRevenue: input.targetRevenue ?? null,
           status: "draft",
@@ -186,6 +188,7 @@ export const strategyRouter = createTRPCRouter({
         description: z.string().optional(),
         interviewData: z.record(z.string(), z.union([z.string(), z.array(z.string()), z.record(z.string(), z.unknown())])).optional(),
         currency: z.string().optional(),
+        country: z.string().length(2).nullable().optional(),
         deliveryMode: z.string().nullable().optional(),
         annualBudget: z.number().int().positive().nullable().optional(),
         targetRevenue: z.number().int().positive().nullable().optional(),
@@ -843,6 +846,46 @@ export const strategyRouter = createTRPCRouter({
           },
         },
         orderBy: { createdAt: "asc" },
+      });
+    }),
+
+  /**
+   * Update per-phase AI model configuration.
+   * Ownership verified by strategyProcedure middleware.
+   */
+  updateModelConfig: strategyProcedure
+    .input(
+      z.object({
+        strategyId: z.string(),
+        phase: z.string(),
+        modelId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Validate phase
+      if (!AI_PHASES.includes(input.phase as Phase)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Phase "${input.phase}" ne supporte pas la sélection de modèle`,
+        });
+      }
+
+      // Validate model
+      const validModelIds = AVAILABLE_MODELS.map((m) => m.id);
+      if (!validModelIds.includes(input.modelId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Modèle "${input.modelId}" non disponible`,
+        });
+      }
+
+      // Merge into existing modelConfig
+      const existing = (ctx.strategy.modelConfig as Record<string, string> | null) ?? {};
+      const updated = { ...existing, [input.phase]: input.modelId };
+
+      return ctx.db.strategy.update({
+        where: { id: input.strategyId },
+        data: { modelConfig: updated },
       });
     }),
 });

@@ -78,7 +78,7 @@ export function calculateRiskScore(rData: RiskAuditResult): RiskBreakdown {
     );
     avgMicroRisk = sum / microSwots.length;
   } else {
-    avgMicroRisk = 0.5; // neutral default when no data
+    avgMicroRisk = 0; // no data = no risk assessed
   }
   const microSwotRisk = Math.round(avgMicroRisk * 40);
 
@@ -94,7 +94,7 @@ export function calculateRiskScore(rData: RiskAuditResult): RiskBreakdown {
     const maxPI = matrix.length * 9;
     piScore = Math.round((totalPI / maxPI) * 30);
   } else {
-    piScore = 15; // neutral default
+    piScore = 0; // no matrix = no score
   }
 
   // --- 3. globalSwotBalance (max 20) ---
@@ -105,7 +105,7 @@ export function calculateRiskScore(rData: RiskAuditResult): RiskBreakdown {
     (gs?.weaknesses?.length ?? 0) + (gs?.threats?.length ?? 0);
   const swotTotal = positives + negatives;
   const balanceRisk =
-    swotTotal > 0 ? Math.round((negatives / swotTotal) * 20) : 10;
+    swotTotal > 0 ? Math.round((negatives / swotTotal) * 20) : 0; // no SWOT = 0 not 10
 
   // --- 4. mitigationCoverage (max 10, penalty) ---
   const highRiskCount = microSwots.filter(

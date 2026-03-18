@@ -132,4 +132,68 @@ export const authRouter = createTRPCRouter({
         company: user.company,
       };
     }),
+
+  // ── Platform preferences ────────────────────────────────────────────────
+  getPreferences: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { preferences: true },
+    });
+    return (user?.preferences ?? {}) as Record<string, unknown>;
+  }),
+
+  updatePreferences: protectedProcedure
+    .input(
+      z.object({
+        language: z.enum(["fr", "en"]).optional(),
+        timezone: z.string().optional(),
+        defaultCurrency: z.string().optional(),
+        defaultMarket: z.string().optional(),
+        ai: z
+          .object({
+            model: z.string().optional(),
+            temperature: z.number().min(0).max(1).optional(),
+            generationLanguage: z.enum(["fr", "en", "both"]).optional(),
+            includeMarketContext: z.boolean().optional(),
+          })
+          .optional(),
+        notifications: z
+          .object({
+            emailCampaignActivation: z.boolean().optional(),
+            cultIndexAlerts: z.boolean().optional(),
+            cultIndexThreshold: z.number().min(0).max(100).optional(),
+            missionReminders: z.boolean().optional(),
+            tarsisSignals: z.boolean().optional(),
+          })
+          .optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Merge with existing preferences
+      const user = await ctx.db.user.findUnique({
+        where: { id: ctx.session.user.id },
+        select: { preferences: true },
+      });
+
+      const existing = (user?.preferences ?? {}) as Record<string, unknown>;
+      const merged = { ...existing, ...input };
+
+      // Deep merge nested objects
+      if (input.ai) {
+        merged.ai = { ...((existing.ai as Record<string, unknown>) ?? {}), ...input.ai };
+      }
+      if (input.notifications) {
+        merged.notifications = {
+          ...((existing.notifications as Record<string, unknown>) ?? {}),
+          ...input.notifications,
+        };
+      }
+
+      await ctx.db.user.update({
+        where: { id: ctx.session.user.id },
+        data: { preferences: merged },
+      });
+
+      return merged;
+    }),
 });

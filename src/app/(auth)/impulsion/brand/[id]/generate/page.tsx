@@ -37,6 +37,7 @@ import {
   TEMPLATE_TYPES,
   PHASES,
   LEGACY_PHASE_MAP,
+  AI_PHASES,
 } from "~/lib/constants";
 import type { PillarType, Phase } from "~/lib/constants";
 import type {
@@ -74,6 +75,7 @@ import FileUploadZone, {
   type ImportResult,
 } from "~/components/strategy/import/file-upload-zone";
 import FreeTextInput from "~/components/strategy/import/free-text-input";
+import { ModelSelector } from "~/components/strategy/model-selector";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -173,6 +175,24 @@ export default function BrandGeneratePage(props: {
     api.marketStudy.complete.useMutation();
   const synthesizeMarketStudyMutation =
     api.marketStudy.synthesize.useMutation();
+  const updateModelConfigMutation =
+    api.strategy.updateModelConfig.useMutation();
+
+  // Model config from strategy
+  const modelConfig = (strategy?.modelConfig as Record<string, string> | null) ?? {};
+
+  const handleModelChange = useCallback(
+    (phase: Phase, modelId: string) => {
+      updateModelConfigMutation.mutate(
+        { strategyId, phase, modelId },
+        {
+          onSuccess: () => void refetchStrategy(),
+          onError: (err) => toast.error(err.message),
+        },
+      );
+    },
+    [strategyId, updateModelConfigMutation, refetchStrategy],
+  );
 
   // Initialize pillar state
   useEffect(() => {
@@ -1012,18 +1032,26 @@ export default function BrandGeneratePage(props: {
 
         {currentPhase === "fiche" && !ficheComplete && (
           <div className="mt-4">
-            <Button
-              onClick={handleLaunchFiche}
-              disabled={isGenerating}
-              className="bg-primary hover:bg-primary/90"
-            >
-              {isGenerating && currentAction === "fiche" ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-4 w-4" />
-              )}
-              G&eacute;n&eacute;rer la fiche de marque (A-D-V-E)
-            </Button>
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleLaunchFiche}
+                disabled={isGenerating}
+                className="bg-primary hover:bg-primary/90"
+              >
+                {isGenerating && currentAction === "fiche" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                G&eacute;n&eacute;rer la fiche de marque (A-D-V-E)
+              </Button>
+              <ModelSelector
+                phase="fiche"
+                currentModel={modelConfig["fiche"]}
+                onModelChange={(m) => handleModelChange("fiche", m)}
+                disabled={isGenerating}
+              />
+            </div>
             {(isGenerating || ficheInProgress) && (
               <GenerationProgress
                 label="G&eacute;n&eacute;ration de la fiche (A-D-V-E)"
@@ -1108,7 +1136,7 @@ export default function BrandGeneratePage(props: {
           />
         )}
         {currentPhase === "audit-r" && !rComplete && !rInProgress && (
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-3">
             <Button
               onClick={handleLaunchAuditR}
               disabled={isGenerating}
@@ -1117,6 +1145,12 @@ export default function BrandGeneratePage(props: {
               <Shield className="mr-2 h-4 w-4" />
               Lancer l&apos;audit Risk
             </Button>
+            <ModelSelector
+              phase="audit-r"
+              currentModel={modelConfig["audit-r"]}
+              onModelChange={(m) => handleModelChange("audit-r", m)}
+              disabled={isGenerating}
+            />
           </div>
         )}
         {rInProgress && currentPhase === "audit-r" && (
@@ -1201,7 +1235,7 @@ export default function BrandGeneratePage(props: {
           />
         )}
         {currentPhase === "audit-t" && !tComplete && !tInProgress && (
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-3">
             <Button
               onClick={handleLaunchAuditT}
               disabled={isGenerating}
@@ -1210,6 +1244,12 @@ export default function BrandGeneratePage(props: {
               <BarChart3 className="mr-2 h-4 w-4" />
               Lancer l&apos;audit Track
             </Button>
+            <ModelSelector
+              phase="audit-t"
+              currentModel={modelConfig["audit-t"]}
+              onModelChange={(m) => handleModelChange("audit-t", m)}
+              disabled={isGenerating}
+            />
           </div>
         )}
         {tInProgress && currentPhase === "audit-t" && (
@@ -1239,6 +1279,16 @@ export default function BrandGeneratePage(props: {
       >
         {currentPhase === "audit-review" && riskData && trackData ? (
           <div className="space-y-6">
+            <div className="flex items-center justify-end">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Mod&egrave;le IA pour les recommandations :</span>
+                <ModelSelector
+                  phase="audit-review"
+                  currentModel={modelConfig["audit-review"]}
+                  onModelChange={(m) => handleModelChange("audit-review", m)}
+                />
+              </div>
+            </div>
             <AuditReviewForm
               initialRiskData={riskData}
               initialTrackData={trackData}
@@ -1281,7 +1331,7 @@ export default function BrandGeneratePage(props: {
           />
         )}
         {currentPhase === "implementation" && !implComplete && !implInProgress && (
-          <div className="mt-4">
+          <div className="mt-4 flex items-center gap-3">
             <Button
               onClick={handleLaunchImplementation}
               disabled={isGenerating}
@@ -1290,6 +1340,12 @@ export default function BrandGeneratePage(props: {
               <Database className="mr-2 h-4 w-4" />
               G&eacute;n&eacute;rer les donn&eacute;es cockpit
             </Button>
+            <ModelSelector
+              phase="implementation"
+              currentModel={modelConfig["implementation"]}
+              onModelChange={(m) => handleModelChange("implementation", m)}
+              disabled={isGenerating}
+            />
           </div>
         )}
         {implInProgress && currentPhase === "implementation" && (
@@ -1330,14 +1386,22 @@ export default function BrandGeneratePage(props: {
         {currentPhase === "cockpit" || currentPhase === "complete" ? (
           <div className="space-y-4">
             {!sComplete && !sInProgress && currentPhase === "cockpit" && (
-              <Button
-                onClick={() => void handleLaunchSynthese()}
-                disabled={isGenerating}
-                className="bg-primary hover:bg-primary/90"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                G&eacute;n&eacute;rer la synth&egrave;se (Pilier S)
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => void handleLaunchSynthese()}
+                  disabled={isGenerating}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  G&eacute;n&eacute;rer la synth&egrave;se (Pilier S)
+                </Button>
+                <ModelSelector
+                  phase="cockpit"
+                  currentModel={modelConfig["cockpit"]}
+                  onModelChange={(m) => handleModelChange("cockpit", m)}
+                  disabled={isGenerating}
+                />
+              </div>
             )}
             {sInProgress && currentPhase === "cockpit" && (
               <GenerationProgress

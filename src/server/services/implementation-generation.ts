@@ -104,7 +104,9 @@ export async function generateImplementationData(
   annualBudget?: number | null,
   targetRevenue?: number | null,
   maturity?: string | null,
+  modelOverride?: string,
 ): Promise<{ data: ImplementationData; usage: AIUsageMetadata }> {
+  const resolvedModel = modelOverride ?? DEFAULT_MODEL;
   const overallStart = Date.now();
 
   // Build shared context
@@ -128,6 +130,7 @@ export async function generateImplementationData(
     specialization,
     tagline,
     currency,
+    resolvedModel,
   );
 
   // ── Pass 2a: Campaigns & financial sections ──
@@ -142,6 +145,7 @@ export async function generateImplementationData(
     annualBudget,
     targetRevenue,
     maturity,
+    resolvedModel,
   );
 
   // ── Pass 2b: Brand & operational sections ──
@@ -154,6 +158,7 @@ export async function generateImplementationData(
     specialization,
     tagline,
     currency,
+    resolvedModel,
   );
 
   // Merge all 3 passes into a single object
@@ -167,7 +172,7 @@ export async function generateImplementationData(
   return {
     data,
     usage: {
-      model: DEFAULT_MODEL,
+      model: resolvedModel,
       tokensIn: pass1Usage.tokensIn + pass2aUsage.tokensIn + pass2bUsage.tokensIn,
       tokensOut: pass1Usage.tokensOut + pass2aUsage.tokensOut + pass2bUsage.tokensOut,
       durationMs: Date.now() - overallStart,
@@ -265,11 +270,12 @@ async function generatePass1(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  resolvedModel: string = DEFAULT_MODEL,
 ): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
   const start = Date.now();
   const { text, usage: callUsage } = await resilientGenerateText({
     label: "pillar-I-pass1",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
 
 Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
@@ -364,7 +370,7 @@ ${JSON_RULES}`, specialization),
     return {
       data: parsed,
       usage: {
-        model: DEFAULT_MODEL,
+        model: resolvedModel,
         tokensIn: callUsage?.inputTokens ?? 0,
         tokensOut: callUsage?.outputTokens ?? 0,
         durationMs: Date.now() - start,
@@ -391,6 +397,7 @@ async function generatePass2a(
   annualBudget?: number | null,
   targetRevenue?: number | null,
   maturity?: string | null,
+  resolvedModel: string = DEFAULT_MODEL,
 ): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
   const pass1Summary = JSON.stringify(pass1Data).substring(0, 6000);
 
@@ -423,7 +430,7 @@ Utilise ces ratios comme guide pour la ventilation par poste.`;
   const start2a = Date.now();
   const { text, usage: callUsage2a } = await resilientGenerateText({
     label: "pillar-I-pass2a",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
 
 Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
@@ -532,7 +539,7 @@ Appuie-toi sur les données stratégiques de la Passe 1 pour garantir la cohére
     return {
       data: parsed,
       usage: {
-        model: DEFAULT_MODEL,
+        model: resolvedModel,
         tokensIn: callUsage2a?.inputTokens ?? 0,
         tokensOut: callUsage2a?.outputTokens ?? 0,
         durationMs: Date.now() - start2a,
@@ -557,6 +564,7 @@ async function generatePass2b(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  resolvedModel: string = DEFAULT_MODEL,
 ): Promise<{ data: Record<string, unknown>; usage: AIUsageMetadata }> {
   const pass1Summary = JSON.stringify(pass1Data).substring(0, 4000);
   const pass2aSummary = JSON.stringify(pass2aData).substring(0, 3000);
@@ -564,7 +572,7 @@ async function generatePass2b(
   const start2b = Date.now();
   const { text, usage: callUsage2b } = await resilientGenerateText({
     label: "pillar-I-pass2b",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
 
 Tu es un consultant stratégique senior utilisant la méthodologie ADVERTIS.
@@ -685,7 +693,7 @@ Appuie-toi sur les données des Passes 1 et 2a pour garantir la cohérence globa
     return {
       data: parsed,
       usage: {
-        model: DEFAULT_MODEL,
+        model: resolvedModel,
         tokensIn: callUsage2b?.inputTokens ?? 0,
         tokensOut: callUsage2b?.outputTokens ?? 0,
         durationMs: Date.now() - start2b,

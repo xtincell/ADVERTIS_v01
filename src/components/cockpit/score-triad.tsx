@@ -1,6 +1,6 @@
 // ==========================================================================
-// COMPONENT C.K21 — ScoreTriad
-// Compact 3-score display: Coherence, Risk, BMF. Tap to expand breakdown.
+// COMPONENT C.K21 — ScoreQuad
+// Compact 4-score display: Coherence, Risk, BMF, Invest. Tap to expand breakdown.
 // ==========================================================================
 
 "use client";
@@ -11,6 +11,7 @@ import type {
   CoherenceBreakdownData,
   RiskBreakdownData,
   BmfBreakdownData,
+  InvestBreakdownData,
 } from "./cockpit-shared";
 import {
   Dialog,
@@ -18,24 +19,36 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
-interface ScoreTriadProps {
+interface ScoreQuadProps {
   coherence: number | null;
   risk: number | null;
   bmf: number | null;
+  invest: number | null;
   coherenceBreakdown?: CoherenceBreakdownData | null;
   riskBreakdown?: RiskBreakdownData | null;
   bmfBreakdown?: BmfBreakdownData | null;
+  investBreakdown?: InvestBreakdownData | null;
 }
+
+// Keep backward-compatible export name
+export type ScoreTriadProps = ScoreQuadProps;
 
 interface ScoreItemProps {
   value: number | null;
   label: string;
   invertColor?: boolean;
   onClick: () => void;
+  hint?: string;
 }
 
-function ScoreItem({ value, label, invertColor, onClick }: ScoreItemProps) {
+function ScoreItem({ value, label, invertColor, onClick, hint }: ScoreItemProps) {
   const displayValue = value != null ? Math.round(value) : "—";
   const colorClass =
     value != null
@@ -44,7 +57,7 @@ function ScoreItem({ value, label, invertColor, onClick }: ScoreItemProps) {
         : getScoreColor(value)
       : "text-muted-foreground";
 
-  return (
+  const button = (
     <button
       onClick={onClick}
       className="group flex flex-1 flex-col items-center gap-1 rounded-xl border bg-card p-3 transition-colors hover:border-primary/30 active:bg-accent"
@@ -55,16 +68,33 @@ function ScoreItem({ value, label, invertColor, onClick }: ScoreItemProps) {
       </span>
     </button>
   );
+
+  if (value == null && hint) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent side="bottom" className="max-w-[200px] text-xs">
+            {hint}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return button;
 }
 
 export function ScoreTriad({
   coherence,
   risk,
   bmf,
+  invest,
   coherenceBreakdown,
   riskBreakdown,
   bmfBreakdown,
-}: ScoreTriadProps) {
+  investBreakdown,
+}: ScoreQuadProps) {
   const [openBreakdown, setOpenBreakdown] = useState<string | null>(null);
 
   const rawBreakdown =
@@ -74,7 +104,9 @@ export function ScoreTriad({
         ? riskBreakdown
         : openBreakdown === "bmf"
           ? bmfBreakdown
-          : null;
+          : openBreakdown === "invest"
+            ? investBreakdown
+            : null;
   const breakdownData = rawBreakdown as Record<string, number> | null | undefined;
 
   const breakdownTitle =
@@ -82,11 +114,13 @@ export function ScoreTriad({
       ? "Score de Cohérence"
       : openBreakdown === "risk"
         ? "Score de Risque"
-        : "Brand-Market Fit";
+        : openBreakdown === "invest"
+          ? "Score d'Investissement"
+          : "Brand-Market Fit";
 
   return (
     <>
-      <div className="flex gap-3 px-4 stagger-children">
+      <div className="grid grid-cols-2 gap-3 px-4 sm:grid-cols-4 stagger-children">
         <ScoreItem
           value={coherence}
           label="Cohérence"
@@ -97,11 +131,19 @@ export function ScoreTriad({
           label="Risque"
           invertColor
           onClick={() => setOpenBreakdown("risk")}
+          hint="Complétez le pilier R pour débloquer"
         />
         <ScoreItem
           value={bmf}
           label="BMF"
           onClick={() => setOpenBreakdown("bmf")}
+          hint="Complétez le pilier T pour débloquer"
+        />
+        <ScoreItem
+          value={invest}
+          label="Invest"
+          onClick={() => setOpenBreakdown("invest")}
+          hint="Complétez le pilier I pour débloquer"
         />
       </div>
 
@@ -135,3 +177,6 @@ export function ScoreTriad({
     </>
   );
 }
+
+// Backward compatibility alias
+export const ScoreQuad = ScoreTriad;

@@ -13,6 +13,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "~/components/ui/select";
 import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "~/components/ui/table";
+import {
   INVOICE_TYPES, INVOICE_TYPE_LABELS, INVOICE_STATUSES, INVOICE_STATUS_LABELS,
   type InvoiceType, type InvoiceStatus,
 } from "~/lib/constants";
@@ -87,38 +90,38 @@ export default function SereniteInvoicesPage() {
           <p>Aucune facture trouvée.</p>
         </div>
       ) : (
-        <div className="rounded-xl border bg-white overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/30">
-                <th className="text-left px-4 py-3 font-medium">Référence</th>
-                <th className="text-left px-4 py-3 font-medium">Type</th>
-                <th className="text-left px-4 py-3 font-medium">Statut</th>
-                <th className="text-right px-4 py-3 font-medium">Total</th>
-                <th className="text-left px-4 py-3 font-medium">Date</th>
-                <th className="text-right px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div className="rounded-xl border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>Référence</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {data?.items.map((inv) => (
-                <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/20">
-                  <td className="px-4 py-3 font-medium">{inv.refNumber}</td>
-                  <td className="px-4 py-3">
+                <TableRow key={inv.id}>
+                  <TableCell className="font-medium">{inv.refNumber}</TableCell>
+                  <TableCell>
                     <Badge variant="outline" className="text-xs">
                       {INVOICE_TYPE_LABELS[inv.type as InvoiceType]}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <Badge
                       variant={inv.status === "PAID" ? "default" : inv.status === "OVERDUE" ? "destructive" : "secondary"}
                       className="text-xs"
                     >
                       {INVOICE_STATUS_LABELS[inv.status as InvoiceStatus]}
                     </Badge>
-                  </td>
-                  <td className="px-4 py-3 text-right tabular-nums font-medium">{fmt(inv.total)} {inv.currency}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString("fr-FR")}</td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="text-right tabular-nums font-medium">{fmt(inv.total)} {inv.currency}</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(inv.createdAt).toLocaleDateString("fr-FR")}</TableCell>
+                  <TableCell className="text-right">
                     {inv.status === "DRAFT" && (
                       <Button
                         variant="outline"
@@ -139,11 +142,11 @@ export default function SereniteInvoicesPage() {
                         Marquer payée
                       </Button>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

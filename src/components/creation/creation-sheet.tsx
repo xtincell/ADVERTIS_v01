@@ -52,7 +52,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 import { MATURITY_PROFILES, MATURITY_CONFIG, type MaturityProfile, SUPPORTED_CURRENCIES, CURRENCY_CONFIG, type SupportedCurrency, DELIVERY_MODES, type DeliveryMode } from "~/lib/constants";
+
+// ---------------------------------------------------------------------------
+// Country / Market options
+// ---------------------------------------------------------------------------
+
+const COUNTRY_OPTIONS = [
+  { value: "CM", label: "Cameroun" },
+  { value: "CI", label: "Côte d'Ivoire" },
+  { value: "SN", label: "Sénégal" },
+  { value: "GH", label: "Ghana" },
+  { value: "NG", label: "Nigeria" },
+  { value: "GA", label: "Gabon" },
+  { value: "BJ", label: "Bénin" },
+  { value: "TG", label: "Togo" },
+  { value: "ML", label: "Mali" },
+  { value: "BF", label: "Burkina Faso" },
+  { value: "FR", label: "France" },
+  { value: "US", label: "États-Unis" },
+  { value: "GB", label: "Royaume-Uni" },
+  { value: "MA", label: "Maroc" },
+  { value: "CD", label: "RD Congo" },
+] as const;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -157,6 +180,10 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
   const [maturityProfile, setMaturityProfile] = useState<MaturityProfile>("MATURE");
   const [currency, setCurrency] = useState<SupportedCurrency>("XOF");
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode | "">("ONE_SHOT");
+  const [country, setCountry] = useState("");
+  const [description, setDescription] = useState("");
+  const [annualBudget, setAnnualBudget] = useState<number | "">("");
+  const [targetRevenue, setTargetRevenue] = useState<number | "">("");
 
   // tRPC — fetch strategies for parent selector
   const { data: strategies, isLoading: strategiesLoading } =
@@ -190,6 +217,10 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
     setMaturityProfile("MATURE");
     setCurrency("XOF");
     setDeliveryMode("ONE_SHOT");
+    setCountry("");
+    setDescription("");
+    setAnnualBudget("");
+    setTargetRevenue("");
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -211,6 +242,10 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
       maturityProfile,
       currency,
       deliveryMode: deliveryMode || undefined,
+      country: country || undefined,
+      description: description.trim() || undefined,
+      annualBudget: annualBudget ? Number(annualBudget) : undefined,
+      targetRevenue: targetRevenue ? Number(targetRevenue) : undefined,
     });
   }
 
@@ -345,6 +380,60 @@ export function CreationSheet({ open, onOpenChange }: CreationSheetProps) {
                 ? "Mission ponctuelle avec suivi"
                 : "Livraison unique sans suivi"}
           </p>
+        </div>
+
+        {/* Country / Market */}
+        <div className="space-y-2">
+          <Label>Pays / Marché</Label>
+          <Select value={country} onValueChange={setCountry}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un marché" />
+            </SelectTrigger>
+            <SelectContent>
+              {COUNTRY_OPTIONS.map((c) => (
+                <SelectItem key={c.value} value={c.value}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Description */}
+        <div className="space-y-2">
+          <Label>Description (optionnel)</Label>
+          <Textarea
+            placeholder="Décrivez brièvement la marque, son activité, sa mission..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        {/* Budget & Revenue */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label>Budget annuel comm.</Label>
+            <Input
+              type="number"
+              placeholder={`Ex: 5 000 000 ${currency}`}
+              value={annualBudget}
+              onChange={(e) =>
+                setAnnualBudget(e.target.value ? parseInt(e.target.value) : "")
+              }
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>CA visé</Label>
+            <Input
+              type="number"
+              placeholder={`Ex: 50 000 000 ${currency}`}
+              value={targetRevenue}
+              onChange={(e) =>
+                setTargetRevenue(e.target.value ? parseInt(e.target.value) : "")
+              }
+            />
+          </div>
         </div>
       </div>
     );

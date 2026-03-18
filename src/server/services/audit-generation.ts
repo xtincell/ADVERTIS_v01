@@ -74,7 +74,9 @@ export async function generateRiskAudit(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  modelOverride?: string,
 ): Promise<{ data: RiskAuditResult; usage: AIUsageMetadata }> {
+  const resolvedModel = modelOverride ?? DEFAULT_MODEL;
   const overallStart = Date.now();
   let totalTokensIn = 0;
   let totalTokensOut = 0;
@@ -135,7 +137,7 @@ export async function generateRiskAudit(
 
       const { text, usage: callUsage } = await resilientGenerateText({
         label: `audit-R-microswot-${pillarType}`,
-        model: anthropic(DEFAULT_MODEL),
+        model: anthropic(resolvedModel),
         system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
 Tu dois réaliser une analyse micro-SWOT pour chaque variable du Pilier ${pillarType} — ${PILLAR_CONFIG[pillarType as PillarType]?.title}.
 
@@ -204,7 +206,7 @@ Exemple :
 
   const { text: synthesisText, usage: synthesisUsage } = await resilientGenerateText({
     label: "audit-R-synthesis",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: injectSpecialization(`Tu es un auditeur stratégique expert utilisant la méthodologie ADVERTIS.
 Tu dois synthétiser les micro-SWOTs individuels en une analyse globale.
 
@@ -257,7 +259,7 @@ FORMAT : Réponds UNIQUEMENT avec un objet JSON valide :
   return {
     data: parsed.data,
     usage: {
-      model: DEFAULT_MODEL,
+      model: resolvedModel,
       tokensIn: totalTokensIn,
       tokensOut: totalTokensOut,
       durationMs: Date.now() - overallStart,
@@ -293,7 +295,9 @@ export async function generateTrackAudit(
   specialization?: SpecializationOptions | null,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  modelOverride?: string,
 ): Promise<{ data: TrackAuditResult; usage: AIUsageMetadata }> {
+  const resolvedModel = modelOverride ?? DEFAULT_MODEL;
   // Build comprehensive context
   const ficheContext = ficheContent
     .map((p) => {
@@ -358,7 +362,7 @@ Indique explicitement quand tu spécules ou estimes.`;
   const trackStart = Date.now();
   const { text, usage: trackUsage } = await resilientGenerateText({
     label: "audit-T-track",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: injectSpecialization(`${getCurrencyPromptInstruction(currency ?? "XOF")}
 
 Tu es un analyste marché expert utilisant la méthodologie ADVERTIS.
@@ -442,7 +446,7 @@ ${hasMarketStudy ? "UTILISE EN PRIORITÉ les données réelles de l'étude de ma
   return {
     data: parsed.data,
     usage: {
-      model: DEFAULT_MODEL,
+      model: resolvedModel,
       tokensIn: trackUsage?.inputTokens ?? 0,
       tokensOut: trackUsage?.outputTokens ?? 0,
       durationMs: Date.now() - trackStart,

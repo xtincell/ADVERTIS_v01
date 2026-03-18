@@ -15,6 +15,7 @@ import { SuperfanFunnel } from "~/components/brand-os/superfan-funnel";
 import { DevotionLadder } from "~/components/brand-os/devotion-ladder";
 import { MarketHeatmap } from "~/components/brand-os/market-heatmap";
 import { getCultTier, CULT_TIERS } from "~/lib/types/brand-os";
+import { PageHeader } from "~/components/ui/page-header";
 
 function NucleusContent() {
   const brandId = useBrandId();
@@ -84,12 +85,10 @@ function NucleusContent() {
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-black tracking-tight">Nucleus</h1>
-        <p className="text-sm text-muted-foreground">
-          Le noyau de votre marque — superfans & cult index
-        </p>
-      </div>
+      <PageHeader
+        title="Nucleus"
+        description="Le noyau de votre marque — superfans & cult index"
+      />
 
       {/* Hero: Cult Index */}
       <div className="flex flex-col items-center py-6">

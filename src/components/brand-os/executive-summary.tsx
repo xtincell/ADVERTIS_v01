@@ -7,6 +7,8 @@
 
 import { getCultTier, CULT_TIERS } from "~/lib/types/brand-os";
 import { CultIndexGauge } from "./cult-index-gauge";
+import { formatCompact } from "~/lib/currency";
+import type { SupportedCurrency } from "~/lib/constants";
 
 interface ExecutiveData {
   brandName: string;
@@ -29,12 +31,7 @@ interface ExecutiveSummaryProps {
   data: ExecutiveData;
 }
 
-function formatCurrency(amount: number, currency: string): string {
-  if (amount >= 1_000_000_000) return `${(amount / 1_000_000_000).toFixed(1)}Mrd ${currency}`;
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M ${currency}`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K ${currency}`;
-  return `${amount.toLocaleString("fr-FR")} ${currency}`;
-}
+// formatCurrency → replaced by centralized formatCompact from ~/lib/currency
 
 function TrendArrow({ value }: { value: number | null }) {
   if (value == null) return <span className="text-muted-foreground/50 text-xs">—</span>;
@@ -133,7 +130,7 @@ export function ExecutiveSummary({ data }: ExecutiveSummaryProps) {
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>Budget annuel:</span>
           <span className="font-semibold text-foreground">
-            {formatCurrency(data.budget, data.currency)}
+            {formatCompact(data.budget, data.currency as SupportedCurrency)}
           </span>
         </div>
       )}

@@ -33,6 +33,7 @@ import { AlertPanel } from "~/components/dashboard/alert-panel";
 import { AgencyKpiBar } from "~/components/dashboard/agency-kpi-bar";
 import { OnboardingHero } from "~/components/dashboard/onboarding-hero";
 import { PORTALS } from "~/lib/portal-config";
+import { formatCompact } from "~/lib/currency";
 
 // ---------------------------------------------------------------------------
 // Icon resolver (portal-config stores icon names as strings)
@@ -71,14 +72,7 @@ function relativeTime(date: Date): string {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Format currency (FCFA)
-// ---------------------------------------------------------------------------
-function formatCFA(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
-  return String(value);
-}
+// formatCFA → replaced by centralized formatCompact from ~/lib/currency
 
 // ==========================================================================
 // Page
@@ -325,14 +319,14 @@ export default function GeneralDashboardPage() {
           <FinanceCard
             label="Chiffre d'affaires"
             icon={DollarSign}
-            value={finance ? `${formatCFA(finance.totalRevenue)} FCFA` : undefined}
+            value={finance ? `${formatCompact(finance.totalRevenue)} FCFA` : undefined}
             loading={loadingFinance}
             color="#10B981"
           />
           <FinanceCard
             label="Impayés"
             icon={FileWarning}
-            value={finance ? `${formatCFA(finance.unpaidAmount)} FCFA` : undefined}
+            value={finance ? `${formatCompact(finance.unpaidAmount)} FCFA` : undefined}
             loading={loadingFinance}
             alert={finance ? finance.unpaidAmount > 0 : false}
             color="#F59E0B"

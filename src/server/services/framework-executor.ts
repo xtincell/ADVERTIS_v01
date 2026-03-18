@@ -196,6 +196,11 @@ export async function executeFramework(
       throw new Error(result.error ?? "Erreur d'exécution du framework");
     }
 
+    // P1-09: Validate framework output data structure
+    if (!result.data || typeof result.data !== "object") {
+      throw new Error(`Framework ${frameworkId} returned invalid output data`);
+    }
+
     // ── Step 6: Persist FrameworkOutput (upsert) ────────────────────────
     await db.frameworkOutput.upsert({
       where: {
@@ -262,10 +267,33 @@ export async function executeFramework(
           durationMs: Date.now() - startTime,
         },
       })
-      .catch(() => {
-        // Can't even update the run — silently fail
+      .catch((dbErr) => {
+        // P1-10: Log critical failure when run is orphaned at "running" status
+        console.error(`[Framework] CRITICAL: Failed to mark run ${actualRunId} as error. Run may be orphaned.`, dbErr);
       });
 
     return { success: false, runId: actualRunId, error: errorMessage };
   }
+}
+
+/**
+ * P1-10: Cleanup orphaned framework runs stuck in "running" status for over 10 minutes.
+ * Should be called periodically (e.g., via cron or on server startup).
+ */
+export async function cleanupOrphanedFrameworkRuns(): Promise<number> {
+  const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+  const result = await db.frameworkRun.updateMany({
+    where: {
+      status: "running",
+      startedAt: { lt: tenMinutesAgo },
+    },
+    data: {
+      status: "error",
+      errorMessage: "Orphaned run: exceeded 10-minute timeout",
+    },
+  });
+  if (result.count > 0) {
+    console.warn(`[Framework] Cleaned up ${result.count} orphaned framework run(s)`);
+  }
+  return result.count;
 }

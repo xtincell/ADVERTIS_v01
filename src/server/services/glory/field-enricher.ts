@@ -10,6 +10,8 @@
 import { type PrismaClient } from "@prisma/client";
 import { getToolBySlug } from "~/server/services/glory/registry";
 import type { FieldEnrichment } from "~/lib/types/glory-tools";
+import { formatCurrency } from "~/lib/currency";
+import type { SupportedCurrency } from "~/lib/constants";
 
 // ---------------------------------------------------------------------------
 // Types for queried data (cached per call)
@@ -54,9 +56,7 @@ function safePillar(pillars: { type: string; content: unknown }[], type: string)
   return pillars.find((p) => p.type === type)?.content ?? null;
 }
 
-function formatCurrency(amount: number, currency: string): string {
-  return `${new Intl.NumberFormat("fr-FR").format(amount)} ${currency}`;
-}
+// Local formatCurrency → replaced by centralized import from ~/lib/currency
 
 // ---------------------------------------------------------------------------
 // Load all enrichment data in one batch
@@ -180,7 +180,7 @@ function enrichBigIdea(ctx: EnrichmentContext): FieldEnrichment {
 
 /** Extract budget default from BudgetTiers or pillar I */
 function enrichBudget(ctx: EnrichmentContext): FieldEnrichment {
-  const currency = ctx.strategy.currency;
+  const currency = ctx.strategy.currency as SupportedCurrency;
 
   if (ctx.budgetTiers.length > 0) {
     // Find a middle tier (IMPACT or the median)
@@ -423,7 +423,7 @@ function enrichEvents(ctx: EnrichmentContext): FieldEnrichment {
 /** Extract campaign context from active missions */
 function enrichCampaignContext(ctx: EnrichmentContext): FieldEnrichment {
   const suggestions = ctx.missions.slice(0, 5).map((m) => {
-    const charge = m.estimatedCharge ? ` — ${formatCurrency(m.estimatedCharge, m.currency)}` : "";
+    const charge = m.estimatedCharge ? ` — ${formatCurrency(m.estimatedCharge, m.currency as SupportedCurrency)}` : "";
     return `${m.title} [${m.status}]${charge}`;
   });
   return { suggestions };

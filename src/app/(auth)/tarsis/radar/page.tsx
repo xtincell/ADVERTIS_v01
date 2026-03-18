@@ -12,19 +12,34 @@ import {
   RotateCcw,
   Building2,
   ExternalLink,
+  Plus,
+  Trash2,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { cn } from "~/lib/utils";
 import { EmptyState } from "~/components/ui/empty-state";
 import { PageSpinner } from "~/components/ui/loading-skeleton";
 import { PageHeader } from "~/components/ui/page-header";
+import { StrategySelector } from "~/components/shared/strategy-selector";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type CompetitorEntry = {
+  id: string;
   strategyBrand: string;
   strategyId: string;
   positioning: string | null;
@@ -34,12 +49,114 @@ type CompetitorEntry = {
 };
 
 // ---------------------------------------------------------------------------
+// Add Competitor Dialog
+// ---------------------------------------------------------------------------
+
+function AddCompetitorDialog() {
+  const [open, setOpen] = useState(false);
+  const [strategyId, setStrategyId] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [positioning, setPositioning] = useState("");
+  const [sov, setSov] = useState("");
+
+  const utils = api.useUtils();
+  const upsert = api.marketContext.competitors.upsert.useMutation({
+    onSuccess: () => {
+      toast.success("Concurrent ajouté");
+      void utils.marketContext.crossBrand.getAll.invalidate();
+      setOpen(false);
+      setName("");
+      setPositioning("");
+      setSov("");
+      setStrategyId(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Plus className="mr-1 h-3.5 w-3.5" /> Ajouter
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Ajouter un concurrent</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <Label className="text-xs">Stratégie associée</Label>
+            <StrategySelector
+              value={strategyId}
+              onChange={setStrategyId}
+              placeholder="Sélectionner la marque"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Nom du concurrent</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Nike, Samsung..."
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Positionnement</Label>
+            <Input
+              value={positioning}
+              onChange={(e) => setPositioning(e.target.value)}
+              placeholder="Positionnement concurrentiel"
+            />
+          </div>
+          <div>
+            <Label className="text-xs">Part de voix (SOV %)</Label>
+            <Input
+              type="number"
+              value={sov}
+              onChange={(e) => setSov(e.target.value)}
+              placeholder="0-100"
+              min={0}
+              max={100}
+            />
+          </div>
+          <Button
+            className="w-full"
+            disabled={!strategyId || !name || upsert.isPending}
+            onClick={() =>
+              upsert.mutate({
+                strategyId: strategyId!,
+                name,
+                positioning: positioning || undefined,
+                sov: sov ? Number(sov) : undefined,
+              })
+            }
+          >
+            {upsert.isPending && <Loader2 className="mr-1 h-3 w-3 animate-spin" />}
+            Ajouter
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
 
 export default function TarsisRadarPage() {
   const { data, isLoading, isError, refetch } =
     api.marketContext.crossBrand.getAll.useQuery();
+
+  const utils = api.useUtils();
+  const deleteMutation = api.marketContext.competitors.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Concurrent supprimé");
+      void utils.marketContext.crossBrand.getAll.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const [brandFilter, setBrandFilter] = useState<string>("all");
 
@@ -54,6 +171,7 @@ export default function TarsisRadarPage() {
       const key = c.name.toLowerCase().trim();
       const entries = map.get(key) ?? [];
       entries.push({
+        id: c.id,
         strategyBrand: c.strategy.brandName,
         strategyId: c.strategy.id,
         positioning: c.positioning,
@@ -107,12 +225,15 @@ export default function TarsisRadarPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <PageHeader
-        title="Radar Concurrentiel"
-        description="Paysage concurrentiel consolidé de toutes vos marques"
-        backHref="/tarsis"
-        backLabel="Retour au tableau Tarsis"
-      />
+      <div className="flex items-center justify-between gap-4">
+        <PageHeader
+          title="Radar Concurrentiel"
+          description="Paysage concurrentiel consolidé de toutes vos marques"
+          backHref="/tarsis"
+          backLabel="Retour au tableau Tarsis"
+        />
+        <AddCompetitorDialog />
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-3 gap-3">
@@ -173,14 +294,14 @@ export default function TarsisRadarPage() {
         <EmptyState
           icon={Building2}
           title="Aucun concurrent identifié"
-          description="Lancez des audits T pour détecter le paysage concurrentiel."
+          description="Ajoutez manuellement ou lancez des audits T pour détecter le paysage concurrentiel."
         />
       )}
 
       {/* Competitor cards */}
       <div className="grid gap-3 sm:grid-cols-2">
         {filteredCompetitors.map(([name, entries]) => (
-          <div key={name} className="rounded-xl border bg-card p-4 space-y-3">
+          <div key={name} className="rounded-xl border bg-card p-4 space-y-3 group">
             {/* Name + overlap badge */}
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -195,6 +316,18 @@ export default function TarsisRadarPage() {
                   SOV {entries[0].sov}%
                 </span>
               )}
+              <button
+                className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-500"
+                onClick={() => {
+                  if (confirm(`Supprimer ${name} ?`)) {
+                    for (const e of entries) {
+                      deleteMutation.mutate({ id: e.id });
+                    }
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
             </div>
 
             {/* Linked brands */}

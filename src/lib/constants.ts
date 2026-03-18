@@ -266,6 +266,62 @@ export const PHASE_CONFIG: Record<
 };
 
 // ============================================
+// AI MODEL CONFIGURATION
+// ============================================
+
+export interface AvailableModel {
+  id: string;
+  label: string;
+  description: string;
+  inputPer1M: number;
+  outputPer1M: number;
+}
+
+export const AVAILABLE_MODELS: AvailableModel[] = [
+  {
+    id: "claude-sonnet-4-6-20260219",
+    label: "Claude Sonnet 4.6",
+    description: "Dernier modèle, meilleur raisonnement",
+    inputPer1M: 3,
+    outputPer1M: 15,
+  },
+  {
+    id: "claude-sonnet-4-20250514",
+    label: "Claude Sonnet 4",
+    description: "Modèle stable, bon rapport qualité/prix",
+    inputPer1M: 3,
+    outputPer1M: 15,
+  },
+  {
+    id: "claude-3-5-haiku-20241022",
+    label: "Claude 3.5 Haiku",
+    description: "Rapide et économique",
+    inputPer1M: 0.8,
+    outputPer1M: 4,
+  },
+];
+
+/** Default model per phase — used when no user override exists */
+export const DEFAULT_PHASE_MODELS: Partial<Record<Phase, string>> = {
+  fiche: "claude-sonnet-4-20250514",
+  "audit-r": "claude-sonnet-4-20250514",
+  "audit-t": "claude-sonnet-4-20250514",
+  "audit-review": "claude-sonnet-4-6-20260219",
+  implementation: "claude-sonnet-4-20250514",
+  cockpit: "claude-sonnet-4-20250514",
+};
+
+/** Phases that involve AI generation (have a model selector) */
+export const AI_PHASES: Phase[] = [
+  "fiche",
+  "audit-r",
+  "audit-t",
+  "audit-review",
+  "implementation",
+  "cockpit",
+];
+
+// ============================================
 // REPORT CONFIGURATION (Phase 3)
 // ============================================
 
@@ -1126,6 +1182,76 @@ export const MARKET_LABELS: Record<Market, string> = {
   NG: "Nigeria",
 };
 
+// ── All Countries (for TAM/market study context) ──
+export const ALL_COUNTRIES = [
+  "CM", "CI", "SN", "GH", "NG",           // Marchés pricing existants
+  "BF", "BJ", "TG", "ML", "NE", "GW",     // WAEMU élargi
+  "GA", "CG", "TD", "CF", "GQ",            // CEMAC élargi
+  "FR", "BE", "CH", "CA",                  // Francophonie hors Afrique
+  "US", "GB",                              // Anglophone hors Afrique
+] as const;
+export type CountryCode = (typeof ALL_COUNTRIES)[number];
+
+export const COUNTRY_LABELS: Record<CountryCode, string> = {
+  CM: "Cameroun", CI: "Côte d'Ivoire", SN: "Sénégal", GH: "Ghana", NG: "Nigeria",
+  BF: "Burkina Faso", BJ: "Bénin", TG: "Togo", ML: "Mali", NE: "Niger", GW: "Guinée-Bissau",
+  GA: "Gabon", CG: "Congo-Brazzaville", TD: "Tchad", CF: "Centrafrique", GQ: "Guinée équatoriale",
+  FR: "France", BE: "Belgique", CH: "Suisse", CA: "Canada",
+  US: "États-Unis", GB: "Royaume-Uni",
+};
+
+// ── Economic Zones ──
+export type EconomicZone = "CEMAC" | "WAEMU" | "ANGLOPHONE_AFRICA" | "EUROPE" | "AMERICAS";
+
+export const COUNTRY_TO_ZONE: Record<CountryCode, EconomicZone> = {
+  CM: "CEMAC", GA: "CEMAC", CG: "CEMAC", TD: "CEMAC", CF: "CEMAC", GQ: "CEMAC",
+  CI: "WAEMU", SN: "WAEMU", BF: "WAEMU", BJ: "WAEMU", TG: "WAEMU", ML: "WAEMU", NE: "WAEMU", GW: "WAEMU",
+  GH: "ANGLOPHONE_AFRICA", NG: "ANGLOPHONE_AFRICA",
+  FR: "EUROPE", BE: "EUROPE", CH: "EUROPE", GB: "EUROPE",
+  US: "AMERICAS", CA: "AMERICAS",
+};
+
+export const COUNTRY_TO_LANGUAGE: Record<CountryCode, string> = {
+  CM: "fr", CI: "fr", SN: "fr", BF: "fr", BJ: "fr", TG: "fr", ML: "fr", NE: "fr", GW: "fr",
+  GA: "fr", CG: "fr", TD: "fr", CF: "fr", GQ: "fr",
+  GH: "en", NG: "en", US: "en", GB: "en", CA: "en",
+  FR: "fr", BE: "fr", CH: "fr",
+};
+
+/** Pays proxy par zone — utilisé quand aucune donnée directe n'est disponible */
+export const ZONE_PROXY_COUNTRY: Record<EconomicZone, CountryCode> = {
+  CEMAC: "CM",              // Cameroun = plus gros marché CEMAC
+  WAEMU: "CI",              // Côte d'Ivoire = plus gros marché WAEMU
+  ANGLOPHONE_AFRICA: "NG",  // Nigeria = plus gros marché anglophone africain
+  EUROPE: "FR",             // France = proxy européen
+  AMERICAS: "US",           // USA = proxy amériques
+};
+
+/**
+ * Résout le pays pour les études de marché / TAM.
+ * Priorité : pays explicite > déduit de la devise > Cameroun (siège agence).
+ */
+export function resolveMarketCountry(
+  country?: string | null,
+  currency?: string,
+): { country: CountryCode; language: string; isProxy: boolean } {
+  // 1. Pays explicite de la marque
+  if (country && country in COUNTRY_TO_ZONE) {
+    const c = country as CountryCode;
+    return { country: c, language: COUNTRY_TO_LANGUAGE[c], isProxy: false };
+  }
+  // 2. Déduire depuis la devise → pays principal de la zone monétaire
+  if (currency) {
+    const currencyToCountry: Record<string, CountryCode> = {
+      XAF: "CM", XOF: "CI", GHS: "GH", NGN: "NG", EUR: "FR", USD: "US",
+    };
+    const c = currencyToCountry[currency];
+    if (c) return { country: c, language: COUNTRY_TO_LANGUAGE[c], isProxy: true };
+  }
+  // 3. Default : Cameroun (siège de l'agence)
+  return { country: "CM", language: "fr", isProxy: true };
+}
+
 // ── Pricing Categories ──
 export const PRICING_CATEGORIES = [
   "PRODUCTION", "MEDIA", "EVENT", "TALENT", "DIGITAL",
@@ -1695,13 +1821,14 @@ export const CAMPAIGN_VALID_TRANSITIONS: Record<CampaignStatus, CampaignStatus[]
   PLANNING: ["CREATIVE_DEV", "BRIEF_VALIDATED", "CANCELLED"],
   CREATIVE_DEV: ["PRODUCTION", "PLANNING", "CANCELLED"],
   PRODUCTION: ["PRE_PRODUCTION", "CREATIVE_DEV", "CANCELLED"],
-  PRE_PRODUCTION: ["APPROVAL", "PRODUCTION"],
-  APPROVAL: ["READY_TO_LAUNCH", "CREATIVE_DEV", "PRODUCTION"],
+  PRE_PRODUCTION: ["APPROVAL", "PRODUCTION", "CANCELLED"],
+  APPROVAL: ["READY_TO_LAUNCH", "CREATIVE_DEV", "PRODUCTION", "CANCELLED"],
   READY_TO_LAUNCH: ["LIVE", "APPROVAL"],
   LIVE: ["POST_CAMPAIGN"],
   POST_CAMPAIGN: ["ARCHIVED"],
   ARCHIVED: [],
-  CANCELLED: ["BRIEF_DRAFT"],
+  // P0-08: CANCELLED is terminal — no resurrection without full re-validation
+  CANCELLED: [],
 };
 
 // ── Campaign Types ──
@@ -1843,7 +1970,8 @@ export const EXECUTION_VALID_TRANSITIONS: Record<ExecutionStatus, ExecutionStatu
   DEVIS: ["BAT"],
   BAT: ["EN_PRODUCTION", "DEVIS"],
   EN_PRODUCTION: ["LIVRAISON", "BAT"],
-  LIVRAISON: ["INSTALLE", "TERMINE"],
+  // P2-14: Allow rollback from LIVRAISON to EN_PRODUCTION for rework
+  LIVRAISON: ["INSTALLE", "TERMINE", "EN_PRODUCTION"],
   INSTALLE: ["TERMINE"],
   TERMINE: [],
 };

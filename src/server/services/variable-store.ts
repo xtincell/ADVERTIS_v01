@@ -174,6 +174,19 @@ export async function setVariable(
 
     const nextVersion = existing ? existing.version + 1 : 1;
 
+    // P1-12: Conflict detection — warn when AI overwrites manual edit or vice versa
+    if (existing && existing.source !== opts.source) {
+      const isAiOverwritingManual = existing.source === "manual_edit" && opts.source === "ai_generation";
+      const isManualOverwritingAi = existing.source === "ai_generation" && opts.source === "manual_edit";
+      if (isAiOverwritingManual) {
+        console.warn(
+          `[VariableStore] CONFLICT: AI generation is overwriting manual edit for key "${key}" (strategy ${strategyId}). ` +
+          `Previous source: ${existing.source}, new source: ${opts.source}`
+        );
+      }
+      // Manual overwriting AI is expected (human takes precedence), no warning needed
+    }
+
     // 2. Snapshot history if there was a previous value
     if (existing) {
       await tx.brandVariableHistory.create({
@@ -259,9 +272,10 @@ export async function setVariablesBatch(
           isStale: false,
           staleReason: null,
           staleSince: null,
-          // Increment version via raw SQL would be ideal, but Prisma doesn't
-          // support atomic increment in upsert.update. We accept a minor race
-          // condition here since batch writes are fire-and-forget from generation.
+          // P2-07: Known race condition — version increment is not atomic in Prisma upsert.
+          // Two concurrent writes may both read version=N and both write version=N+1.
+          // Mitigation: use db.$transaction with serializable isolation for critical paths.
+          // Accepted for fire-and-forget generation; manual edits should use setVariable() directly.
           version: { increment: 1 },
           updatedBy: entry.options.changedBy,
         },

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none">
+  <defs>
+    <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8501A"/>
+      <stop offset="100%" stop-color="#F43F5E"/>
+    </linearGradient>
+  </defs>
+  <!-- Left leg -->
+  <line x1="5" y1="28" x2="16" y2="4" stroke="#E8501A" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- Right leg -->
+  <line x1="27" y1="28" x2="16" y2="4" stroke="#E8501A" stroke-width="3.2" stroke-linecap="round"/>
+  <!-- Crossbar -->
+  <line x1="9" y1="19.5" x2="23" y2="19.5" stroke="#F43F5E" stroke-width="2.4" stroke-linecap="round"/>
+  <!-- Flame apex -->
+  <path d="M16 0.5 C13.8 3, 13.5 5.5, 16 7 C18.5 5.5, 18.2 3, 16 0.5Z" fill="url(#fg)"/>
+</svg>

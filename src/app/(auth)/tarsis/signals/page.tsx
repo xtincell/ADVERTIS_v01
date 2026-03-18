@@ -16,10 +16,31 @@ import {
   Search,
   Radar as RadarIcon,
   Lightbulb,
+  Plus,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
+import { Textarea } from "~/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import { StrategySelector } from "~/components/shared/strategy-selector";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
 import { EmptyState } from "~/components/ui/empty-state";
@@ -51,6 +72,56 @@ export default function TarsisSignalsPage() {
     api.marketContext.crossBrand.getAll.useQuery();
 
   const [brandFilter, setBrandFilter] = useState<string>("all");
+
+  // Create signal dialog state
+  const [createOpen, setCreateOpen] = useState(false);
+  const [newStrategyId, setNewStrategyId] = useState<string | null>(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newLayer, setNewLayer] = useState<string>("");
+  const [newPillar, setNewPillar] = useState("");
+  const [newValue, setNewValue] = useState("");
+
+  const utils = api.useUtils();
+
+  const createMutation = api.signal.create.useMutation({
+    onSuccess: () => {
+      toast.success("Signal créé avec succès");
+      void utils.analytics.getAgencyOverview.invalidate();
+      void utils.marketContext.crossBrand.getAll.invalidate();
+      setCreateOpen(false);
+      resetCreateForm();
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Erreur lors de la création");
+    },
+  });
+
+  function resetCreateForm() {
+    setNewStrategyId(null);
+    setNewLabel("");
+    setNewDescription("");
+    setNewLayer("");
+    setNewPillar("");
+    setNewValue("");
+  }
+
+  function handleCreate() {
+    if (!newStrategyId || !newLabel || !newLayer || !newPillar) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    // Default status based on layer
+    const defaultStatus = newLayer === "METRIC" ? "HEALTHY" : newLayer === "STRONG" ? "ACTIVE" : "WATCH";
+    createMutation.mutate({
+      strategyId: newStrategyId,
+      title: newLabel,
+      description: newDescription || undefined,
+      layer: newLayer as "METRIC" | "STRONG" | "WEAK",
+      pillar: newPillar,
+      status: defaultStatus,
+    });
+  }
 
   const isLoading = overviewLoading || crossBrandLoading;
 
@@ -113,12 +184,94 @@ export default function TarsisSignalsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <PageHeader
-        title="Signaux & Tendances"
-        description="Tendances macro, signaux faibles et patterns émergents agrégés"
-        backHref="/tarsis"
-        backLabel="Retour au tableau Tarsis"
-      />
+      <div className="flex items-start justify-between gap-4">
+        <PageHeader
+          title="Signaux & Tendances"
+          description="Tendances macro, signaux faibles et patterns émergents agrégés"
+          backHref="/tarsis"
+          backLabel="Retour au tableau Tarsis"
+        />
+        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="shrink-0">
+              <Plus className="mr-2 h-4 w-4" />
+              Ajouter un signal
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Nouveau signal</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label>Stratégie *</Label>
+                <StrategySelector
+                  value={newStrategyId}
+                  onChange={setNewStrategyId}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Label *</Label>
+                <Input
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  placeholder="Nom du signal"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Description du signal..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Couche *</Label>
+                  <Select value={newLayer} onValueChange={setNewLayer}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="METRIC">Métrique</SelectItem>
+                      <SelectItem value="STRONG">Fort</SelectItem>
+                      <SelectItem value="WEAK">Faible</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Pilier *</Label>
+                  <Input
+                    value={newPillar}
+                    onChange={(e) => setNewPillar(e.target.value)}
+                    placeholder="Ex: T, A, R, S..."
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Valeur</Label>
+                <Input
+                  type="number"
+                  value={newValue}
+                  onChange={(e) => setNewValue(e.target.value)}
+                  placeholder="Valeur numérique (optionnel)"
+                />
+              </div>
+              <Button
+                onClick={handleCreate}
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Créer le signal
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

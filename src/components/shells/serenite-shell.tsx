@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Settings,
   Users,
+  Plug,
 } from "lucide-react";
 import { AppShell } from "./app-shell";
 import type { SidebarNavItem } from "./app-sidebar";
@@ -32,6 +33,7 @@ const SIDEBAR_ITEMS: SidebarNavItem[] = [
 const SECONDARY_ITEMS: SidebarNavItem[] = [
   { href: "/serenite/users", label: "Utilisateurs", icon: Users },
   { href: "/serenite/costs", label: "Coûts IA", icon: Cpu },
+  { href: "/serenite/integrations", label: "Intégrations", icon: Plug },
   { href: "/serenite/admin", label: "Admin", icon: ShieldCheck },
   { href: "/serenite/settings", label: "Paramètres", icon: Settings },
 ];

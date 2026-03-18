@@ -77,6 +77,7 @@ export async function generatePillarContent(
   options?: GenerationOptions,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  modelOverride?: string,
 ): Promise<{ data: unknown; usage: AIUsageMetadata }> {
   let systemPrompt = getSystemPrompt(pillarType, options);
   if (currency) {
@@ -92,10 +93,11 @@ export async function generatePillarContent(
     tagline,
   );
 
+  const resolvedModel = modelOverride ?? DEFAULT_MODEL;
   const start = Date.now();
   const result = await resilientGenerateText({
     label: `pillar-${pillarType}`,
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 6000,
@@ -109,7 +111,7 @@ export async function generatePillarContent(
   return {
     data,
     usage: {
-      model: DEFAULT_MODEL,
+      model: resolvedModel,
       tokensIn: result.usage?.inputTokens ?? 0,
       tokensOut: result.usage?.outputTokens ?? 0,
       durationMs: Date.now() - start,
@@ -129,6 +131,7 @@ export async function generateSyntheseContent(
   options?: GenerationOptions,
   tagline?: string | null,
   currency?: SupportedCurrency,
+  modelOverride?: string,
 ): Promise<{ data: SynthesePillarData; usage: AIUsageMetadata }> {
   let systemPrompt = getSystemPrompt("S", options);
   if (currency) {
@@ -144,10 +147,11 @@ export async function generateSyntheseContent(
     tagline,
   );
 
+  const resolvedModel = modelOverride ?? DEFAULT_MODEL;
   const start = Date.now();
   const result = await resilientGenerateText({
     label: "pillar-S-synthese",
-    model: anthropic(DEFAULT_MODEL),
+    model: anthropic(resolvedModel),
     system: systemPrompt,
     prompt: userPrompt,
     maxOutputTokens: 8000,
@@ -161,7 +165,7 @@ export async function generateSyntheseContent(
   return {
     data,
     usage: {
-      model: DEFAULT_MODEL,
+      model: resolvedModel,
       tokensIn: result.usage?.inputTokens ?? 0,
       tokensOut: result.usage?.outputTokens ?? 0,
       durationMs: Date.now() - start,

@@ -17,6 +17,9 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Card } from "~/components/ui/card";
 import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "~/components/ui/table";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -139,61 +142,61 @@ export default function GuildeDirectoryPage() {
           {/* Desktop Table */}
           <div className="hidden md:block">
             <Card className="overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/30">
-                    <th className="text-left px-4 py-3 font-medium">Talent</th>
-                    <th className="text-left px-4 py-3 font-medium">Catégorie</th>
-                    <th className="text-left px-4 py-3 font-medium">Niveau</th>
-                    <th className="text-left px-4 py-3 font-medium">Dispo</th>
-                    <th className="text-right px-4 py-3 font-medium">Missions</th>
-                    <th className="text-right px-4 py-3 font-medium">Score</th>
-                    <th className="text-right px-4 py-3 font-medium">TJM</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead>Talent</TableHead>
+                    <TableHead>Catégorie</TableHead>
+                    <TableHead>Niveau</TableHead>
+                    <TableHead>Dispo</TableHead>
+                    <TableHead className="text-right">Missions</TableHead>
+                    <TableHead className="text-right">Score</TableHead>
+                    <TableHead className="text-right">TJM</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {data?.items.map((talent) => {
                     const lvl = talent.level as TalentLevel;
                     const cfg = TALENT_LEVEL_CONFIG[lvl];
                     return (
-                      <tr key={talent.id} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
-                        <td className="px-4 py-3">
+                      <TableRow key={talent.id}>
+                        <TableCell>
                           <Link href={`/guilde/${talent.userId}`} className="hover:underline">
                             <div className="font-medium">{talent.displayName ?? talent.user?.name ?? "—"}</div>
                             <div className="text-xs text-muted-foreground truncate max-w-[200px]">{talent.headline ?? ""}</div>
                           </Link>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                           <Badge variant="outline" className="text-xs">
                             {TALENT_CATEGORY_LABELS[talent.category as TalentCategory] ?? talent.category}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                           <span className="flex items-center gap-1.5">
                             <span>{cfg?.emoji}</span>
                             <span style={{ color: cfg?.color }}>{TALENT_LEVEL_LABELS[lvl]}</span>
                           </span>
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell>
                           <Badge
                             variant={talent.availability === "AVAILABLE" ? "default" : "secondary"}
                             className="text-xs"
                           >
                             {TALENT_AVAILABILITY_LABELS[talent.availability as TalentAvailability] ?? talent.availability}
                           </Badge>
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">{talent.totalMissions}</td>
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{talent.totalMissions}</TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {talent.avgScore ? `${talent.avgScore.toFixed(1)}/5` : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right tabular-nums">
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">
                           {talent.tjmMin ? `${talent.tjmMin.toLocaleString()} ${talent.currency}` : "—"}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </Card>
           </div>
 

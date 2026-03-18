@@ -33,6 +33,7 @@ import type {
   AIWebSearchQuery,
   DataConfidence,
 } from "~/lib/types/market-study";
+import { COUNTRY_LABELS, type CountryCode } from "~/lib/constants";
 
 export class AIWebSearchAdapter implements DataSourceAdapter {
   name = "AI Web Search";
@@ -45,7 +46,7 @@ export class AIWebSearchAdapter implements DataSourceAdapter {
 
   async collect(params: CollectionParams): Promise<CollectionResult> {
     const { brandName, sector, competitors, country } = params;
-    const countryLabel = country ?? "France";
+    const countryLabel = COUNTRY_LABELS[country as CountryCode] ?? country ?? "Cameroun";
 
     // Build targeted queries that complement other sources
     const queries: AIWebSearchQuery[] = [

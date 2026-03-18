@@ -29,6 +29,9 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { PageHeader } from "~/components/ui/page-header";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
 import {
   Select,
@@ -288,37 +291,34 @@ function StrategyManagement() {
       {!isLoading && (
         <div className="rounded-xl border border-border overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/30 hover:bg-muted/30">
+                  <TableHead>
                     Marque
-                  </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 hidden md:table-cell">
                     Propriétaire
-                  </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+                  </TableHead>
+                  <TableHead>
                     Statut
-                  </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+                  </TableHead>
+                  <TableHead>
                     Mode
-                  </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 hidden sm:table-cell">
                     Phase
-                  </th>
-                  <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden lg:table-cell">
+                  </TableHead>
+                  <TableHead className="px-4 py-3 hidden lg:table-cell">
                     Score
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {filtered.map((strategy) => (
-                  <tr
-                    key={strategy.id}
-                    className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
-                  >
+                  <TableRow key={strategy.id}>
                     {/* Brand name + project name */}
-                    <td className="px-4 py-3">
+                    <TableCell>
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">
                           {strategy.brandName}
@@ -327,10 +327,10 @@ function StrategyManagement() {
                           {strategy.name}
                         </p>
                       </div>
-                    </td>
+                    </TableCell>
 
                     {/* Owner */}
-                    <td className="px-4 py-3 hidden md:table-cell">
+                    <TableCell className="hidden md:table-cell">
                       {users && users.length > 0 ? (
                         <Select
                           value={strategy.userId}
@@ -352,10 +352,10 @@ function StrategyManagement() {
                           {strategy.user.name ?? strategy.user.email}
                         </span>
                       )}
-                    </td>
+                    </TableCell>
 
                     {/* Status */}
-                    <td className="px-4 py-3">
+                    <TableCell>
                       <Select
                         value={strategy.status}
                         onValueChange={(v) => handleStatusChange(strategy.id, v)}
@@ -381,10 +381,10 @@ function StrategyManagement() {
                           ))}
                         </SelectContent>
                       </Select>
-                    </td>
+                    </TableCell>
 
                     {/* Delivery mode */}
-                    <td className="px-4 py-3">
+                    <TableCell>
                       <Select
                         value={strategy.deliveryMode ?? "NONE"}
                         onValueChange={(v) => handleDeliveryChange(strategy.id, v)}
@@ -415,39 +415,39 @@ function StrategyManagement() {
                           ))}
                         </SelectContent>
                       </Select>
-                    </td>
+                    </TableCell>
 
                     {/* Phase */}
-                    <td className="px-4 py-3 hidden sm:table-cell">
+                    <TableCell className="hidden sm:table-cell">
                       <span className="text-xs text-muted-foreground capitalize">
                         {strategy.phase}
                       </span>
-                    </td>
+                    </TableCell>
 
                     {/* Coherence score */}
-                    <td className="px-4 py-3 hidden lg:table-cell">
+                    <TableCell className="hidden lg:table-cell">
                       <span className="text-xs font-medium">
                         {strategy.coherenceScore != null
                           ? `${strategy.coherenceScore}%`
                           : "—"}
                       </span>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
 
                 {filtered.length === 0 && (
-                  <tr>
-                    <td
+                  <TableRow>
+                    <TableCell
                       colSpan={6}
-                      className="px-4 py-8 text-center text-sm text-muted-foreground"
+                      className="h-24 text-center text-muted-foreground"
                     >
                       <Layers className="h-8 w-8 mx-auto mb-2 opacity-30" />
                       Aucune stratégie trouvée
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}

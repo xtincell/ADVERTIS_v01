@@ -32,6 +32,7 @@ import type {
   SourceStatusMap,
   DataSourceName,
 } from "~/lib/types/market-study";
+import { resolveMarketCountry } from "~/lib/constants";
 import { BraveSearchAdapter } from "./adapters/brave-search";
 import { AIWebSearchAdapter } from "./adapters/ai-web-search";
 import { GoogleTrendsAdapter } from "./adapters/google-trends";
@@ -73,14 +74,21 @@ export async function runMarketStudyCollection(
   sourcesTotal: number;
   errors: string[];
 }> {
+  // Resolve the brand's actual country (explicit > currency-inferred > CM default)
+  const strategy = await db.strategy.findUnique({
+    where: { id: strategyId },
+    select: { country: true, currency: true },
+  });
+  const resolved = resolveMarketCountry(strategy?.country, strategy?.currency);
+
   // Build collection params
   const params: CollectionParams = {
     brandName,
     sector,
     competitors,
     keywords: keywords ?? [brandName, sector],
-    country: "FR",
-    language: "fr",
+    country: resolved.country,
+    language: resolved.language,
   };
 
   // Initialize all adapters

@@ -12,8 +12,8 @@ export default function OperatorPresetsPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 md:p-6">
       <PageHeader
-        title="Gestion des Presets"
-        description="Configurez les templates de briefs pour accélérer la création de stratégies"
+        title="Presets de stratégie"
+        description="Modèles de fiche pré-configurés"
         backHref="/impulsion"
         backLabel="Retour au menu"
       />

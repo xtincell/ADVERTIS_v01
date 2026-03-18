@@ -50,8 +50,8 @@ import type { SupportedCurrency } from "~/lib/constants";
 import type { ImplementationData } from "~/lib/types/implementation-data";
 import { CockpitSection, MetricCard } from "../cockpit-shared";
 
-const BudgetSimulator = dynamic(
-  () => import("../budget-simulator").then((m) => ({ default: m.BudgetSimulator })),
+const CampaignPlanSimulator = dynamic(
+  () => import("../campaign-plan-simulator").then((m) => ({ default: m.CampaignPlanSimulator })),
   { ssr: false },
 );
 
@@ -633,7 +633,7 @@ export function SectionImplementation({
             </div>
 
             {showSimulator && (
-              <BudgetSimulator
+              <CampaignPlanSimulator
                 campaigns={implContent.campaigns?.annualCalendar ?? []}
                 budgetAllocation={implContent.budgetAllocation}
                 currency={currency}

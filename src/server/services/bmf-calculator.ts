@@ -61,10 +61,15 @@ export function calculateBrandMarketFit(
   // --- 1. triangulationQuality (max 25) ---
   const tri = tData.triangulation;
   let triScore = 0;
-  if (tri?.internalData && tri.internalData.trim().length > 0) triScore += 8;
-  if (tri?.marketData && tri.marketData.trim().length > 0) triScore += 8;
-  if (tri?.customerData && tri.customerData.trim().length > 0) triScore += 5;
-  if (tri?.synthesis && tri.synthesis.trim().length > 0) triScore += 4;
+  const hasInternalData = tri?.internalData && tri.internalData.trim().length > 0;
+  const hasMarketData = tri?.marketData && tri.marketData.trim().length > 0;
+  const hasCustomerData = tri?.customerData && tri.customerData.trim().length > 0;
+  if (hasInternalData) triScore += 8;
+  if (hasMarketData) triScore += 8;
+  if (hasCustomerData) triScore += 5;
+  // P2-20: Synthesis only scores if at least one other data source exists
+  const hasAnyDataSource = hasInternalData || hasMarketData || hasCustomerData;
+  if (tri?.synthesis && tri.synthesis.trim().length > 0 && hasAnyDataSource) triScore += 4;
 
   // --- 2. hypothesisValidation (max 30) ---
   const hyps = tData.hypothesisValidation ?? [];

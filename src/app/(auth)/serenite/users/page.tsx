@@ -10,6 +10,9 @@ import { useState } from "react";
 import { Users, Search } from "lucide-react";
 import { api } from "~/trpc/react";
 import { PageHeader } from "~/components/ui/page-header";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "~/components/ui/table";
 import { Badge } from "~/components/ui/badge";
 import {
   Select,
@@ -114,31 +117,28 @@ export default function UsersPage() {
       {/* Users list */}
       {!isLoading && (
         <div className="rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border bg-muted/30">
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30 hover:bg-muted/30">
+                <TableHead>
                   Utilisateur
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden md:table-cell">
+                </TableHead>
+                <TableHead className="hidden md:table-cell">
                   Entreprise
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3">
+                </TableHead>
+                <TableHead>
                   Rôle
-                </th>
-                <th className="text-left text-xs font-medium text-muted-foreground px-4 py-3 hidden sm:table-cell">
+                </TableHead>
+                <TableHead className="hidden sm:table-cell">
                   Inscrit le
-                </th>
-              </tr>
-            </thead>
-            <tbody>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {filteredUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className="border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
-                >
+                <TableRow key={user.id}>
                   {/* Name + email */}
-                  <td className="px-4 py-3">
+                  <TableCell>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">
                         {user.name?.[0]?.toUpperCase() ?? "?"}
@@ -152,17 +152,17 @@ export default function UsersPage() {
                         </p>
                       </div>
                     </div>
-                  </td>
+                  </TableCell>
 
                   {/* Company */}
-                  <td className="px-4 py-3 hidden md:table-cell">
+                  <TableCell className="hidden md:table-cell">
                     <span className="text-sm text-muted-foreground">
                       {user.company ?? "—"}
                     </span>
-                  </td>
+                  </TableCell>
 
                   {/* Role selector */}
-                  <td className="px-4 py-3">
+                  <TableCell>
                     <Select
                       value={user.role}
                       onValueChange={(v) => handleRoleChange(user.id, v)}
@@ -193,10 +193,10 @@ export default function UsersPage() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </td>
+                  </TableCell>
 
                   {/* Created at */}
-                  <td className="px-4 py-3 hidden sm:table-cell">
+                  <TableCell className="hidden sm:table-cell">
                     <span className="text-xs text-muted-foreground">
                       {new Date(user.createdAt).toLocaleDateString("fr-FR", {
                         day: "numeric",
@@ -204,23 +204,23 @@ export default function UsersPage() {
                         year: "numeric",
                       })}
                     </span>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
 
               {filteredUsers.length === 0 && (
-                <tr>
-                  <td
+                <TableRow>
+                  <TableCell
                     colSpan={4}
-                    className="px-4 py-8 text-center text-sm text-muted-foreground"
+                    className="h-24 text-center text-muted-foreground"
                   >
                     <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
                     Aucun utilisateur trouvé
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

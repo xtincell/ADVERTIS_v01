@@ -13,9 +13,8 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase } from "lucide-react";
-
 import { useMobile } from "~/components/hooks/use-mobile";
+import { PageHeader } from "~/components/ui/page-header";
 import { MissionListMobile } from "~/components/missions/mission-list-mobile";
 import dynamic from "next/dynamic";
 const MissionBoard = dynamic(
@@ -50,13 +49,11 @@ export default function MissionsPage() {
   return (
     <div className="flex flex-col gap-4 p-4 pb-24 md:p-6 animate-page-enter">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Briefcase className="h-5 w-5 text-primary" />
-          <h1 className="text-display-lg">Missions</h1>
-        </div>
-        <CreateMissionDialog />
-      </div>
+      <PageHeader
+        title="Missions"
+        description="Gestion et suivi des missions freelance"
+        actions={<CreateMissionDialog />}
+      />
 
       {/* ── Filter Tabs ── */}
       <div className="flex gap-1 rounded-lg border bg-muted/40 p-1">

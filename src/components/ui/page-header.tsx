@@ -78,7 +78,7 @@ export function PageHeader({
           {backHref && (
             <Button variant="ghost" size="icon" asChild className="shrink-0 -ml-2">
               <Link href={backHref} aria-label={backLabel ?? "Retour"}>
-                <ArrowLeft className="h-4 w-4" />
+                <ArrowLeft className="size-4" />
               </Link>
             </Button>
           )}

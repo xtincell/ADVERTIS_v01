@@ -10,7 +10,7 @@
 
 import Link from "next/link";
 import * as LucideIcons from "lucide-react";
-import { type LucideIcon } from "lucide-react";
+import { type LucideIcon, Sparkles } from "lucide-react";
 import { cn } from "~/lib/utils";
 import {
   GLORY_LAYER_META,
@@ -25,7 +25,7 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
-import { Sparkles } from "lucide-react";
+import { PageHeader } from "~/components/ui/page-header";
 
 // ---------------------------------------------------------------------------
 // Icon resolver
@@ -53,16 +53,10 @@ export function GloryHub({ tools, strategyId }: GloryHubProps) {
   return (
     <div className="space-y-10">
       {/* Page header */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <Sparkles className="h-7 w-7 text-violet-500" />
-          <h1 className="text-2xl font-bold text-foreground">GLORY Hub</h1>
-        </div>
-        <p className="text-sm text-muted-foreground max-w-2xl">
-          Plateforme d&apos;outils opérationnels pour la création publicitaire.
-          Sélectionnez un outil ci-dessous pour commencer.
-        </p>
-      </div>
+      <PageHeader
+        title="GLORY Hub"
+        description="Plateforme d'outils opérationnels pour la création publicitaire. Sélectionnez un outil ci-dessous pour commencer."
+      />
 
       {/* Layer sections */}
       {layers.map((layer) => {

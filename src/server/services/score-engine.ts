@@ -290,6 +290,88 @@ export async function recalculateAllScores(
     investScore,
   });
 
+  // --- 6.1.9b  Auto-populate S pillar (Synthèse) from aggregated data ---
+  // When ≥5 pillars are complete and S pillar is empty, auto-fill with summary data
+  // so the radar chart shows S data
+  try {
+    const completePillars = strategy.pillars.filter((p) => p.status === "complete");
+    const sPillar = strategy.pillars.find((p) => p.type === "S");
+    // P1-19: Safe null checks — sPillar.content may be null, string, or object
+    const sPillarEmpty = !sPillar || !sPillar.content ||
+      (typeof sPillar.content === "object" && sPillar.content !== null &&
+        !(sPillar.content as Record<string, unknown>)?.syntheseExecutive);
+
+    if (completePillars.length >= 5 && sPillarEmpty) {
+      // Build summary data from available pillars
+      const coherencePiliers = completePillars.map((p) => ({
+        pilier: p.type,
+        contribution: p.summary ?? "",
+        articulation: p.status,
+      }));
+
+      // P1-19: Safe extraction from I pillar content — guard all nested accesses
+      const iContent = pillarMap["I"] as Record<string, unknown> | undefined;
+      const annualCalendar = Array.isArray(iContent?.annualCalendar) ? iContent.annualCalendar : [];
+      const totalCampaigns = annualCalendar.length;
+      const budgetTotal = typeof iContent?.enveloppeGlobale === "string" ? iContent.enveloppeGlobale : "";
+
+      // Build KPI dashboard from available scores
+      const kpiDashboard = [
+        { pilier: "Global", kpi: "Cohérence", cible: "80+", statut: coherenceBreakdown.total >= 80 ? "Atteint" : "En cours" },
+        ...(riskScore != null ? [{ pilier: "R", kpi: "Score Risque", cible: "<40", statut: riskScore < 40 ? "Atteint" : "À surveiller" }] : []),
+        ...(bmfScore != null ? [{ pilier: "T", kpi: "Brand-Market Fit", cible: "70+", statut: bmfScore >= 70 ? "Atteint" : "En cours" }] : []),
+        ...(investScore != null ? [{ pilier: "I", kpi: "Score Investissement", cible: "60+", statut: investScore >= 60 ? "Atteint" : "En cours" }] : []),
+      ];
+
+      // Build strategic axes from ADVE pillar summaries
+      const axesStrategiques = ["A", "D", "V", "E"]
+        .map((type) => {
+          const pillar = strategy.pillars.find((p) => p.type === type);
+          return pillar?.summary
+            ? { axe: type, description: pillar.summary, piliersLies: [type], kpisCles: [] as string[] }
+            : null;
+        })
+        .filter((a): a is NonNullable<typeof a> => a !== null);
+
+      const synthContent = {
+        syntheseExecutive: `Stratégie ${strategy.pillars.filter((p) => p.status === "complete").length}/8 piliers complétés. Score de cohérence : ${Math.round(coherenceBreakdown.total)}/100.`,
+        visionStrategique: "",
+        coherencePiliers: coherencePiliers,
+        facteursClesSucces: [] as string[],
+        recommandationsPrioritaires: [] as Array<{ action: string; priorite: number; impact: string; delai: string }>,
+        scoreCoherence: coherenceBreakdown.total,
+        axesStrategiques,
+        sprint90Recap: { actions: [] as Array<{ action: string; owner: string; kpi: string; status: string }>, summary: "" },
+        campaignsSummary: { totalCampaigns, highlights: [] as string[], budgetTotal },
+        activationSummary: "",
+        kpiDashboard,
+      };
+
+      if (sPillar) {
+        await db.pillar.update({
+          where: { id: sPillar.id },
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: { content: synthContent as any, status: "complete" },
+        });
+      } else {
+        await db.pillar.create({
+          data: {
+            strategyId,
+            type: "S",
+            title: "Synthèse Stratégique",
+            order: 8,
+            status: "complete",
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            content: synthContent as any,
+            summary: `${completePillars.length}/8 piliers complétés`,
+          },
+        });
+      }
+    }
+  } catch (error) {
+    console.warn("[ScoreEngine] Failed to auto-populate S pillar:", error);
+  }
+
   // --- 6.1.10  ARTEMIS Score (quality gates + layer scores) ---
   let artemisScore: number | null = null;
   let artemisLayerScores: Record<string, number> | null = null;
@@ -335,17 +417,21 @@ export async function recalculateAllScores(
     // Quality gates or framework registry not available — skip ARTEMIS scores
   }
 
+  // P2-02: Clamp all scores to 0-100 before returning
+  const clampScore = (s: number | null): number | null =>
+    s !== null ? Math.min(100, Math.max(0, Math.round(s))) : null;
+
   return {
-    coherenceScore: coherenceBreakdown.total,
+    coherenceScore: clampScore(coherenceBreakdown.total) ?? 0,
     coherenceBreakdown,
-    riskScore,
+    riskScore: clampScore(riskScore),
     riskBreakdown,
-    bmfScore,
+    bmfScore: clampScore(bmfScore),
     bmfBreakdown,
-    investScore,
+    investScore: clampScore(investScore),
     investBreakdown,
-    parentCoherenceScore: coherenceBreakdown.parentChildAlignment ?? null,
-    artemisScore,
+    parentCoherenceScore: clampScore(coherenceBreakdown.parentChildAlignment ?? null),
+    artemisScore: clampScore(artemisScore),
     artemisLayerScores,
     qualityGates,
   };

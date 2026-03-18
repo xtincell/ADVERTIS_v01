@@ -51,6 +51,38 @@ export async function materializePillar(
     throw new Error(`[PillarMaterializer] Unknown pillar type: ${pillarType}`);
   }
 
+  // P1-11: Validate upstream pillar dependencies before materialization
+  const PILLAR_DEPENDENCIES: Record<string, string[]> = {
+    A: [],           // No dependencies
+    D: ["A"],        // D depends on A
+    V: ["A", "D"],   // V depends on A, D
+    E: ["A", "D", "V"], // E depends on A, D, V
+    R: ["A", "D", "V", "E"], // R depends on ADVE
+    T: ["R"],        // T depends on R
+    I: ["A", "D", "V", "E", "R", "T"], // I depends on all
+    S: ["A", "D", "V", "E", "R", "T", "I"], // S depends on all
+  };
+
+  const requiredPillars = PILLAR_DEPENDENCIES[pillarType] ?? [];
+  if (requiredPillars.length > 0) {
+    const completedDeps = await db.pillar.findMany({
+      where: {
+        strategyId,
+        type: { in: requiredPillars },
+        status: "complete",
+      },
+      select: { type: true },
+    });
+    const completedTypes = new Set(completedDeps.map(p => p.type));
+    const missingDeps = requiredPillars.filter(t => !completedTypes.has(t));
+    if (missingDeps.length > 0) {
+      console.warn(
+        `[PillarMaterializer] Materializing pillar ${pillarType} with incomplete dependencies: ${missingDeps.join(", ")}. ` +
+        `Output quality may be degraded.`
+      );
+    }
+  }
+
   // 1. Get section definitions to know which BrandVariable keys map to which sections
   const sectionDefs = getPillarSectionDefinitions(pillarType);
 

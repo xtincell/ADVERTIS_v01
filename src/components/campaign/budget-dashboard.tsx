@@ -19,6 +19,7 @@ import {
   CAMPAIGN_BUDGET_CATEGORY_LABELS,
   type CampaignBudgetCategory,
 } from "~/lib/constants";
+import { formatCompact } from "~/lib/currency";
 
 interface BudgetDashboardProps {
   campaignId: string;
@@ -60,37 +61,37 @@ export function BudgetDashboard({ campaignId }: BudgetDashboardProps) {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-6">
         <KpiCard
           label="Budget total"
-          value={formatCurrency(summary.totalBudget)}
+          value={formatCompact(summary.totalBudget)}
           icon={Wallet}
           color="text-blue-600"
         />
         <KpiCard
           label="Alloue"
-          value={formatCurrency(summary.totalAllocated)}
+          value={formatCompact(summary.totalAllocated)}
           icon={BarChart3}
           color="text-indigo-600"
         />
         <KpiCard
           label="Engage"
-          value={formatCurrency(summary.totalCommitted)}
+          value={formatCompact(summary.totalCommitted)}
           icon={PiggyBank}
           color="text-purple-600"
         />
         <KpiCard
           label="Depense"
-          value={formatCurrency(summary.totalSpent)}
+          value={formatCompact(summary.totalSpent)}
           icon={DollarSign}
           color="text-amber-600"
         />
         <KpiCard
           label="Restant"
-          value={formatCurrency(summary.remaining)}
+          value={formatCompact(summary.remaining)}
           icon={summary.remaining >= 0 ? TrendingUp : TrendingDown}
           color={summary.remaining >= 0 ? "text-green-600" : "text-red-600"}
         />
         <KpiCard
           label="Variance"
-          value={formatCurrency(Math.abs(summary.variance))}
+          value={formatCompact(Math.abs(summary.variance))}
           icon={summary.variance >= 0 ? TrendingUp : AlertTriangle}
           color={summary.variance >= 0 ? "text-teal-600" : "text-red-600"}
           sub={summary.variance < 0 ? "depassement" : "sous budget"}
@@ -102,7 +103,7 @@ export function BudgetDashboard({ campaignId }: BudgetDashboardProps) {
         <CardContent className="py-4">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              Utilisation du budget ({formatCurrency(summary.totalSpent)} / {formatCurrency(summary.totalBudget)})
+              Utilisation du budget ({formatCompact(summary.totalSpent)} / {formatCompact(summary.totalBudget)})
             </span>
             <span className="font-medium">{utilization}%</span>
           </div>
@@ -159,10 +160,10 @@ export function BudgetDashboard({ campaignId }: BudgetDashboardProps) {
                         </td>
                         <td className="py-2 pr-4 font-medium">{line.label}</td>
                         <td className="py-2 pr-4 text-right tabular-nums">
-                          {formatCurrency(line.budgetAllocated)}
+                          {formatCompact(line.budgetAllocated)}
                         </td>
                         <td className="py-2 pr-4 text-right tabular-nums">
-                          {formatCurrency(line.budgetCommitted)}
+                          {formatCompact(line.budgetCommitted)}
                         </td>
                         <td className="py-2 text-right tabular-nums">
                           <span
@@ -174,7 +175,7 @@ export function BudgetDashboard({ campaignId }: BudgetDashboardProps) {
                                   : ""
                             }
                           >
-                            {formatCurrency(line.budgetSpent)}
+                            {formatCompact(line.budgetSpent)}
                           </span>
                         </td>
                       </tr>
@@ -246,8 +247,4 @@ function KpiCard({
   );
 }
 
-function formatCurrency(amount: number) {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K`;
-  return amount.toLocaleString("fr-FR");
-}
+// formatCurrency → replaced by centralized formatCompact from ~/lib/currency

@@ -24,6 +24,10 @@ import {
   Radio,
   Settings2,
   Palette,
+  MessageSquare,
+  Bell,
+  X,
+  Save,
 } from "lucide-react";
 
 import { api } from "~/trpc/react";
@@ -36,6 +40,7 @@ import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Checkbox } from "~/components/ui/checkbox";
 import { Separator } from "~/components/ui/separator";
+import { Textarea } from "~/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -44,6 +49,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { AddChannelDialog } from "~/components/brand-os/add-channel-dialog";
+import { getAllFrameworks } from "~/lib/framework-registry";
 import { CultWeightsEditor } from "~/components/brand-os/cult-weights-editor";
 import {
   PLATFORM_CONFIG,
@@ -80,6 +86,29 @@ const FONT_OPTIONS = [
   { value: "DM Sans", label: "DM Sans" },
   { value: "Poppins", label: "Poppins" },
   { value: "Playfair Display", label: "Playfair Display" },
+  { value: "Montserrat", label: "Montserrat" },
+  { value: "Raleway", label: "Raleway" },
+  { value: "Space Grotesk", label: "Space Grotesk" },
+  { value: "Outfit", label: "Outfit" },
+  { value: "Plus Jakarta Sans", label: "Plus Jakarta Sans" },
+  { value: "Sora", label: "Sora" },
+];
+
+const TONE_OPTIONS = [
+  { value: "authoritative", label: "Autoritaire" },
+  { value: "friendly", label: "Amical" },
+  { value: "inspiring", label: "Inspirant" },
+  { value: "provocative", label: "Provocateur" },
+  { value: "expert", label: "Expert" },
+  { value: "playful", label: "Ludique" },
+  { value: "minimalist", label: "Minimaliste" },
+  { value: "storytelling", label: "Narratif" },
+];
+
+const REGISTER_OPTIONS = [
+  { value: "formal", label: "Soutenu" },
+  { value: "standard", label: "Courant" },
+  { value: "casual", label: "Familier" },
 ];
 
 // ---------------------------------------------------------------------------
@@ -202,6 +231,18 @@ function SettingsContent({ strategyId }: { strategyId: string }) {
             <Palette className="mr-1.5 h-4 w-4" />
             Thème
           </TabsTrigger>
+          <TabsTrigger value="voice">
+            <MessageSquare className="mr-1.5 h-4 w-4" />
+            Voix
+          </TabsTrigger>
+          <TabsTrigger value="alerts">
+            <Bell className="mr-1.5 h-4 w-4" />
+            Alertes
+          </TabsTrigger>
+          <TabsTrigger value="frameworks">
+            <Settings2 className="mr-1.5 h-4 w-4" />
+            Frameworks
+          </TabsTrigger>
         </TabsList>
 
         {/* ── Tab 1: Social Channels ── */}
@@ -239,6 +280,42 @@ function SettingsContent({ strategyId }: { strategyId: string }) {
             config={config}
             onUpdate={async (data) => {
               await updateConfig.mutateAsync({ strategyId, theme: data });
+            }}
+            isLoading={updateConfig.isPending}
+          />
+        </TabsContent>
+
+        {/* ── Tab 4: Brand Voice ── */}
+        <TabsContent value="voice" className="mt-4">
+          <BrandVoiceTab
+            strategyId={strategyId}
+            config={config}
+            onUpdate={async (data) => {
+              await updateConfig.mutateAsync({ strategyId, brandVoice: data });
+            }}
+            isLoading={updateConfig.isPending}
+          />
+        </TabsContent>
+
+        {/* ── Tab 5: Alerts ── */}
+        <TabsContent value="alerts" className="mt-4">
+          <AlertsTab
+            strategyId={strategyId}
+            config={config}
+            onUpdate={async (data) => {
+              await updateConfig.mutateAsync({ strategyId, alertConfig: data });
+            }}
+            isLoading={updateConfig.isPending}
+          />
+        </TabsContent>
+
+        {/* ── Tab 6: Frameworks ── */}
+        <TabsContent value="frameworks" className="mt-4">
+          <FrameworksTab
+            strategyId={strategyId}
+            config={config}
+            onUpdate={async (ids) => {
+              await updateConfig.mutateAsync({ strategyId, enabledFrameworks: ids });
             }}
             isLoading={updateConfig.isPending}
           />
@@ -686,6 +763,570 @@ function ThemeTab({ config, onUpdate, isLoading }: ThemeTabProps) {
           Enregistrer le thème
         </Button>
       </Card>
+    </div>
+  );
+}
+
+// ===========================================================================
+// TAB 4 — Brand Voice
+// ===========================================================================
+
+interface BrandVoiceTabProps {
+  strategyId: string;
+  config: {
+    socialCredentials: unknown;
+  };
+  onUpdate: (data: Record<string, unknown>) => Promise<void>;
+  isLoading: boolean;
+}
+
+function BrandVoiceTab({ config, onUpdate, isLoading }: BrandVoiceTabProps) {
+  const creds = (config.socialCredentials && typeof config.socialCredentials === "object"
+    ? config.socialCredentials
+    : {}) as Record<string, unknown>;
+  const existingVoice = (creds.brandVoice ?? {}) as Record<string, unknown>;
+
+  const [tone, setTone] = useState((existingVoice.tone as string) ?? "");
+  const [register, setRegister] = useState((existingVoice.register as string) ?? "");
+  const [keywords, setKeywords] = useState<string[]>(
+    (existingVoice.keywords as string[]) ?? [],
+  );
+  const [forbiddenWords, setForbiddenWords] = useState<string[]>(
+    (existingVoice.forbiddenWords as string[]) ?? [],
+  );
+  const [examplePhrase, setExamplePhrase] = useState(
+    (existingVoice.examplePhrase as string) ?? "",
+  );
+  const [applyToGlory, setApplyToGlory] = useState(
+    (existingVoice.applyToGlory as boolean) ?? true,
+  );
+  const [keywordInput, setKeywordInput] = useState("");
+  const [forbiddenInput, setForbiddenInput] = useState("");
+
+  const handleAddKeyword = useCallback(() => {
+    const word = keywordInput.trim();
+    if (word && !keywords.includes(word)) {
+      setKeywords([...keywords, word]);
+      setKeywordInput("");
+    }
+  }, [keywordInput, keywords]);
+
+  const handleAddForbidden = useCallback(() => {
+    const word = forbiddenInput.trim();
+    if (word && !forbiddenWords.includes(word)) {
+      setForbiddenWords([...forbiddenWords, word]);
+      setForbiddenInput("");
+    }
+  }, [forbiddenInput, forbiddenWords]);
+
+  const handleSave = useCallback(async () => {
+    await onUpdate({
+      tone,
+      register,
+      keywords,
+      forbiddenWords,
+      examplePhrase: examplePhrase || undefined,
+      applyToGlory,
+    });
+  }, [tone, register, keywords, forbiddenWords, examplePhrase, applyToGlory, onUpdate]);
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-5 space-y-5">
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Voix de marque</h3>
+          <p className="text-xs text-muted-foreground">
+            Définissez le ton, le registre et le vocabulaire de votre marque.
+            Ces paramètres guident les générations IA.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Tone */}
+          <div className="space-y-2">
+            <Label>Ton principal</Label>
+            <Select value={tone} onValueChange={setTone}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choisir un ton" />
+              </SelectTrigger>
+              <SelectContent>
+                {TONE_OPTIONS.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Register */}
+          <div className="space-y-2">
+            <Label>Registre de langue</Label>
+            <Select value={register} onValueChange={setRegister}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choisir un registre" />
+              </SelectTrigger>
+              <SelectContent>
+                {REGISTER_OPTIONS.map((r) => (
+                  <SelectItem key={r.value} value={r.value}>
+                    {r.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Keywords */}
+        <div className="space-y-2">
+          <Label>Mots-clés de marque</Label>
+          <div className="flex gap-2">
+            <Input
+              value={keywordInput}
+              onChange={(e) => setKeywordInput(e.target.value)}
+              placeholder="Ajouter un mot-clé..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddKeyword();
+                }
+              }}
+            />
+            <Button variant="outline" size="sm" onClick={handleAddKeyword}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {keywords.map((kw) => (
+              <span
+                key={kw}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+              >
+                {kw}
+                <button
+                  onClick={() => setKeywords(keywords.filter((k) => k !== kw))}
+                  className="hover:text-primary/70"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Forbidden words */}
+        <div className="space-y-2">
+          <Label>Mots interdits</Label>
+          <div className="flex gap-2">
+            <Input
+              value={forbiddenInput}
+              onChange={(e) => setForbiddenInput(e.target.value)}
+              placeholder="Ajouter un mot à éviter..."
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleAddForbidden();
+                }
+              }}
+            />
+            <Button variant="outline" size="sm" onClick={handleAddForbidden}>
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {forbiddenWords.map((fw) => (
+              <span
+                key={fw}
+                className="inline-flex items-center gap-1 rounded-full bg-red-500/10 px-3 py-1 text-xs font-medium text-red-600"
+              >
+                {fw}
+                <button
+                  onClick={() => setForbiddenWords(forbiddenWords.filter((w) => w !== fw))}
+                  className="hover:text-red-400"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Example phrase */}
+        <div className="space-y-2">
+          <Label>Phrase type (exemple de voix)</Label>
+          <Textarea
+            value={examplePhrase}
+            onChange={(e) => setExamplePhrase(e.target.value)}
+            placeholder="Ex: Chez Xtincell, on ne suit pas les tendances — on les crée."
+            rows={2}
+          />
+          <p className="text-xs text-muted-foreground">
+            Donnez un exemple de phrase qui capture parfaitement le ton de votre marque.
+          </p>
+        </div>
+
+        <Separator />
+
+        {/* Apply to GLORY */}
+        <label className="flex items-center gap-3 cursor-pointer">
+          <Checkbox
+            checked={applyToGlory}
+            onCheckedChange={(checked) => setApplyToGlory(checked === true)}
+          />
+          <div>
+            <div className="text-sm font-medium">
+              Appliquer aux générations GLORY
+            </div>
+            <div className="text-xs text-muted-foreground">
+              Les outils GLORY utiliseront automatiquement cette voix de marque
+            </div>
+          </div>
+        </label>
+
+        <Separator />
+
+        <Button onClick={() => void handleSave()} disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Save className="mr-2 h-4 w-4" />
+          Enregistrer la voix
+        </Button>
+      </Card>
+    </div>
+  );
+}
+
+// ===========================================================================
+// TAB 5 — Alerts & Monitoring
+// ===========================================================================
+
+interface AlertsTabProps {
+  strategyId: string;
+  config: {
+    socialCredentials: unknown;
+  };
+  onUpdate: (data: Record<string, unknown>) => Promise<void>;
+  isLoading: boolean;
+}
+
+function AlertsTab({ config, onUpdate, isLoading }: AlertsTabProps) {
+  const creds = (config.socialCredentials && typeof config.socialCredentials === "object"
+    ? config.socialCredentials
+    : {}) as Record<string, unknown>;
+  const existingAlerts = (creds.alertConfig ?? {}) as Record<string, unknown>;
+
+  const [cultThreshold, setCultThreshold] = useState(
+    (existingAlerts.cultIndexThreshold as number) ?? 30,
+  );
+  const [healthThreshold, setHealthThreshold] = useState(
+    (existingAlerts.communityHealthThreshold as number) ?? 40,
+  );
+  const [reportFreq, setReportFreq] = useState(
+    (existingAlerts.reportFrequency as string) ?? "WEEKLY",
+  );
+  const [alertEngagement, setAlertEngagement] = useState(
+    (existingAlerts.alertEngagementDrop as boolean) ?? true,
+  );
+  const [alertTarsis, setAlertTarsis] = useState(
+    (existingAlerts.alertTarsisSignal as boolean) ?? true,
+  );
+  const [alertMission, setAlertMission] = useState(
+    (existingAlerts.alertMissionDeadline as boolean) ?? true,
+  );
+
+  const handleSave = useCallback(async () => {
+    await onUpdate({
+      cultIndexThreshold: cultThreshold,
+      communityHealthThreshold: healthThreshold,
+      reportFrequency: reportFreq,
+      alertEngagementDrop: alertEngagement,
+      alertTarsisSignal: alertTarsis,
+      alertMissionDeadline: alertMission,
+    });
+  }, [cultThreshold, healthThreshold, reportFreq, alertEngagement, alertTarsis, alertMission, onUpdate]);
+
+  return (
+    <div className="space-y-6">
+      {/* Thresholds */}
+      <Card className="p-5 space-y-5">
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Seuils d'alerte</h3>
+          <p className="text-xs text-muted-foreground">
+            Définissez les seuils en dessous desquels vous serez alerté.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Seuil Cult Index</Label>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={cultThreshold}
+                onChange={(e) => setCultThreshold(parseInt(e.target.value))}
+                className="flex-1 accent-primary"
+              />
+              <span className="text-sm font-mono w-12 text-right">
+                {cultThreshold}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Alerte si le Cult Index descend sous {cultThreshold}/100
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Seuil santé communauté</Label>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value={healthThreshold}
+                onChange={(e) => setHealthThreshold(parseInt(e.target.value))}
+                className="flex-1 accent-primary"
+              />
+              <span className="text-sm font-mono w-12 text-right">
+                {healthThreshold}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Alerte si la santé communautaire descend sous {healthThreshold}/100
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* Report frequency */}
+      <Card className="p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Fréquence des rapports</h3>
+          <p className="text-xs text-muted-foreground">
+            À quelle fréquence souhaitez-vous recevoir les rapports de monitoring ?
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {(["DAILY", "WEEKLY", "MONTHLY"] as const).map((freq) => {
+            const labels: Record<string, string> = {
+              DAILY: "Quotidien",
+              WEEKLY: "Hebdomadaire",
+              MONTHLY: "Mensuel",
+            };
+            return (
+              <Button
+                key={freq}
+                variant={reportFreq === freq ? "default" : "outline"}
+                size="sm"
+                onClick={() => setReportFreq(freq)}
+              >
+                {labels[freq]}
+              </Button>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Alert toggles */}
+      <Card className="p-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold mb-1">Types d'alertes</h3>
+          <p className="text-xs text-muted-foreground">
+            Activez ou désactivez les différents types d'alertes.
+          </p>
+        </div>
+
+        {[
+          {
+            checked: alertEngagement,
+            setter: setAlertEngagement,
+            title: "Baisse d'engagement > 20%",
+            desc: "Alerte quand l'engagement rate chute de plus de 20% par rapport à la moyenne",
+          },
+          {
+            checked: alertTarsis,
+            setter: setAlertTarsis,
+            title: "Nouveaux signaux TARSIS",
+            desc: "Alerte quand un nouveau signal concurrentiel est détecté",
+          },
+          {
+            checked: alertMission,
+            setter: setAlertMission,
+            title: "Deadlines de missions",
+            desc: "Rappel quand une mission approche de sa date limite",
+          },
+        ].map((toggle, i) => (
+          <label
+            key={i}
+            className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+          >
+            <Checkbox
+              checked={toggle.checked}
+              onCheckedChange={(checked) => toggle.setter(checked === true)}
+            />
+            <div className="min-w-0">
+              <div className="text-sm font-medium">{toggle.title}</div>
+              <div className="text-xs text-muted-foreground">{toggle.desc}</div>
+            </div>
+          </label>
+        ))}
+      </Card>
+
+      <Button onClick={() => void handleSave()} disabled={isLoading}>
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Save className="mr-2 h-4 w-4" />
+        Enregistrer les alertes
+      </Button>
+    </div>
+  );
+}
+
+// ===========================================================================
+// TAB 6 — Frameworks
+// ===========================================================================
+
+const LAYER_LABELS: Record<string, string> = {
+  PHILOSOPHY: "Philosophie",
+  IDENTITY: "Identité",
+  STRATEGY: "Stratégie",
+  EXPERIENCE: "Expérience",
+  VALIDATION: "Validation",
+  EXECUTION: "Exécution",
+  MEASURE: "Mesure",
+  GROWTH: "Croissance",
+  SURVIVAL: "Survie",
+};
+
+const LAYER_COLORS: Record<string, string> = {
+  PHILOSOPHY: "#8B5CF6",
+  IDENTITY: "#10B981",
+  STRATEGY: "#F59E0B",
+  EXPERIENCE: "#3B82F6",
+  VALIDATION: "#EF4444",
+  EXECUTION: "#EC4899",
+  MEASURE: "#06B6D4",
+  GROWTH: "#F97316",
+  SURVIVAL: "#6B7280",
+};
+
+interface FrameworksTabProps {
+  strategyId: string;
+  config: {
+    socialCredentials: unknown;
+  };
+  onUpdate: (frameworkIds: string[]) => Promise<void>;
+  isLoading: boolean;
+}
+
+function FrameworksTab({ config, onUpdate, isLoading }: FrameworksTabProps) {
+  const allFrameworks = getAllFrameworks();
+  const creds = (config.socialCredentials && typeof config.socialCredentials === "object"
+    ? config.socialCredentials
+    : {}) as Record<string, unknown>;
+
+  // Default: all implemented frameworks are enabled
+  const defaultEnabled = allFrameworks
+    .filter((fw) => fw.hasImplementation)
+    .map((fw) => fw.id);
+  const savedEnabled = (creds.enabledFrameworks as string[]) ?? defaultEnabled;
+
+  const [enabledIds, setEnabledIds] = useState<string[]>(savedEnabled);
+
+  const handleToggle = useCallback(
+    (fwId: string, checked: boolean) => {
+      setEnabledIds((prev) =>
+        checked ? [...prev, fwId] : prev.filter((id) => id !== fwId),
+      );
+    },
+    [],
+  );
+
+  const handleSave = useCallback(async () => {
+    await onUpdate(enabledIds);
+  }, [enabledIds, onUpdate]);
+
+  // Group by layer
+  const byLayer = new Map<string, typeof allFrameworks>();
+  for (const fw of allFrameworks) {
+    const layer = fw.layer;
+    if (!byLayer.has(layer)) byLayer.set(layer, []);
+    byLayer.get(layer)!.push(fw);
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="p-5 space-y-2">
+        <h3 className="text-sm font-semibold">Frameworks ARTEMIS</h3>
+        <p className="text-xs text-muted-foreground">
+          Activez ou désactivez les frameworks stratégiques pour cette marque.
+          {enabledIds.length} / {allFrameworks.length} activé(s).
+        </p>
+      </Card>
+
+      {Array.from(byLayer.entries()).map(([layer, frameworks]) => (
+        <Card key={layer} className="p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <div
+              className="h-3 w-3 rounded-full"
+              style={{ backgroundColor: LAYER_COLORS[layer] ?? "#6b7280" }}
+            />
+            <h3 className="text-sm font-semibold">
+              {LAYER_LABELS[layer] ?? layer}
+            </h3>
+            <Badge variant="outline" className="text-[10px]">
+              Couche {Array.from(byLayer.keys()).indexOf(layer)}
+            </Badge>
+          </div>
+
+          <div className="space-y-2">
+            {frameworks.map((fw) => {
+              const isEnabled = enabledIds.includes(fw.id);
+              return (
+                <label
+                  key={fw.id}
+                  className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                >
+                  <Checkbox
+                    checked={isEnabled}
+                    onCheckedChange={(checked) =>
+                      handleToggle(fw.id, checked === true)
+                    }
+                    disabled={isLoading}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{fw.name}</span>
+                      <span className="text-[10px] text-muted-foreground font-mono">
+                        {fw.id}
+                      </span>
+                      {!fw.hasImplementation && (
+                        <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-500/30">
+                          Système existant
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground line-clamp-1">
+                      {fw.description}
+                    </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        </Card>
+      ))}
+
+      <Button onClick={() => void handleSave()} disabled={isLoading}>
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        <Save className="mr-2 h-4 w-4" />
+        Enregistrer la configuration
+      </Button>
     </div>
   );
 }

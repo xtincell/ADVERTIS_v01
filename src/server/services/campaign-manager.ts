@@ -34,6 +34,7 @@
 // =============================================================================
 
 import { db } from "~/server/db";
+import { runFeedbackLoop } from "./track-collector";
 import {
   CAMPAIGN_VALID_TRANSITIONS,
   EXECUTION_VALID_TRANSITIONS,
@@ -77,10 +78,22 @@ import type {
 /** Generate a unique campaign code: CAMP-YYYY-NNN */
 async function generateCampaignCode(strategyId: string): Promise<string> {
   const year = new Date().getFullYear();
-  const count = await db.campaign.count({
-    where: { strategyId, createdAt: { gte: new Date(`${year}-01-01`) } },
-  });
-  return `CAMP-${year}-${String(count + 1).padStart(3, "0")}`;
+  // Use transaction to prevent race conditions on code generation
+  const maxRetries = 3;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const count = await db.campaign.count({
+      where: { strategyId, createdAt: { gte: new Date(`${year}-01-01`) } },
+    });
+    const code = `CAMP-${year}-${String(count + 1).padStart(3, "0")}`;
+    // Check uniqueness before returning
+    const exists = await db.campaign.findFirst({
+      where: { strategyId, code },
+      select: { id: true },
+    });
+    if (!exists) return code;
+  }
+  // Fallback: use timestamp suffix for guaranteed uniqueness
+  return `CAMP-${year}-${Date.now().toString(36).toUpperCase()}`;
 }
 
 export async function createCampaign(
@@ -88,6 +101,12 @@ export async function createCampaign(
   createdBy: string,
 ) {
   const code = await generateCampaignCode(data.strategyId);
+  // P0-09: Validate dates
+  if (data.startDate && data.endDate) {
+    if (new Date(data.endDate) <= new Date(data.startDate)) {
+      throw new Error("endDate doit être postérieure à startDate");
+    }
+  }
   return db.campaign.create({
     data: {
       ...data,
@@ -102,6 +121,19 @@ export async function createCampaign(
 
 export async function updateCampaign(data: UpdateCampaignInput) {
   const { id, ...rest } = data;
+  // P0-09: Validate dates
+  if (rest.startDate && rest.endDate) {
+    if (new Date(rest.endDate) <= new Date(rest.startDate)) {
+      throw new Error("endDate doit être postérieure à startDate");
+    }
+  } else if (rest.startDate || rest.endDate) {
+    const current = await db.campaign.findUniqueOrThrow({ where: { id }, select: { startDate: true, endDate: true } });
+    const start = rest.startDate ? new Date(rest.startDate) : current.startDate;
+    const end = rest.endDate ? new Date(rest.endDate) : current.endDate;
+    if (start && end && end <= start) {
+      throw new Error("endDate doit être postérieure à startDate");
+    }
+  }
   return db.campaign.update({ where: { id }, data: rest });
 }
 
@@ -137,6 +169,18 @@ export async function transitionCampaign(
     }
   }
 
+  // P0-11: Require at least one approved CampaignApproval before READY_TO_LAUNCH
+  if (newStatus === "READY_TO_LAUNCH") {
+    const approvedCount = await db.campaignApproval.count({
+      where: { campaignId: id, status: "APPROVED" },
+    });
+    if (approvedCount === 0) {
+      throw new Error(
+        "Au moins une approbation validée (status APPROVED) est requise avant le lancement",
+      );
+    }
+  }
+
   const updateData: Record<string, unknown> = { status: newStatus };
 
   // Auto-set approval timestamps
@@ -149,7 +193,16 @@ export async function transitionCampaign(
     updateData.clientApprovedAt = new Date();
   }
 
-  return db.campaign.update({ where: { id }, data: updateData });
+  const result = await db.campaign.update({ where: { id }, data: updateData });
+
+  // Trigger feedback loop when campaign reaches POST_CAMPAIGN (fire-and-forget)
+  if (newStatus === "POST_CAMPAIGN") {
+    void runFeedbackLoop(campaign.strategyId, id).catch((err) => {
+      console.error(`[Campaign Manager] Feedback loop failed for ${id}:`, err);
+    });
+  }
+
+  return result;
 }
 
 export async function getCampaignById(id: string) {
@@ -511,14 +564,17 @@ export async function createAmplification(data: CreateAmplificationInput) {
 
 export async function updateAmplification(data: UpdateAmplificationInput) {
   const { id, ...rest } = data;
-  if (rest.mediaCost !== undefined || rest.productionCost !== undefined || rest.agencyFee !== undefined) {
-    const current = await db.campaignAmplification.findUniqueOrThrow({ where: { id } });
-    const mediaCost = rest.mediaCost ?? current.mediaCost;
-    const productionCost = rest.productionCost ?? current.productionCost;
-    const agencyFee = rest.agencyFee ?? current.agencyFee;
-    (rest as Record<string, unknown>).totalCost = mediaCost + productionCost + agencyFee;
-  }
-  return db.campaignAmplification.update({ where: { id }, data: rest });
+  // P2-09: Use transaction for totalCost atomicity
+  return db.$transaction(async (tx) => {
+    if (rest.mediaCost !== undefined || rest.productionCost !== undefined || rest.agencyFee !== undefined) {
+      const current = await tx.campaignAmplification.findUniqueOrThrow({ where: { id } });
+      const mediaCost = rest.mediaCost ?? current.mediaCost;
+      const productionCost = rest.productionCost ?? current.productionCost;
+      const agencyFee = rest.agencyFee ?? current.agencyFee;
+      (rest as Record<string, unknown>).totalCost = mediaCost + productionCost + agencyFee;
+    }
+    return tx.campaignAmplification.update({ where: { id }, data: rest });
+  });
 }
 
 export async function updateAmplificationPerformance(data: UpdateAmplificationPerformanceInput) {
@@ -608,6 +664,20 @@ export async function getTeamWorkload(campaignId: string) {
 // ============================================
 
 export async function createMilestone(data: CreateMilestoneInput) {
+  // P2-12: Validate milestone dueDate within campaign range
+  const campaign = await db.campaign.findUniqueOrThrow({
+    where: { id: data.campaignId },
+    select: { startDate: true, endDate: true },
+  });
+  if (data.dueDate) {
+    const due = new Date(data.dueDate);
+    if (campaign.startDate && due < campaign.startDate) {
+      throw new Error("La date d'échéance du jalon ne peut pas précéder le début de la campagne");
+    }
+    if (campaign.endDate && due > campaign.endDate) {
+      throw new Error("La date d'échéance du jalon ne peut pas dépasser la fin de la campagne");
+    }
+  }
   return db.campaignMilestone.create({ data });
 }
 
@@ -712,13 +782,27 @@ async function recalculateBudgetAllocated(campaignId: string) {
     where: { campaignId },
     _sum: { budgetAllocated: true, budgetSpent: true },
   });
+  const budgetAllocated = agg._sum.budgetAllocated ?? 0;
+  const budgetSpent = agg._sum.budgetSpent ?? 0;
   await db.campaign.update({
     where: { id: campaignId },
-    data: {
-      budgetAllocated: agg._sum.budgetAllocated ?? 0,
-      budgetSpent: agg._sum.budgetSpent ?? 0,
-    },
+    data: { budgetAllocated, budgetSpent },
   });
+  // Budget overspend warning
+  const campaign = await db.campaign.findUniqueOrThrow({
+    where: { id: campaignId },
+    select: { totalBudget: true, code: true },
+  });
+  if (campaign.totalBudget && budgetSpent > campaign.totalBudget) {
+    console.warn(
+      `[Campaign Manager] BUDGET OVERSPEND: Campaign ${campaign.code ?? campaignId} spent ${budgetSpent} exceeds totalBudget ${campaign.totalBudget}`,
+    );
+  }
+  if (campaign.totalBudget && budgetAllocated > campaign.totalBudget) {
+    console.warn(
+      `[Campaign Manager] BUDGET OVER-ALLOCATED: Campaign ${campaign.code ?? campaignId} allocated ${budgetAllocated} exceeds totalBudget ${campaign.totalBudget}`,
+    );
+  }
 }
 
 // ============================================

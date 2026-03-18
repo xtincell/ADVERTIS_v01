@@ -17,7 +17,8 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import { PHASE_CONFIG, SECTORS } from "~/lib/constants";
-import type { Phase } from "~/lib/constants";
+import type { Phase, SupportedCurrency } from "~/lib/constants";
+import { formatCompact } from "~/lib/currency";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,11 +74,7 @@ const DELIVERY_COLORS: Record<string, string> = {
   RETAINER: "#22C55E",
 };
 
-function formatCurrency(value: number, currency: string): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M ${currency}`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K ${currency}`;
-  return `${value} ${currency}`;
-}
+// formatCurrency → replaced by centralized formatCompact from ~/lib/currency
 
 // ---------------------------------------------------------------------------
 // Component
@@ -175,7 +172,7 @@ export function SectionFicheClient({
             <InfoItem
               icon={<Wallet className="h-3.5 w-3.5" />}
               label="Budget annuel"
-              value={formatCurrency(annualBudget, currency ?? "XOF")}
+              value={formatCompact(annualBudget, (currency ?? "XOF") as SupportedCurrency)}
             />
           )}
 
@@ -184,7 +181,7 @@ export function SectionFicheClient({
             <InfoItem
               icon={<TrendingUp className="h-3.5 w-3.5" />}
               label="CA visé"
-              value={formatCurrency(targetRevenue, currency ?? "XOF")}
+              value={formatCompact(targetRevenue, (currency ?? "XOF") as SupportedCurrency)}
             />
           )}
 

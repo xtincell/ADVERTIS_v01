@@ -35,6 +35,7 @@ import type { LogAIUsageInput } from "~/lib/types/phase3-schemas";
 // ============================================
 
 const MODEL_PRICING: Record<string, { inputPer1M: number; outputPer1M: number }> = {
+  "claude-sonnet-4-6-20260219": { inputPer1M: 3, outputPer1M: 15 },
   "claude-sonnet-4-20250514": { inputPer1M: 3, outputPer1M: 15 },
   "claude-3-5-sonnet-20241022": { inputPer1M: 3, outputPer1M: 15 },
   "claude-3-5-haiku-20241022": { inputPer1M: 0.8, outputPer1M: 4 },

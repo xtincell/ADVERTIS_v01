@@ -45,7 +45,7 @@ export function EmptyState({
         onClick={act.onClick}
         disabled={act.disabled}
       >
-        {ActionIcon && <ActionIcon className="mr-2 h-4 w-4" />}
+        {ActionIcon && <ActionIcon className="mr-2 size-4" />}
         {act.label}
       </Button>
     );

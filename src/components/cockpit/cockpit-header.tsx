@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  X,
   MoreVertical,
   Share2,
   Download,
@@ -194,6 +195,17 @@ export function CockpitHeader({
               {Math.round(coherenceScore)}
             </span>
           )}
+
+          {/* Close cockpit */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => router.push("/impulsion")}
+            title="Fermer le cockpit"
+          >
+            <X className="h-4 w-4" />
+          </Button>
 
           {/* Context menu */}
           <DropdownMenu>

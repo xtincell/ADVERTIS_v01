@@ -23,6 +23,7 @@ import {
 import { api } from "~/trpc/react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Badge } from "~/components/ui/badge";
+import { formatCount } from "~/lib/currency";
 
 // ---------------------------------------------------------------------------
 // Tabs
@@ -85,7 +86,7 @@ function GlobalCostView() {
 
   if (!overview) return null;
 
-  const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n));
+  const fmt = formatCount;
 
   return (
     <div className="space-y-6">
@@ -269,7 +270,7 @@ function BrandCostView() {
     );
   }
 
-  const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n));
+  const fmt = formatCount;
   const totalUsd = brands.reduce((sum, b) => sum + b.costUsd, 0);
 
   return (

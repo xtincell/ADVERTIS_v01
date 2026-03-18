@@ -70,14 +70,60 @@ export const brandOSRouter = createTRPCRouter({
       enabledViews: z.array(z.string()).optional(),
       refreshCadence: z.enum(["HOURLY", "DAILY", "WEEKLY"]).optional(),
       cultWeights: z.record(z.number()).optional(),
+      brandVoice: z.object({
+        tone: z.string().optional(),
+        register: z.string().optional(),
+        keywords: z.array(z.string()).optional(),
+        forbiddenWords: z.array(z.string()).optional(),
+        examplePhrase: z.string().optional(),
+        applyToGlory: z.boolean().optional(),
+      }).optional(),
+      alertConfig: z.object({
+        cultIndexThreshold: z.number().min(0).max(100).optional(),
+        communityHealthThreshold: z.number().min(0).max(100).optional(),
+        reportFrequency: z.enum(["DAILY", "WEEKLY", "MONTHLY"]).optional(),
+        alertEngagementDrop: z.boolean().optional(),
+        alertTarsisSignal: z.boolean().optional(),
+        alertMissionDeadline: z.boolean().optional(),
+      }).optional(),
+      enabledFrameworks: z.array(z.string()).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await verifyStrategyAccess(ctx.db, input.strategyId, ctx.session.user);
       const { strategyId, ...data } = input;
+
+      // For brandVoice, alertConfig, enabledFrameworks — merge into socialCredentials JSON
+      if (data.brandVoice || data.alertConfig || data.enabledFrameworks) {
+        const existing = await ctx.db.brandOSConfig.findUnique({
+          where: { strategyId },
+          select: { socialCredentials: true },
+        });
+        const existingCreds = (existing?.socialCredentials ?? {}) as Record<string, unknown>;
+        if (data.brandVoice) {
+          existingCreds.brandVoice = {
+            ...((existingCreds.brandVoice as Record<string, unknown>) ?? {}),
+            ...data.brandVoice,
+          };
+        }
+        if (data.alertConfig) {
+          existingCreds.alertConfig = {
+            ...((existingCreds.alertConfig as Record<string, unknown>) ?? {}),
+            ...data.alertConfig,
+          };
+        }
+        if (data.enabledFrameworks) {
+          existingCreds.enabledFrameworks = data.enabledFrameworks;
+        }
+        (data as Record<string, unknown>).socialCredentials = existingCreds;
+      }
+
+      // Remove extended fields from data before upsert (not direct DB columns)
+      const { brandVoice: _bv, alertConfig: _ac, enabledFrameworks: _ef, ...dbData } = data;
+
       return ctx.db.brandOSConfig.upsert({
         where: { strategyId },
-        create: { strategyId, ...data },
-        update: data,
+        create: { strategyId, ...dbData },
+        update: dbData,
       });
     }),
 

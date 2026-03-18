@@ -32,8 +32,9 @@ import { generateImplementationData } from "~/server/services/implementation-gen
 import { trackAICall } from "~/server/services/ai-cost-tracker";
 import { syncTrackToMarketContext } from "~/server/services/track-sync";
 import { onPillarGenerated } from "~/server/services/pipeline-orchestrator";
-import { PILLAR_TYPES } from "~/lib/constants";
-import type { SupportedCurrency } from "~/lib/constants";
+import { PILLAR_TYPES, DEFAULT_PHASE_MODELS } from "~/lib/constants";
+import type { SupportedCurrency, Phase } from "~/lib/constants";
+import { DEFAULT_MODEL } from "~/server/services/anthropic-client";
 import type { RiskAuditResult, TrackAuditResult } from "~/server/services/audit-generation";
 import type { MarketStudySynthesis } from "~/lib/types/market-study";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
@@ -135,6 +136,15 @@ export async function POST(req: NextRequest) {
 
         const currency = ((strategy as Record<string, unknown>).currency ?? "XOF") as SupportedCurrency;
 
+        // Resolve AI model for this pillar type
+        const PILLAR_TO_PHASE: Record<string, Phase> = {
+          A: "fiche", D: "fiche", V: "fiche", E: "fiche",
+          R: "audit-r", T: "audit-t", I: "implementation", S: "cockpit",
+        };
+        const phase = PILLAR_TO_PHASE[pillarType] ?? "fiche";
+        const userModelConfig = (strategy.modelConfig as Record<string, string> | null) ?? {};
+        const modelOverride = userModelConfig[phase] ?? DEFAULT_PHASE_MODELS[phase] ?? DEFAULT_MODEL;
+
         const targetPillar = strategy.pillars.find((p) => p.type === pillarType);
         if (!targetPillar) {
           send({ event: "error", error: `Pillar ${pillarType} not found in strategy` });
@@ -195,6 +205,7 @@ export async function POST(req: NextRequest) {
             { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
             strategy.tagline,
             currency,
+            modelOverride,
           );
 
           generatedContent = riskResult;
@@ -239,6 +250,7 @@ export async function POST(req: NextRequest) {
             { vertical: strategy.vertical, maturityProfile: strategy.maturityProfile },
             strategy.tagline,
             currency,
+            modelOverride,
           );
 
           generatedContent = trackResult;
@@ -285,6 +297,7 @@ export async function POST(req: NextRequest) {
             (strategy as Record<string, unknown>).annualBudget as number | null ?? null,
             (strategy as Record<string, unknown>).targetRevenue as number | null ?? null,
             strategy.maturityProfile,
+            modelOverride,
           );
 
           generatedContent = implResult;
@@ -311,6 +324,7 @@ export async function POST(req: NextRequest) {
             { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
             strategy.tagline,
             currency,
+            modelOverride,
           );
 
           generatedContent = syntheseResult;
@@ -328,6 +342,7 @@ export async function POST(req: NextRequest) {
             { vertical: strategy.vertical ?? undefined, maturityProfile: strategy.maturityProfile ?? undefined },
             strategy.tagline,
             currency,
+            modelOverride,
           );
 
           generatedContent = jsonContent;

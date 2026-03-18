@@ -104,8 +104,13 @@ export function calculateInvestmentScore(
   // --- 2. allocationQuality (max 25) ---
   let allocationQuality = 0;
   const postes = implData.budgetAllocation?.parPoste ?? [];
+  // P1-06: Proper number validation instead of regex
   const postesWithAmount = postes.filter(
-    (p) => p.poste && (p.pourcentage > 0 || /\d/.test(p.montant)),
+    (p) => {
+      const parsedAmount = parseFloat(String(p.montant).replace(/[^\d.-]/g, ""));
+      const isValidAmount = !isNaN(parsedAmount) && parsedAmount > 0;
+      return p.poste && (p.pourcentage > 0 || isValidAmount);
+    },
   );
 
   // Diversity: ≥4 postes = 12pts, ≥2 = 6pts
@@ -127,6 +132,12 @@ export function calculateInvestmentScore(
   const totalPct = postesWithAmount.reduce((s, p) => s + p.pourcentage, 0);
   if (totalPct >= 90 && totalPct <= 110) {
     allocationQuality += 5;
+  }
+
+  // P1-07: Penalize under-allocated budgets
+  if (totalPct > 0 && totalPct < 90) {
+    // No allocation quality bonus if less than 90% allocated
+    allocationQuality = Math.max(0, allocationQuality - 5);
   }
 
   // --- 3. roiProjections (max 20) ---
@@ -155,8 +166,13 @@ export function calculateInvestmentScore(
   // --- 5. phaseBalance (max 10) ---
   let phaseBalance = 0;
   const phases = implData.budgetAllocation?.parPhase ?? [];
+  // P1-06: Proper number validation instead of regex
   const phasesWithAmount = phases.filter(
-    (p) => p.phase && /\d/.test(p.montant),
+    (p) => {
+      const parsedAmount = parseFloat(String(p.montant).replace(/[^\d.-]/g, ""));
+      const isValidAmount = !isNaN(parsedAmount) && parsedAmount > 0;
+      return p.phase && isValidAmount;
+    },
   );
   if (phasesWithAmount.length >= 3) phaseBalance = 10;
   else if (phasesWithAmount.length >= 2) phaseBalance = 6;

@@ -83,6 +83,9 @@ function computeDimensions(metrics: CultInputMetrics): Omit<CultIndexBreakdown, 
   const evangelistRatio = evangelistCount / safeCommunity;
   const referralIntensity = metrics.totalReferrals / Math.max(superfanCount, 1);
   const evangelismScore = clamp(
+    // evangelistRatio * 500: an evangelist ratio of 0.20 (20%) maps to score 100
+    // referralIntensity * 20: 5 referrals per superfan maps to score 100
+    // /2: average of both sub-scores
     (evangelistRatio * 500 + referralIntensity * 20) / 2,
   );
 
@@ -106,16 +109,24 @@ export function computeCultIndex(
   metrics: CultInputMetrics,
   weights: CultIndexWeights = DEFAULT_CULT_WEIGHTS,
 ): CultIndexBreakdown {
+  // Validate weights sum to ~1.0, normalize if not
+  const weightSum = Object.values(weights).reduce((a, b) => a + b, 0);
+  const normalizedWeights = weightSum > 0 && Math.abs(weightSum - 1) > 0.01
+    ? Object.fromEntries(
+        Object.entries(weights).map(([k, v]) => [k, v / weightSum])
+      ) as CultIndexWeights
+    : weights;
+
   const dims = computeDimensions(metrics);
 
   const cultIndex = clamp(Math.round(
-    dims.engagementDepth * weights.engagementDepth +
-    dims.superfanVelocity * weights.superfanVelocity +
-    dims.communityCohesion * weights.communityCohesion +
-    dims.brandDefenseRate * weights.brandDefenseRate +
-    dims.ugcGenerationRate * weights.ugcGenerationRate +
-    dims.ritualAdoption * weights.ritualAdoption +
-    dims.evangelismScore * weights.evangelismScore,
+    dims.engagementDepth * normalizedWeights.engagementDepth +
+    dims.superfanVelocity * normalizedWeights.superfanVelocity +
+    dims.communityCohesion * normalizedWeights.communityCohesion +
+    dims.brandDefenseRate * normalizedWeights.brandDefenseRate +
+    dims.ugcGenerationRate * normalizedWeights.ugcGenerationRate +
+    dims.ritualAdoption * normalizedWeights.ritualAdoption +
+    dims.evangelismScore * normalizedWeights.evangelismScore,
   ));
 
   return { cultIndex, ...dims };

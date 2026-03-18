@@ -40,7 +40,7 @@ export class GoogleTrendsAdapter implements DataSourceAdapter {
   }
 
   async collect(params: CollectionParams): Promise<CollectionResult> {
-    const { brandName, sector, competitors } = params;
+    const { brandName, sector, competitors, country: geoCountry, language: geoLang } = params;
 
     // Build keyword list
     const keywords: GoogleTrendsKeyword[] = [
@@ -61,7 +61,9 @@ export class GoogleTrendsAdapter implements DataSourceAdapter {
       try {
         // Using a simple fetch approach to the explore API
         // This is a best-effort approach — Google may block automated requests
-        const url = `https://trends.google.com/trends/api/dailytrends?hl=fr&tz=-60&geo=FR&ns=15`;
+        const geo = geoCountry ?? "CM";
+        const hl = geoLang ?? "fr";
+        const url = `https://trends.google.com/trends/api/dailytrends?hl=${hl}&tz=-60&geo=${geo}&ns=15`;
         const response = await fetch(url, {
           headers: {
             "User-Agent": "Mozilla/5.0 (compatible; ADVERTIS/1.0)",

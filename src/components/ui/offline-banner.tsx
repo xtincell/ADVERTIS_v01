@@ -45,12 +45,12 @@ export function OfflineBanner() {
     >
       {isOffline ? (
         <>
-          <WifiOff className="h-4 w-4" />
+          <WifiOff className="size-4" />
           <span>{`Vous êtes hors ligne`}</span>
         </>
       ) : (
         <>
-          <Wifi className="h-4 w-4" />
+          <Wifi className="size-4" />
           <span>{`Connexion rétablie`}</span>
         </>
       )}

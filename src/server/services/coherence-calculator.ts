@@ -359,9 +359,10 @@ function calculateParentChildAlignment(
     const parentVals = parentA.valeurs.map((v) => v.valeur?.toLowerCase()).filter(Boolean);
     // At least 1 shared value = pass
     const overlap = childVals.some((cv) => parentVals.includes(cv));
-    if (overlap || childVals.length === 0 || parentVals.length === 0) passes++;
+    if (overlap) passes++;
+    // Empty arrays on either side = no data to compare, don't award points
   } else {
-    passes++; // No data to compare = no penalty
+    // Neither pillar has valeurs data at all — don't award points
   }
 
   // Check 2: Positioning consistency (child should reference parent's positioning)
@@ -448,7 +449,7 @@ export function getCoherenceBreakdown(
     const withContent = pillars.filter(
       (p) => p.status === "complete" && hasNonTrivialContent(p.content) === 1,
     ).length;
-    qualityRatio = withContent / totalPillars;
+    qualityRatio = withContent / completedPillars;
   }
   const contentQuality = Math.round(qualityRatio * 15);
 
@@ -463,13 +464,9 @@ export function getCoherenceBreakdown(
     ? calculateParentChildAlignment(pillarMap, parentPillarMap)
     : undefined;
 
-  const total_ =
-    pillarCompletion +
-    variableCoverage +
-    contentQuality +
-    crossPillarAlignment +
-    auditIntegration +
-    (parentChildAlignment ?? 0);
+  const total_ = parentChildAlignment !== undefined
+    ? pillarCompletion + variableCoverage + contentQuality + crossPillarAlignment + parentChildAlignment
+    : pillarCompletion + variableCoverage + contentQuality + crossPillarAlignment + auditIntegration;
 
   return {
     pillarCompletion,

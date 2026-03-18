@@ -26,6 +26,7 @@
 
 import { db } from "~/server/db";
 import type { TrackAuditResult } from "~/lib/types/pillar-schemas";
+import { collectInternalData } from "./track-collector";
 
 export async function syncTrackToMarketContext(
   strategyId: string,
@@ -133,6 +134,21 @@ export async function syncTrackToMarketContext(
     console.log(
       `[Track Sync] Synced ${track.competitiveBenchmark.length} competitors + ${entries.length} opportunities for strategy ${strategyId}`,
     );
+
+    // -----------------------------------------------------------------------
+    // 4. Trigger internal data collection (fire-and-forget)
+    //    This aggregates scores, KPIs, campaigns, and detects signals
+    // -----------------------------------------------------------------------
+    void collectInternalData(strategyId).then((snapshot) => {
+      if (snapshot.signals.length > 0) {
+        console.log(
+          `[Track Sync] ${snapshot.signals.length} signal(s) detected after T sync:`,
+          snapshot.signals.map((s) => `[${s.severity}] ${s.message}`).join(", "),
+        );
+      }
+    }).catch((err) => {
+      console.error("[Track Sync] Internal collection after T sync failed:", err);
+    });
   } catch (error) {
     // Non-blocking: log but don't throw (fire-and-forget)
     console.error("[Track Sync] Error syncing track data:", error);

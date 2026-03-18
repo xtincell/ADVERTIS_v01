@@ -32,10 +32,12 @@ import {
 import { recalculateAllScores } from "~/server/services/score-engine";
 import { calculateRiskScore } from "~/server/services/risk-calculator";
 import { calculateBrandMarketFit } from "~/server/services/bmf-calculator";
+import { calculateInvestmentScore } from "~/server/services/investment-calculator";
 import { parsePillarContent } from "~/lib/types/pillar-parsers";
 import type {
   RiskAuditResult,
   TrackAuditResult,
+  ImplementationData,
   SynthesePillarData,
   ValeurPillarDataV2,
 } from "~/lib/types/pillar-schemas";
@@ -717,10 +719,27 @@ export const analyticsRouter = createTRPCRouter({
         }
       }
 
+      // 4. Invest breakdown (only if I pillar is complete)
+      let investBreakdown = null;
+      const iPillar = strategy.pillars.find((p) => p.type === "I");
+      if (iPillar?.status === "complete" && iPillar.content) {
+        const { data: iData } = parsePillarContent<ImplementationData>("I", iPillar.content);
+        if (iData) {
+          investBreakdown = calculateInvestmentScore(
+            iData,
+            strategy.annualBudget,
+            strategy.targetRevenue,
+            strategy.sector,
+            strategy.maturityProfile,
+          );
+        }
+      }
+
       return {
         coherenceBreakdown,
         riskBreakdown,
         bmfBreakdown,
+        investBreakdown,
       };
     }),
 

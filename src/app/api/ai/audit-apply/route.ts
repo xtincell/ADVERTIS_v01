@@ -16,6 +16,7 @@ import { generateText } from "ai";
 import { auth } from "~/server/auth";
 import { db } from "~/server/db";
 import { anthropic, DEFAULT_MODEL } from "~/server/services/anthropic-client";
+import { DEFAULT_PHASE_MODELS } from "~/lib/constants";
 
 // Allow up to 2 minutes for AI analysis (larger scope = more time)
 export const maxDuration = 120;
@@ -78,6 +79,10 @@ export async function POST(req: NextRequest) {
       { status: 404 },
     );
   }
+
+  // 3b. Resolve AI model for audit-review phase
+  const userModelConfig = (strategy.modelConfig as Record<string, string> | null) ?? {};
+  const auditReviewModel = userModelConfig["audit-review"] ?? DEFAULT_PHASE_MODELS["audit-review"] ?? DEFAULT_MODEL;
 
   // 4. Extract R + T audit content (required for cross-analysis)
   const pillarR = strategy.pillars.find((p) => p.type === "R");
@@ -161,7 +166,7 @@ Réponds avec un JSON dans ce format exact :
   // 7. Call Claude
   try {
     const result = await generateText({
-      model: anthropic(DEFAULT_MODEL),
+      model: anthropic(auditReviewModel),
       system: systemPrompt,
       prompt: userPrompt,
       maxOutputTokens: 10000,

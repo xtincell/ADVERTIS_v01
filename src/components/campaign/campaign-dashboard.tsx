@@ -20,6 +20,7 @@ import {
   CAMPAIGN_STATUS_LABELS,
   CAMPAIGN_STATUS_COLORS,
 } from "~/lib/constants";
+import { formatCompact } from "~/lib/currency";
 
 interface CampaignDashboardProps {
   onNavigate?: (path: string) => void;
@@ -62,17 +63,17 @@ export function CampaignDashboard({ onNavigate }: CampaignDashboardProps) {
         />
         <KpiCard
           label="Budget total"
-          value={formatCurrency(dashboard.totalBudget)}
+          value={formatCompact(dashboard.totalBudget)}
           icon={DollarSign}
           color="text-green-600"
           sub={`${budgetUtil}% utilisé`}
         />
         <KpiCard
           label="Budget dépensé"
-          value={formatCurrency(dashboard.totalSpent)}
+          value={formatCompact(dashboard.totalSpent)}
           icon={DollarSign}
           color="text-amber-600"
-          sub={`${formatCurrency(dashboard.totalAllocated)} alloué`}
+          sub={`${formatCompact(dashboard.totalAllocated)} alloué`}
         />
       </div>
 
@@ -200,8 +201,4 @@ function KpiCard({
   );
 }
 
-function formatCurrency(amount: number) {
-  if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M`;
-  if (amount >= 1_000) return `${(amount / 1_000).toFixed(0)}K`;
-  return amount.toLocaleString("fr-FR");
-}
+// formatCurrency → replaced by centralized formatCompact from ~/lib/currency

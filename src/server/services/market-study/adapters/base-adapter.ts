@@ -28,6 +28,7 @@ import type {
   CollectionResult,
   DataSourceName,
 } from "~/lib/types/market-study";
+import { COUNTRY_LABELS, type CountryCode } from "~/lib/constants";
 
 export type { DataSourceAdapter, CollectionParams, CollectionResult, DataSourceName };
 
@@ -47,20 +48,21 @@ export function buildSearchQueries(
 ): { query: string; category: string }[] {
   const { brandName, sector, competitors, keywords } = params;
   const lang = params.language ?? "fr";
-  const country = params.country ?? "FR";
+  const country = params.country ?? "CM";
+  const countryLabel = COUNTRY_LABELS[country as CountryCode] ?? country;
 
   const queries: { query: string; category: string }[] = [];
 
   // Market size queries
   queries.push(
-    { query: `${sector} market size ${country} 2024 2025`, category: "market_size" },
-    { query: `taille marché ${sector} ${country}`, category: "market_size" },
+    { query: `${sector} market size ${countryLabel} 2024 2025`, category: "market_size" },
+    { query: `taille marché ${sector} ${countryLabel}`, category: "market_size" },
   );
 
   // Trend queries
   queries.push(
-    { query: `${sector} trends 2025 ${country}`, category: "trends" },
-    { query: `tendances ${sector} ${lang === "fr" ? "France" : country}`, category: "trends" },
+    { query: `${sector} trends 2025 ${countryLabel}`, category: "trends" },
+    { query: `tendances ${sector} ${countryLabel}`, category: "trends" },
   );
 
   // Competitor queries
